@@ -38,25 +38,6 @@ const Index = () => {
   const balance = 12580.50;
 
   const handleServiceClick = (service: any) => {
-    if (!profile?.is_account_activated && service.action !== 'disabled') {
-      toast({
-        title: "تفعيل الحساب مطلوب",
-        description: "يجب تفعيل حسابك أولاً لاستخدام هذه الخدمة",
-        variant: "destructive",
-        action: (
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => navigate('/activate')}
-            className="ml-2"
-          >
-            تفعيل الآن
-          </Button>
-        ),
-      });
-      return;
-    }
-    
     if (service.action === 'disabled') {
       toast({
         title: "خدمة غير متاحة",
@@ -65,8 +46,12 @@ const Index = () => {
       return;
     }
 
-    // Handle other service actions here
-    console.log(`Clicked on service: ${service.title}`);
+    // السماح بالدخول إلى صفحة الخدمة بغض النظر عن حالة التفعيل
+    // التحقق من التفعيل سيتم عند محاولة تنفيذ العملية الفعلية
+    console.log(`Navigating to service: ${service.title}`);
+    
+    // هنا يمكن إضافة التوجيه إلى صفحة الخدمة المناسبة
+    // navigate(`/${service.action}`);
   };
 
   const services = [
@@ -266,7 +251,7 @@ const Index = () => {
                 className={`
                   group cursor-pointer border-0 bg-gradient-card shadow-card hover:shadow-elevated 
                   transition-all duration-500 hover:scale-105 relative overflow-hidden
-                  ${service.action === 'disabled' || (!profile?.is_account_activated && service.action !== 'disabled') ? 'cursor-not-allowed' : ''}
+                  ${service.action === 'disabled' ? 'cursor-not-allowed' : ''}
                 `}
                 onClick={() => handleServiceClick(service)}
               >
@@ -283,11 +268,6 @@ const Index = () => {
                         <Lock className="h-3 w-3 text-muted-foreground" />
                       </div>
                     )}
-                    {!profile?.is_account_activated && service.action !== 'disabled' && (
-                      <div className="absolute -top-1 -right-1 bg-gradient-gold rounded-full p-1 shadow-md">
-                        <AlertCircle className="h-3 w-3 text-white" />
-                      </div>
-                    )}
                   </div>
                   <h3 className="font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
                     {service.title}
@@ -296,13 +276,6 @@ const Index = () => {
                   {service.action === 'disabled' && (
                     <div className="absolute inset-0 bg-background/50 backdrop-blur-sm rounded-lg flex items-center justify-center">
                       <Badge variant="secondary" className="font-medium">قريباً</Badge>
-                    </div>
-                  )}
-                  {!profile?.is_account_activated && service.action !== 'disabled' && (
-                    <div className="absolute inset-0 bg-gradient-gold/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-                      <Badge className="bg-gradient-gold text-white border-0 font-medium">
-                        يتطلب تفعيل الحساب
-                      </Badge>
                     </div>
                   )}
                 </CardContent>
