@@ -19,7 +19,6 @@ import {
   Lock,
   QrCode
 } from "lucide-react";
-import opayLogo from "@/assets/opay-logo.jpg";
 
 const Index = () => {
   const [showBalance, setShowBalance] = useState(true);
@@ -59,14 +58,14 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-accent/5" dir="rtl">
+    <div className="min-h-screen bg-gray-50" dir="rtl">
       {/* Header */}
-      <header className="bg-gradient-primary shadow-elevated">
+      <header className="bg-blue-600 shadow-lg">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-white/20 p-2 rounded-lg overflow-hidden">
-                <img src={opayLogo} alt="OpaY Logo" className="h-6 w-6 rounded" />
+              <div className="bg-white/20 p-2 rounded-lg">
+                <Wallet className="h-6 w-6 text-white" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white">OpaY</h1>
@@ -87,31 +86,31 @@ const Index = () => {
         {/* Balance and QR Pay Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Balance Card */}
-          <Card className="bg-gradient-card shadow-glow border-0 overflow-hidden">
+          <Card className="bg-white shadow-lg border-0">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-muted-foreground">الرصيد المتاح</h2>
+                <h2 className="text-lg font-semibold text-gray-600">الرصيد المتاح</h2>
                 <Button 
                   variant="ghost" 
                   size="sm"
                   onClick={() => setShowBalance(!showBalance)}
-                  className="text-muted-foreground hover:text-primary"
+                  className="text-gray-500 hover:text-blue-600"
                 >
                   {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
               
               <div className="flex items-center gap-2">
-                <span className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                <span className="text-3xl font-bold text-blue-600">
                   {showBalance ? `${balance.toFixed(2)}` : "••••••"}
                 </span>
-                <span className="text-lg text-muted-foreground font-medium">دج</span>
+                <span className="text-lg text-gray-600 font-medium">دج</span>
               </div>
             </CardContent>
           </Card>
 
           {/* QR Pay Card */}
-          <Card className="bg-gradient-primary shadow-glow border-0 overflow-hidden">
+          <Card className="bg-blue-600 shadow-lg border-0">
             <CardContent className="p-6 text-center">
               <div className="mb-4">
                 <div className="bg-white/20 p-4 rounded-2xl w-16 h-16 mx-auto flex items-center justify-center mb-3">
@@ -121,7 +120,7 @@ const Index = () => {
                 <p className="text-white/80 text-sm">ادفع بسرعة وأمان</p>
               </div>
               
-              <Button variant="secondary" className="w-full bg-white/20 border-0 text-white hover:bg-white/30 backdrop-blur-sm">
+              <Button variant="secondary" className="w-full bg-white/20 border-0 text-white hover:bg-white/30">
                 <QrCode className="h-4 w-4 ml-2" />
                 مسح الكود
               </Button>
@@ -135,7 +134,7 @@ const Index = () => {
             <Card 
               key={index} 
               className={`
-                shadow-card hover:shadow-elevated transition-all duration-300 border-0 bg-gradient-card cursor-pointer group
+                shadow-lg hover:shadow-xl transition-all duration-300 border-0 bg-white cursor-pointer group
                 ${service.variant === 'disabled' ? 'cursor-not-allowed relative' : ''}
               `}
             >
@@ -143,27 +142,27 @@ const Index = () => {
                 <div className={`
                   inline-flex p-3 rounded-xl mb-3 transition-all duration-300 
                   ${service.variant !== 'disabled' ? 'group-hover:scale-110' : ''}
-                  ${service.variant === 'primary' ? 'bg-gradient-primary text-white' :
-                    service.variant === 'secondary' ? 'bg-secondary text-secondary-foreground' :
-                    service.variant === 'success' ? 'bg-success text-white' :
-                    service.variant === 'disabled' ? 'bg-gradient-gold text-white relative' :
-                    'bg-secondary text-secondary-foreground'}
+                  ${service.variant === 'primary' ? 'bg-blue-600 text-white' :
+                    service.variant === 'secondary' ? 'bg-gray-100 text-gray-700' :
+                    service.variant === 'success' ? 'bg-green-600 text-white' :
+                    service.variant === 'disabled' ? 'bg-yellow-500 text-white relative' :
+                    'bg-gray-100 text-gray-700'}
                 `}>
                   {service.icon}
                   {service.variant === 'disabled' && (
                     <div className="absolute -top-1 -right-1 bg-white rounded-full p-1 shadow-md">
-                      <Lock className="h-3 w-3 text-muted-foreground" />
+                      <Lock className="h-3 w-3 text-gray-500" />
                     </div>
                   )}
                 </div>
-                <h3 className={`font-semibold mb-1 ${service.variant === 'disabled' ? 'text-foreground' : ''}`}>
+                <h3 className={`font-semibold mb-1 ${service.variant === 'disabled' ? 'text-gray-700' : ''}`}>
                   {service.title}
                 </h3>
-                <p className="text-xs text-muted-foreground">{service.subtitle}</p>
+                <p className="text-xs text-gray-500">{service.subtitle}</p>
                 {service.variant === 'disabled' && (
                   <div className="absolute inset-0 bg-black/5 rounded-lg flex items-center justify-center">
                     <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full border">
-                      <span className="text-xs font-medium text-muted-foreground">قريباً</span>
+                      <span className="text-xs font-medium text-gray-500">قريباً</span>
                     </div>
                   </div>
                 )}
@@ -173,32 +172,32 @@ const Index = () => {
         </div>
 
         {/* Recent Transactions */}
-        <Card className="shadow-card border-0 bg-gradient-card">
+        <Card className="shadow-lg border-0 bg-white">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
+              <TrendingUp className="h-5 w-5 text-blue-600" />
               المعاملات الأخيرة
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {recentTransactions.map((transaction) => (
-              <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary/80 transition-colors">
+              <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${transaction.amount > 0 ? 'bg-success/20 text-success' : 'bg-primary/20 text-primary'}`}>
+                  <div className={`p-2 rounded-lg ${transaction.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
                     {transaction.icon}
                   </div>
                   <div>
                     <p className="font-medium text-sm">{transaction.desc}</p>
-                    <p className="text-xs text-muted-foreground">{transaction.type}</p>
+                    <p className="text-xs text-gray-500">{transaction.type}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
                   {transaction.amount > 0 ? (
-                    <ArrowDownLeft className="h-4 w-4 text-success" />
+                    <ArrowDownLeft className="h-4 w-4 text-green-600" />
                   ) : (
-                    <ArrowUpRight className="h-4 w-4 text-primary" />
+                    <ArrowUpRight className="h-4 w-4 text-blue-600" />
                   )}
-                  <span className={`font-semibold ${transaction.amount > 0 ? 'text-success' : 'text-primary'}`}>
+                  <span className={`font-semibold ${transaction.amount > 0 ? 'text-green-600' : 'text-blue-600'}`}>
                     {transaction.amount > 0 ? '+' : ''}{Math.abs(transaction.amount)} دج
                   </span>
                 </div>
@@ -208,7 +207,7 @@ const Index = () => {
         </Card>
 
         {/* Quick Actions */}
-        <Card className="shadow-card border-0 bg-gradient-gold">
+        <Card className="shadow-lg border-0 bg-yellow-500">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
