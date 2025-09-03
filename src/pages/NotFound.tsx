@@ -24,7 +24,7 @@ const NotFound = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/dashboard')}
           className="w-12 h-12 p-0 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-white/20 transition-all group"
         >
           <ArrowLeft className="h-5 w-5 text-white group-hover:text-white transition-colors" />

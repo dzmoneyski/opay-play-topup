@@ -135,19 +135,6 @@ const Index = () => {
       {/* Professional Header */}
       <header className="relative bg-gradient-hero overflow-hidden">
         <div className="absolute inset-0 bg-gradient-glass"></div>
-        
-        {/* Back Button */}
-        <div className="absolute top-6 left-6 z-30">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(-1)}
-            className="w-12 h-12 p-0 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-white/20 transition-all group"
-          >
-            <ArrowLeft className="h-5 w-5 text-white group-hover:text-white transition-colors" />
-          </Button>
-        </div>
-        
         <div className="container mx-auto px-4 py-8 relative z-10">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
