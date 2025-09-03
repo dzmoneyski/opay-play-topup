@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Wallet, 
   CreditCard, 
@@ -22,6 +24,7 @@ import {
 } from "lucide-react";
 
 const Index = () => {
+  const { user, signOut } = useAuth();
   const [showBalance, setShowBalance] = useState(true);
   const balance = 12580.50;
 
@@ -116,10 +119,32 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Badge className="bg-gradient-secondary text-white border-0 px-3 py-1">
-                <Smartphone className="h-4 w-4 ml-2" />
-                متصل
-              </Badge>
+              {user ? (
+                <div className="flex items-center gap-3">
+                  <Badge className="bg-gradient-secondary text-white border-0 px-3 py-1">
+                    <Smartphone className="h-4 w-4 ml-2" />
+                    متصل
+                  </Badge>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => signOut()}
+                    className="text-white/70 hover:text-white hover:bg-white/10 border border-white/20"
+                  >
+                    تسجيل الخروج
+                  </Button>
+                </div>
+              ) : (
+                <Link to="/auth">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-white/70 hover:text-white hover:bg-white/10 border border-white/20"
+                  >
+                    تسجيل الدخول
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
 
