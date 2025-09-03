@@ -17,7 +17,8 @@ import {
   Smartphone,
   MapPin,
   Lock,
-  QrCode
+  QrCode,
+  ArrowDownToLine
 } from "lucide-react";
 
 const Index = () => {
@@ -127,6 +128,34 @@ const Index = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Withdrawal Card */}
+        <Card className="bg-gradient-to-r from-green-500 to-green-600 shadow-lg border-0 relative overflow-hidden animate-pulse">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[slide-in-right_2s_ease-in-out_infinite] opacity-75"></div>
+          <CardContent className="p-6 relative">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="bg-white/20 p-3 rounded-xl">
+                  <ArrowDownToLine className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-1">سحب الأموال</h3>
+                  <p className="text-white/90 text-sm">اسحب رصيدك إلى حسابك البنكي</p>
+                </div>
+              </div>
+              <Button className="bg-white/20 hover:bg-white/30 border-0 text-white font-semibold px-6">
+                سحب الآن
+              </Button>
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-white/20">
+              <div className="flex justify-between items-center text-white/90 text-sm">
+                <span>الحد الأدنى للسحب: 1000 دج</span>
+                <span>رسوم السحب: 50 دج</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Services Grid */}
         <div className="grid grid-cols-2 gap-4">
