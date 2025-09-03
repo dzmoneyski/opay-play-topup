@@ -84,58 +84,50 @@ const Index = () => {
       </header>
 
       <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Balance Card */}
-        <Card className="bg-gradient-card shadow-glow border-0 overflow-hidden">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-muted-foreground">الرصيد المتاح</h2>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setShowBalance(!showBalance)}
-                className="text-muted-foreground hover:text-primary"
-              >
-                {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-            </div>
-            
-            <div className="flex items-center gap-2 mb-6">
-              <span className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                {showBalance ? `${balance.toFixed(2)}` : "••••••"}
-              </span>
-              <span className="text-lg text-muted-foreground font-medium">دج</span>
-            </div>
-
-            {/* QR Pay Section */}
-            <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="bg-gradient-primary p-2.5 rounded-lg">
-                    <QrCode className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm">الدفع بـ QR</h3>
-                    <p className="text-xs text-muted-foreground">ادفع بسرعة وأمان</p>
-                  </div>
-                </div>
-                <Button size="sm" variant="outline" className="border-primary/20 hover:bg-primary/5 text-xs">
-                  مسح الكود
+        {/* Balance and QR Pay Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Balance Card */}
+          <Card className="bg-gradient-card shadow-glow border-0 overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-muted-foreground">الرصيد المتاح</h2>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowBalance(!showBalance)}
+                  className="text-muted-foreground hover:text-primary"
+                >
+                  {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
-            </div>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  {showBalance ? `${balance.toFixed(2)}` : "••••••"}
+                </span>
+                <span className="text-lg text-muted-foreground font-medium">دج</span>
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="flex gap-3">
-              <Button className="flex-1 bg-gradient-primary hover:shadow-glow transition-all duration-300">
-                <Plus className="h-4 w-4 ml-2" />
-                شحن رصيد
+          {/* QR Pay Card */}
+          <Card className="bg-gradient-primary shadow-glow border-0 overflow-hidden">
+            <CardContent className="p-6 text-center">
+              <div className="mb-4">
+                <div className="bg-white/20 p-4 rounded-2xl w-16 h-16 mx-auto flex items-center justify-center mb-3">
+                  <QrCode className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-1">الدفع بـ QR</h3>
+                <p className="text-white/80 text-sm">ادفع بسرعة وأمان</p>
+              </div>
+              
+              <Button variant="secondary" className="w-full bg-white/20 border-0 text-white hover:bg-white/30 backdrop-blur-sm">
+                <QrCode className="h-4 w-4 ml-2" />
+                مسح الكود
               </Button>
-              <Button variant="outline" className="flex-1 border-primary/20 hover:bg-primary/5">
-                <TrendingUp className="h-4 w-4 ml-2" />
-                الإحصائيات
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Services Grid */}
         <div className="grid grid-cols-2 gap-4">
