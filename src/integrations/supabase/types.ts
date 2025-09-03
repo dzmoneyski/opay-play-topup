@@ -20,7 +20,14 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          identity_verification_status: string | null
+          is_account_activated: boolean | null
+          is_identity_verified: boolean | null
+          is_phone_verified: boolean | null
+          national_id: string | null
           phone: string | null
+          phone_verification_code: string | null
+          phone_verification_expires_at: string | null
           updated_at: string
           user_id: string
         }
@@ -29,7 +36,14 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          identity_verification_status?: string | null
+          is_account_activated?: boolean | null
+          is_identity_verified?: boolean | null
+          is_phone_verified?: boolean | null
+          national_id?: string | null
           phone?: string | null
+          phone_verification_code?: string | null
+          phone_verification_expires_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -38,7 +52,59 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          identity_verification_status?: string | null
+          is_account_activated?: boolean | null
+          is_identity_verified?: boolean | null
+          is_phone_verified?: boolean | null
+          national_id?: string | null
           phone?: string | null
+          phone_verification_code?: string | null
+          phone_verification_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      verification_requests: {
+        Row: {
+          created_at: string
+          id: string
+          national_id: string
+          national_id_back_image: string | null
+          national_id_front_image: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          submitted_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          national_id: string
+          national_id_back_image?: string | null
+          national_id_front_image?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          submitted_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          national_id?: string
+          national_id_back_image?: string | null
+          national_id_front_image?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          submitted_at?: string
           updated_at?: string
           user_id?: string
         }

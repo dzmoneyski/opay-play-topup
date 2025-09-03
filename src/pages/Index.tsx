@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { 
   Wallet, 
   CreditCard, 
@@ -20,11 +21,14 @@ import {
   MapPin,
   Lock,
   QrCode,
-  ArrowDownToLine
+  ArrowDownToLine,
+  CheckCircle,
+  Clock
 } from "lucide-react";
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const { profile } = useProfile();
   const [showBalance, setShowBalance] = useState(true);
   const balance = 12580.50;
 
@@ -120,10 +124,17 @@ const Index = () => {
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-3">
-                <Badge className="bg-gradient-secondary text-white border-0 px-3 py-1">
-                  <Smartphone className="h-4 w-4 ml-2" />
-                  متصل
-                </Badge>
+                {profile?.is_account_activated ? (
+                  <Badge className="bg-gradient-secondary text-white border-0 px-3 py-1">
+                    <CheckCircle className="h-4 w-4 ml-2" />
+                    الحساب مفعل
+                  </Badge>
+                ) : (
+                  <Badge className="bg-gradient-gold text-white border-0 px-3 py-1">
+                    <Clock className="h-4 w-4 ml-2" />
+                    يتطلب تفعيل
+                  </Badge>
+                )}
                 <Button 
                   variant="ghost" 
                   size="sm"

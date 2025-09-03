@@ -9,6 +9,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import PublicRoute from "@/components/PublicRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import AccountActivation from "./pages/AccountActivation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,11 @@ const App = () => (
               <PublicRoute>
                 <Auth />
               </PublicRoute>
+            } />
+            <Route path="/activate" element={
+              <ProtectedRoute requireActivation={false}>
+                <AccountActivation />
+              </ProtectedRoute>
             } />
             <Route path="/dashboard" element={
               <ProtectedRoute>
