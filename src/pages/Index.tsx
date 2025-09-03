@@ -41,6 +41,13 @@ const Index = () => {
       action: "transfer"
     },
     {
+      icon: <ArrowDownToLine className="h-6 w-6" />,
+      title: "سحب الأموال",
+      subtitle: "اسحب رصيدك إلى البنك",
+      gradient: "bg-gradient-secondary",
+      action: "withdraw"
+    },
+    {
       icon: <ShoppingBag className="h-6 w-6" />,
       title: "شراء بطاقات",
       subtitle: "Google Play، Steam، Netflix",
@@ -164,7 +171,7 @@ const Index = () => {
           </h2>
 
           {/* Main Services Grid */}
-          <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {services.map((service, index) => (
               <Card 
                 key={index} 
@@ -201,40 +208,6 @@ const Index = () => {
               </Card>
             ))}
           </div>
-
-          {/* Withdrawal Feature Card */}
-          <Card className="bg-gradient-secondary shadow-glow border-0 relative overflow-hidden animate-float">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer bg-[length:200%_100%]"></div>
-            <CardContent className="p-6 relative z-10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
-                    <ArrowDownToLine className="h-8 w-8 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-1">سحب الأموال</h3>
-                    <p className="text-white/90">اسحب رصيدك إلى حسابك البنكي بسهولة</p>
-                  </div>
-                </div>
-                <Button className="bg-white/20 hover:bg-white/30 border-0 text-white font-semibold px-6 py-3 backdrop-blur-sm">
-                  سحب الآن
-                </Button>
-              </div>
-              
-              <div className="mt-6 pt-4 border-t border-white/20">
-                <div className="grid grid-cols-2 gap-4 text-white/90 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-white/40"></div>
-                    <span>الحد الأدنى: 1000 دج</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-white/40"></div>
-                    <span>رسوم السحب: 50 دج</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Recent Transactions */}
