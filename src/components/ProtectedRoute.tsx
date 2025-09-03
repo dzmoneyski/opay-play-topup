@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
   requireActivation?: boolean;
 }
 
-const ProtectedRoute = ({ children, requireActivation = true }: ProtectedRouteProps) => {
+const ProtectedRoute = ({ children, requireActivation = false }: ProtectedRouteProps) => {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
 
@@ -26,6 +26,7 @@ const ProtectedRoute = ({ children, requireActivation = true }: ProtectedRoutePr
     return <Navigate to="/auth" replace />;
   }
 
+  // Only redirect to activation if explicitly required
   if (requireActivation && profile && !profile.is_account_activated) {
     return <Navigate to="/activate" replace />;
   }

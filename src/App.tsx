@@ -38,7 +38,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/dashboard" element={
-              <ProtectedRoute>
+              <ProtectedRoute requireActivation={false}>
                 <Index />
               </ProtectedRoute>
             } />

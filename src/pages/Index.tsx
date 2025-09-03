@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Wallet, 
   CreditCard, 
@@ -23,14 +24,50 @@ import {
   QrCode,
   ArrowDownToLine,
   CheckCircle,
-  Clock
+  Clock,
+  AlertCircle,
+  ArrowRight
 } from "lucide-react";
 
 const Index = () => {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const [showBalance, setShowBalance] = useState(true);
   const balance = 12580.50;
+
+  const handleServiceClick = (service: any) => {
+    if (!profile?.is_account_activated && service.action !== 'disabled') {
+      toast({
+        title: "تفعيل الحساب مطلوب",
+        description: "يجب تفعيل حسابك أولاً لاستخدام هذه الخدمة",
+        variant: "destructive",
+        action: (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => navigate('/activate')}
+            className="ml-2"
+          >
+            تفعيل الآن
+          </Button>
+        ),
+      });
+      return;
+    }
+    
+    if (service.action === 'disabled') {
+      toast({
+        title: "خدمة غير متاحة",
+        description: "ستكون هذه الخدمة متاحة قريباً",
+      });
+      return;
+    }
+
+    // Handle other service actions here
+    console.log(`Clicked on service: ${service.title}`);
+  };
 
   const services = [
     {
@@ -186,7 +223,34 @@ const Index = () => {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8 space-y-8 -mt-4 relative z-20">
+        {/* Account Activation Banner */}
+        {!profile?.is_account_activated && (
+          <div className="container mx-auto px-4 pt-4 -mt-4 relative z-20">
+            <Card className="bg-gradient-gold/90 border-white/20 shadow-glow animate-slide-up backdrop-blur-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-6 w-6 text-white" />
+                    <div>
+                      <h3 className="text-white font-semibold">تفعيل الحساب مطلوب</h3>
+                      <p className="text-white/90 text-sm">
+                        يجب تفعيل حسابك لاستخدام جميع الخدمات المالية
+                      </p>
+                    </div>
+                  </div>
+                  <Link to="/activate">
+                    <Button className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm">
+                      تفعيل الآن
+                      <ArrowRight className="mr-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        <div className="container mx-auto px-4 py-8 space-y-8 -mt-4 relative z-20">
         {/* Services Section */}
         <div className="animate-slide-up" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
           <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
@@ -202,8 +266,9 @@ const Index = () => {
                 className={`
                   group cursor-pointer border-0 bg-gradient-card shadow-card hover:shadow-elevated 
                   transition-all duration-500 hover:scale-105 relative overflow-hidden
-                  ${service.action === 'disabled' ? 'cursor-not-allowed' : ''}
+                  ${service.action === 'disabled' || (!profile?.is_account_activated && service.action !== 'disabled') ? 'cursor-not-allowed' : ''}
                 `}
+                onClick={() => handleServiceClick(service)}
               >
                 <div className={`absolute inset-0 ${service.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}></div>
                 <CardContent className="p-6 text-center relative z-10">
@@ -218,6 +283,11 @@ const Index = () => {
                         <Lock className="h-3 w-3 text-muted-foreground" />
                       </div>
                     )}
+                    {!profile?.is_account_activated && service.action !== 'disabled' && (
+                      <div className="absolute -top-1 -right-1 bg-gradient-gold rounded-full p-1 shadow-md">
+                        <AlertCircle className="h-3 w-3 text-white" />
+                      </div>
+                    )}
                   </div>
                   <h3 className="font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
                     {service.title}
@@ -226,6 +296,13 @@ const Index = () => {
                   {service.action === 'disabled' && (
                     <div className="absolute inset-0 bg-background/50 backdrop-blur-sm rounded-lg flex items-center justify-center">
                       <Badge variant="secondary" className="font-medium">قريباً</Badge>
+                    </div>
+                  )}
+                  {!profile?.is_account_activated && service.action !== 'disabled' && (
+                    <div className="absolute inset-0 bg-gradient-gold/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                      <Badge className="bg-gradient-gold text-white border-0 font-medium">
+                        يتطلب تفعيل الحساب
+                      </Badge>
                     </div>
                   )}
                 </CardContent>
