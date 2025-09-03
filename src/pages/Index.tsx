@@ -16,7 +16,8 @@ import {
   ArrowDownLeft,
   Smartphone,
   MapPin,
-  Lock
+  Lock,
+  QrCode
 } from "lucide-react";
 import opayLogo from "@/assets/opay-logo.jpg";
 
@@ -103,6 +104,24 @@ const Index = () => {
                 {showBalance ? `${balance.toFixed(2)}` : "••••••"}
               </span>
               <span className="text-lg text-muted-foreground font-medium">دج</span>
+            </div>
+
+            {/* QR Pay Section */}
+            <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-gradient-primary p-2.5 rounded-lg">
+                    <QrCode className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm">الدفع بـ QR</h3>
+                    <p className="text-xs text-muted-foreground">ادفع بسرعة وأمان</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="outline" className="border-primary/20 hover:bg-primary/5 text-xs">
+                  مسح الكود
+                </Button>
+              </div>
             </div>
 
             <div className="flex gap-3">
