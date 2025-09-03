@@ -25,9 +25,9 @@ const NotFound = () => {
             
             <h1 className="text-6xl font-bold text-primary mb-4">404</h1>
             <h2 className="text-xl font-semibold mb-2">الصفحة غير موجودة</h2>
-            <p className="text-muted-foreground mb-6">
-              عذراً، لا يمكننا العثور على الصفحة التي تبحث عنها في OpaY
-            </p>
+              <p className="text-muted-foreground mb-6">
+                عذراً، لا يمكننا العثور على الصفحة التي تبحث عنها في OpaY الجزائر
+              </p>
             
             <div className="space-y-3">
               <Button asChild className="w-full bg-gradient-primary hover:shadow-glow transition-all duration-300">

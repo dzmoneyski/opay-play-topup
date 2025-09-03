@@ -21,7 +21,7 @@ import opayLogo from "@/assets/opay-logo.jpg";
 
 const Index = () => {
   const [showBalance, setShowBalance] = useState(true);
-  const balance = 2580.75;
+  const balance = 12580.50;
 
   const services = [
     {
@@ -33,27 +33,27 @@ const Index = () => {
     {
       icon: <Send className="h-6 w-6" />,
       title: "تحويل أموال",
-      subtitle: "أرسل إلى الأصدقاء",
+      subtitle: "أرسل إلى الأصدقاء والعائلة",
       variant: "secondary" as const
     },
     {
       icon: <ShoppingBag className="h-6 w-6" />,
       title: "شراء بطاقات",
-      subtitle: "Google Play، Netflix",
+      subtitle: "Google Play، Steam، Netflix",
       variant: "accent" as const
     },
     {
       icon: <CreditCard className="h-6 w-6" />,
-      title: "فعل بطاقة",
-      subtitle: "أدخل كود الشحن",
+      title: "فعّل بطاقة",
+      subtitle: "أدخل كود بطاقة OpaY",
       variant: "success" as const
     }
   ];
 
   const recentTransactions = [
-    { id: 1, type: "شراء", desc: "بطاقة Google Play", amount: -100, icon: <ShoppingBag className="h-4 w-4" /> },
-    { id: 2, type: "شحن", desc: "بطاقة OpaY", amount: +500, icon: <Plus className="h-4 w-4" /> },
-    { id: 3, type: "تحويل", desc: "إلى أحمد محمد", amount: -250, icon: <Send className="h-4 w-4" /> },
+    { id: 1, type: "شراء", desc: "بطاقة Google Play 500 دج", amount: -500, icon: <ShoppingBag className="h-4 w-4" /> },
+    { id: 2, type: "شحن", desc: "بطاقة OpaY من الكشك", amount: +2000, icon: <Plus className="h-4 w-4" /> },
+    { id: 3, type: "تحويل", desc: "إلى كريم بن علي", amount: -750, icon: <Send className="h-4 w-4" /> },
   ];
 
   return (
@@ -68,7 +68,7 @@ const Index = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white">OpaY</h1>
-                <p className="text-white/80 text-sm">محفظتك الرقمية</p>
+                <p className="text-white/80 text-sm">محفظتك الرقمية - الجزائر</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -101,7 +101,7 @@ const Index = () => {
               <span className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                 {showBalance ? `${balance.toFixed(2)}` : "••••••"}
               </span>
-              <span className="text-lg text-muted-foreground font-medium">ريال</span>
+              <span className="text-lg text-muted-foreground font-medium">دج</span>
             </div>
 
             <div className="flex gap-3">
@@ -165,7 +165,7 @@ const Index = () => {
                     <ArrowUpRight className="h-4 w-4 text-primary" />
                   )}
                   <span className={`font-semibold ${transaction.amount > 0 ? 'text-success' : 'text-primary'}`}>
-                    {transaction.amount > 0 ? '+' : ''}{Math.abs(transaction.amount)} ريال
+                    {transaction.amount > 0 ? '+' : ''}{Math.abs(transaction.amount)} دج
                   </span>
                 </div>
               </div>
@@ -178,14 +178,14 @@ const Index = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-white mb-1">بطاقات OpaY</h3>
-                <p className="text-white/90 text-sm">اشترِ بطاقات الشحن من أقرب محل</p>
+                <h3 className="font-bold text-white mb-1">بطاقات OpaY الجزائر</h3>
+                <p className="text-white/90 text-sm">اشترِ بطاقات الشحن من أقرب كشك أو محل</p>
               </div>
               <Gift className="h-8 w-8 text-white" />
             </div>
             <Button variant="secondary" className="w-full mt-4 bg-white/20 border-0 text-white hover:bg-white/30">
               <MapPin className="h-4 w-4 ml-2" />
-              اعثر على أقرب متجر
+              اعثر على أقرب كشك
             </Button>
           </CardContent>
         </Card>
