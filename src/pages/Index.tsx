@@ -38,9 +38,9 @@ const Index = () => {
       variant: "secondary" as const
     },
     {
-      icon: <Lock className="h-6 w-6" />,
+      icon: <ShoppingBag className="h-6 w-6" />,
       title: "شراء بطاقات",
-      subtitle: "قريباً...",
+      subtitle: "Google Play، Steam، Netflix",
       variant: "disabled" as const
     },
     {
@@ -125,7 +125,7 @@ const Index = () => {
               key={index} 
               className={`
                 shadow-card hover:shadow-elevated transition-all duration-300 border-0 bg-gradient-card cursor-pointer group
-                ${service.variant === 'disabled' ? 'opacity-60 cursor-not-allowed' : ''}
+                ${service.variant === 'disabled' ? 'cursor-not-allowed relative' : ''}
               `}
             >
               <CardContent className="p-4 text-center">
@@ -135,15 +135,27 @@ const Index = () => {
                   ${service.variant === 'primary' ? 'bg-gradient-primary text-white' :
                     service.variant === 'secondary' ? 'bg-secondary text-secondary-foreground' :
                     service.variant === 'success' ? 'bg-success text-white' :
-                    service.variant === 'disabled' ? 'bg-muted text-muted-foreground' :
+                    service.variant === 'disabled' ? 'bg-gradient-gold text-white relative' :
                     'bg-secondary text-secondary-foreground'}
                 `}>
                   {service.icon}
+                  {service.variant === 'disabled' && (
+                    <div className="absolute -top-1 -right-1 bg-white rounded-full p-1 shadow-md">
+                      <Lock className="h-3 w-3 text-muted-foreground" />
+                    </div>
+                  )}
                 </div>
-                <h3 className={`font-semibold mb-1 ${service.variant === 'disabled' ? 'text-muted-foreground' : ''}`}>
+                <h3 className={`font-semibold mb-1 ${service.variant === 'disabled' ? 'text-foreground' : ''}`}>
                   {service.title}
                 </h3>
                 <p className="text-xs text-muted-foreground">{service.subtitle}</p>
+                {service.variant === 'disabled' && (
+                  <div className="absolute inset-0 bg-black/5 rounded-lg flex items-center justify-center">
+                    <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full border">
+                      <span className="text-xs font-medium text-muted-foreground">قريباً</span>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
