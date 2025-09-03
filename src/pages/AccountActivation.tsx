@@ -35,13 +35,21 @@ const AccountActivation = () => {
   const [nationalId, setNationalId] = useState('');
 
   useEffect(() => {
+    console.log('Profile data:', profile);
+    console.log('Loading state:', loading);
     if (profile && profile.is_account_activated) {
+      console.log('Account is activated, redirecting to dashboard');
       navigate('/dashboard');
     }
   }, [profile, navigate]);
 
   useEffect(() => {
+    console.log('Profile changed:', profile);
     if (profile) {
+      console.log('Phone verified:', profile.is_phone_verified);
+      console.log('Identity verified:', profile.is_identity_verified);
+      console.log('Current step will be:', profile.is_phone_verified ? 2 : 1);
+      
       if (profile.is_phone_verified) {
         setCurrentStep(2);
       }
@@ -159,7 +167,13 @@ const AccountActivation = () => {
     setIsLoading(false);
   };
 
+  console.log('Rendering AccountActivation component');
+  console.log('Current loading state:', loading);
+  console.log('Current profile:', profile);
+  console.log('Current step:', currentStep);
+
   if (loading) {
+    console.log('Still loading, showing loading screen');
     return (
       <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
         <div className="text-white text-center">
@@ -169,6 +183,10 @@ const AccountActivation = () => {
       </div>
     );
   }
+
+  console.log('Profile loaded, rendering main content');
+  console.log('Should show phone verification:', !profile?.is_phone_verified);
+  console.log('Should show identity verification:', profile?.is_phone_verified && !profile?.is_identity_verified);
 
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4" dir="rtl">
