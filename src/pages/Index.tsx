@@ -15,7 +15,8 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Smartphone,
-  MapPin
+  MapPin,
+  Lock
 } from "lucide-react";
 import opayLogo from "@/assets/opay-logo.jpg";
 
@@ -37,10 +38,10 @@ const Index = () => {
       variant: "secondary" as const
     },
     {
-      icon: <ShoppingBag className="h-6 w-6" />,
+      icon: <Lock className="h-6 w-6" />,
       title: "شراء بطاقات",
-      subtitle: "Google Play، Steam، Netflix",
-      variant: "accent" as const
+      subtitle: "قريباً...",
+      variant: "disabled" as const
     },
     {
       icon: <CreditCard className="h-6 w-6" />,
@@ -120,18 +121,28 @@ const Index = () => {
         {/* Services Grid */}
         <div className="grid grid-cols-2 gap-4">
           {services.map((service, index) => (
-            <Card key={index} className="shadow-card hover:shadow-elevated transition-all duration-300 border-0 bg-gradient-card cursor-pointer group">
+            <Card 
+              key={index} 
+              className={`
+                shadow-card hover:shadow-elevated transition-all duration-300 border-0 bg-gradient-card cursor-pointer group
+                ${service.variant === 'disabled' ? 'opacity-60 cursor-not-allowed' : ''}
+              `}
+            >
               <CardContent className="p-4 text-center">
                 <div className={`
-                  inline-flex p-3 rounded-xl mb-3 transition-all duration-300 group-hover:scale-110
+                  inline-flex p-3 rounded-xl mb-3 transition-all duration-300 
+                  ${service.variant !== 'disabled' ? 'group-hover:scale-110' : ''}
                   ${service.variant === 'primary' ? 'bg-gradient-primary text-white' :
-                    service.variant === 'accent' ? 'bg-gradient-gold text-white' :
+                    service.variant === 'secondary' ? 'bg-secondary text-secondary-foreground' :
                     service.variant === 'success' ? 'bg-success text-white' :
+                    service.variant === 'disabled' ? 'bg-muted text-muted-foreground' :
                     'bg-secondary text-secondary-foreground'}
                 `}>
                   {service.icon}
                 </div>
-                <h3 className="font-semibold mb-1">{service.title}</h3>
+                <h3 className={`font-semibold mb-1 ${service.variant === 'disabled' ? 'text-muted-foreground' : ''}`}>
+                  {service.title}
+                </h3>
                 <p className="text-xs text-muted-foreground">{service.subtitle}</p>
               </CardContent>
             </Card>
