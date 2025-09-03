@@ -15,7 +15,8 @@ import {
   Clock,
   AlertCircle,
   ArrowRight,
-  Shield
+  Shield,
+  ArrowLeft
 } from 'lucide-react';
 
 const AccountActivation = () => {
@@ -191,6 +192,18 @@ const AccountActivation = () => {
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4" dir="rtl">
       <div className="absolute inset-0 bg-gradient-glass"></div>
+      
+      {/* Back Button */}
+      <div className="absolute top-6 left-6 z-30">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(-1)}
+          className="w-12 h-12 p-0 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-white/20 transition-all group"
+        >
+          <ArrowLeft className="h-5 w-5 text-white group-hover:text-white transition-colors" />
+        </Button>
+      </div>
       
       <div className="w-full max-w-2xl relative z-10">
         {/* Header */}
