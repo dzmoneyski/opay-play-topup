@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, FileText, Camera, CheckCircle, AlertCircle } from 'lucide-react';
@@ -16,6 +17,10 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
   const { toast } = useToast();
   
   const [nationalId, setNationalId] = useState('');
+  const [fullNameOnId, setFullNameOnId] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [placeOfBirth, setPlaceOfBirth] = useState('');
+  const [address, setAddress] = useState('');
   const [frontImage, setFrontImage] = useState<File | null>(null);
   const [backImage, setBackImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -68,6 +73,24 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
       return;
     }
 
+    if (!fullNameOnId.trim()) {
+      toast({
+        title: "خطأ في البيانات",
+        description: "يرجى إدخال الاسم الكامل كما هو مكتوب في البطاقة",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!dateOfBirth.trim()) {
+      toast({
+        title: "خطأ في البيانات",
+        description: "يرجى إدخال تاريخ الميلاد",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!frontImage && !backImage) {
       toast({
         title: "خطأ في البيانات",
@@ -80,7 +103,17 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
     setLoading(true);
     
     try {
-      const result = await submitIdentityVerification(nationalId, frontImage || undefined, backImage || undefined);
+      const result = await submitIdentityVerification(
+        nationalId, 
+        frontImage || undefined, 
+        backImage || undefined,
+        {
+          fullNameOnId,
+          dateOfBirth,
+          placeOfBirth,
+          address
+        }
+      );
       
       if (result.error) {
         toast({
@@ -96,6 +129,10 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
         
         // Reset form
         setNationalId('');
+        setFullNameOnId('');
+        setDateOfBirth('');
+        setPlaceOfBirth('');
+        setAddress('');
         setFrontImage(null);
         setBackImage(null);
         setFrontImagePreview(null);
@@ -160,19 +197,92 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* National ID Input */}
-          <div className="space-y-2">
-            <Label htmlFor="nationalId">رقم الهوية الوطنية *</Label>
-            <Input
-              id="nationalId"
-              type="text"
-              value={nationalId}
-              onChange={(e) => setNationalId(e.target.value)}
-              placeholder="أدخل رقم الهوية الوطنية (18 رقم)"
-              maxLength={18}
-              className="text-right"
-              disabled={loading}
-            />
+          {/* Personal Information Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground">المعلومات الشخصية</h3>
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground mb-3">
+                يرجى إدخال المعلومات بالضبط كما هي مكتوبة في بطاقة الهوية الوطنية
+              </p>
+            </div>
+            
+            {/* National ID Input */}
+            <div className="space-y-2">
+              <Label htmlFor="nationalId">رقم الهوية الوطنية *</Label>
+              <Input
+                id="nationalId"
+                type="text"
+                value={nationalId}
+                onChange={(e) => setNationalId(e.target.value)}
+                placeholder="أدخل رقم الهوية الوطنية (18 رقم)"
+                maxLength={18}
+                className="text-right"
+                disabled={loading}
+              />
+            </div>
+
+            {/* Full Name on ID */}
+            <div className="space-y-2">
+              <Label htmlFor="fullNameOnId">الاسم الكامل كما هو مكتوب في البطاقة *</Label>
+              <Input
+                id="fullNameOnId"
+                type="text"
+                value={fullNameOnId}
+                onChange={(e) => setFullNameOnId(e.target.value)}
+                placeholder="الاسم الكامل بالضبط كما هو في البطاقة"
+                className="text-right"
+                disabled={loading}
+              />
+              {profile?.full_name && fullNameOnId && fullNameOnId !== profile.full_name && (
+                <div className="flex items-center gap-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-sm">
+                  <AlertCircle className="h-4 w-4 text-yellow-600" />
+                  <span className="text-yellow-800">
+                    الاسم المدخل لا يطابق اسم الحساب ({profile.full_name})
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Date of Birth */}
+            <div className="space-y-2">
+              <Label htmlFor="dateOfBirth">تاريخ الميلاد *</Label>
+              <Input
+                id="dateOfBirth"
+                type="date"
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                className="text-right"
+                disabled={loading}
+              />
+            </div>
+
+            {/* Place of Birth */}
+            <div className="space-y-2">
+              <Label htmlFor="placeOfBirth">مكان الميلاد</Label>
+              <Input
+                id="placeOfBirth"
+                type="text"
+                value={placeOfBirth}
+                onChange={(e) => setPlaceOfBirth(e.target.value)}
+                placeholder="مكان الميلاد (اختياري)"
+                className="text-right"
+                disabled={loading}
+              />
+            </div>
+
+            {/* Address */}
+            <div className="space-y-2">
+              <Label htmlFor="address">العنوان</Label>
+              <Textarea
+                id="address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="عنوان الإقامة (اختياري)"
+                rows={2}
+                className="text-right"
+                disabled={loading}
+              />
+            </div>
           </div>
 
           {/* Front Image Upload */}
@@ -279,7 +389,7 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={loading || (!nationalId.trim()) || (!frontImage && !backImage)}
+            disabled={loading || (!nationalId.trim()) || (!fullNameOnId.trim()) || (!dateOfBirth.trim()) || (!frontImage && !backImage)}
           >
             {loading ? 'جاري الإرسال...' : 'إرسال طلب التحقق'}
           </Button>

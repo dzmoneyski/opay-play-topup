@@ -296,20 +296,61 @@ const AdminPanel = () => {
                           <User className="h-4 w-4" />
                           <span>{request.profiles?.full_name || 'اسم غير محدد'}</span>
                         </CardTitle>
-                        <CardDescription className="flex items-center space-x-4">
-                          <span className="flex items-center space-x-1">
-                            <FileText className="h-3 w-3" />
-                            <span>رقم الهوية: {request.national_id}</span>
-                          </span>
-                          <span className="flex items-center space-x-1">
-                            <Phone className="h-3 w-3" />
-                            <span>{request.profiles?.phone || 'غير محدد'}</span>
-                          </span>
-                          <span className="flex items-center space-x-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>{formatDate(request.submitted_at)}</span>
-                          </span>
-                        </CardDescription>
+                         <CardDescription className="flex items-center space-x-4">
+                           <span className="flex items-center space-x-1">
+                             <FileText className="h-3 w-3" />
+                             <span>رقم الهوية: {request.national_id}</span>
+                           </span>
+                           <span className="flex items-center space-x-1">
+                             <Phone className="h-3 w-3" />
+                             <span>{request.profiles?.phone || 'غير محدد'}</span>
+                           </span>
+                           <span className="flex items-center space-x-1">
+                             <Calendar className="h-3 w-3" />
+                             <span>{formatDate(request.submitted_at)}</span>
+                           </span>
+                         </CardDescription>
+                         
+                         {/* Information Comparison Section */}
+                         {request.full_name_on_id && (
+                           <div className="mt-3 p-3 bg-muted/30 rounded-lg">
+                             <h4 className="text-sm font-medium text-foreground mb-2">مقارنة المعلومات</h4>
+                             <div className="grid gap-2 text-xs">
+                               <div className="flex justify-between">
+                                 <span className="text-muted-foreground">الاسم في الحساب:</span>
+                                 <span className="font-medium">{request.profiles?.full_name || 'غير محدد'}</span>
+                               </div>
+                               <div className="flex justify-between">
+                                 <span className="text-muted-foreground">الاسم في البطاقة:</span>
+                                 <span className={`font-medium ${
+                                   request.full_name_on_id === request.profiles?.full_name 
+                                     ? 'text-green-600' 
+                                     : 'text-red-600'
+                                 }`}>
+                                   {request.full_name_on_id}
+                                 </span>
+                               </div>
+                               {request.date_of_birth && (
+                                 <div className="flex justify-between">
+                                   <span className="text-muted-foreground">تاريخ الميلاد:</span>
+                                   <span className="font-medium">{new Date(request.date_of_birth).toLocaleDateString('ar-DZ')}</span>
+                                 </div>
+                               )}
+                               {request.place_of_birth && (
+                                 <div className="flex justify-between">
+                                   <span className="text-muted-foreground">مكان الميلاد:</span>
+                                   <span className="font-medium">{request.place_of_birth}</span>
+                                 </div>
+                               )}
+                               {request.address && (
+                                 <div className="flex justify-between">
+                                   <span className="text-muted-foreground">العنوان:</span>
+                                   <span className="font-medium text-xs">{request.address}</span>
+                                 </div>
+                               )}
+                             </div>
+                           </div>
+                         )}
                       </div>
                       {getStatusBadge(request.status)}
                     </div>

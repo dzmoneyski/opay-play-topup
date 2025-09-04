@@ -8,6 +8,10 @@ interface VerificationRequest {
   national_id: string;
   national_id_front_image: string | null;
   national_id_back_image: string | null;
+  full_name_on_id: string | null;
+  date_of_birth: string | null;
+  place_of_birth: string | null;
+  address: string | null;
   status: 'pending' | 'approved' | 'rejected';
   submitted_at: string;
   reviewed_at: string | null;

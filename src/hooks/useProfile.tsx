@@ -131,7 +131,13 @@ export const useProfile = () => {
   const submitIdentityVerification = async (
     nationalId: string, 
     frontImage?: File, 
-    backImage?: File
+    backImage?: File,
+    additionalInfo?: {
+      fullNameOnId: string;
+      dateOfBirth: string;
+      placeOfBirth: string;
+      address: string;
+    }
   ) => {
     if (!user) return { error: 'لم يتم تسجيل الدخول' };
 
@@ -180,6 +186,10 @@ export const useProfile = () => {
           national_id: nationalId,
           national_id_front_image: frontImageUrl,
           national_id_back_image: backImageUrl,
+          full_name_on_id: additionalInfo?.fullNameOnId || null,
+          date_of_birth: additionalInfo?.dateOfBirth || null,
+          place_of_birth: additionalInfo?.placeOfBirth || null,
+          address: additionalInfo?.address || null,
           status: 'pending'
         })
         .select()
