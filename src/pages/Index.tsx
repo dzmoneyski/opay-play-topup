@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Wallet, 
@@ -36,6 +37,7 @@ import {
 const Index = () => {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
+  const { isAdmin } = useUserRoles();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showBalance, setShowBalance] = useState(true);
@@ -150,6 +152,23 @@ const Index = () => {
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
+                {/* Admin Panel Access */}
+                {isAdmin && (
+                  <div className="relative group">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => navigate('/admin')}
+                      className="w-10 h-10 p-0 bg-gradient-primary/20 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-gradient-primary/30 transition-all"
+                    >
+                      <Shield className="h-5 w-5 text-white" />
+                    </Button>
+                    <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      لوحة الإدارة
+                    </div>
+                  </div>
+                )}
+                
                 {/* Account Status Icon */}
                 {profile?.is_account_activated ? (
                   <div className="relative group">

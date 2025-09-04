@@ -10,6 +10,7 @@ import PublicRoute from "@/components/PublicRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AccountActivation from "./pages/AccountActivation";
+import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,11 @@ const App = () => (
             <Route path="/dashboard" element={
               <ProtectedRoute requireActivation={false}>
                 <Index />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute requireActivation={false}>
+                <AdminPanel />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
