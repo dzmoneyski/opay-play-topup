@@ -1,62 +1,48 @@
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-// Ultra-minimal test to verify React works at all
-const TestComponent = () => {
-  console.log("TestComponent rendering...");
+// Absolute minimal React test - no external libraries at all
+const App = () => {
+  console.log("App rendering - React object:", React);
+  console.log("React.useState:", React.useState);
+  console.log("React.useEffect:", React.useEffect);
   
-  const [test, setTest] = React.useState("React is working!");
+  const [message, setMessage] = React.useState("Pure React Test");
   
   React.useEffect(() => {
-    console.log("React useEffect working!");
-    setTest("React + useEffect working!");
+    console.log("Pure React useEffect working!");
+    setMessage("React hooks are working!");
   }, []);
 
   return (
     <div style={{ 
       minHeight: '100vh', 
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: '#1a1a1a',
+      color: 'white',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      flexDirection: 'column',
+      fontFamily: 'Arial, sans-serif'
     }}>
-      <div style={{ 
-        color: 'white', 
-        textAlign: 'center',
-        padding: '2rem',
-        fontSize: '24px'
-      }}>
-        <h1 style={{ fontSize: '48px', marginBottom: '1rem' }}>{test}</h1>
-        <p>If you can see this, React core is working</p>
-        <button 
-          onClick={() => setTest("Button click works!")}
-          style={{
-            marginTop: '1rem',
-            padding: '12px 24px',
-            fontSize: '18px',
-            backgroundColor: 'white',
-            color: '#667eea',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer'
-          }}
-        >
-          Test Click
-        </button>
-      </div>
+      <h1 style={{ fontSize: '48px', marginBottom: '20px' }}>{message}</h1>
+      <p style={{ fontSize: '20px', marginBottom: '20px' }}>
+        If you see this, pure React is working
+      </p>
+      <button 
+        onClick={() => setMessage("Button click works!")}
+        style={{
+          padding: '12px 24px',
+          fontSize: '18px',
+          backgroundColor: '#007acc',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer'
+        }}
+      >
+        Test React State
+      </button>
     </div>
-  );
-};
-
-const App = () => {
-  console.log("App component rendering without QueryClient...");
-  
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="*" element={<TestComponent />} />
-      </Routes>
-    </BrowserRouter>
   );
 };
 
