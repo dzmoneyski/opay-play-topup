@@ -52,7 +52,7 @@ const App = () => {
                   <Index />
                 </ProtectedRoute>
               } />
-              <Route path="/admin" element={
+              <Route path="/admin/*" element={
                 <ProtectedRoute requireActivation={false}>
                   <AdminPanel />
                 </ProtectedRoute>
