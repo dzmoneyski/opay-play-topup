@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PublicRoute from "@/components/PublicRoute";
 import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import AccountActivation from "./pages/AccountActivation";
 import AdminPanel from "./pages/AdminPanel";
@@ -51,7 +52,7 @@ const App = () => {
               } />
               <Route path="/dashboard" element={
                 <ProtectedRoute requireActivation={false}>
-                  <Index />
+                  <Dashboard />
                 </ProtectedRoute>
               } />
               <Route path="/admin/*" element={
