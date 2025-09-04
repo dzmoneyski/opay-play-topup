@@ -21,9 +21,16 @@ const AdminPanel = () => {
   const [rejectionReason, setRejectionReason] = React.useState('');
   const [processing, setProcessing] = React.useState(false);
 
-  // Function to get image URL from Supabase Storage
+  // Function to get image URL from Supabase Storage or return direct URL
   const getImageUrl = (imagePath: string | null) => {
     if (!imagePath) return null;
+    
+    // If it's already a full URL, return it as is
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    // Otherwise, construct the URL from storage
     const { data } = supabase.storage.from('identity-documents').getPublicUrl(imagePath);
     return data.publicUrl;
   };
