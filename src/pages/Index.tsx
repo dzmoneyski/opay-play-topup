@@ -58,6 +58,11 @@ const Index = () => {
       return;
     }
 
+    if (service.action === 'transfer') {
+      navigate('/transfer');
+      return;
+    }
+
     // السماح بالدخول إلى صفحة الخدمة بغض النظر عن حالة التفعيل
     // التحقق من التفعيل سيتم عند محاولة تنفيذ العملية الفعلية
     console.log(`Navigating to service: ${service.title}`);
