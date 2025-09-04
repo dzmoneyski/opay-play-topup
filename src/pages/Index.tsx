@@ -75,13 +75,6 @@ const Index = () => {
       action: "deposits"
     },
     {
-      icon: <Plus className="h-6 w-6" />,
-      title: "شحن رصيد",
-      subtitle: "أضف أموال لمحفظتك",
-      gradient: "bg-gradient-primary",
-      action: "top-up"
-    },
-    {
       icon: <Send className="h-6 w-6" />,
       title: "تحويل أموال", 
       subtitle: "أرسل إلى الأصدقاء والعائلة",
