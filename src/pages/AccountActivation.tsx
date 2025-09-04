@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,18 +24,18 @@ const AccountActivation = () => {
   const { toast } = useToast();
   const { profile, loading, submitPhoneVerification, verifyPhoneCode, submitIdentityVerification } = useProfile();
   
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+  const [currentStep, setCurrentStep] = React.useState(1);
+  const [isLoading, setIsLoading] = React.useState(false);
   
   // Phone verification states
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [phoneNumber, setPhoneNumber] = React.useState('');
+  const [verificationCode, setVerificationCode] = React.useState('');
+  const [showCodeInput, setShowCodeInput] = React.useState(false);
   
   // Identity verification states
-  const [nationalId, setNationalId] = useState('');
+  const [nationalId, setNationalId] = React.useState('');
 
-  useEffect(() => {
+  React.useEffect(() => {
     console.log('Profile data:', profile);
     console.log('Loading state:', loading);
     if (profile && profile.is_account_activated) {
@@ -44,7 +44,7 @@ const AccountActivation = () => {
     }
   }, [profile, navigate]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     console.log('Profile changed:', profile);
     if (profile) {
       console.log('Phone verified:', profile.is_phone_verified);
