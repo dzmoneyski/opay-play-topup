@@ -3,14 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useVerificationRequests } from '@/hooks/useVerificationRequests';
 import { useToast } from '@/hooks/use-toast';
-import BackButton from '@/components/BackButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { AlertCircle, CheckCircle, Clock, Eye, Shield, Users, XCircle, User, Phone, Calendar, FileText } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, Eye, Shield, Users, XCircle, User, Phone, Calendar, FileText, ArrowLeft } from 'lucide-react';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -145,9 +144,17 @@ const AdminPanel = () => {
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-4">
-              <BackButton />
-              <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4 space-x-reverse">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center space-x-2 space-x-reverse hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded-lg"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>العودة</span>
+              </Button>
+              <div className="flex items-center space-x-3 space-x-reverse">
                 <div className="p-2 bg-primary/10 rounded-lg">
                   <Shield className="h-6 w-6 text-primary" />
                 </div>
