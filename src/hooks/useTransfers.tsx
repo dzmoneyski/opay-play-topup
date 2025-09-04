@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 interface TransferData {
-  recipient: string;
-  amount: string;
+  recipient_phone: string;
+  amount: number;
   note?: string;
 }
 
-interface TransferResponse {
+interface TransferResult {
   success: boolean;
   error?: string;
   transfer_id?: string;
@@ -17,43 +17,91 @@ interface TransferResponse {
 
 export const useTransfers = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
+  const { toast } = useToast();
 
-  const processTransfer = async (transferData: TransferData): Promise<TransferResponse> => {
-    if (!user) {
-      return { success: false, error: 'User not authenticated' };
-    }
-
+  const processTransfer = async (transferData: TransferData): Promise<TransferResult> => {
     setIsLoading(true);
+    
     try {
-      const { data, error } = await supabase.rpc('process_transfer', {
-        recipient_phone_param: transferData.recipient,
-        amount_param: parseFloat(transferData.amount),
-        note_param: transferData.note || null
-      });
+      const { data, error } = await supabase
+        .rpc('process_transfer', {
+          recipient_phone_param: transferData.recipient_phone,
+          amount_param: transferData.amount,
+          note_param: transferData.note || null
+        });
 
       if (error) {
         console.error('Transfer error:', error);
+        toast({
+          title: "خطأ في التحويل",
+          description: "حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى",
+          variant: "destructive"
+        });
         return { success: false, error: error.message };
       }
 
-      return data as unknown as TransferResponse;
+      const result = data as unknown as TransferResult;
+      
+      if (!result.success) {
+        let errorMessage = "حدث خطأ غير متوقع";
+        
+        switch (result.error) {
+          case 'User not authenticated':
+            errorMessage = "يجب تسجيل الدخول أولاً";
+            break;
+          case 'Recipient not found':
+            errorMessage = "رقم الهاتف غير مسجل في النظام";
+            break;
+          case 'Cannot transfer to yourself':
+            errorMessage = "لا يمكن التحويل إلى نفسك";
+            break;
+          case 'Sender balance not found':
+            errorMessage = "لم يتم العثور على رصيدك";
+            break;
+          case 'Insufficient balance':
+            errorMessage = "الرصيد غير كافي للتحويل";
+            break;
+          default:
+            errorMessage = result.error || "حدث خطأ غير متوقع";
+        }
+
+        toast({
+          title: "فشل التحويل",
+          description: errorMessage,
+          variant: "destructive"
+        });
+        
+        return { success: false, error: errorMessage };
+      }
+
+      toast({
+        title: "تم التحويل بنجاح",
+        description: `تم تحويل ${transferData.amount} دج إلى ${transferData.recipient_phone}`,
+      });
+
+      return result;
     } catch (error) {
-      console.error('Transfer error:', error);
-      return { success: false, error: 'فشل في عملية التحويل' };
+      console.error('Unexpected transfer error:', error);
+      toast({
+        title: "خطأ في التحويل",
+        description: "حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى",
+        variant: "destructive"
+      });
+      return { success: false, error: 'Unexpected error occurred' };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const fetchUserTransfers = async () => {
-    if (!user) return [];
-
+  const getUserTransfers = async () => {
     try {
       const { data, error } = await supabase
         .from('transfers')
-        .select('*')
-        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+        .select(`
+          *,
+          sender:profiles!transfers_sender_id_fkey(full_name, phone),
+          recipient:profiles!transfers_recipient_id_fkey(full_name, phone)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -61,16 +109,16 @@ export const useTransfers = () => {
         return [];
       }
 
-      return data;
+      return data || [];
     } catch (error) {
-      console.error('Error fetching transfers:', error);
+      console.error('Unexpected error fetching transfers:', error);
       return [];
     }
   };
 
   return {
     processTransfer,
-    fetchUserTransfers,
+    getUserTransfers,
     isLoading
   };
 };

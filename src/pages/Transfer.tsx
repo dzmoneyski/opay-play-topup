@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useBalance } from '@/hooks/useBalance';
 import { useTransfers } from '@/hooks/useTransfers';
+import { useContacts } from '@/hooks/useContacts';
 import { useToast } from '@/hooks/use-toast';
 import BackButton from '@/components/BackButton';
 import { 
@@ -27,6 +28,7 @@ const Transfer = () => {
   const { user } = useAuth();
   const { balance, fetchBalance } = useBalance();
   const { processTransfer, isLoading: transferLoading } = useTransfers();
+  const { contacts } = useContacts();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -38,13 +40,6 @@ const Transfer = () => {
   const [showBalance, setShowBalance] = useState(true);
 
   const quickAmounts = [100, 500, 1000, 2000, 5000];
-  
-  const recentContacts = [
-    { name: "أحمد بن محمد", phone: "+213555123456", avatar: "A" },
-    { name: "فاطمة العلوي", phone: "+213666789012", avatar: "F" },
-    { name: "كريم الجزائري", phone: "+213777345678", avatar: "K" },
-    { name: "سارة بن عيسى", phone: "+213888901234", avatar: "س" }
-  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,41 +62,21 @@ const Transfer = () => {
       return;
     }
 
-    const result = await processTransfer(transferData);
+    const result = await processTransfer({
+      recipient_phone: transferData.recipient,
+      amount: parseFloat(transferData.amount),
+      note: transferData.note
+    });
     
     if (result.success) {
-      toast({
-        title: "تم التحويل بنجاح",
-        description: `تم تحويل ${transferData.amount} دج إلى ${transferData.recipient}`,
-      });
-      
       // Refresh balance after successful transfer
-      fetchBalance();
+      await fetchBalance();
       
       // Reset form
       setTransferData({ recipient: '', amount: '', note: '' });
       
       // Navigate back to home
       navigate('/');
-    } else {
-      let errorMessage = "فشل في عملية التحويل";
-      
-      // Map error messages to Arabic
-      if (result.error?.includes('Recipient not found')) {
-        errorMessage = "رقم الهاتف غير مسجل في النظام";
-      } else if (result.error?.includes('Insufficient balance')) {
-        errorMessage = "رصيد غير كافي";
-      } else if (result.error?.includes('Cannot transfer to yourself')) {
-        errorMessage = "لا يمكن التحويل لنفسك";
-      } else if (result.error?.includes('User not authenticated')) {
-        errorMessage = "يجب تسجيل الدخول أولاً";
-      }
-      
-      toast({
-        title: "فشل في التحويل",
-        description: errorMessage,
-        variant: "destructive"
-      });
     }
   };
 
@@ -109,7 +84,7 @@ const Transfer = () => {
     setTransferData(prev => ({ ...prev, amount: amount.toString() }));
   };
 
-  const selectContact = (contact: typeof recentContacts[0]) => {
+  const selectContact = (contact: { name: string; phone: string; avatar: string }) => {
     setTransferData(prev => ({ ...prev, recipient: contact.phone }));
   };
 
@@ -282,24 +257,30 @@ const Transfer = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {recentContacts.map((contact, index) => (
-                  <div 
-                    key={index}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-primary/5 transition-colors cursor-pointer group"
-                    onClick={() => selectContact(contact)}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-bold">
-                      {contact.avatar}
+                {contacts.length > 0 ? (
+                  contacts.map((contact, index) => (
+                    <div 
+                      key={index}
+                      className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-primary/5 transition-colors cursor-pointer group"
+                      onClick={() => selectContact(contact)}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-bold">
+                        {contact.avatar}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                          {contact.name}
+                        </p>
+                        <p className="text-sm text-muted-foreground truncate">{contact.phone}</p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
-                        {contact.name}
-                      </p>
-                      <p className="text-sm text-muted-foreground truncate">{contact.phone}</p>
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    لا توجد جهات اتصال متاحة
+                  </p>
+                )}
               </CardContent>
             </Card>
 
