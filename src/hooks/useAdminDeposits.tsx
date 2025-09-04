@@ -33,19 +33,30 @@ export const useAdminDeposits = () => {
     
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // First get all deposits
+      const { data: depositsData, error: depositsError } = await supabase
         .from('deposits')
-        .select(`
-          *,
-          profiles:user_id (
-            full_name,
-            phone
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setDeposits((data || []) as any[]);
+      if (depositsError) throw depositsError;
+
+      // Then get profile data for each unique user_id
+      const userIds = [...new Set(depositsData?.map(d => d.user_id) || [])];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, phone')
+        .in('user_id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combine deposits with profile data
+      const depositsWithProfiles = depositsData?.map(deposit => ({
+        ...deposit,
+        profiles: profilesData?.find(profile => profile.user_id === deposit.user_id) || null
+      })) || [];
+
+      setDeposits(depositsWithProfiles as any[]);
     } catch (error) {
       console.error('Error fetching deposits:', error);
       toast({
