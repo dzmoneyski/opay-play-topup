@@ -39,7 +39,7 @@ const Dashboard = () => {
   const quickStats = [
     {
       title: "الرصيد الحالي",
-      value: showBalance ? (balanceLoading ? "..." : `${balance?.toLocaleString() || 0} دج`) : "****",
+      value: showBalance ? (balanceLoading ? "..." : `${balance?.balance?.toLocaleString() || 0} دج`) : "****",
       icon: <CreditCard className="h-6 w-6" />,
       gradient: "bg-gradient-primary"
     },
