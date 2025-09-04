@@ -1,47 +1,33 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
-import { useUserRoles } from "@/hooks/useUserRoles";
 import { useBalance } from "@/hooks/useBalance";
 import { useToast } from "@/hooks/use-toast";
+import Header from "@/components/Header";
+import ServicesSection from "@/components/ServicesSection";
+import RecentTransactions from "@/components/RecentTransactions";
 import { 
-  Wallet, 
   CreditCard, 
   Send, 
   ShoppingBag, 
   Gift, 
-  TrendingUp,
-  Eye,
-  EyeOff,
   Plus,
-  ArrowUpRight,
-  ArrowDownLeft,
   Smartphone,
   MapPin,
-  Lock,
   QrCode,
   ArrowDownToLine,
-  CheckCircle,
-  Clock,
-  AlertCircle,
-  ArrowRight,
-  LogOut,
-  Shield,
-  Bell,
-  ArrowLeft
+  ArrowUpRight,
+  Shield
 } from "lucide-react";
 
 const Index = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { profile } = useProfile();
-  const { isAdmin } = useUserRoles();
   const { balance, loading: balanceLoading } = useBalance();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [showBalance, setShowBalance] = React.useState(true);
 
   const handleServiceClick = (service: any) => {
@@ -54,21 +40,16 @@ const Index = () => {
     }
 
     if (service.action === 'deposits') {
-      navigate('/deposits');
+      window.location.href = '/deposits';
       return;
     }
 
     if (service.action === 'transfer') {
-      navigate('/transfer');
+      window.location.href = '/transfer';
       return;
     }
 
-    // السماح بالدخول إلى صفحة الخدمة بغض النظر عن حالة التفعيل
-    // التحقق من التفعيل سيتم عند محاولة تنفيذ العملية الفعلية
     console.log(`Navigating to service: ${service.title}`);
-    
-    // هنا يمكن إضافة التوجيه إلى صفحة الخدمة المناسبة
-    // navigate(`/${service.action}`);
   };
 
   const services = [
@@ -145,274 +126,56 @@ const Index = () => {
   
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      {/* Professional Header */}
-      <header className="relative bg-gradient-hero overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-glass"></div>
-        <div className="container mx-auto px-4 py-8 relative z-10">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="bg-gradient-primary p-3 rounded-2xl shadow-glow animate-glow-pulse">
-                  <Wallet className="h-8 w-8 text-white" />
-                </div>
-              </div>
-              <div className="animate-slide-up">
-                <h1 className="text-3xl font-bold text-white mb-1">OpaY الجزائر</h1>
-                <p className="text-white/80">محفظتك الرقمية المتطورة</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                {/* Admin Panel Access */}
-                {isAdmin && (
-                  <div className="relative group">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => navigate('/admin')}
-                      className="w-10 h-10 p-0 bg-gradient-primary/20 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-gradient-primary/30 transition-all"
-                    >
-                      <Shield className="h-5 w-5 text-white" />
-                    </Button>
-                    <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                      لوحة الإدارة
-                    </div>
-                  </div>
-                )}
-                
-                {/* Account Status Icon */}
-                {profile?.is_account_activated ? (
-                  <div className="relative group">
-                    <div className="flex items-center justify-center w-10 h-10 bg-gradient-secondary/20 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-gradient-secondary/30 transition-all cursor-pointer">
-                      <CheckCircle className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                      الحساب مفعل
-                    </div>
-                  </div>
-                ) : (
-                  <Link to="/activate">
-                    <div className="relative group">
-                      <div className="flex items-center justify-center w-10 h-10 bg-gradient-gold/20 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-gradient-gold/30 transition-all animate-pulse">
-                        <Bell className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                        تفعيل الحساب
-                      </div>
-                    </div>
-                  </Link>
-                )}
-                
-                {/* Logout Icon */}
-                <div className="relative group">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => signOut()}
-                    className="w-10 h-10 p-0 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-white/20 transition-all"
-                  >
-                    <LogOut className="h-5 w-5 text-white" />
-                  </Button>
-                  <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    تسجيل الخروج
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <Header 
+        balance={balance}
+        balanceLoading={balanceLoading}
+        showBalance={showBalance}
+        setShowBalance={setShowBalance}
+        profile={profile}
+        quickActions={quickActions}
+      />
 
-          {/* Hero Balance Display */}
-          <div className="bg-gradient-glass backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-elevated">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-white/70 text-sm mb-1">الرصيد المتاح</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-4xl font-bold text-white">
-                    {balanceLoading ? (
-                      <div className="h-10 bg-white/20 rounded animate-pulse w-32" />
-                    ) : (
-                      showBalance ? `${(balance?.balance ?? 0).toFixed(2)}` : "••••••"
-                    )}
-                  </span>
-                  <span className="text-xl text-white/80 font-medium">دج</span>
-                </div>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setShowBalance(!showBalance)}
-                className="text-white/70 hover:text-white hover:bg-white/10 border border-white/20"
-              >
-                {showBalance ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </Button>
-            </div>
-            
-            {/* Quick Actions Row */}
-            <div className="grid grid-cols-4 gap-3 mt-6">
-              {quickActions.map((action, index) => (
-                <Button 
-                  key={index}
-                  variant="ghost" 
-                  className="flex-col h-auto py-3 text-white/80 hover:text-white hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all"
-                >
-                  {action.icon}
-                  <span className="text-xs mt-1">{action.title}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </header>
-
-        {/* Simplified Account Status Banner - Only for Non-Activated Users */}
-        {!profile?.is_account_activated && (
-          <div className="container mx-auto px-4 pt-4 -mt-4 relative z-20">
-            <Card className="bg-gradient-gold/10 border-white/10 shadow-soft animate-slide-up backdrop-blur-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Shield className="h-5 w-5 text-white" />
-                    <div>
-                      <p className="text-white/90 text-sm font-medium">
-                        قم بتفعيل حسابك للاستفادة من جميع الخدمات المالية
-                      </p>
-                      <p className="text-white/70 text-xs">
-                        {!profile?.is_phone_verified && "تحقق من رقم الهاتف • "}
-                        {!profile?.is_identity_verified && "تحقق من الهوية"}
-                      </p>
-                    </div>
+      {/* Simplified Account Status Banner - Only for Non-Activated Users */}
+      {!profile?.is_account_activated && (
+        <div className="container mx-auto px-4 pt-4 -mt-4 relative z-20">
+          <Card className="bg-gradient-gold/10 border-white/10 shadow-soft animate-slide-up backdrop-blur-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Shield className="h-5 w-5 text-white" />
+                  <div>
+                    <p className="text-white/90 text-sm font-medium">
+                      قم بتفعيل حسابك للاستفادة من جميع الخدمات المالية
+                    </p>
+                    <p className="text-white/70 text-xs">
+                      {!profile?.is_phone_verified && "تحقق من رقم الهاتف • "}
+                      {!profile?.is_identity_verified && "تحقق من الهوية"}
+                    </p>
                   </div>
-                  <div className="flex gap-2">
-                    {!profile?.is_identity_verified && (
-                      <Link to="/identity-verification">
-                        <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm text-xs">
-                          تحقق الهوية
-                        </Button>
-                      </Link>
-                    )}
-                    <Link to="/activate">
+                </div>
+                <div className="flex gap-2">
+                  {!profile?.is_identity_verified && (
+                    <Link to="/identity-verification">
                       <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm text-xs">
-                        تفعيل
+                        تحقق الهوية
                       </Button>
                     </Link>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        <div className="container mx-auto px-4 py-8 space-y-8 -mt-4 relative z-20">
-        {/* Services Section */}
-        <div className="animate-slide-up" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
-          <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
-            <div className="w-1 h-8 bg-gradient-primary rounded-full"></div>
-            الخدمات المصرفية
-          </h2>
-
-          {/* Main Services Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            {services.map((service, index) => (
-              <Card 
-                key={index} 
-                className={`
-                  group cursor-pointer border-0 bg-gradient-card shadow-card hover:shadow-elevated 
-                  transition-all duration-500 hover:scale-105 relative overflow-hidden
-                  ${service.action === 'disabled' ? 'cursor-not-allowed' : ''}
-                `}
-                onClick={() => handleServiceClick(service)}
-              >
-                <div className={`absolute inset-0 ${service.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}></div>
-                <CardContent className="p-6 text-center relative z-10">
-                  <div className={`
-                    inline-flex p-4 rounded-2xl mb-4 transition-all duration-500 group-hover:scale-110
-                    ${service.gradient} text-white shadow-soft
-                    ${service.action === 'disabled' ? 'relative' : ''}
-                  `}>
-                    {service.icon}
-                    {service.action === 'disabled' && (
-                      <div className="absolute -top-1 -right-1 bg-card rounded-full p-1 shadow-md">
-                        <Lock className="h-3 w-3 text-muted-foreground" />
-                      </div>
-                    )}
-                  </div>
-                  <h3 className="font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
-                    {service.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">{service.subtitle}</p>
-                  {service.action === 'disabled' && (
-                    <div className="absolute inset-0 bg-background/50 backdrop-blur-sm rounded-lg flex items-center justify-center">
-                      <Badge variant="secondary" className="font-medium">قريباً</Badge>
-                    </div>
                   )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Transactions */}
-        <div className="animate-slide-up" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
-          <Card className="shadow-card border-0 bg-gradient-card backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-3 text-foreground">
-                <div className="p-2 rounded-xl bg-gradient-primary">
-                  <TrendingUp className="h-5 w-5 text-white" />
+                  <Link to="/activate">
+                    <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm text-xs">
+                      تفعيل
+                    </Button>
+                  </Link>
                 </div>
-                المعاملات الأخيرة
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {recentTransactions.map((transaction, index) => (
-                <div 
-                  key={transaction.id} 
-                  className="group flex items-center justify-between p-4 rounded-xl bg-muted/50 hover:bg-gradient-primary/5 transition-all duration-300 hover:shadow-soft border border-transparent hover:border-primary/10"
-                  style={{ animationDelay: `${0.1 * index}s`, animationFillMode: 'both' }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`
-                      p-3 rounded-xl transition-all duration-300 group-hover:scale-110
-                      ${transaction.amount > 0 
-                        ? 'bg-gradient-secondary text-white shadow-soft' 
-                        : 'bg-gradient-primary text-white shadow-soft'
-                      }
-                    `}>
-                      {transaction.icon}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                        {transaction.desc}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{transaction.type}</span>
-                        <span>•</span>
-                        <span>{transaction.time}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className={`
-                      p-1 rounded-lg
-                      ${transaction.amount > 0 ? 'bg-success/10' : 'bg-primary/10'}
-                    `}>
-                      {transaction.amount > 0 ? (
-                        <ArrowDownLeft className="h-4 w-4 text-success" />
-                      ) : (
-                        <ArrowUpRight className="h-4 w-4 text-primary" />
-                      )}
-                    </div>
-                    <span className={`
-                      font-bold text-lg
-                      ${transaction.amount > 0 ? 'text-success' : 'text-primary'}
-                    `}>
-                      {transaction.amount > 0 ? '+' : ''}{Math.abs(transaction.amount)} دج
-                    </span>
-                  </div>
-                </div>
-              ))}
+              </div>
             </CardContent>
           </Card>
         </div>
+      )}
+
+      <div className="container mx-auto px-4 py-8 space-y-8 -mt-4 relative z-20">
+        <ServicesSection services={services} handleServiceClick={handleServiceClick} />
+        <RecentTransactions transactions={recentTransactions} />
 
         {/* Store Locator Card */}
         <div className="animate-slide-up" style={{ animationDelay: '0.6s', animationFillMode: 'both' }}>
