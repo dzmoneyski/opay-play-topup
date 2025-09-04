@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, CheckCircle, Clock, Eye, Shield, Users, XCircle, User, Phone, Calendar, FileText, ArrowLeft } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -19,6 +20,13 @@ const AdminPanel = () => {
   const [selectedRequest, setSelectedRequest] = React.useState<any>(null);
   const [rejectionReason, setRejectionReason] = React.useState('');
   const [processing, setProcessing] = React.useState(false);
+
+  // Function to get image URL from Supabase Storage
+  const getImageUrl = (imagePath: string | null) => {
+    if (!imagePath) return null;
+    const { data } = supabase.storage.from('identity-documents').getPublicUrl(imagePath);
+    return data.publicUrl;
+  };
 
   React.useEffect(() => {
     if (!rolesLoading && !isAdmin) {
@@ -257,31 +265,47 @@ const AdminPanel = () => {
                      {/* Display identity document images */}
                      <div className="mb-4">
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         {request.national_id_front_image && (
-                           <div>
-                             <p className="text-sm font-medium text-muted-foreground mb-2">صورة الهوية - الوجه الأمامي</p>
-                             <img 
-                               src={request.national_id_front_image} 
-                               alt="الوجه الأمامي للهوية"
-                               className="w-full max-h-48 object-contain border rounded-md bg-gray-50"
-                               onClick={() => window.open(request.national_id_front_image, '_blank')}
-                               style={{ cursor: 'pointer' }}
-                             />
-                           </div>
-                         )}
-                         
-                         {request.national_id_back_image && (
-                           <div>
-                             <p className="text-sm font-medium text-muted-foreground mb-2">صورة الهوية - الوجه الخلفي</p>
-                             <img 
-                               src={request.national_id_back_image} 
-                               alt="الوجه الخلفي للهوية"
-                               className="w-full max-h-48 object-contain border rounded-md bg-gray-50"
-                               onClick={() => window.open(request.national_id_back_image, '_blank')}
-                               style={{ cursor: 'pointer' }}
-                             />
-                           </div>
-                         )}
+                          {request.national_id_front_image && (
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground mb-2">صورة الهوية - الوجه الأمامي</p>
+                              <img 
+                                src={getImageUrl(request.national_id_front_image) || ''} 
+                                alt="الوجه الأمامي للهوية"
+                                className="w-full max-h-48 object-contain border rounded-md bg-gray-50"
+                                onClick={() => window.open(getImageUrl(request.national_id_front_image) || '', '_blank')}
+                                style={{ cursor: 'pointer' }}
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  target.nextElementSibling?.classList.remove('hidden');
+                                }}
+                              />
+                              <div className="hidden w-full max-h-48 border rounded-md bg-gray-50 flex items-center justify-center">
+                                <p className="text-sm text-muted-foreground">فشل في تحميل الصورة</p>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {request.national_id_back_image && (
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground mb-2">صورة الهوية - الوجه الخلفي</p>
+                              <img 
+                                src={getImageUrl(request.national_id_back_image) || ''} 
+                                alt="الوجه الخلفي للهوية"
+                                className="w-full max-h-48 object-contain border rounded-md bg-gray-50"
+                                onClick={() => window.open(getImageUrl(request.national_id_back_image) || '', '_blank')}
+                                style={{ cursor: 'pointer' }}
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  target.nextElementSibling?.classList.remove('hidden');
+                                }}
+                              />
+                              <div className="hidden w-full max-h-48 border rounded-md bg-gray-50 flex items-center justify-center">
+                                <p className="text-sm text-muted-foreground">فشل في تحميل الصورة</p>
+                              </div>
+                            </div>
+                          )}
                          
                          {!request.national_id_front_image && !request.national_id_back_image && (
                            <div className="col-span-2 text-center py-4">
