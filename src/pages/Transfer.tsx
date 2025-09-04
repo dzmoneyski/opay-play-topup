@@ -88,10 +88,13 @@ const Transfer = () => {
     setTransferData(prev => ({ ...prev, recipient: contact.phone }));
   };
 
-  if (!user) {
-    React.useEffect(() => {
+  React.useEffect(() => {
+    if (!user) {
       navigate('/auth');
-    }, [navigate]);
+    }
+  }, [user, navigate]);
+
+  if (!user) {
     return null;
   }
 
