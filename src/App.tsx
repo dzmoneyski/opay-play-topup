@@ -1,47 +1,59 @@
-import React from "react";
+// Try legacy React import pattern
+import * as React from "react";
+import { useState, useEffect } from "react";
 
-// Absolute minimal React test - no external libraries at all
+// Test both import methods
 const App = () => {
-  console.log("App rendering - React object:", React);
-  console.log("React.useState:", React.useState);
-  console.log("React.useEffect:", React.useEffect);
+  console.log("=== DEBUGGING REACT IMPORT ===");
+  console.log("React namespace import:", React);
+  console.log("Direct useState import:", useState);
+  console.log("Direct useEffect import:", useEffect);
+  console.log("===========================");
+
+  // Try direct imported hooks first
+  let message, setMessage;
   
-  const [message, setMessage] = React.useState("Pure React Test");
-  
-  React.useEffect(() => {
-    console.log("Pure React useEffect working!");
-    setMessage("React hooks are working!");
-  }, []);
+  try {
+    [message, setMessage] = useState("Testing direct useState import");
+    console.log("✅ Direct useState import works!");
+  } catch (error) {
+    console.error("❌ Direct useState failed:", error);
+    try {
+      [message, setMessage] = React.useState("Testing React.useState");
+      console.log("✅ React.useState works!");
+    } catch (error2) {
+      console.error("❌ React.useState also failed:", error2);
+      // Complete fallback - no React hooks
+      return (
+        <div style={{ 
+          minHeight: '100vh', 
+          background: '#ff0000',
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column'
+        }}>
+          <h1>🚨 REACT IS BROKEN 🚨</h1>
+          <p>React import is null - package corruption detected</p>
+          <p>Check console for details</p>
+        </div>
+      );
+    }
+  }
 
   return (
     <div style={{ 
       minHeight: '100vh', 
-      background: '#1a1a1a',
+      background: '#00aa00',
       color: 'white',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      flexDirection: 'column',
-      fontFamily: 'Arial, sans-serif'
+      flexDirection: 'column'
     }}>
-      <h1 style={{ fontSize: '48px', marginBottom: '20px' }}>{message}</h1>
-      <p style={{ fontSize: '20px', marginBottom: '20px' }}>
-        If you see this, pure React is working
-      </p>
-      <button 
-        onClick={() => setMessage("Button click works!")}
-        style={{
-          padding: '12px 24px',
-          fontSize: '18px',
-          backgroundColor: '#007acc',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer'
-        }}
-      >
-        Test React State
-      </button>
+      <h1>✅ REACT IS WORKING</h1>
+      <p>{message}</p>
     </div>
   );
 };
