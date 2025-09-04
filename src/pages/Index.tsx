@@ -52,6 +52,11 @@ const Index = () => {
       return;
     }
 
+    if (service.action === 'deposits') {
+      navigate('/deposits');
+      return;
+    }
+
     // السماح بالدخول إلى صفحة الخدمة بغض النظر عن حالة التفعيل
     // التحقق من التفعيل سيتم عند محاولة تنفيذ العملية الفعلية
     console.log(`Navigating to service: ${service.title}`);
@@ -61,6 +66,13 @@ const Index = () => {
   };
 
   const services = [
+    {
+      icon: <ArrowDownToLine className="h-6 w-6" />,
+      title: "إيداع أموال",
+      subtitle: "أضف أموال عبر Baridimob وCCP",
+      gradient: "bg-gradient-primary",
+      action: "deposits"
+    },
     {
       icon: <Plus className="h-6 w-6" />,
       title: "شحن رصيد",
@@ -76,7 +88,7 @@ const Index = () => {
       action: "transfer"
     },
     {
-      icon: <ArrowDownToLine className="h-6 w-6" />,
+      icon: <ArrowUpRight className="h-6 w-6" />,
       title: "سحب الأموال",
       subtitle: "اسحب رصيدك إلى البنك",
       gradient: "bg-gradient-secondary",

@@ -1,0 +1,340 @@
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useDeposits, PaymentMethod } from '@/hooks/useDeposits';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  CreditCard,
+  Upload,
+  ArrowRight,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Banknote,
+  Wallet,
+  Receipt
+} from 'lucide-react';
+import BackButton from '@/components/BackButton';
+
+const PaymentWallets = {
+  baridimob: "0551234567",
+  ccp: "1234567890123",
+  edahabiya: "0987654321"
+};
+
+export default function Deposits() {
+  const { deposits, loading, createDeposit } = useDeposits();
+  const { toast } = useToast();
+  const [selectedMethod, setSelectedMethod] = React.useState<PaymentMethod>('baridimob');
+  const [amount, setAmount] = React.useState('');
+  const [transactionId, setTransactionId] = React.useState('');
+  const [receiptFile, setReceiptFile] = React.useState<File | null>(null);
+  const [submitting, setSubmitting] = React.useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!amount || !transactionId || !receiptFile) {
+      toast({
+        title: "بيانات ناقصة",
+        description: "يرجى ملء جميع الحقول المطلوبة",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const amountNumber = parseFloat(amount);
+    if (isNaN(amountNumber) || amountNumber <= 0) {
+      toast({
+        title: "مبلغ غير صحيح",
+        description: "يرجى إدخال مبلغ صحيح",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSubmitting(true);
+    const result = await createDeposit(selectedMethod, amountNumber, transactionId, receiptFile);
+    
+    if (result.success) {
+      // Reset form
+      setAmount('');
+      setTransactionId('');
+      setReceiptFile(null);
+    }
+    
+    setSubmitting(false);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return (
+          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+            <Clock className="w-3 h-3 mr-1" />
+            قيد المراجعة
+          </Badge>
+        );
+      case 'approved':
+        return (
+          <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            مقبول
+          </Badge>
+        );
+      case 'rejected':
+        return (
+          <Badge variant="destructive">
+            <XCircle className="w-3 h-3 mr-1" />
+            مرفوض
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ar-DZ', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-hero p-4 sm:p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <BackButton />
+        
+        {/* Header */}
+        <div className="text-center text-white space-y-4">
+          <div className="flex items-center justify-center gap-3">
+            <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
+              <Wallet className="h-8 w-8" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">إيداع الأموال</h1>
+              <p className="text-white/80">اختر طريقة الدفع المناسبة لك</p>
+            </div>
+          </div>
+        </div>
+
+        <Tabs value={selectedMethod} onValueChange={(value) => setSelectedMethod(value as PaymentMethod)} className="space-y-6">
+          {/* Payment Method Selection */}
+          <TabsList className="grid w-full grid-cols-3 bg-white/10 backdrop-blur-sm">
+            <TabsTrigger value="baridimob" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+              Baridimob
+            </TabsTrigger>
+            <TabsTrigger value="ccp" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+              CCP
+            </TabsTrigger>
+            <TabsTrigger value="edahabiya" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+              Edahabiya
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Deposit Form */}
+          <TabsContent value="baridimob" className="space-y-6">
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  إيداع عبر Baridimob
+                </CardTitle>
+                <CardDescription>
+                  أرسل المال إلى المحفظة المحددة أدناه ثم املأ النموذج
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Wallet Information */}
+                <div className="p-4 bg-gradient-primary rounded-lg text-white">
+                  <h3 className="font-semibold mb-2">محفظة الإيداع</h3>
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-mono">{PaymentWallets.baridimob}</span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => navigator.clipboard.writeText(PaymentWallets.baridimob)}
+                    >
+                      نسخ
+                    </Button>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Deposit Form */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="amount">المبلغ المرسل (دج)</Label>
+                      <Input
+                        id="amount"
+                        type="number"
+                        placeholder="مثال: 5000"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        required
+                        min="1"
+                        step="0.01"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="transactionId">معرف المعاملة</Label>
+                      <Input
+                        id="transactionId"
+                        type="text"
+                        placeholder="معرف المعاملة من Baridimob"
+                        value={transactionId}
+                        onChange={(e) => setTransactionId(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="receipt">صورة الوصل</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="receipt"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                        required
+                        className="cursor-pointer"
+                      />
+                      <Upload className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    {receiptFile && (
+                      <p className="text-sm text-muted-foreground">
+                        تم اختيار: {receiptFile.name}
+                      </p>
+                    )}
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-primary hover:opacity-90"
+                    disabled={submitting || loading}
+                    size="lg"
+                  >
+                    {submitting ? (
+                      <>
+                        <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        جاري الإرسال...
+                      </>
+                    ) : (
+                      <>
+                        إرسال طلب الإيداع
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="ccp" className="space-y-6">
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Banknote className="h-5 w-5" />
+                  إيداع عبر CCP
+                </CardTitle>
+                <CardDescription>
+                  قريباً - خدمة CCP قيد التطوير
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">هذه الخدمة ستكون متاحة قريباً</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="edahabiya" className="space-y-6">
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  إيداع عبر Edahabiya
+                </CardTitle>
+                <CardDescription>
+                  قريباً - خدمة Edahabiya قيد التطوير
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">هذه الخدمة ستكون متاحة قريباً</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Deposit History */}
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" />
+              تاريخ الإيداعات
+            </CardTitle>
+            <CardDescription>
+              جميع طلبات الإيداع السابقة
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-16 bg-muted rounded animate-pulse" />
+                ))}
+              </div>
+            ) : deposits.length === 0 ? (
+              <div className="text-center py-8">
+                <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">لا توجد عمليات إيداع سابقة</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {deposits.map((deposit) => (
+                  <div key={deposit.id} className="border rounded-lg p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{deposit.amount} دج</span>
+                        <span className="text-sm text-muted-foreground">
+                          عبر {deposit.payment_method}
+                        </span>
+                      </div>
+                      {getStatusBadge(deposit.status)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      <p>معرف المعاملة: {deposit.transaction_id}</p>
+                      <p>تاريخ الإرسال: {formatDate(deposit.created_at)}</p>
+                      {deposit.admin_notes && (
+                        <p className="text-blue-600 font-medium">ملاحظة: {deposit.admin_notes}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
