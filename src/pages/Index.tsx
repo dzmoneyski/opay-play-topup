@@ -36,8 +36,6 @@ import {
 } from "lucide-react";
 
 const Index = () => {
-  console.log("Dashboard component started loading...");
-  
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const { isAdmin } = useUserRoles();
@@ -45,14 +43,6 @@ const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showBalance, setShowBalance] = React.useState(true);
-
-  console.log("Dashboard state:", { 
-    user: user?.id, 
-    profile: profile?.id, 
-    isAdmin, 
-    balance: balance?.balance,
-    balanceLoading 
-  });
 
   const handleServiceClick = (service: any) => {
     if (service.action === 'disabled') {
@@ -152,8 +142,6 @@ const Index = () => {
       time: "أمس"
     }
   ];
-
-  console.log("Dashboard is rendering...");
   
   return (
     <div className="min-h-screen bg-background" dir="rtl">

@@ -26,13 +26,9 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  console.log("AuthProvider starting...");
-  
   const [user, setUser] = React.useState<User | null>(null);
   const [session, setSession] = React.useState<Session | null>(null);
   const [loading, setLoading] = React.useState(true);
-
-  console.log("AuthProvider state:", { user: user?.id, session: !!session, loading });
 
   React.useEffect(() => {
     // Set up auth state listener FIRST

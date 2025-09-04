@@ -11,13 +11,9 @@ export interface UserBalance {
 }
 
 export const useBalance = () => {
-  console.log("useBalance hook starting...");
-  
   const [balance, setBalance] = React.useState<UserBalance | null>(null);
   const [loading, setLoading] = React.useState(false);
   const { user } = useAuth();
-
-  console.log("useBalance state:", { user: user?.id, balance: balance?.balance, loading });
 
   const fetchBalance = React.useCallback(async () => {
     if (!user) return;
