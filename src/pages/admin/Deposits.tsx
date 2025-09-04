@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { useAdminDeposits } from '@/hooks/useAdminDeposits';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -24,6 +25,7 @@ export default function DepositsPage() {
   const [selectedDeposit, setSelectedDeposit] = React.useState<any>(null);
   const [rejectionReason, setRejectionReason] = React.useState('');
   const [approvalNotes, setApprovalNotes] = React.useState('');
+  const [adjustedAmount, setAdjustedAmount] = React.useState('');
   const [processing, setProcessing] = React.useState(false);
 
   const getImageUrl = (imagePath: string | null) => {
@@ -32,11 +34,12 @@ export default function DepositsPage() {
     return data.publicUrl;
   };
 
-  const handleApprove = async (depositId: string, notes?: string) => {
+  const handleApprove = async (depositId: string, notes?: string, amount?: number) => {
     setProcessing(true);
-    const result = await approveDeposit(depositId, notes);
+    const result = await approveDeposit(depositId, notes, amount);
     if (result.success) {
       setApprovalNotes('');
+      setAdjustedAmount('');
       setSelectedDeposit(null);
     }
     setProcessing(false);
@@ -236,7 +239,11 @@ export default function DepositsPage() {
                       <DialogTrigger asChild>
                         <Button 
                           className="bg-green-600 hover:bg-green-700 text-white"
-                          onClick={() => setSelectedDeposit(deposit)}
+                          onClick={() => { 
+                            setSelectedDeposit(deposit);
+                            setApprovalNotes('');
+                            setAdjustedAmount(String(deposit.amount));
+                          }}
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
                           قبول الطلب
@@ -260,10 +267,28 @@ export default function DepositsPage() {
                               rows={3}
                             />
                           </div>
+                          <div>
+                            <Label htmlFor="approval-amount">المبلغ النهائي (د.ج)</Label>
+                            <Input
+                              id="approval-amount"
+                              type="number"
+                              min={0}
+                              step={0.01}
+                              value={adjustedAmount}
+                              onChange={(e) => setAdjustedAmount(e.target.value)}
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              المبلغ الذي سيتم اعتماده عند قبول الطلب
+                            </p>
+                          </div>
                         </div>
                         <DialogFooter>
                           <Button
-                            onClick={() => selectedDeposit && handleApprove(selectedDeposit.id, approvalNotes)}
+                            onClick={() => {
+                              if (!selectedDeposit) return;
+                              const amountNum = adjustedAmount.trim() === '' ? undefined : Number(adjustedAmount);
+                              handleApprove(selectedDeposit.id, approvalNotes, amountNum);
+                            }}
                             disabled={processing}
                             className="bg-green-600 hover:bg-green-700"
                           >

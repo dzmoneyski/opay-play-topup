@@ -73,14 +73,15 @@ export const useAdminDeposits = () => {
     fetchDeposits();
   }, [fetchDeposits]);
 
-  const approveDeposit = async (depositId: string, notes?: string) => {
+  const approveDeposit = async (depositId: string, notes?: string, adjustedAmount?: number) => {
     if (!user) return { success: false, error: "غير مصرح" };
 
     try {
       const { error } = await supabase.rpc('approve_deposit', {
         _deposit_id: depositId,
         _admin_id: user.id,
-        _notes: notes || null
+        _notes: notes || null,
+        _adjusted_amount: adjustedAmount ?? null
       });
 
       if (error) throw error;
@@ -93,7 +94,8 @@ export const useAdminDeposits = () => {
               status: 'approved', 
               processed_by: user.id,
               processed_at: new Date().toISOString(),
-              admin_notes: notes || null
+              admin_notes: notes || null,
+              amount: adjustedAmount ?? deposit.amount
             }
           : deposit
       ));

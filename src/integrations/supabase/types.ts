@@ -197,7 +197,14 @@ export type Database = {
     }
     Functions: {
       approve_deposit: {
-        Args: { _admin_id: string; _deposit_id: string; _notes?: string }
+        Args:
+          | {
+              _adjusted_amount?: number
+              _admin_id: string
+              _deposit_id: string
+              _notes?: string
+            }
+          | { _admin_id: string; _deposit_id: string; _notes?: string }
         Returns: undefined
       }
       approve_verification_request: {
