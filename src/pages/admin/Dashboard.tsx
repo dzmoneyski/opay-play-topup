@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useVerificationRequests } from '@/hooks/useVerificationRequests';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Users, 
   CreditCard, 
@@ -16,15 +17,40 @@ import {
 
 export default function AdminDashboard() {
   const { requests, loading } = useVerificationRequests();
+  const [totalUsers, setTotalUsers] = React.useState(0);
+  const [userProfilesData, setUserProfilesData] = React.useState<any[]>([]);
   
   const pendingRequests = requests.filter(req => req.status === 'pending').length;
   const approvedRequests = requests.filter(req => req.status === 'approved').length;
   const rejectedRequests = requests.filter(req => req.status === 'rejected').length;
 
-  // Mock data for other statistics
+  // Fetch real user data
+  React.useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('*');
+        
+        if (!error && profiles) {
+          setTotalUsers(profiles.length);
+          setUserProfilesData(profiles);
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    if (!loading) {
+      fetchUserData();
+    }
+  }, [loading]);
+
+  const activeUsers = userProfilesData.filter(profile => profile.is_account_activated).length;
+  const phoneVerifiedUsers = userProfilesData.filter(profile => profile.is_phone_verified).length;
+
+  // Mock data for financial statistics (to be replaced with real data later)
   const stats = {
-    totalUsers: 1247,
-    activeUsers: 892,
     totalDeposits: 2850000,
     totalWithdrawals: 1650000,
     pendingTransactions: 23,
@@ -102,7 +128,7 @@ export default function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="إجمالي المستخدمين"
-          value={stats.totalUsers}
+          value={totalUsers}
           description="مستخدمين مسجلين"
           icon={Users}
           trend="+12%"
@@ -111,8 +137,8 @@ export default function AdminDashboard() {
         
         <StatsCard
           title="المستخدمين النشطين"
-          value={stats.activeUsers}
-          description="نشطين هذا الشهر"
+          value={activeUsers}
+          description="حسابات مفعلة"
           icon={TrendingUp}
           trend="+8%"
           color="success"
@@ -127,11 +153,11 @@ export default function AdminDashboard() {
         />
         
         <StatsCard
-          title="العمليات المعلقة"
-          value={stats.pendingTransactions}
-          description="تحتاج موافقة"
-          icon={AlertCircle}
-          color="warning"
+          title="الهواتف المؤكدة"
+          value={phoneVerifiedUsers}
+          description="تم تأكيد هواتفهم"
+          icon={CheckCircle}
+          color="success"
         />
       </div>
 

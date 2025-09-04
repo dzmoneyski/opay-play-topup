@@ -365,13 +365,33 @@ export default function IdentityVerificationPage() {
                           </div>
                         </div>
                       )}
-                      
-                      {!request.national_id_front_image && !request.national_id_back_image && (
-                        <div className="col-span-2 text-center py-4">
-                          <p className="text-sm text-muted-foreground">لم يتم رفع صور للهوية</p>
-                        </div>
-                      )}
                     </div>
+                    
+                    {/* Selfie image in separate row */}
+                    {request.selfie_image && (
+                      <div className="mt-4">
+                        <p className="text-sm font-medium text-muted-foreground mb-2">صورة شخصية (سيلفي)</p>
+                        <div className="flex justify-center">
+                          <img 
+                            src={getImageUrl(request.selfie_image) || ''} 
+                            alt="صورة شخصية"
+                            className="max-w-48 max-h-48 object-contain border rounded-md bg-gray-50"
+                            onClick={() => window.open(getImageUrl(request.selfie_image) || '', '_blank')}
+                            style={{ cursor: 'pointer' }}
+                            onError={(e) => handleImageError(e, request.selfie_image)}
+                          />
+                          <div className="hidden max-w-48 max-h-48 border rounded-md bg-gray-50 flex items-center justify-center">
+                            <p className="text-sm text-muted-foreground">فشل في تحميل الصورة</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                      
+                    {!request.national_id_front_image && !request.national_id_back_image && !request.selfie_image && (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-muted-foreground">لم يتم رفع صور للهوية</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex space-x-2">
