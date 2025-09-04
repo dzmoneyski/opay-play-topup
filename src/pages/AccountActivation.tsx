@@ -18,11 +18,12 @@ import {
   Shield,
   ArrowLeft
 } from 'lucide-react';
+import { IdentityVerification } from '@/components/IdentityVerification';
 
 const AccountActivation = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { profile, loading, submitPhoneVerification, verifyPhoneCode, submitIdentityVerification } = useProfile();
+  const { profile, loading, submitPhoneVerification, verifyPhoneCode } = useProfile();
   
   const [currentStep, setCurrentStep] = React.useState(1);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -31,9 +32,6 @@ const AccountActivation = () => {
   const [phoneNumber, setPhoneNumber] = React.useState('');
   const [verificationCode, setVerificationCode] = React.useState('');
   const [showCodeInput, setShowCodeInput] = React.useState(false);
-  
-  // Identity verification states
-  const [nationalId, setNationalId] = React.useState('');
 
   React.useEffect(() => {
     console.log('Profile data:', profile);
@@ -56,9 +54,6 @@ const AccountActivation = () => {
       }
       if (profile.phone) {
         setPhoneNumber(profile.phone);
-      }
-      if (profile.national_id) {
-        setNationalId(profile.national_id);
       }
     }
   }, [profile]);
@@ -126,44 +121,6 @@ const AccountActivation = () => {
         description: "يمكنك الآن المتابعة لتفعيل الهوية",
       });
       setCurrentStep(2);
-    }
-    setIsLoading(false);
-  };
-
-  const handleIdentitySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!nationalId.trim()) {
-      toast({
-        title: "خطأ",
-        description: "يرجى إدخال رقم البطاقة الوطنية",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (nationalId.length !== 18) {
-      toast({
-        title: "خطأ في البطاقة الوطنية",
-        description: "يجب أن يكون رقم البطاقة الوطنية 18 رقماً",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    const { error } = await submitIdentityVerification(nationalId);
-    
-    if (error) {
-      toast({
-        title: "خطأ في إرسال الطلب",
-        description: error,
-        variant: "destructive"
-      });
-    } else {
-      toast({
-        title: "تم إرسال طلب التفعيل",
-        description: "سيتم مراجعة طلبك خلال 24 ساعة",
-      });
     }
     setIsLoading(false);
   };
@@ -352,68 +309,16 @@ const AccountActivation = () => {
 
         {/* Step 2: Identity Verification */}
         {profile?.is_phone_verified && !profile?.is_identity_verified && (
-          <Card className="bg-gradient-glass backdrop-blur-xl border border-white/10 shadow-elevated mb-6 animate-slide-up" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-3">
-                <CreditCard className="h-6 w-6" />
-                تفعيل البطاقة الوطنية
-                {profile.identity_verification_status === 'pending' && (
-                  <Badge className="bg-gradient-gold text-white border-0">
-                    <Clock className="h-3 w-3 ml-1" />
-                    قيد المراجعة
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {profile.identity_verification_status === 'pending' ? (
-                <div className="text-center py-8">
-                  <Clock className="h-16 w-16 text-white/70 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-white mb-2">طلبك قيد المراجعة</h3>
-                  <p className="text-white/80">
-                    سيتم مراجعة طلب تفعيل البطاقة الوطنية خلال 24 ساعة
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleIdentitySubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="nationalId" className="text-white/90">رقم البطاقة الوطنية</Label>
-                    <Input
-                      id="nationalId"
-                      type="text"
-                      placeholder="xxxxxxxxxxxxxxxxxx"
-                      value={nationalId}
-                      onChange={(e) => setNationalId(e.target.value)}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-primary focus:bg-white/20"
-                      disabled={isLoading}
-                      maxLength={18}
-                    />
-                    <p className="text-white/70 text-sm">
-                      يجب أن يكون رقم البطاقة الوطنية 18 رقماً
-                    </p>
-                  </div>
-                  
-                  <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="h-5 w-5 text-white/70 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm text-white/80">
-                        <p className="font-medium mb-1">معلومة مهمة:</p>
-                        <p>سيتم مراجعة البطاقة الوطنية من قبل فريقنا للتأكد من صحة البيانات. هذه العملية قد تستغرق حتى 24 ساعة.</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gradient-secondary hover:opacity-90 text-white font-semibold"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "جاري الإرسال..." : "إرسال طلب التفعيل"}
-                  </Button>
-                </form>
-              )}
-            </CardContent>
-          </Card>
+          <div className="animate-slide-up" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
+            <IdentityVerification 
+              onSuccess={() => {
+                toast({
+                  title: "تم إرسال طلب التفعيل بنجاح",
+                  description: "سيتم مراجعة طلبك خلال 24 ساعة وإشعارك بالنتيجة",
+                });
+              }} 
+            />
+          </div>
         )}
       </div>
     </div>
