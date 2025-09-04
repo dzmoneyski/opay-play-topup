@@ -11,12 +11,8 @@ const BackButton = ({ className = '', variant = 'floating' }: BackButtonProps) =
   const navigate = useNavigate();
 
   const handleBackClick = () => {
-    // Try to go back in history, if no history, go to home page
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate('/');
-    }
+    // Always try to navigate back, browser will handle if there's no history
+    navigate(-1);
   };
 
   const baseClasses = "w-12 h-12 p-0 bg-gradient-glass backdrop-blur-sm rounded-xl border border-primary/20 hover:border-primary/40 shadow-soft hover:shadow-card transition-smooth group hover:scale-105";
