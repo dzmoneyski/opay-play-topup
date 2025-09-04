@@ -24,15 +24,61 @@ const AdminPanel = () => {
   // Function to get image URL from Supabase Storage or return direct URL
   const getImageUrl = (imagePath: string | null) => {
     if (!imagePath) return null;
-    
     // If it's already a full URL, return it as is
     if (imagePath.startsWith('http')) {
       return imagePath;
     }
-    
     // Otherwise, construct the URL from storage
     const { data } = supabase.storage.from('identity-documents').getPublicUrl(imagePath);
     return data.publicUrl;
+  };
+
+  // Fallback: if loading the public URL fails, try a signed URL once
+  const handleImageError = async (
+    e: React.SyntheticEvent<HTMLImageElement, Event>,
+    imagePath: string | null
+  ) => {
+    const target = e.currentTarget;
+    if (!imagePath) return;
+    // Avoid infinite loop
+    if (target.dataset.retried === 'true') {
+      target.style.display = 'none';
+      target.nextElementSibling?.classList.remove('hidden');
+      return;
+    }
+    target.dataset.retried = 'true';
+
+    // Extract storage path if a full URL was stored
+    let path = imagePath;
+    if (imagePath.startsWith('http')) {
+      const marker = '/object/';
+      const pos = imagePath.indexOf('identity-documents/');
+      if (pos !== -1) {
+        path = imagePath.substring(pos + 'identity-documents/'.length);
+      } else {
+        // nothing to do, show fallback
+        target.style.display = 'none';
+        target.nextElementSibling?.classList.remove('hidden');
+        return;
+      }
+    }
+
+    try {
+      const { data, error } = await supabase.storage
+        .from('identity-documents')
+        .createSignedUrl(path, 3600);
+      if (error || !data?.signedUrl) {
+        target.style.display = 'none';
+        target.nextElementSibling?.classList.remove('hidden');
+        return;
+      }
+      target.src = data.signedUrl;
+      target.style.display = '';
+      target.nextElementSibling?.classList.add('hidden');
+    } catch (err) {
+      target.style.display = 'none';
+      target.nextElementSibling?.classList.remove('hidden');
+    }
   };
 
   React.useEffect(() => {
@@ -281,11 +327,7 @@ const AdminPanel = () => {
                                 className="w-full max-h-48 object-contain border rounded-md bg-gray-50"
                                 onClick={() => window.open(getImageUrl(request.national_id_front_image) || '', '_blank')}
                                 style={{ cursor: 'pointer' }}
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  target.nextElementSibling?.classList.remove('hidden');
-                                }}
+                                  onError={(e) => handleImageError(e, request.national_id_front_image)}
                               />
                               <div className="hidden w-full max-h-48 border rounded-md bg-gray-50 flex items-center justify-center">
                                 <p className="text-sm text-muted-foreground">فشل في تحميل الصورة</p>
@@ -302,11 +344,7 @@ const AdminPanel = () => {
                                 className="w-full max-h-48 object-contain border rounded-md bg-gray-50"
                                 onClick={() => window.open(getImageUrl(request.national_id_back_image) || '', '_blank')}
                                 style={{ cursor: 'pointer' }}
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  target.nextElementSibling?.classList.remove('hidden');
-                                }}
+                                onError={(e) => handleImageError(e, request.national_id_back_image)}
                               />
                               <div className="hidden w-full max-h-48 border rounded-md bg-gray-50 flex items-center justify-center">
                                 <p className="text-sm text-muted-foreground">فشل في تحميل الصورة</p>
