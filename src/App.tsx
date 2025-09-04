@@ -34,9 +34,9 @@ const App = () => {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={
-                <PublicRoute>
-                  <Auth />
-                </PublicRoute>
+                <ProtectedRoute requireActivation={false}>
+                  <Index />
+                </ProtectedRoute>
               } />
               <Route path="/auth" element={
                 <PublicRoute>
