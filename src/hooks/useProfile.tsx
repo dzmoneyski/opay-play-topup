@@ -18,9 +18,13 @@ interface Profile {
 }
 
 export const useProfile = () => {
+  console.log("useProfile hook starting...");
+  
   const { user } = useAuth();
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [loading, setLoading] = React.useState(true);
+
+  console.log("useProfile state:", { user: user?.id, profile: profile?.id, loading });
 
   React.useEffect(() => {
     if (user) {

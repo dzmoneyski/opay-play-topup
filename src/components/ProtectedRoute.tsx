@@ -11,6 +11,14 @@ const ProtectedRoute = ({ children, requireActivation = false }: ProtectedRouteP
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
 
+  console.log("ProtectedRoute state:", { 
+    user: user?.id, 
+    authLoading, 
+    profile: profile?.id, 
+    profileLoading,
+    requireActivation 
+  });
+
   if (authLoading || profileLoading) {
     return (
       <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
