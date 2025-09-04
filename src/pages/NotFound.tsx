@@ -1,5 +1,5 @@
 import { useLocation, Link, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Home, ArrowRight, Wallet, ArrowLeft } from "lucide-react";
@@ -8,7 +8,7 @@ const NotFound = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => {
+  React.useEffect(() => {
     console.error(
       "404 Error: User attempted to access non-existent route:",
       location.pathname

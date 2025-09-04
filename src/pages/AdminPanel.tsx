@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useVerificationRequests } from '@/hooks/useVerificationRequests';
@@ -16,11 +16,11 @@ const AdminPanel = () => {
   const { isAdmin, loading: rolesLoading } = useUserRoles();
   const { requests, loading: requestsLoading, approveRequest, rejectRequest } = useVerificationRequests();
   const { toast } = useToast();
-  const [selectedRequest, setSelectedRequest] = useState<any>(null);
-  const [rejectionReason, setRejectionReason] = useState('');
-  const [processing, setProcessing] = useState(false);
+  const [selectedRequest, setSelectedRequest] = React.useState<any>(null);
+  const [rejectionReason, setRejectionReason] = React.useState('');
+  const [processing, setProcessing] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!rolesLoading && !isAdmin) {
       toast({
         title: "غير مصرح",

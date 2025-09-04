@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,16 +23,16 @@ const Auth = () => {
   const { toast } = useToast();
   const { signIn, signUp, user } = useAuth();
   
-  const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('signin');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [activeTab, setActiveTab] = React.useState('signin');
 
   // Form states
-  const [signInData, setSignInData] = useState({
+  const [signInData, setSignInData] = React.useState({
     email: '',
     password: ''
   });
 
-  const [signUpData, setSignUpData] = useState({
+  const [signUpData, setSignUpData] = React.useState({
     fullName: '',
     email: '',
     password: '',
@@ -40,7 +40,7 @@ const Auth = () => {
   });
 
   // Redirect if already authenticated
-  useEffect(() => {
+  React.useEffect(() => {
     if (user) {
       navigate('/dashboard');
     }
