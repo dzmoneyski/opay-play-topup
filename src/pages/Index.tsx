@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserRoles } from "@/hooks/useUserRoles";
+import { useBalance } from "@/hooks/useBalance";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Wallet, 
@@ -38,10 +39,10 @@ const Index = () => {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const { isAdmin } = useUserRoles();
+  const { balance, loading: balanceLoading } = useBalance();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showBalance, setShowBalance] = React.useState(true);
-  const balance = 12580.50;
 
   const handleServiceClick = (service: any) => {
     if (service.action === 'disabled') {
@@ -229,7 +230,11 @@ const Index = () => {
                 <p className="text-white/70 text-sm mb-1">الرصيد المتاح</p>
                 <div className="flex items-center gap-2">
                   <span className="text-4xl font-bold text-white">
-                    {showBalance ? `${balance.toFixed(2)}` : "••••••"}
+                    {balanceLoading ? (
+                      <div className="h-10 bg-white/20 rounded animate-pulse w-32" />
+                    ) : (
+                      showBalance ? `${(balance?.balance ?? 0).toFixed(2)}` : "••••••"
+                    )}
                   </span>
                   <span className="text-xl text-white/80 font-medium">دج</span>
                 </div>
