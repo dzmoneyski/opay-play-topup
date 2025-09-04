@@ -1,60 +1,67 @@
-// Try legacy React import pattern
-import * as React from "react";
-import { useState, useEffect } from "react";
+import React from "react";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import PublicRoute from "@/components/PublicRoute";
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import AccountActivation from "./pages/AccountActivation";
+import AdminPanel from "./pages/AdminPanel";
+import NotFound from "./pages/NotFound";
 
-// Test both import methods
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 const App = () => {
-  console.log("=== DEBUGGING REACT IMPORT ===");
-  console.log("React namespace import:", React);
-  console.log("Direct useState import:", useState);
-  console.log("Direct useEffect import:", useEffect);
-  console.log("===========================");
-
-  // Try direct imported hooks first
-  let message, setMessage;
-  
-  try {
-    [message, setMessage] = useState("Testing direct useState import");
-    console.log("✅ Direct useState import works!");
-  } catch (error) {
-    console.error("❌ Direct useState failed:", error);
-    try {
-      [message, setMessage] = React.useState("Testing React.useState");
-      console.log("✅ React.useState works!");
-    } catch (error2) {
-      console.error("❌ React.useState also failed:", error2);
-      // Complete fallback - no React hooks
-      return (
-        <div style={{ 
-          minHeight: '100vh', 
-          background: '#ff0000',
-          color: 'white',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'column'
-        }}>
-          <h1>🚨 REACT IS BROKEN 🚨</h1>
-          <p>React import is null - package corruption detected</p>
-          <p>Check console for details</p>
-        </div>
-      );
-    }
-  }
-
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      background: '#00aa00',
-      color: 'white',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexDirection: 'column'
-    }}>
-      <h1>✅ REACT IS WORKING</h1>
-      <p>{message}</p>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={
+                <PublicRoute>
+                  <Auth />
+                </PublicRoute>
+              } />
+              <Route path="/auth" element={
+                <PublicRoute>
+                  <Auth />
+                </PublicRoute>
+              } />
+              <Route path="/activate" element={
+                <ProtectedRoute requireActivation={false}>
+                  <AccountActivation />
+                </ProtectedRoute>
+              } />
+              <Route path="/dashboard" element={
+                <ProtectedRoute requireActivation={false}>
+                  <Index />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin" element={
+                <ProtectedRoute requireActivation={false}>
+                  <AdminPanel />
+                </ProtectedRoute>
+              } />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 };
 
