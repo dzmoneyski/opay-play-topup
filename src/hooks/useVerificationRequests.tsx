@@ -39,23 +39,35 @@ export const useVerificationRequests = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      // First get all verification requests
+      const { data: requestsData, error: requestsError } = await supabase
         .from('verification_requests')
-        .select(`
-          *,
-          profiles (
-            full_name,
-            phone
-          )
-        `)
+        .select('*')
         .order('submitted_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching verification requests:', error);
+      if (requestsError) {
+        console.error('Error fetching verification requests:', requestsError);
         return;
       }
 
-      setRequests(data as any);
+      // Then get profiles for each user_id
+      const userIds = [...new Set(requestsData?.map(req => req.user_id) || [])];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, phone')
+        .in('user_id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+      }
+
+      // Merge the data
+      const requestsWithProfiles = requestsData?.map(request => ({
+        ...request,
+        profiles: profilesData?.find(profile => profile.user_id === request.user_id) || null
+      })) || [];
+
+      setRequests(requestsWithProfiles as any);
     } catch (error) {
       console.error('Error fetching verification requests:', error);
     } finally {
