@@ -19,7 +19,7 @@ const BackButton = ({ className = '', variant = 'floating' }: BackButtonProps) =
     }
   };
 
-  const baseClasses = "w-12 h-12 p-0 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-white/20 transition-all group";
+  const baseClasses = "w-12 h-12 p-0 bg-gradient-glass backdrop-blur-sm rounded-xl border border-primary/20 hover:border-primary/40 shadow-soft hover:shadow-card transition-smooth group hover:scale-105";
   const floatingClasses = "absolute top-6 left-6 z-30";
   
   return (
@@ -30,7 +30,7 @@ const BackButton = ({ className = '', variant = 'floating' }: BackButtonProps) =
         onClick={handleBackClick}
         className={`${baseClasses} ${className}`}
       >
-        <ArrowLeft className="h-5 w-5 text-white group-hover:text-white transition-colors" />
+        <ArrowLeft className="h-5 w-5 text-primary-foreground group-hover:text-primary transition-smooth" />
       </Button>
     </div>
   );
