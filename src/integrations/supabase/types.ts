@@ -110,6 +110,45 @@ export type Database = {
         }
         Relationships: []
       }
+      transfers: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          note: string | null
+          recipient_id: string
+          recipient_phone: string
+          sender_id: string
+          sender_phone: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          recipient_id: string
+          recipient_phone: string
+          sender_id: string
+          sender_phone: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          recipient_id?: string
+          recipient_phone?: string
+          sender_id?: string
+          sender_phone?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_balances: {
         Row: {
           balance: number
@@ -241,6 +280,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      process_transfer: {
+        Args: {
+          amount_param: number
+          note_param?: string
+          recipient_phone_param: string
+        }
+        Returns: Json
       }
       recalculate_all_balances: {
         Args: Record<PropertyKey, never>
