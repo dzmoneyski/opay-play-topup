@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AccountActivation from "./pages/AccountActivation";
 import AdminPanel from "./pages/AdminPanel";
+import IdentityVerificationPage from "./pages/IdentityVerificationPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -54,6 +55,11 @@ const App = () => {
               <Route path="/admin" element={
                 <ProtectedRoute requireActivation={false}>
                   <AdminPanel />
+                </ProtectedRoute>
+              } />
+              <Route path="/identity-verification" element={
+                <ProtectedRoute requireActivation={false}>
+                  <IdentityVerificationPage />
                 </ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />

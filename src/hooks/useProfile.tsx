@@ -128,15 +128,58 @@ export const useProfile = () => {
     return { success: true };
   };
 
-  const submitIdentityVerification = async (nationalId: string) => {
-    if (!user) return { error: 'No user found' };
+  const submitIdentityVerification = async (
+    nationalId: string, 
+    frontImage?: File, 
+    backImage?: File
+  ) => {
+    if (!user) return { error: 'لم يتم تسجيل الدخول' };
 
     try {
+      let frontImageUrl = null;
+      let backImageUrl = null;
+
+      // Upload front image if provided
+      if (frontImage) {
+        const frontFileName = `${user.id}/front_${Date.now()}.${frontImage.name.split('.').pop()}`;
+        const { error: frontError } = await supabase.storage
+          .from('identity-documents')
+          .upload(frontFileName, frontImage);
+        
+        if (frontError) {
+          return { error: `خطأ في رفع صورة الوجه الأمامي: ${frontError.message}` };
+        }
+        
+        const { data: frontPublicUrl } = supabase.storage
+          .from('identity-documents')
+          .getPublicUrl(frontFileName);
+        frontImageUrl = frontPublicUrl.publicUrl;
+      }
+
+      // Upload back image if provided
+      if (backImage) {
+        const backFileName = `${user.id}/back_${Date.now()}.${backImage.name.split('.').pop()}`;
+        const { error: backError } = await supabase.storage
+          .from('identity-documents')
+          .upload(backFileName, backImage);
+        
+        if (backError) {
+          return { error: `خطأ في رفع صورة الوجه الخلفي: ${backError.message}` };
+        }
+        
+        const { data: backPublicUrl } = supabase.storage
+          .from('identity-documents')
+          .getPublicUrl(backFileName);
+        backImageUrl = backPublicUrl.publicUrl;
+      }
+
       const { data, error } = await supabase
         .from('verification_requests')
         .insert({
           user_id: user.id,
           national_id: nationalId,
+          national_id_front_image: frontImageUrl,
+          national_id_back_image: backImageUrl,
           status: 'pending'
         })
         .select()
@@ -154,7 +197,7 @@ export const useProfile = () => {
 
       return { data, error: null };
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Unknown error' };
+      return { error: error instanceof Error ? error.message : 'خطأ غير معروف' };
     }
   };
 

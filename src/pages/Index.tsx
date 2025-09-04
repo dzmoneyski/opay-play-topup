@@ -253,17 +253,34 @@ const Index = () => {
         {!profile?.is_account_activated && (
           <div className="container mx-auto px-4 pt-4 -mt-4 relative z-20">
             <Card className="bg-gradient-gold/10 border-white/10 shadow-soft animate-slide-up backdrop-blur-sm">
-              <CardContent className="p-3">
-                <div className="flex items-center gap-3 text-center justify-center">
-                  <Shield className="h-5 w-5 text-white" />
-                  <p className="text-white/90 text-sm">
-                    قم بتفعيل حسابك للاستفادة من جميع الخدمات المالية
-                  </p>
-                  <Link to="/activate">
-                    <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm text-xs">
-                      تفعيل
-                    </Button>
-                  </Link>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Shield className="h-5 w-5 text-white" />
+                    <div>
+                      <p className="text-white/90 text-sm font-medium">
+                        قم بتفعيل حسابك للاستفادة من جميع الخدمات المالية
+                      </p>
+                      <p className="text-white/70 text-xs">
+                        {!profile?.is_phone_verified && "تحقق من رقم الهاتف • "}
+                        {!profile?.is_identity_verified && "تحقق من الهوية"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {!profile?.is_identity_verified && (
+                      <Link to="/identity-verification">
+                        <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm text-xs">
+                          تحقق الهوية
+                        </Button>
+                      </Link>
+                    )}
+                    <Link to="/activate">
+                      <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm text-xs">
+                        تفعيل
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </CardContent>
             </Card>

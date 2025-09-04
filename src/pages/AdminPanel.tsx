@@ -253,8 +253,45 @@ const AdminPanel = () => {
                       {getStatusBadge(request.status)}
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="flex space-x-2">
+                   <CardContent>
+                     {/* Display identity document images */}
+                     <div className="mb-4">
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         {request.national_id_front_image && (
+                           <div>
+                             <p className="text-sm font-medium text-muted-foreground mb-2">صورة الهوية - الوجه الأمامي</p>
+                             <img 
+                               src={request.national_id_front_image} 
+                               alt="الوجه الأمامي للهوية"
+                               className="w-full max-h-48 object-contain border rounded-md bg-gray-50"
+                               onClick={() => window.open(request.national_id_front_image, '_blank')}
+                               style={{ cursor: 'pointer' }}
+                             />
+                           </div>
+                         )}
+                         
+                         {request.national_id_back_image && (
+                           <div>
+                             <p className="text-sm font-medium text-muted-foreground mb-2">صورة الهوية - الوجه الخلفي</p>
+                             <img 
+                               src={request.national_id_back_image} 
+                               alt="الوجه الخلفي للهوية"
+                               className="w-full max-h-48 object-contain border rounded-md bg-gray-50"
+                               onClick={() => window.open(request.national_id_back_image, '_blank')}
+                               style={{ cursor: 'pointer' }}
+                             />
+                           </div>
+                         )}
+                         
+                         {!request.national_id_front_image && !request.national_id_back_image && (
+                           <div className="col-span-2 text-center py-4">
+                             <p className="text-sm text-muted-foreground">لم يتم رفع صور للهوية</p>
+                           </div>
+                         )}
+                       </div>
+                     </div>
+
+                     <div className="flex space-x-2">
                       <Button
                         onClick={() => handleApprove(request.id)}
                         disabled={processing}
