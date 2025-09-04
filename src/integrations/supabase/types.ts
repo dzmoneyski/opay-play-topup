@@ -100,6 +100,7 @@ export type Database = {
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          selfie_image: string | null
           status: string | null
           submitted_at: string
           updated_at: string
@@ -118,6 +119,7 @@ export type Database = {
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          selfie_image?: string | null
           status?: string | null
           submitted_at?: string
           updated_at?: string
@@ -136,6 +138,7 @@ export type Database = {
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          selfie_image?: string | null
           status?: string | null
           submitted_at?: string
           updated_at?: string
