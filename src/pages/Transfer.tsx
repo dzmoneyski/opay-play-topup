@@ -88,7 +88,9 @@ const Transfer = () => {
   };
 
   if (!user) {
-    navigate('/auth');
+    React.useEffect(() => {
+      navigate('/auth');
+    }, [navigate]);
     return null;
   }
 
