@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useBalance } from '@/hooks/useBalance';
+import { useTransfers } from '@/hooks/useTransfers';
 import { useToast } from '@/hooks/use-toast';
 import BackButton from '@/components/BackButton';
 import { 
@@ -24,7 +25,8 @@ import {
 
 const Transfer = () => {
   const { user } = useAuth();
-  const { balance } = useBalance();
+  const { balance, fetchBalance } = useBalance();
+  const { processTransfer, isLoading: transferLoading } = useTransfers();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -34,7 +36,6 @@ const Transfer = () => {
     note: ''
   });
   const [showBalance, setShowBalance] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
 
   const quickAmounts = [100, 500, 1000, 2000, 5000];
   
@@ -66,17 +67,42 @@ const Transfer = () => {
       return;
     }
 
-    setIsLoading(true);
+    const result = await processTransfer(transferData);
     
-    // محاكاة عملية التحويل
-    setTimeout(() => {
+    if (result.success) {
       toast({
         title: "تم التحويل بنجاح",
         description: `تم تحويل ${transferData.amount} دج إلى ${transferData.recipient}`,
       });
-      setIsLoading(false);
+      
+      // Refresh balance after successful transfer
+      fetchBalance();
+      
+      // Reset form
+      setTransferData({ recipient: '', amount: '', note: '' });
+      
+      // Navigate back to home
       navigate('/');
-    }, 2000);
+    } else {
+      let errorMessage = "فشل في عملية التحويل";
+      
+      // Map error messages to Arabic
+      if (result.error?.includes('Recipient not found')) {
+        errorMessage = "رقم الهاتف غير مسجل في النظام";
+      } else if (result.error?.includes('Insufficient balance')) {
+        errorMessage = "رصيد غير كافي";
+      } else if (result.error?.includes('Cannot transfer to yourself')) {
+        errorMessage = "لا يمكن التحويل لنفسك";
+      } else if (result.error?.includes('User not authenticated')) {
+        errorMessage = "يجب تسجيل الدخول أولاً";
+      }
+      
+      toast({
+        title: "فشل في التحويل",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    }
   };
 
   const selectQuickAmount = (amount: number) => {
@@ -224,9 +250,9 @@ const Transfer = () => {
                   <Button 
                     type="submit" 
                     className="w-full bg-gradient-primary hover:opacity-90 text-white font-medium py-3 transition-all hover:scale-105"
-                    disabled={isLoading}
+                    disabled={transferLoading}
                   >
-                    {isLoading ? (
+                    {transferLoading ? (
                       <>
                         <Clock className="h-5 w-5 animate-spin ml-2" />
                         جاري التحويل...
