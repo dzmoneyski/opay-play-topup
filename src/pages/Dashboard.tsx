@@ -20,9 +20,17 @@ import {
 } from "lucide-react";
 
 const Dashboard = () => {
+  console.log('Dashboard component loading...');
+  
   const { user } = useAuth();
+  console.log('useAuth hook result:', user);
+  
   const { profile } = useProfile();
+  console.log('useProfile hook result:', profile);
+  
   const { balance, loading: balanceLoading } = useBalance();
+  console.log('useBalance hook result:', { balance, balanceLoading });
+  
   const { toast } = useToast();
   const [showBalance, setShowBalance] = React.useState(true);
 
