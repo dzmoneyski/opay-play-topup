@@ -1,0 +1,444 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useUserRoles } from '@/hooks/useUserRoles';
+import { useVerificationRequests } from '@/hooks/useVerificationRequests';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { AlertCircle, CheckCircle, Clock, Eye, Shield, Users, XCircle, User, Phone, Calendar, FileText, ArrowLeft } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+export default function IdentityVerificationPage() {
+  const navigate = useNavigate();
+  const { isAdmin, loading: rolesLoading } = useUserRoles();
+  const { requests, loading: requestsLoading, approveRequest, rejectRequest } = useVerificationRequests();
+  const { toast } = useToast();
+  const [selectedRequest, setSelectedRequest] = React.useState<any>(null);
+  const [rejectionReason, setRejectionReason] = React.useState('');
+  const [processing, setProcessing] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!rolesLoading && !isAdmin) {
+      toast({
+        title: "غير مصرح",
+        description: "ليس لديك صلاحية للوصول إلى هذه الصفحة",
+        variant: "destructive"
+      });
+      navigate('/admin');
+    }
+  }, [isAdmin, rolesLoading, navigate, toast]);
+
+  // Function to get image URL from Supabase Storage or return direct URL
+  const getImageUrl = (imagePath: string | null) => {
+    if (!imagePath) return null;
+    // If it's already a full URL, return it as is
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    // Otherwise, construct the URL from storage
+    const { data } = supabase.storage.from('identity-documents').getPublicUrl(imagePath);
+    return data.publicUrl;
+  };
+
+  // Fallback: if loading the public URL fails, try a signed URL once
+  const handleImageError = async (
+    e: React.SyntheticEvent<HTMLImageElement, Event>,
+    imagePath: string | null
+  ) => {
+    const target = e.currentTarget;
+    if (!imagePath) return;
+    // Avoid infinite loop
+    if (target.dataset.retried === 'true') {
+      target.style.display = 'none';
+      target.nextElementSibling?.classList.remove('hidden');
+      return;
+    }
+    target.dataset.retried = 'true';
+
+    // Extract storage path if a full URL was stored
+    let path = imagePath;
+    if (imagePath.startsWith('http')) {
+      const marker = '/object/';
+      const pos = imagePath.indexOf('identity-documents/');
+      if (pos !== -1) {
+        path = imagePath.substring(pos + 'identity-documents/'.length);
+      } else {
+        // nothing to do, show fallback
+        target.style.display = 'none';
+        target.nextElementSibling?.classList.remove('hidden');
+        return;
+      }
+    }
+
+    try {
+      const { data, error } = await supabase.storage
+        .from('identity-documents')
+        .createSignedUrl(path, 3600);
+      if (error || !data?.signedUrl) {
+        target.style.display = 'none';
+        target.nextElementSibling?.classList.remove('hidden');
+        return;
+      }
+      target.src = data.signedUrl;
+      target.style.display = '';
+      target.nextElementSibling?.classList.add('hidden');
+    } catch (err) {
+      target.style.display = 'none';
+      target.nextElementSibling?.classList.remove('hidden');
+    }
+  };
+
+  const handleApprove = async (requestId: string) => {
+    setProcessing(true);
+    const result = await approveRequest(requestId);
+    
+    if (result.error) {
+      toast({
+        title: "خطأ",
+        description: result.error,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "تم بنجاح",
+        description: "تم الموافقة على طلب التحقق وتفعيل الحساب",
+      });
+    }
+    setProcessing(false);
+  };
+
+  const handleReject = async (requestId: string, reason: string) => {
+    if (!reason.trim()) {
+      toast({
+        title: "خطأ",
+        description: "يجب إدخال سبب الرفض",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setProcessing(true);
+    const result = await rejectRequest(requestId, reason);
+    
+    if (result.error) {
+      toast({
+        title: "خطأ",
+        description: result.error,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "تم بنجاح",
+        description: "تم رفض طلب التحقق",
+      });
+      setRejectionReason('');
+      setSelectedRequest(null);
+    }
+    setProcessing(false);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return (
+          <Badge variant="secondary" className="flex items-center gap-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+            <Clock className="w-3 h-3" />
+            قيد المراجعة
+          </Badge>
+        );
+      case 'approved':
+        return (
+          <Badge variant="default" className="flex items-center gap-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+            <CheckCircle className="w-3 h-3" />
+            موافق عليه
+          </Badge>
+        );
+      case 'rejected':
+        return (
+          <Badge variant="destructive" className="flex items-center gap-1">
+            <XCircle className="w-3 h-3" />
+            مرفوض
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ar-DZ', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (rolesLoading || requestsLoading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-muted rounded w-1/3" />
+          <div className="grid gap-4 md:grid-cols-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-32 bg-muted rounded" />
+            ))}
+          </div>
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-48 bg-muted rounded" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const pendingRequests = requests.filter(req => req.status === 'pending');
+  const approvedRequests = requests.filter(req => req.status === 'approved').length;
+  const rejectedRequests = requests.filter(req => req.status === 'rejected').length;
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Page Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">إدارة طلبات التحقق من الهوية</h1>
+        <p className="text-muted-foreground mt-2">
+          مراجعة وإدارة طلبات تحقق الهوية المقدمة من المستخدمين
+        </p>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">قيد المراجعة</CardTitle>
+            <Clock className="h-4 w-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">{pendingRequests.length}</div>
+            <p className="text-xs text-muted-foreground">تحتاج انتباه</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">موافق عليها</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{approvedRequests}</div>
+            <p className="text-xs text-muted-foreground">تم قبولها</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">مرفوضة</CardTitle>
+            <XCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{rejectedRequests}</div>
+            <p className="text-xs text-muted-foreground">تم رفضها</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Pending Requests Section */}
+      {pendingRequests.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="h-5 w-5 text-yellow-600" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              طلبات تحتاج مراجعة ({pendingRequests.length})
+            </h2>
+          </div>
+          
+          <div className="space-y-4">
+            {pendingRequests.map((request) => (
+              <Card key={request.id} className="border-l-4 border-l-yellow-500">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="flex items-center space-x-2">
+                        <User className="h-4 w-4" />
+                        <span>{request.profiles?.full_name || 'اسم غير محدد'}</span>
+                      </CardTitle>
+                      <CardDescription className="flex items-center space-x-4">
+                        <span className="flex items-center space-x-1">
+                          <FileText className="h-3 w-3" />
+                          <span>رقم الهوية: {request.national_id}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <Phone className="h-3 w-3" />
+                          <span>{request.profiles?.phone || 'غير محدد'}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>{formatDate(request.submitted_at)}</span>
+                        </span>
+                      </CardDescription>
+                      
+                      {/* Information Comparison Section */}
+                      {request.full_name_on_id && (
+                        <div className="mt-3 p-3 bg-muted/30 rounded-lg">
+                          <h4 className="text-sm font-medium text-foreground mb-2">مقارنة المعلومات</h4>
+                          <div className="grid gap-2 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">الاسم في الحساب:</span>
+                              <span className="font-medium">{request.profiles?.full_name || 'غير محدد'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">الاسم في البطاقة:</span>
+                              <span className={`font-medium ${
+                                request.full_name_on_id === request.profiles?.full_name 
+                                  ? 'text-green-600' 
+                                  : 'text-red-600'
+                              }`}>
+                                {request.full_name_on_id}
+                              </span>
+                            </div>
+                            {request.date_of_birth && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">تاريخ الميلاد:</span>
+                                <span className="font-medium">{new Date(request.date_of_birth).toLocaleDateString('ar-DZ')}</span>
+                              </div>
+                            )}
+                            {request.place_of_birth && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">مكان الميلاد:</span>
+                                <span className="font-medium">{request.place_of_birth}</span>
+                              </div>
+                            )}
+                            {request.address && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">العنوان:</span>
+                                <span className="font-medium text-xs">{request.address}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {getStatusBadge(request.status)}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {/* Display identity document images */}
+                  <div className="mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {request.national_id_front_image && (
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground mb-2">صورة الهوية - الوجه الأمامي</p>
+                          <img 
+                            src={getImageUrl(request.national_id_front_image) || ''} 
+                            alt="الوجه الأمامي للهوية"
+                            className="w-full max-h-48 object-contain border rounded-md bg-gray-50"
+                            onClick={() => window.open(getImageUrl(request.national_id_front_image) || '', '_blank')}
+                            style={{ cursor: 'pointer' }}
+                            onError={(e) => handleImageError(e, request.national_id_front_image)}
+                          />
+                          <div className="hidden w-full max-h-48 border rounded-md bg-gray-50 flex items-center justify-center">
+                            <p className="text-sm text-muted-foreground">فشل في تحميل الصورة</p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {request.national_id_back_image && (
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground mb-2">صورة الهوية - الوجه الخلفي</p>
+                          <img 
+                            src={getImageUrl(request.national_id_back_image) || ''} 
+                            alt="الوجه الخلفي للهوية"
+                            className="w-full max-h-48 object-contain border rounded-md bg-gray-50"
+                            onClick={() => window.open(getImageUrl(request.national_id_back_image) || '', '_blank')}
+                            style={{ cursor: 'pointer' }}
+                            onError={(e) => handleImageError(e, request.national_id_back_image)}
+                          />
+                          <div className="hidden w-full max-h-48 border rounded-md bg-gray-50 flex items-center justify-center">
+                            <p className="text-sm text-muted-foreground">فشل في تحميل الصورة</p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {!request.national_id_front_image && !request.national_id_back_image && (
+                        <div className="col-span-2 text-center py-4">
+                          <p className="text-sm text-muted-foreground">لم يتم رفع صور للهوية</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={() => handleApprove(request.id)}
+                      disabled={processing}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      موافقة وتفعيل الحساب
+                    </Button>
+                    
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          onClick={() => setSelectedRequest(request)}
+                        >
+                          <XCircle className="w-4 h-4 mr-2" />
+                          رفض الطلب
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>رفض طلب التحقق</DialogTitle>
+                          <DialogDescription>
+                            يرجى إدخال سبب رفض طلب التحقق من الهوية لـ {request.profiles?.full_name}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <Textarea
+                          placeholder="سبب الرفض (مثال: صورة الهوية غير واضحة، بيانات غير مطابقة، إلخ)"
+                          value={rejectionReason}
+                          onChange={(e) => setRejectionReason(e.target.value)}
+                          className="mt-4"
+                          rows={3}
+                        />
+                        <DialogFooter>
+                          <Button
+                            variant="destructive"
+                            onClick={() => selectedRequest && handleReject(selectedRequest.id, rejectionReason)}
+                            disabled={processing || !rejectionReason.trim()}
+                          >
+                            رفض الطلب
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* All Requests History */}
+      {requests.length === 0 && !requestsLoading && (
+        <Card>
+          <CardContent className="text-center py-8">
+            <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">لا توجد طلبات تحقق</h3>
+            <p className="text-muted-foreground">
+              لم يتم تقديم أي طلبات تحقق من الهوية حتى الآن
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

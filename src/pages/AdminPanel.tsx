@@ -10,7 +10,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, CheckCircle, Clock, Eye, Shield, Users, XCircle, User, Phone, Calendar, FileText, ArrowLeft } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { AdminSidebar } from '@/components/AdminSidebar';
+import AdminDashboard from '@/pages/admin/Dashboard';
+import IdentityVerificationPage from '@/pages/admin/IdentityVerification';
+import UsersPage from '@/pages/admin/Users';
+import DepositsPage from '@/pages/admin/Deposits';
+import WithdrawalsPage from '@/pages/admin/Withdrawals';
+import TransfersPage from '@/pages/admin/Transfers';
+import CardsPage from '@/pages/admin/Cards';
+import SettingsPage from '@/pages/admin/Settings';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
