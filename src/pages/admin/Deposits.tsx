@@ -1,100 +1,78 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useAdminDeposits } from '@/hooks/useAdminDeposits';
+import { supabase } from '@/integrations/supabase/client';
 import { 
-  ArrowDownToLine, 
-  Search, 
-  Calendar,
-  Clock,
+  ArrowDownToLine,
   CheckCircle,
-  AlertTriangle,
-  DollarSign,
-  TrendingUp,
-  User
+  XCircle,
+  Clock,
+  User,
+  Calendar,
+  Banknote,
+  Receipt,
+  Eye
 } from 'lucide-react';
 
 export default function DepositsPage() {
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [selectedStatus, setSelectedStatus] = React.useState('all');
+  const { deposits, loading, approveDeposit, rejectDeposit } = useAdminDeposits();
+  const [selectedDeposit, setSelectedDeposit] = React.useState<any>(null);
+  const [rejectionReason, setRejectionReason] = React.useState('');
+  const [approvalNotes, setApprovalNotes] = React.useState('');
+  const [processing, setProcessing] = React.useState(false);
 
-  // Mock data - في التطبيق الحقيقي، ستأتي من API
-  const deposits = [
-    {
-      id: '1',
-      user_name: 'أحمد محمد علي',
-      user_email: 'ahmed@example.com',
-      amount: 50000,
-      method: 'بطاقة OpaY',
-      reference: 'DP-2024-001',
-      status: 'completed',
-      created_at: '2024-03-01T10:30:00Z',
-      completed_at: '2024-03-01T10:35:00Z'
-    },
-    {
-      id: '2',
-      user_name: 'فاطمة الزهراء',
-      user_email: 'fatima@example.com',
-      amount: 25000,
-      method: 'تحويل بنكي',
-      reference: 'DP-2024-002',
-      status: 'pending',
-      created_at: '2024-03-01T14:20:00Z',
-      completed_at: null
-    },
-    {
-      id: '3',
-      user_name: 'محمد الأمين',
-      user_email: 'mohamed@example.com',
-      amount: 75000,
-      method: 'بطاقة OpaY',
-      reference: 'DP-2024-003',
-      status: 'failed',
-      created_at: '2024-03-01T16:45:00Z',
-      completed_at: null
+  const getImageUrl = (imagePath: string | null) => {
+    if (!imagePath) return null;
+    const { data } = supabase.storage.from('deposit-receipts').getPublicUrl(imagePath);
+    return data.publicUrl;
+  };
+
+  const handleApprove = async (depositId: string, notes?: string) => {
+    setProcessing(true);
+    const result = await approveDeposit(depositId, notes);
+    if (result.success) {
+      setApprovalNotes('');
+      setSelectedDeposit(null);
     }
-  ];
+    setProcessing(false);
+  };
 
-  const filteredDeposits = deposits.filter(deposit => {
-    const matchesSearch = 
-      deposit.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      deposit.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      deposit.user_email.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = selectedStatus === 'all' || deposit.status === selectedStatus;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const totalDeposits = deposits.reduce((sum, deposit) => 
-    deposit.status === 'completed' ? sum + deposit.amount : sum, 0
-  );
-  const pendingDeposits = deposits.filter(d => d.status === 'pending').length;
-  const completedDeposits = deposits.filter(d => d.status === 'completed').length;
-  const failedDeposits = deposits.filter(d => d.status === 'failed').length;
+  const handleReject = async (depositId: string, reason: string) => {
+    setProcessing(true);
+    const result = await rejectDeposit(depositId, reason);
+    if (result.success) {
+      setRejectionReason('');
+      setSelectedDeposit(null);
+    }
+    setProcessing(false);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'completed':
-        return (
-          <Badge className="bg-green-100 text-green-800 border-green-200">
-            <CheckCircle className="w-3 h-3 mr-1" />
-            مكتمل
-          </Badge>
-        );
       case 'pending':
         return (
-          <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
             <Clock className="w-3 h-3 mr-1" />
-            في انتظار
+            قيد المراجعة
           </Badge>
         );
-      case 'failed':
+      case 'approved':
+        return (
+          <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            مقبول
+          </Badge>
+        );
+      case 'rejected':
         return (
           <Badge variant="destructive">
-            <AlertTriangle className="w-3 h-3 mr-1" />
-            فاشل
+            <XCircle className="w-3 h-3 mr-1" />
+            مرفوض
           </Badge>
         );
       default:
@@ -105,186 +83,292 @@ export default function DepositsPage() {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ar-DZ', {
       year: 'numeric',
-      month: 'short',
+      month: 'long',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('ar-DZ', {
       style: 'currency',
       currency: 'DZD',
-      minimumFractionDigits: 0
+      minimumFractionDigits: 2
     }).format(amount);
   };
+
+  const pendingDeposits = deposits.filter(d => d.status === 'pending');
+  const approvedDeposits = deposits.filter(d => d.status === 'approved').length;
+  const rejectedDeposits = deposits.filter(d => d.status === 'rejected').length;
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-muted rounded w-1/3" />
+          <div className="grid gap-4 md:grid-cols-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-32 bg-muted rounded" />
+            ))}
+          </div>
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-48 bg-muted rounded" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">إدارة عمليات الإيداع</h1>
+        <h1 className="text-3xl font-bold text-foreground">إدارة طلبات الإيداع</h1>
         <p className="text-muted-foreground mt-2">
-          مراقبة وإدارة جميع عمليات إيداع الأموال في المنصة
+          مراجعة وإدارة طلبات إيداع الأموال المقدمة من المستخدمين
         </p>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">إجمالي الإيداعات</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(totalDeposits)}
-            </div>
-            <p className="text-xs text-muted-foreground">هذا الشهر</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">عمليات مكتملة</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{completedDeposits}</div>
-            <p className="text-xs text-muted-foreground">تم بنجاح</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">في انتظار</CardTitle>
+            <CardTitle className="text-sm font-medium">قيد المراجعة</CardTitle>
             <Clock className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{pendingDeposits}</div>
+            <div className="text-2xl font-bold text-yellow-600">{pendingDeposits.length}</div>
             <p className="text-xs text-muted-foreground">تحتاج مراجعة</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">عمليات فاشلة</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <CardTitle className="text-sm font-medium">مقبولة</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{failedDeposits}</div>
-            <p className="text-xs text-muted-foreground">تحتاج انتباه</p>
+            <div className="text-2xl font-bold text-green-600">{approvedDeposits}</div>
+            <p className="text-xs text-muted-foreground">تم قبولها</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">مرفوضة</CardTitle>
+            <XCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{rejectedDeposits}</div>
+            <p className="text-xs text-muted-foreground">تم رفضها</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search and Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>البحث والتصفية</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="البحث بالاسم، المرجع، أو البريد الإلكتروني..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10"
-              />
-            </div>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 border border-input rounded-md bg-background"
-            >
-              <option value="all">جميع الحالات</option>
-              <option value="completed">مكتمل</option>
-              <option value="pending">في انتظار</option>
-              <option value="failed">فاشل</option>
-            </select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Pending Deposits */}
+      {pendingDeposits.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Clock className="h-5 w-5 text-yellow-600" />
+            طلبات تحتاج مراجعة ({pendingDeposits.length})
+          </h2>
+          
+          <div className="space-y-4">
+            {pendingDeposits.map((deposit) => (
+              <Card key={deposit.id} className="border-l-4 border-l-yellow-500">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        <span>{deposit.profiles?.full_name || 'مستخدم غير محدد'}</span>
+                      </CardTitle>
+                      <CardDescription className="flex items-center gap-4 flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <Banknote className="h-3 w-3" />
+                          <span>{formatAmount(deposit.amount)}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <ArrowDownToLine className="h-3 w-3" />
+                          <span>{deposit.payment_method}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>{formatDate(deposit.created_at)}</span>
+                        </span>
+                      </CardDescription>
+                    </div>
+                    {getStatusBadge(deposit.status)}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Deposit Details */}
+                  <div className="grid gap-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">معرف المعاملة:</span>
+                      <span className="font-medium">{deposit.transaction_id || 'غير محدد'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">رقم الهاتف:</span>
+                      <span className="font-medium">{deposit.profiles?.phone || 'غير محدد'}</span>
+                    </div>
+                  </div>
 
-      {/* Deposits Table */}
+                  {/* Receipt Image */}
+                  {deposit.receipt_image && (
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">صورة الوصل</h4>
+                      <img
+                        src={getImageUrl(deposit.receipt_image) || ''}
+                        alt="وصل الإيداع"
+                        className="max-w-md max-h-64 object-contain border rounded-md cursor-pointer"
+                        onClick={() => window.open(getImageUrl(deposit.receipt_image) || '', '_blank')}
+                      />
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-4">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          onClick={() => setSelectedDeposit(deposit)}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          قبول الطلب
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>قبول طلب الإيداع</DialogTitle>
+                          <DialogDescription>
+                            هل أنت متأكد من قبول طلب إيداع {formatAmount(deposit.amount)} من {deposit.profiles?.full_name}؟
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="approval-notes">ملاحظات (اختيارية)</Label>
+                            <Textarea
+                              id="approval-notes"
+                              placeholder="ملاحظات حول الطلب..."
+                              value={approvalNotes}
+                              onChange={(e) => setApprovalNotes(e.target.value)}
+                              rows={3}
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button
+                            onClick={() => selectedDeposit && handleApprove(selectedDeposit.id, approvalNotes)}
+                            disabled={processing}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            تأكيد القبول
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="destructive"
+                          onClick={() => setSelectedDeposit(deposit)}
+                        >
+                          <XCircle className="w-4 h-4 mr-2" />
+                          رفض الطلب
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>رفض طلب الإيداع</DialogTitle>
+                          <DialogDescription>
+                            يرجى إدخال سبب رفض الطلب
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="rejection-reason">سبب الرفض *</Label>
+                            <Textarea
+                              id="rejection-reason"
+                              placeholder="سبب الرفض (مثال: وصل غير واضح، مبلغ غير صحيح، إلخ)"
+                              value={rejectionReason}
+                              onChange={(e) => setRejectionReason(e.target.value)}
+                              rows={3}
+                              required
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button
+                            variant="destructive"
+                            onClick={() => selectedDeposit && handleReject(selectedDeposit.id, rejectionReason)}
+                            disabled={processing || !rejectionReason.trim()}
+                          >
+                            تأكيد الرفض
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* All Deposits History */}
       <Card>
         <CardHeader>
-          <CardTitle>سجل عمليات الإيداع ({filteredDeposits.length})</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Receipt className="h-5 w-5" />
+            تاريخ جميع الطلبات
+          </CardTitle>
           <CardDescription>
-            عرض تفصيلي لجميع عمليات الإيداع وحالتها
+            جميع طلبات الإيداع في النظام
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {filteredDeposits.map((deposit) => (
-              <div key={deposit.id} className="border rounded-lg p-4 hover:bg-muted/20 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-2">
-                      <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center text-white">
-                        <ArrowDownToLine className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">
-                          {formatCurrency(deposit.amount)}
-                        </h3>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <User className="h-3 w-3" />
-                            {deposit.user_name}
-                          </span>
-                          <span>•</span>
-                          <span>{deposit.method}</span>
-                          <span>•</span>
-                          <span>#{deposit.reference}</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">تاريخ الطلب: </span>
-                        <span className="font-medium text-foreground">
-                          {formatDate(deposit.created_at)}
-                        </span>
-                      </div>
-                      {deposit.completed_at && (
-                        <div>
-                          <span className="text-muted-foreground">تاريخ الإكمال: </span>
-                          <span className="font-medium text-foreground">
-                            {formatDate(deposit.completed_at)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(deposit.status)}
-                    {deposit.status === 'pending' && (
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                        تأكيد
-                      </Button>
-                    )}
-                    <Button variant="outline" size="sm">
-                      عرض التفاصيل
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {filteredDeposits.length === 0 && (
+          {deposits.length === 0 ? (
             <div className="text-center py-8">
               <ArrowDownToLine className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">لا توجد عمليات إيداع</h3>
-              <p className="text-muted-foreground">
-                لم يتم العثور على عمليات إيداع تطابق معايير البحث
-              </p>
+              <p className="text-muted-foreground">لا توجد طلبات إيداع</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {deposits.map((deposit) => (
+                <div key={deposit.id} className={`border rounded-lg p-4 ${
+                  deposit.status === 'pending' ? 'border-l-4 border-l-yellow-500' : 
+                  deposit.status === 'approved' ? 'border-l-4 border-l-green-500' : 
+                  'border-l-4 border-l-red-500'
+                }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{formatAmount(deposit.amount)}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {deposit.profiles?.full_name || 'مستخدم غير محدد'}
+                      </span>
+                    </div>
+                    {getStatusBadge(deposit.status)}
+                  </div>
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p>طريقة الدفع: {deposit.payment_method}</p>
+                    <p>معرف المعاملة: {deposit.transaction_id}</p>
+                    <p>تاريخ الطلب: {formatDate(deposit.created_at)}</p>
+                    {deposit.processed_at && (
+                      <p>تاريخ المراجعة: {formatDate(deposit.processed_at)}</p>
+                    )}
+                    {deposit.admin_notes && (
+                      <p className="font-medium text-blue-600">ملاحظة: {deposit.admin_notes}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
