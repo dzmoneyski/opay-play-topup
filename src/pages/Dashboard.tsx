@@ -26,6 +26,14 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [showBalance, setShowBalance] = React.useState(true);
 
+  console.log('Dashboard Debug:', {
+    user,
+    profile,
+    balance,
+    balanceLoading,
+    balanceValue: balance?.balance
+  });
+
   const handleServiceClick = (action: string) => {
     if (action === 'disabled') {
       toast({
