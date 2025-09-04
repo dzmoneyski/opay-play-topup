@@ -43,7 +43,7 @@ export const useVerificationRequests = () => {
         .from('verification_requests')
         .select(`
           *,
-          profiles!verification_requests_user_id_fkey (
+          profiles (
             full_name,
             phone
           )
