@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDeposits, PaymentMethod } from '@/hooks/useDeposits';
+import { useBalance } from '@/hooks/useBalance';
 import { useToast } from '@/hooks/use-toast';
 import { 
   CreditCard,
@@ -29,6 +30,7 @@ const PaymentWallets = {
 
 export default function Deposits() {
   const { deposits, loading, createDeposit } = useDeposits();
+  const { balance, loading: balanceLoading, fetchBalance } = useBalance();
   const { toast } = useToast();
   const [selectedMethod, setSelectedMethod] = React.useState<PaymentMethod>('baridimob');
   const [amount, setAmount] = React.useState('');
@@ -66,6 +68,8 @@ export default function Deposits() {
       setAmount('');
       setTransactionId('');
       setReceiptFile(null);
+      // Refresh balance after successful deposit
+      fetchBalance();
     }
     
     setSubmitting(false);
@@ -126,6 +130,24 @@ export default function Deposits() {
             </div>
           </div>
         </div>
+
+        {/* Current Balance */}
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center gap-4">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-1">الرصيد الحالي</p>
+                {balanceLoading ? (
+                  <div className="h-8 bg-muted rounded animate-pulse w-24 mx-auto" />
+                ) : (
+                  <p className="text-2xl font-bold text-primary">
+                    {balance?.balance?.toFixed(2) || '0.00'} دج
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Tabs value={selectedMethod} onValueChange={(value) => setSelectedMethod(value as PaymentMethod)} className="space-y-6">
           {/* Payment Method Selection */}
