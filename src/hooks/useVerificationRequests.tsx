@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -23,10 +23,10 @@ interface VerificationRequest {
 
 export const useVerificationRequests = () => {
   const { user } = useAuth();
-  const [requests, setRequests] = useState<VerificationRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [requests, setRequests] = React.useState<VerificationRequest[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (user) {
       fetchVerificationRequests();
     } else {

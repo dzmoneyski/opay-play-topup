@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -11,11 +11,11 @@ interface UserRole {
 
 export const useUserRoles = () => {
   const { user } = useAuth();
-  const [roles, setRoles] = useState<UserRole[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [roles, setRoles] = React.useState<UserRole[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [isAdmin, setIsAdmin] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (user) {
       fetchUserRoles();
     } else {
