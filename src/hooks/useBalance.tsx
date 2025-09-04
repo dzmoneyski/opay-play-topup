@@ -20,6 +20,10 @@ export const useBalance = () => {
     
     setLoading(true);
     try {
+      // First, recalculate balance based on approved deposits
+      await supabase.rpc('recalculate_user_balance', { _user_id: user.id });
+      
+      // Then fetch the updated balance
       const { data, error } = await supabase
         .from('user_balances')
         .select('*')
@@ -28,7 +32,7 @@ export const useBalance = () => {
 
       if (error) throw error;
 
-      // If no balance exists, create one with 0.00
+      // If no balance exists, create one
       if (!data) {
         const { data: newBalance, error: insertError } = await supabase
           .from('user_balances')
