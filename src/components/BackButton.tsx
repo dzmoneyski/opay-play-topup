@@ -11,8 +11,18 @@ const BackButton = ({ className = '', variant = 'floating' }: BackButtonProps) =
   const navigate = useNavigate();
 
   const handleBackClick = () => {
-    // Always try to navigate back, browser will handle if there's no history
-    navigate(-1);
+    try {
+      // Check if we have history to go back to
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        // Fallback to home page if no history
+        navigate('/');
+      }
+    } catch (error) {
+      // Fallback to home page if navigation fails
+      navigate('/');
+    }
   };
 
   const baseClasses = "w-12 h-12 p-0 bg-gradient-glass backdrop-blur-sm rounded-xl border border-primary/20 hover:border-primary/40 shadow-soft hover:shadow-card transition-smooth group hover:scale-105";
