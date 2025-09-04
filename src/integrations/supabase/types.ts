@@ -242,6 +242,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      recalculate_all_balances: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      recalculate_user_balance: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
       reject_verification_request: {
         Args: { _admin_id: string; _reason: string; _request_id: string }
         Returns: undefined

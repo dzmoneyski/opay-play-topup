@@ -55,6 +55,31 @@ export const useBalance = () => {
     fetchBalance();
   }, [fetchBalance]);
 
+  // Add real-time subscription for balance updates
+  React.useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('balance-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_balances',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchBalance();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchBalance]);
+
   return {
     balance,
     loading,
