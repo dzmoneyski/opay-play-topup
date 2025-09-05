@@ -73,17 +73,29 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
       const amount = Number(balanceAction.amount);
       const delta = balanceAction.type === 'add' ? amount : -amount;
 
-      const { error } = await supabase.rpc('admin_adjust_balance', {
+      const { data, error } = await supabase.rpc('admin_adjust_balance', {
         _target_user: user.user_id,
         _amount: delta,
-        _note: balanceAction.note || null,
+        _note: balanceAction.note || `تعديل رصيد من الإدارة (${balanceAction.type === 'add' ? 'إضافة' : 'خصم'})`
       });
-      if (error) throw error;
 
-      setBalanceAction({ type: '', amount: '', note: '' });
-      onUpdate();
-    } catch (error) {
+      if (error) {
+        console.error('RPC Error:', error);
+        throw error;
+      }
+
+      const result = data as { success?: boolean; new_balance?: number };
+      if (result?.success) {
+        console.log('تم تحديث الرصيد بنجاح:', result);
+        alert(`تم ${balanceAction.type === 'add' ? 'إضافة' : 'خصم'} ${amount} دج بنجاح. الرصيد الحالي: ${result.new_balance} دج`);
+        setBalanceAction({ type: '', amount: '', note: '' });
+        onUpdate();
+      } else {
+        throw new Error('فشل في تحديث الرصيد');
+      }
+    } catch (error: any) {
       console.error('Error adjusting balance:', error);
+      alert(`خطأ في تحديث الرصيد: ${error.message}`);
     } finally {
       setProcessing(false);
     }
