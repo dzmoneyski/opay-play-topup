@@ -442,6 +442,15 @@ export type Database = {
         Args: { _amount: number; _fee_config: Json }
         Returns: Json
       }
+      get_user_gift_card_redemptions: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          amount: number
+          created_at: string
+          id: string
+          used_at: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -43,12 +43,9 @@ export const useTransactionHistory = () => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      // Fetch gift cards
-      const { data: giftCards } = await supabase
-        .from('gift_cards')
-        .select('*')
-        .eq('used_by', user.id)
-        .order('used_at', { ascending: false });
+      // Fetch gift cards using secure RPC
+      const { data: giftCards, error: giftCardsError } = await supabase
+        .rpc('get_user_gift_card_redemptions');
 
       const allTransactions: TransactionHistoryItem[] = [];
 
@@ -95,17 +92,19 @@ export const useTransactionHistory = () => {
       });
 
       // Process gift cards
-      giftCards?.forEach(card => {
-        allTransactions.push({
-          id: card.id,
-          type: 'gift_card',
-          description: `تفعيل بطاقة OpaY`,
-          amount: Number(card.amount),
-          status: 'completed',
-          created_at: card.used_at || card.created_at,
-          icon_type: 'gift'
+      if (giftCards && !giftCardsError) {
+        giftCards.forEach(card => {
+          allTransactions.push({
+            id: card.id,
+            type: 'gift_card',
+            description: `تفعيل بطاقة OpaY`,
+            amount: Number(card.amount),
+            status: 'completed',
+            created_at: card.used_at || card.created_at,
+            icon_type: 'gift'
+          });
         });
-      });
+      }
 
       // Sort by date (newest first)
       allTransactions.sort((a, b) => 
