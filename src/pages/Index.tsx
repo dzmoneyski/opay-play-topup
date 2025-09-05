@@ -8,6 +8,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { useBalance } from "@/hooks/useBalance";
 import { useToast } from "@/hooks/use-toast";
+import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import { 
   Wallet, 
   CreditCard, 
@@ -40,6 +41,7 @@ const Index = () => {
   const { profile } = useProfile();
   const { isAdmin } = useUserRoles();
   const { balance, loading: balanceLoading } = useBalance();
+  const { transactions, loading: transactionsLoading } = useTransactionHistory();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showBalance, setShowBalance] = React.useState(true);
@@ -126,32 +128,38 @@ const Index = () => {
     { icon: <MapPin className="h-5 w-5" />, title: "المتاجر", desc: "أقرب كشك" }
   ];
 
-  const recentTransactions = [
-    { 
-      id: 1, 
-      type: "شراء", 
-      desc: "بطاقة Google Play 500 دج", 
-      amount: -500, 
-      icon: <ShoppingBag className="h-4 w-4" />,
-      time: "منذ ساعتين"
-    },
-    { 
-      id: 2, 
-      type: "شحن", 
-      desc: "بطاقة OpaY من الكشك", 
-      amount: +2000, 
-      icon: <Plus className="h-4 w-4" />,
-      time: "اليوم"
-    },
-    { 
-      id: 3, 
-      type: "تحويل", 
-      desc: "إلى كريم بن علي", 
-      amount: -750, 
-      icon: <Send className="h-4 w-4" />,
-      time: "أمس"
+  const getTransactionIcon = (iconType: string) => {
+    switch (iconType) {
+      case 'plus': return <Plus className="h-4 w-4" />;
+      case 'send': return <Send className="h-4 w-4" />;
+      case 'receive': return <ArrowDownLeft className="h-4 w-4" />;
+      case 'withdraw': return <ArrowUpRight className="h-4 w-4" />;
+      case 'gift': return <Gift className="h-4 w-4" />;
+      default: return <Plus className="h-4 w-4" />;
     }
-  ];
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'approved': return 'مكتمل';
+      case 'pending': return 'معلق';
+      case 'rejected': return 'مرفوض';
+      case 'completed': return 'مكتمل';
+      default: return status;
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'منذ أقل من ساعة';
+    if (diffInHours < 24) return `منذ ${diffInHours} ساعة`;
+    if (diffInHours < 48) return 'أمس';
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `منذ ${diffInDays} يوم`;
+  };
   
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -373,53 +381,75 @@ const Index = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {recentTransactions.map((transaction, index) => (
-                <div 
-                  key={transaction.id} 
-                  className="group flex items-center justify-between p-4 rounded-xl bg-muted/50 hover:bg-gradient-primary/5 transition-all duration-300 hover:shadow-soft border border-transparent hover:border-primary/10"
-                  style={{ animationDelay: `${0.1 * index}s`, animationFillMode: 'both' }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`
-                      p-3 rounded-xl transition-all duration-300 group-hover:scale-110
-                      ${transaction.amount > 0 
-                        ? 'bg-gradient-secondary text-white shadow-soft' 
-                        : 'bg-gradient-primary text-white shadow-soft'
-                      }
-                    `}>
-                      {transaction.icon}
+              {transactionsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-muted animate-pulse rounded-xl"></div>
+                        <div className="space-y-2">
+                          <div className="w-32 h-4 bg-muted animate-pulse rounded"></div>
+                          <div className="w-24 h-3 bg-muted animate-pulse rounded"></div>
+                        </div>
+                      </div>
+                      <div className="w-20 h-6 bg-muted animate-pulse rounded"></div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                        {transaction.desc}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{transaction.type}</span>
-                        <span>•</span>
-                        <span>{transaction.time}</span>
+                  ))}
+                </div>
+              ) : transactions.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>لا توجد معاملات حتى الآن</p>
+                </div>
+              ) : (
+                transactions.map((transaction, index) => (
+                  <div 
+                    key={transaction.id} 
+                    className="group flex items-center justify-between p-4 rounded-xl bg-muted/50 hover:bg-gradient-primary/5 transition-all duration-300 hover:shadow-soft border border-transparent hover:border-primary/10"
+                    style={{ animationDelay: `${0.1 * index}s`, animationFillMode: 'both' }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`
+                        p-3 rounded-xl transition-all duration-300 group-hover:scale-110
+                        ${transaction.amount > 0 
+                          ? 'bg-gradient-secondary text-white shadow-soft' 
+                          : 'bg-gradient-primary text-white shadow-soft'
+                        }
+                      `}>
+                        {getTransactionIcon(transaction.icon_type)}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                          {transaction.description}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{getStatusText(transaction.status)}</span>
+                          <span>•</span>
+                          <span>{formatTimeAgo(transaction.created_at)}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className={`
-                      p-1 rounded-lg
-                      ${transaction.amount > 0 ? 'bg-success/10' : 'bg-primary/10'}
-                    `}>
-                      {transaction.amount > 0 ? (
-                        <ArrowDownLeft className="h-4 w-4 text-success" />
-                      ) : (
-                        <ArrowUpRight className="h-4 w-4 text-primary" />
-                      )}
+                    <div className="flex items-center gap-2">
+                      <div className={`
+                        p-1 rounded-lg
+                        ${transaction.amount > 0 ? 'bg-success/10' : 'bg-primary/10'}
+                      `}>
+                        {transaction.amount > 0 ? (
+                          <ArrowDownLeft className="h-4 w-4 text-success" />
+                        ) : (
+                          <ArrowUpRight className="h-4 w-4 text-primary" />
+                        )}
+                      </div>
+                      <span className={`
+                        font-bold text-lg
+                        ${transaction.amount > 0 ? 'text-success' : 'text-primary'}
+                      `}>
+                        {transaction.amount > 0 ? '+' : ''}{Math.abs(transaction.amount)} دج
+                      </span>
                     </div>
-                    <span className={`
-                      font-bold text-lg
-                      ${transaction.amount > 0 ? 'text-success' : 'text-primary'}
-                    `}>
-                      {transaction.amount > 0 ? '+' : ''}{Math.abs(transaction.amount)} دج
-                    </span>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </CardContent>
           </Card>
         </div>
