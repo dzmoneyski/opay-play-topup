@@ -218,82 +218,114 @@ export default function CardsPage() {
     const qrCode = qrCodes[card.id];
     return `
       <div style="
-        width: 340px;
-        height: 216px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 16px;
-        padding: 20px;
+        width: 360px;
+        height: 228px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        border-radius: 20px;
+        padding: 24px;
         color: white;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         direction: rtl;
         position: relative;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4), 0 5px 15px rgba(0,0,0,0.12);
         overflow: hidden;
       ">
-        <!-- Background pattern -->
+        <!-- Decorative elements -->
         <div style="
           position: absolute;
-          top: -50px;
-          right: -50px;
-          width: 150px;
-          height: 150px;
+          top: -60px;
+          right: -60px;
+          width: 180px;
+          height: 180px;
           border-radius: 50%;
-          background: rgba(255,255,255,0.1);
+          background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 70%, transparent 100%);
         "></div>
         <div style="
           position: absolute;
-          bottom: -30px;
-          left: -30px;
-          width: 100px;
-          height: 100px;
+          bottom: -40px;
+          left: -40px;
+          width: 120px;
+          height: 120px;
           border-radius: 50%;
-          background: rgba(255,255,255,0.05);
+          background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 70%, transparent 100%);
+        "></div>
+        
+        <!-- Chip -->
+        <div style="
+          position: absolute;
+          top: 24px;
+          left: 24px;
+          width: 32px;
+          height: 24px;
+          background: linear-gradient(145deg, #ffd700, #ffed4e);
+          border-radius: 4px;
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
         "></div>
         
         <!-- Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; position: relative; z-index: 2;">
           <div>
-            <h1 style="margin: 0; font-size: 24px; font-weight: bold;">OpaY</h1>
-            <p style="margin: 0; font-size: 14px; opacity: 0.9;">بطاقة شحن رقمية</p>
+            <h1 style="margin: 0; font-size: 28px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">OpaY</h1>
+            <p style="margin: 2px 0 0 0; font-size: 13px; opacity: 0.9; font-weight: 400;">بطاقة شحن رقمية</p>
           </div>
           <div style="
-            width: 40px;
-            height: 40px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 8px;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            padding: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
-          ">💳</div>
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          ">
+            <div style="font-size: 16px;">💳</div>
+          </div>
         </div>
         
         <!-- Main content -->
-        <div style="display: flex; gap: 20px; align-items: center;">
-          <!-- QR Code -->
+        <div style="display: flex; gap: 24px; align-items: center; position: relative; z-index: 2;">
+          <!-- QR Code Section -->
           <div style="
-            background: white;
-            padding: 8px;
-            border-radius: 8px;
-            width: 80px;
-            height: 80px;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px;
+            border-radius: 16px;
+            width: 96px;
+            height: 96px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.8);
+            border: 1px solid rgba(255,255,255,0.3);
           ">
-            ${qrCode ? `<img src="${qrCode}" style="width: 64px; height: 64px;" />` : '<div style="width: 64px; height: 64px; background: #f0f0f0; border-radius: 4px;"></div>'}
+            ${qrCode ? `<img src="${qrCode}" style="width: 72px; height: 72px; border-radius: 4px;" />` : '<div style="width: 72px; height: 72px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #6c757d; font-size: 10px;">QR</div>'}
           </div>
           
           <!-- Card Info -->
           <div style="flex: 1;">
-            <div style="margin-bottom: 12px;">
-              <p style="margin: 0; font-size: 12px; opacity: 0.8;">القيمة</p>
-              <p style="margin: 0; font-size: 28px; font-weight: bold;">${formatCurrency(card.amount)}</p>
+            <div style="margin-bottom: 16px;">
+              <p style="margin: 0; font-size: 11px; opacity: 0.8; font-weight: 500; letter-spacing: 0.5px;">القيمة</p>
+              <p style="margin: 2px 0 0 0; font-size: 32px; font-weight: 800; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                ${formatCurrency(card.amount)}
+              </p>
             </div>
             
-            <div style="margin-bottom: 8px;">
-              <p style="margin: 0; font-size: 10px; opacity: 0.7;">رقم البطاقة</p>
-              <p style="margin: 0; font-size: 14px; font-family: 'Courier New', monospace; letter-spacing: 1px;">
+            <div style="margin-bottom: 12px;">
+              <p style="margin: 0; font-size: 9px; opacity: 0.7; font-weight: 500; letter-spacing: 0.5px;">رقم البطاقة</p>
+              <p style="
+                margin: 2px 0 0 0; 
+                font-size: 13px; 
+                font-family: 'Courier New', monospace; 
+                letter-spacing: 1.5px;
+                background: rgba(0,0,0,0.1);
+                padding: 6px 10px;
+                border-radius: 8px;
+                backdrop-filter: blur(5px);
+                border: 1px solid rgba(255,255,255,0.1);
+              ">
                 ${card.card_code}
               </p>
             </div>
@@ -303,18 +335,46 @@ export default function CardsPage() {
         <!-- Footer -->
         <div style="
           position: absolute;
-          bottom: 16px;
-          right: 20px;
-          left: 20px;
+          bottom: 20px;
+          right: 24px;
+          left: 24px;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          font-size: 10px;
+          font-size: 9px;
           opacity: 0.8;
+          font-weight: 500;
+          z-index: 2;
         ">
-          <span>امسح رمز QR للاستخدام</span>
-          <span>${formatDate(card.created_at).split(' ')[0]}</span>
+          <div style="
+            background: rgba(0,0,0,0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+            backdrop-filter: blur(5px);
+          ">
+            امسح رمز QR للاستخدام
+          </div>
+          <div style="
+            background: rgba(0,0,0,0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+            backdrop-filter: blur(5px);
+          ">
+            ${formatDate(card.created_at).split(' ')[0]}
+          </div>
         </div>
+        
+        <!-- Holographic effect -->
+        <div style="
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+          border-radius: 20px;
+          pointer-events: none;
+        "></div>
       </div>
     `;
   };
