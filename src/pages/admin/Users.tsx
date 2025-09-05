@@ -66,34 +66,51 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
   }, [user.user_id]);
 
   const handleBalanceAction = async () => {
-    if (!balanceAction.amount || Number(balanceAction.amount) <= 0) return;
+    if (!balanceAction.amount || Number(balanceAction.amount) <= 0 || !balanceAction.type) return;
     
     setProcessing(true);
     try {
       const amount = Number(balanceAction.amount);
-      const currentBalance = user.balance || 0;
-      const newBalance = balanceAction.type === 'add' 
-        ? currentBalance + amount 
-        : Math.max(0, currentBalance - amount);
 
-      // Update balance in database
-      await supabase
+      // Fetch latest balance to avoid using stale value
+      const { data: current, error: balErr } = await supabase
         .from('user_balances')
-        .upsert({
-          user_id: user.user_id,
-          balance: newBalance,
-          updated_at: new Date().toISOString()
-        });
+        .select('balance')
+        .eq('user_id', user.user_id)
+        .maybeSingle();
+      if (balErr) throw balErr;
 
-      // Create a record in deposits table for balance adjustments
+      const currentBalance = Number(current?.balance) || 0;
+      const delta = balanceAction.type === 'add' ? amount : -amount;
+      const newBalance = currentBalance + delta;
+
+      if (newBalance < 0) {
+        throw new Error('لا يمكن أن يصبح الرصيد سالبًا');
+      }
+
+      // Upsert using unique key on user_id to avoid duplicate key errors
+      const { error: upsertError } = await supabase
+        .from('user_balances')
+        .upsert(
+          {
+            user_id: user.user_id,
+            balance: newBalance,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' }
+        );
+
+      if (upsertError) throw upsertError;
+
+      // Optional: record an admin adjustment as an approved deposit for traceability when adding
       if (balanceAction.type === 'add') {
         await supabase.from('deposits').insert({
           user_id: user.user_id,
           amount: amount,
           payment_method: 'admin_adjustment',
           status: 'approved',
-          admin_notes: `تعديل رصيد من الإدارة: ${balanceAction.note}`,
-          processed_at: new Date().toISOString()
+          admin_notes: `تعديل رصيد من الإدارة: ${balanceAction.note || ''}`,
+          processed_at: new Date().toISOString(),
         });
       }
 
