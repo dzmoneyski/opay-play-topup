@@ -19,43 +19,76 @@ export default function AdminDashboard() {
   const { requests, loading } = useVerificationRequests();
   const [totalUsers, setTotalUsers] = React.useState(0);
   const [userProfilesData, setUserProfilesData] = React.useState<any[]>([]);
+  const [financialStats, setFinancialStats] = React.useState({
+    totalDeposits: 0,
+    totalWithdrawals: 0,
+    totalTransfers: 0,
+    totalCards: 0,
+    pendingDeposits: 0,
+    pendingWithdrawals: 0
+  });
   
   const pendingRequests = requests.filter(req => req.status === 'pending').length;
   const approvedRequests = requests.filter(req => req.status === 'approved').length;
   const rejectedRequests = requests.filter(req => req.status === 'rejected').length;
 
-  // Fetch real user data
+  // Fetch all data
   React.useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchAllData = async () => {
       try {
-        const { data: profiles, error } = await supabase
+        // Fetch user profiles
+        const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('*');
         
-        if (!error && profiles) {
+        if (!profilesError && profiles) {
           setTotalUsers(profiles.length);
           setUserProfilesData(profiles);
         }
+
+        // Fetch financial data
+        const [depositsRes, withdrawalsRes, transfersRes, cardsRes] = await Promise.all([
+          supabase.from('deposits').select('amount, status'),
+          supabase.from('withdrawals').select('amount, status'), 
+          supabase.from('transfers').select('amount, status'),
+          supabase.from('gift_cards').select('amount, is_used')
+        ]);
+
+        const totalDeposits = depositsRes.data?.filter(d => d.status === 'approved')
+          .reduce((sum, d) => sum + Number(d.amount), 0) || 0;
+        
+        const totalWithdrawals = withdrawalsRes.data?.filter(w => w.status === 'completed')
+          .reduce((sum, w) => sum + Number(w.amount), 0) || 0;
+        
+        const totalTransfers = transfersRes.data?.filter(t => t.status === 'completed')
+          .reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+        
+        const totalCards = cardsRes.data?.reduce((sum, c) => sum + Number(c.amount), 0) || 0;
+        
+        const pendingDeposits = depositsRes.data?.filter(d => d.status === 'pending').length || 0;
+        const pendingWithdrawals = withdrawalsRes.data?.filter(w => w.status === 'pending').length || 0;
+
+        setFinancialStats({
+          totalDeposits,
+          totalWithdrawals,
+          totalTransfers,
+          totalCards,
+          pendingDeposits,
+          pendingWithdrawals
+        });
+
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Error fetching data:', error);
       }
     };
 
     if (!loading) {
-      fetchUserData();
+      fetchAllData();
     }
   }, [loading]);
 
   const activeUsers = userProfilesData.filter(profile => profile.is_account_activated).length;
   const phoneVerifiedUsers = userProfilesData.filter(profile => profile.is_phone_verified).length;
-
-  // Mock data for financial statistics (to be replaced with real data later)
-  const stats = {
-    totalDeposits: 2850000,
-    totalWithdrawals: 1650000,
-    pendingTransactions: 23,
-    totalCards: 156
-  };
 
   const StatsCard = ({ 
     title, 
@@ -165,28 +198,31 @@ export default function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="إجمالي الإيداعات"
-          value={`${(stats.totalDeposits / 1000000).toFixed(1)}M دج`}
-          description="هذا الشهر"
+          value={financialStats.totalDeposits >= 1000000 
+            ? `${(financialStats.totalDeposits / 1000000).toFixed(1)}M دج`
+            : `${(financialStats.totalDeposits / 1000).toFixed(0)}K دج`}
+          description="المقبولة"
           icon={ArrowDownToLine}
-          trend="+15%"
           color="success"
         />
         
         <StatsCard
           title="إجمالي السحوبات"
-          value={`${(stats.totalWithdrawals / 1000000).toFixed(1)}M دج`}
-          description="هذا الشهر"
+          value={financialStats.totalWithdrawals >= 1000000 
+            ? `${(financialStats.totalWithdrawals / 1000000).toFixed(1)}M دج`
+            : `${(financialStats.totalWithdrawals / 1000).toFixed(0)}K دج`}
+          description="المكتملة"
           icon={ArrowUpFromLine}
-          trend="+10%"
           color="primary"
         />
         
         <StatsCard
-          title="البطاقات المباعة"
-          value={stats.totalCards}
-          description="هذا الشهر"
+          title="قيمة البطاقات"
+          value={financialStats.totalCards >= 1000000 
+            ? `${(financialStats.totalCards / 1000000).toFixed(1)}M دج`
+            : `${(financialStats.totalCards / 1000).toFixed(0)}K دج`}
+          description="إجمالي القيمة"
           icon={CreditCard}
-          trend="+25%"
           color="success"
         />
         

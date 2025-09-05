@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Users, 
   Search, 
@@ -19,49 +20,54 @@ import {
 
 export default function UsersPage() {
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [users, setUsers] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
-  // Mock data - في التطبيق الحقيقي، ستأتي من API
-  const users = [
-    {
-      id: '1',
-      full_name: 'أحمد محمد علي',
-      email: 'ahmed@example.com',
-      phone: '0556123456',
-      is_phone_verified: true,
-      is_identity_verified: true,
-      is_account_activated: true,
-      created_at: '2024-01-15T10:30:00Z',
-      last_login: '2024-03-01T14:20:00Z',
-      balance: 25000,
-      total_transactions: 45
-    },
-    {
-      id: '2',
-      full_name: 'فاطمة الزهراء',
-      email: 'fatima@example.com',
-      phone: '0661234567',
-      is_phone_verified: true,
-      is_identity_verified: false,
-      is_account_activated: false,
-      created_at: '2024-02-20T16:45:00Z',
-      last_login: '2024-02-28T09:15:00Z',
-      balance: 5000,
-      total_transactions: 8
-    },
-    {
-      id: '3',
-      full_name: 'محمد الأمين بن عيسى',
-      email: 'mohamed@example.com',
-      phone: '0770123456',
-      is_phone_verified: false,
-      is_identity_verified: false,
-      is_account_activated: false,
-      created_at: '2024-03-01T08:00:00Z',
-      last_login: '2024-03-01T08:00:00Z',
-      balance: 0,
-      total_transactions: 0
-    }
-  ];
+  // Fetch real user data
+  React.useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select(`
+            *
+          `);
+        
+        if (error) throw error;
+
+        // Get additional data for each user
+        const usersWithStats = await Promise.all(
+          (profiles || []).map(async (profile) => {
+            const [depositsRes, withdrawalsRes, transfersRes, balanceRes, roleRes] = await Promise.all([
+              supabase.from('deposits').select('id').eq('user_id', profile.user_id),
+              supabase.from('withdrawals').select('id').eq('user_id', profile.user_id),
+              supabase.from('transfers').select('id').or(`sender_id.eq.${profile.user_id},recipient_id.eq.${profile.user_id}`),
+              supabase.from('user_balances').select('balance').eq('user_id', profile.user_id).single(),
+              supabase.from('user_roles').select('role').eq('user_id', profile.user_id).single()
+            ]);
+
+            return {
+              ...profile,
+              balance: Number(balanceRes.data?.balance) || 0,
+              user_roles: roleRes.data ? [roleRes.data] : [],
+              total_transactions: (depositsRes.data?.length || 0) + 
+                                (withdrawalsRes.data?.length || 0) + 
+                                (transfersRes.data?.length || 0)
+            };
+          })
+        );
+
+        setUsers(usersWithStats);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const filteredUsers = users.filter(user =>
     user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -114,6 +120,26 @@ export default function UsersPage() {
       minimumFractionDigits: 0
     }).format(amount);
   };
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-muted rounded w-1/3" />
+          <div className="grid gap-4 md:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-muted rounded" />
+            ))}
+          </div>
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-24 bg-muted rounded" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -224,7 +250,7 @@ export default function UsersPage() {
                             <Phone className="h-3 w-3" />
                             {user.phone}
                           </span>
-                          <span className="flex items-center gap-1">
+                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             انضم في {formatDate(user.created_at)}
                           </span>
@@ -245,10 +271,10 @@ export default function UsersPage() {
                           {user.total_transactions}
                         </span>
                       </div>
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">آخر دخول: </span>
+                        <div className="text-sm">
+                        <span className="text-muted-foreground">الصلاحية: </span>
                         <span className="font-semibold text-foreground">
-                          {formatDate(user.last_login)}
+                          {user.user_roles?.[0]?.role || 'مستخدم'}
                         </span>
                       </div>
                     </div>

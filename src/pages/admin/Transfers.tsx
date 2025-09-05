@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Send, 
   Search, 
@@ -18,52 +19,64 @@ import {
 export default function TransfersPage() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedStatus, setSelectedStatus] = React.useState('all');
+  const [transfers, setTransfers] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
-  // Mock data - في التطبيق الحقيقي، ستأتي من API
-  const transfers = [
-    {
-      id: '1',
-      sender_name: 'أحمد محمد علي',
-      sender_email: 'ahmed@example.com',
-      receiver_name: 'فاطمة الزهراء',
-      receiver_email: 'fatima@example.com',
-      receiver_phone: '0661234567',
-      amount: 10000,
-      reference: 'TR-2024-001',
-      status: 'completed',
-      created_at: '2024-03-01T10:30:00Z',
-      completed_at: '2024-03-01T10:31:00Z',
-      fee: 50
-    },
-    {
-      id: '2',
-      sender_name: 'يوسف بن صالح',
-      sender_email: 'youssef@example.com',
-      receiver_name: 'خديجة العلوي',
-      receiver_email: 'khadija@example.com',
-      receiver_phone: '0556789012',
-      amount: 25000,
-      reference: 'TR-2024-002',
-      status: 'pending',
-      created_at: '2024-03-01T14:20:00Z',
-      completed_at: null,
-      fee: 100
-    },
-    {
-      id: '3',
-      sender_name: 'محمد الأمين',
-      sender_email: 'mohamed@example.com',
-      receiver_name: 'رقم غير مسجل',
-      receiver_phone: '0770000000',
-      amount: 5000,
-      reference: 'TR-2024-003',
-      status: 'failed',
-      created_at: '2024-03-01T16:45:00Z',
-      completed_at: null,
-      fee: 25,
-      failure_reason: 'رقم المستقبل غير مسجل في النظام'
-    }
-  ];
+  // Fetch real transfer data
+  React.useEffect(() => {
+    const fetchTransfers = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('transfers')
+          .select(`
+            *
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Get profile data for each transfer
+        const transfersWithProfiles = await Promise.all(
+          (data || []).map(async (transfer) => {
+            const [senderRes, recipientRes] = await Promise.all([
+              supabase.from('profiles').select('full_name, phone').eq('user_id', transfer.sender_id).single(),
+              supabase.from('profiles').select('full_name, phone').eq('user_id', transfer.recipient_id).single()
+            ]);
+
+            return {
+              ...transfer,
+              sender: senderRes.data,
+              recipient: recipientRes.data
+            };
+          })
+        );
+
+        const formattedTransfers = transfersWithProfiles.map(transfer => ({
+          id: transfer.id,
+          sender_name: transfer.sender?.full_name || 'مستخدم غير محدد',
+          sender_phone: transfer.sender_phone,
+          receiver_name: transfer.recipient?.full_name || 'مستخدم غير محدد',
+          receiver_phone: transfer.recipient_phone,
+          amount: Number(transfer.amount),
+          reference: `TR-${transfer.id.slice(0, 8)}`,
+          status: transfer.status,
+          created_at: transfer.created_at,
+          completed_at: transfer.updated_at,
+          note: transfer.note,
+          fee: Math.round(Number(transfer.amount) * 0.005) // 0.5% fee calculation
+        }));
+
+        setTransfers(formattedTransfers);
+      } catch (error) {
+        console.error('Error fetching transfers:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransfers();
+  }, []);
 
   const filteredTransfers = transfers.filter(transfer => {
     const matchesSearch = 
@@ -132,6 +145,26 @@ export default function TransfersPage() {
       minimumFractionDigits: 0
     }).format(amount);
   };
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-muted rounded w-1/3" />
+          <div className="grid gap-4 md:grid-cols-5">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-32 bg-muted rounded" />
+            ))}
+          </div>
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-24 bg-muted rounded" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -308,30 +341,20 @@ export default function TransfersPage() {
                         )}
                       </div>
 
-                      {transfer.status === 'failed' && transfer.failure_reason && (
-                        <div className="p-2 bg-red-50 border border-red-200 rounded text-red-800 text-xs">
-                          <strong>سبب الفشل:</strong> {transfer.failure_reason}
-                        </div>
-                      )}
+                          {transfer.note && (
+                          <div className="p-2 bg-blue-50 border border-blue-200 rounded text-blue-800 text-xs">
+                            <strong>ملاحظة:</strong> {transfer.note}
+                          </div>
+                        )}
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(transfer.status)}
-                    {transfer.status === 'pending' && (
-                      <div className="flex gap-1">
-                        <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                          تأكيد
-                        </Button>
-                        <Button size="sm" variant="destructive">
-                          إلغاء
-                        </Button>
-                      </div>
-                    )}
-                    <Button variant="outline" size="sm">
-                      عرض التفاصيل
-                    </Button>
-                  </div>
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(transfer.status)}
+                      <Button variant="outline" size="sm">
+                        عرض التفاصيل
+                      </Button>
+                    </div>
                 </div>
               </div>
             ))}
