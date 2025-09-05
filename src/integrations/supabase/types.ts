@@ -92,6 +92,72 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_ledger: {
+        Row: {
+          created_at: string
+          currency: string | null
+          fee_amount: number
+          fee_fixed: number | null
+          fee_percentage: number | null
+          id: string
+          original_amount: number
+          transaction_id: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          fee_amount: number
+          fee_fixed?: number | null
+          fee_percentage?: number | null
+          id?: string
+          original_amount: number
+          transaction_id?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          fee_amount?: number
+          fee_fixed?: number | null
+          fee_percentage?: number | null
+          id?: string
+          original_amount?: number
+          transaction_id?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -372,6 +438,10 @@ export type Database = {
         Args: { _admin_id: string; _notes?: string; _withdrawal_id: string }
         Returns: undefined
       }
+      calculate_fee: {
+        Args: { _amount: number; _fee_config: Json }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -393,6 +463,16 @@ export type Database = {
       }
       recalculate_user_balance: {
         Args: { _user_id: string }
+        Returns: undefined
+      }
+      record_platform_revenue: {
+        Args: {
+          _fee_info: Json
+          _original_amount: number
+          _transaction_id: string
+          _transaction_type: string
+          _user_id: string
+        }
         Returns: undefined
       }
       redeem_gift_card: {
