@@ -6,10 +6,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { AlertCircle, CheckCircle, Clock, Eye, Shield, Users, XCircle, User, Phone, Calendar, FileText, ArrowLeft } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, Eye, Shield, Users, XCircle, User, Phone, Calendar, FileText, ArrowLeft, Search, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function IdentityVerificationPage() {
@@ -20,6 +21,8 @@ export default function IdentityVerificationPage() {
   const [selectedRequest, setSelectedRequest] = React.useState<any>(null);
   const [rejectionReason, setRejectionReason] = React.useState('');
   const [processing, setProcessing] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState('all');
 
   React.useEffect(() => {
     if (!rolesLoading && !isAdmin) {
@@ -202,6 +205,18 @@ export default function IdentityVerificationPage() {
   const pendingRequests = requests.filter(req => req.status === 'pending');
   const approvedRequests = requests.filter(req => req.status === 'approved').length;
   const rejectedRequests = requests.filter(req => req.status === 'rejected').length;
+
+  // Filter requests based on search and status
+  const filteredRequests = requests.filter(request => {
+    const matchesSearch = 
+      request.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.national_id.includes(searchTerm) ||
+      request.profiles?.phone?.includes(searchTerm);
+    
+    const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="p-6 space-y-6">
@@ -427,7 +442,306 @@ export default function IdentityVerificationPage() {
         </div>
       )}
 
-      {/* All Requests History */}
+      {/* All Verification Requests Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                جميع طلبات التحقق ({requests.length})
+              </CardTitle>
+              <CardDescription>
+                عرض جميع طلبات التحقق من الهوية وحالتها
+              </CardDescription>
+            </div>
+            <Badge variant="outline" className="text-sm">
+              {filteredRequests.length} من {requests.length}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Search and Filter Section */}
+          <div className="flex gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="البحث بالاسم، رقم الهوية، أو رقم الهاتف..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-10"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-input rounded-md bg-background min-w-[150px]"
+            >
+              <option value="all">جميع الحالات</option>
+              <option value="pending">قيد المراجعة</option>
+              <option value="approved">مقبول</option>
+              <option value="rejected">مرفوض</option>
+            </select>
+          </div>
+
+          {/* Requests List */}
+          <div className="space-y-4">
+            {filteredRequests.map((request) => (
+              <div key={request.id} className={`border rounded-lg p-4 ${
+                request.status === 'pending' ? 'border-l-4 border-l-yellow-500' :
+                request.status === 'approved' ? 'border-l-4 border-l-green-500' :
+                'border-l-4 border-l-red-500'
+              }`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center text-white font-bold">
+                      {request.profiles?.full_name?.charAt(0) || 'M'}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">
+                        {request.profiles?.full_name || 'اسم غير محدد'}
+                      </h3>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <FileText className="h-3 w-3" />
+                          {request.national_id}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          {request.profiles?.phone || 'غير محدد'}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {formatDate(request.submitted_at)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {getStatusBadge(request.status)}
+                </div>
+
+                {/* Additional Info for Non-Pending Requests */}
+                {request.status !== 'pending' && (
+                  <div className="mt-3 p-3 bg-muted/30 rounded-lg">
+                    <div className="grid gap-2 text-sm">
+                      {request.reviewed_at && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">تاريخ المراجعة:</span>
+                          <span className="font-medium">{formatDate(request.reviewed_at)}</span>
+                        </div>
+                      )}
+                      {request.status === 'rejected' && request.rejection_reason && (
+                        <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-800 text-xs">
+                          <strong>سبب الرفض:</strong> {request.rejection_reason}
+                        </div>
+                      )}
+                      {request.status === 'approved' && (
+                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-800 text-xs">
+                          <strong>ملاحظة:</strong> تم قبول الطلب وتفعيل الحساب بنجاح
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 mt-4">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Eye className="w-4 h-4 mr-2" />
+                        عرض التفاصيل
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>تفاصيل طلب التحقق</DialogTitle>
+                        <DialogDescription>
+                          معلومات مفصلة لطلب التحقق من الهوية
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-6">
+                        {/* User Information */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <h4 className="font-medium mb-2">معلومات المستخدم</h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">الاسم في الحساب:</span>
+                                <span className="font-medium">{request.profiles?.full_name || 'غير محدد'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">رقم الهاتف:</span>
+                                <span className="font-medium">{request.profiles?.phone || 'غير محدد'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">تاريخ الطلب:</span>
+                                <span className="font-medium">{formatDate(request.submitted_at)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">الحالة:</span>
+                                {getStatusBadge(request.status)}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <h4 className="font-medium mb-2">معلومات البطاقة</h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">رقم الهوية:</span>
+                                <span className="font-medium">{request.national_id}</span>
+                              </div>
+                              {request.full_name_on_id && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">الاسم في البطاقة:</span>
+                                  <span className={`font-medium ${
+                                    request.full_name_on_id === request.profiles?.full_name 
+                                      ? 'text-green-600' 
+                                      : 'text-red-600'
+                                  }`}>
+                                    {request.full_name_on_id}
+                                  </span>
+                                </div>
+                              )}
+                              {request.date_of_birth && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">تاريخ الميلاد:</span>
+                                  <span className="font-medium">{new Date(request.date_of_birth).toLocaleDateString('ar-DZ')}</span>
+                                </div>
+                              )}
+                              {request.place_of_birth && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">مكان الميلاد:</span>
+                                  <span className="font-medium">{request.place_of_birth}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {request.address && (
+                          <div>
+                            <h4 className="font-medium mb-2">العنوان</h4>
+                            <p className="text-sm bg-muted/30 p-3 rounded">{request.address}</p>
+                          </div>
+                        )}
+
+                        {/* Document Images */}
+                        <div>
+                          <h4 className="font-medium mb-4">صور المستندات</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {request.national_id_front_image && (
+                              <div>
+                                <p className="text-sm font-medium text-muted-foreground mb-2">الوجه الأمامي للهوية</p>
+                                <img 
+                                  src={getImageUrl(request.national_id_front_image) || ''} 
+                                  alt="الوجه الأمامي للهوية"
+                                  className="w-full max-h-64 object-contain border rounded-md bg-gray-50 cursor-pointer"
+                                  onClick={() => window.open(getImageUrl(request.national_id_front_image) || '', '_blank')}
+                                  onError={(e) => handleImageError(e, request.national_id_front_image)}
+                                />
+                              </div>
+                            )}
+                            
+                            {request.national_id_back_image && (
+                              <div>
+                                <p className="text-sm font-medium text-muted-foreground mb-2">الوجه الخلفي للهوية</p>
+                                <img 
+                                  src={getImageUrl(request.national_id_back_image) || ''} 
+                                  alt="الوجه الخلفي للهوية"
+                                  className="w-full max-h-64 object-contain border rounded-md bg-gray-50 cursor-pointer"
+                                  onClick={() => window.open(getImageUrl(request.national_id_back_image) || '', '_blank')}
+                                  onError={(e) => handleImageError(e, request.national_id_back_image)}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* Action buttons for pending requests */}
+                  {request.status === 'pending' && (
+                    <>
+                      <Button
+                        onClick={() => handleApprove(request.id)}
+                        disabled={processing}
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        قبول
+                      </Button>
+                      
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setSelectedRequest(request)}
+                          >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            رفض
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>رفض طلب التحقق</DialogTitle>
+                            <DialogDescription>
+                              يرجى إدخال سبب رفض طلب التحقق من الهوية لـ {request.profiles?.full_name}
+                            </DialogDescription>
+                          </DialogHeader>
+                          <Textarea
+                            placeholder="سبب الرفض (مثال: صورة الهوية غير واضحة، بيانات غير مطابقة، إلخ)"
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                            rows={4}
+                          />
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setRejectionReason('');
+                                setSelectedRequest(null);
+                              }}
+                            >
+                              إلغاء
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={() => selectedRequest && handleReject(selectedRequest.id, rejectionReason)}
+                              disabled={processing || !rejectionReason.trim()}
+                            >
+                              تأكيد الرفض
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {filteredRequests.length === 0 && (
+            <div className="text-center py-8">
+              <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">لا توجد طلبات</h3>
+              <p className="text-muted-foreground">
+                {searchTerm || statusFilter !== 'all' 
+                  ? 'لم يتم العثور على طلبات تطابق معايير البحث'
+                  : 'لم يتم تقديم أي طلبات تحقق بعد'
+                }
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Fallback for no requests */}
       {requests.length === 0 && !requestsLoading && (
         <Card>
           <CardContent className="text-center py-8">
