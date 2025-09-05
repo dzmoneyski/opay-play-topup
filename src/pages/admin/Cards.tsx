@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import QRCode from 'qrcode';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { 
   Gift, 
   Search, 
@@ -23,7 +26,8 @@ import {
   Eye,
   EyeOff,
   Trash2,
-  Edit
+  Edit,
+  FileText
 } from 'lucide-react';
 
 interface GiftCard {
@@ -44,12 +48,13 @@ export default function CardsPage() {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [showCodes, setShowCodes] = useState<Record<string, boolean>>({});
+  const [qrCodes, setQrCodes] = useState<Record<string, string>>({});
   
   // Generation form state
   const [amount, setAmount] = useState<number>(1000);
   const [quantity, setQuantity] = useState<number>(10);
-  const [prefix, setPrefix] = useState<string>('');
   const [generating, setGenerating] = useState(false);
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   const { toast } = useToast();
 
@@ -76,21 +81,16 @@ export default function CardsPage() {
     }
   };
 
-  // Generate secure random numeric card code in format XXXX-XXXX-XXXX (12 digits)
+  // Generate secure random card code for QR
   const generateSecureCardCode = () => {
-    const bytes = new Uint8Array(12);
+    const bytes = new Uint8Array(16);
     crypto.getRandomValues(bytes);
-
-    // Map each byte to a digit 0-9 and build 12-digit string
-    const digits = Array.from(bytes)
-      .map((b) => (b % 10).toString())
-      .join('');
-
-    const part1 = digits.slice(0, 4);
-    const part2 = digits.slice(4, 8);
-    const part3 = digits.slice(8, 12);
-
-    return `${part1}-${part2}-${part3}`;
+    
+    // Create a secure random string for QR code
+    return Array.from(bytes)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('')
+      .toUpperCase();
   };
 
   // Check if card code is unique
@@ -170,7 +170,6 @@ export default function CardsPage() {
       setShowGenerateDialog(false);
       setAmount(1000);
       setQuantity(10);
-      setPrefix('');
       fetchGiftCards();
     } catch (error) {
       console.error('Error generating gift cards:', error);
@@ -181,6 +180,128 @@ export default function CardsPage() {
       });
     } finally {
       setGenerating(false);
+    }
+  };
+
+  // Generate QR code for a card
+  const generateQRCode = async (cardCode: string): Promise<string> => {
+    try {
+      const qrDataURL = await QRCode.toDataURL(cardCode, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      return qrDataURL;
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      return '';
+    }
+  };
+
+  // Load QR codes for cards
+  const loadQRCodes = async (cards: GiftCard[]) => {
+    const newQrCodes: Record<string, string> = {};
+    
+    for (const card of cards) {
+      const qrCode = await generateQRCode(card.card_code);
+      newQrCodes[card.id] = qrCode;
+    }
+    
+    setQrCodes(prev => ({ ...prev, ...newQrCodes }));
+  };
+
+  // Export unused gift cards to PDF
+  const exportToPDF = async () => {
+    setExportingPDF(true);
+    try {
+      const unusedCards = giftCards.filter(card => !card.is_used);
+      
+      if (unusedCards.length === 0) {
+        toast({
+          title: "لا توجد بطاقات للتصدير",
+          description: "جميع البطاقات مستخدمة أو لا توجد بطاقات",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const cardsPerPage = 6; // 2x3 grid
+      const cardWidth = 85;
+      const cardHeight = 54; // Standard credit card size
+      const marginX = 10;
+      const marginY = 20;
+      const spacingX = 10;
+      const spacingY = 10;
+
+      for (let i = 0; i < unusedCards.length; i++) {
+        const card = unusedCards[i];
+        const pageIndex = Math.floor(i / cardsPerPage);
+        const cardIndex = i % cardsPerPage;
+        
+        // Add new page if needed
+        if (cardIndex === 0 && i > 0) {
+          pdf.addPage();
+        }
+        
+        // Calculate position
+        const col = cardIndex % 2;
+        const row = Math.floor(cardIndex / 2);
+        const x = marginX + col * (cardWidth + spacingX);
+        const y = marginY + row * (cardHeight + spacingY);
+        
+        // Draw card border
+        pdf.setDrawColor(0);
+        pdf.setLineWidth(0.5);
+        pdf.rect(x, y, cardWidth, cardHeight);
+        
+        // Add title
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('بطاقة شحن', x + cardWidth/2, y + 10, { align: 'center' });
+        
+        // Add QR code
+        const qrCode = qrCodes[card.id] || await generateQRCode(card.card_code);
+        if (qrCode) {
+          try {
+            pdf.addImage(qrCode, 'PNG', x + 10, y + 15, 25, 25);
+          } catch (error) {
+            console.warn('Failed to add QR code to PDF:', error);
+          }
+        }
+        
+        // Add card details
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`القيمة: ${formatCurrency(card.amount)}`, x + 40, y + 25);
+        pdf.text(`الكود: ${card.card_code.slice(0, 8)}...`, x + 40, y + 30);
+        pdf.text(`تاريخ الإنشاء: ${formatDate(card.created_at).split(' ')[0]}`, x + 40, y + 35);
+        
+        // Add footer
+        pdf.setFontSize(8);
+        pdf.text('امسح رمز QR لاستخدام البطاقة', x + cardWidth/2, y + cardHeight - 5, { align: 'center' });
+      }
+
+      // Save PDF
+      const fileName = `gift_cards_${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+      
+      toast({
+        title: "تم التصدير بنجاح",
+        description: `تم تصدير ${unusedCards.length} بطاقة إلى PDF`,
+      });
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      toast({
+        title: "خطأ في التصدير",
+        description: "فشل في تصدير البطاقات إلى PDF",
+        variant: "destructive",
+      });
+    } finally {
+      setExportingPDF(false);
     }
   };
 
@@ -265,6 +386,12 @@ export default function CardsPage() {
     fetchGiftCards();
   }, []);
 
+  React.useEffect(() => {
+    if (giftCards.length > 0) {
+      loadQRCodes(giftCards);
+    }
+  }, [giftCards]);
+
   const toggleCodeVisibility = (cardId: string) => {
     setShowCodes(prev => ({
       ...prev,
@@ -317,7 +444,15 @@ export default function CardsPage() {
         <div className="flex gap-2">
           <Button onClick={exportGiftCards} variant="outline">
             <Download className="w-4 h-4 mr-2" />
-            تصدير
+            تصدير CSV
+          </Button>
+          <Button 
+            onClick={exportToPDF} 
+            variant="outline"
+            disabled={exportingPDF || giftCards.filter(c => !c.is_used).length === 0}
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            {exportingPDF ? 'جاري التصدير...' : 'تصدير PDF'}
           </Button>
           <Dialog open={showGenerateDialog} onOpenChange={setShowGenerateDialog}>
             <DialogTrigger asChild>
@@ -353,15 +488,6 @@ export default function CardsPage() {
                     onChange={(e) => setQuantity(Number(e.target.value))}
                     min="1"
                     max="100"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="prefix">بادئة اختيارية</Label>
-                  <Input
-                    id="prefix"
-                    value={prefix}
-                    onChange={(e) => setPrefix(e.target.value)}
-                    placeholder="مثال: PROMO"
                   />
                 </div>
                 <Button 
@@ -475,44 +601,57 @@ export default function CardsPage() {
                 <div key={card.id} className="border rounded-lg p-4 hover:bg-muted/20 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-4 mb-2">
+                      <div className="flex items-start gap-4 mb-2">
                         <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center text-white">
                           <Gift className="h-5 w-5" />
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-sm">
-                              {showCodes[card.id] ? card.card_code : '••••••••••••'}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => toggleCodeVisibility(card.id)}
-                              className="h-6 w-6 p-0"
-                            >
-                              {showCodes[card.id] ? (
-                                <EyeOff className="h-3 w-3" />
-                              ) : (
-                                <Eye className="h-3 w-3" />
+                        <div className="flex items-start gap-4 flex-1">
+                          {qrCodes[card.id] ? (
+                            <div className="w-16 h-16 border rounded">
+                              <img 
+                                src={qrCodes[card.id]} 
+                                alt="QR Code" 
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-16 h-16 border rounded bg-muted animate-pulse"></div>
+                          )}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="font-mono text-xs">
+                                {showCodes[card.id] ? card.card_code : '••••••••••••••••'}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleCodeVisibility(card.id)}
+                                className="h-6 w-6 p-0"
+                              >
+                                {showCodes[card.id] ? (
+                                  <EyeOff className="h-3 w-3" />
+                                ) : (
+                                  <Eye className="h-3 w-3" />
+                                )}
+                              </Button>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span className="font-semibold text-foreground">
+                                {formatCurrency(card.amount)}
+                              </span>
+                              <span>•</span>
+                              <span>
+                                {formatDate(card.created_at)}
+                              </span>
+                              {card.used_at && (
+                                <>
+                                  <span>•</span>
+                                  <span>
+                                    استُخدمت: {formatDate(card.used_at)}
+                                  </span>
+                                </>
                               )}
-                            </Button>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="font-semibold text-foreground">
-                              {formatCurrency(card.amount)}
-                            </span>
-                            <span>•</span>
-                            <span>
-                              {formatDate(card.created_at)}
-                            </span>
-                            {card.used_at && (
-                              <>
-                                <span>•</span>
-                                <span>
-                                  استُخدمت: {formatDate(card.used_at)}
-                                </span>
-                              </>
-                            )}
+                            </div>
                           </div>
                         </div>
                       </div>
