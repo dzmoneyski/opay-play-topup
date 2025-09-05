@@ -349,6 +349,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_adjust_balance: {
+        Args: { _amount: number; _note?: string; _target_user: string }
+        Returns: Json
+      }
       approve_deposit: {
         Args:
           | {

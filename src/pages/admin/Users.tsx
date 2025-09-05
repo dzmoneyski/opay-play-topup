@@ -67,57 +67,23 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
 
   const handleBalanceAction = async () => {
     if (!balanceAction.amount || Number(balanceAction.amount) <= 0 || !balanceAction.type) return;
-    
+
     setProcessing(true);
     try {
       const amount = Number(balanceAction.amount);
-
-      // Fetch latest balance to avoid using stale value
-      const { data: current, error: balErr } = await supabase
-        .from('user_balances')
-        .select('balance')
-        .eq('user_id', user.user_id)
-        .maybeSingle();
-      if (balErr) throw balErr;
-
-      const currentBalance = Number(current?.balance) || 0;
       const delta = balanceAction.type === 'add' ? amount : -amount;
-      const newBalance = currentBalance + delta;
 
-      if (newBalance < 0) {
-        throw new Error('لا يمكن أن يصبح الرصيد سالبًا');
-      }
-
-      // Upsert using unique key on user_id to avoid duplicate key errors
-      const { error: upsertError } = await supabase
-        .from('user_balances')
-        .upsert(
-          {
-            user_id: user.user_id,
-            balance: newBalance,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'user_id' }
-        );
-
-      if (upsertError) throw upsertError;
-
-      // Optional: record an admin adjustment as an approved deposit for traceability when adding
-      if (balanceAction.type === 'add') {
-        await supabase.from('deposits').insert({
-          user_id: user.user_id,
-          amount: amount,
-          payment_method: 'admin_adjustment',
-          status: 'approved',
-          admin_notes: `تعديل رصيد من الإدارة: ${balanceAction.note || ''}`,
-          processed_at: new Date().toISOString(),
-        });
-      }
+      const { error } = await supabase.rpc('admin_adjust_balance', {
+        _target_user: user.user_id,
+        _amount: delta,
+        _note: balanceAction.note || null,
+      });
+      if (error) throw error;
 
       setBalanceAction({ type: '', amount: '', note: '' });
       onUpdate();
     } catch (error) {
-      console.error('Error updating balance:', error);
+      console.error('Error adjusting balance:', error);
     } finally {
       setProcessing(false);
     }
