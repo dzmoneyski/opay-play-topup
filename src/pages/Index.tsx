@@ -10,8 +10,7 @@ import { useBalance } from "@/hooks/useBalance";
 import { useToast } from "@/hooks/use-toast";
 import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import { QRScanner } from "@/components/QRScanner";
-import { QRCodeGenerator } from "@/components/QRCodeGenerator";
-import { 
+import {
   Wallet, 
   CreditCard, 
   Send, 
@@ -48,7 +47,6 @@ const Index = () => {
   const navigate = useNavigate();
   const [showBalance, setShowBalance] = React.useState(true);
   const [showQRScanner, setShowQRScanner] = React.useState(false);
-  const [showQRGenerator, setShowQRGenerator] = React.useState(false);
 
   const handleServiceClick = (service: any) => {
     if (service.action === 'disabled') {
@@ -296,7 +294,7 @@ const Index = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Button
-                  onClick={() => setShowQRGenerator(true)}
+                  onClick={() => setShowQRScanner(true)}
                   variant="ghost"
                   size="sm"
                   className="text-white/70 hover:text-white hover:bg-white/10 border border-white/20"
@@ -533,12 +531,6 @@ const Index = () => {
       <QRScanner 
         open={showQRScanner}
         onOpenChange={setShowQRScanner}
-      />
-
-      {/* QR Code Generator Modal */}
-      <QRCodeGenerator 
-        open={showQRGenerator}
-        onOpenChange={setShowQRGenerator}
       />
     </div>
   );

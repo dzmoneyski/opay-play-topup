@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,8 +7,10 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useTransfers } from '@/hooks/useTransfers';
 import { useProfile } from '@/hooks/useProfile';
+import { useAuth } from '@/hooks/useAuth';
 import { Separator } from '@/components/ui/separator';
-import { Camera, X, Send, User, Phone } from 'lucide-react';
+import { Camera, X, Send, User, Phone, QrCode } from 'lucide-react';
+import QRCode from 'qrcode';
 
 interface QRScannerProps {
   open: boolean;
@@ -22,13 +24,15 @@ interface ScannedUser {
 }
 
 export const QRScanner: React.FC<QRScannerProps> = ({ open, onOpenChange }) => {
-  const [step, setStep] = useState<'scan' | 'confirm'>('scan');
+  const [step, setStep] = useState<'choose' | 'scan' | 'confirm' | 'show-qr'>('choose');
   const [scannedUser, setScannedUser] = useState<ScannedUser | null>(null);
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const { processTransfer } = useTransfers();
   const { profile } = useProfile();
+  const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -87,6 +91,47 @@ export const QRScanner: React.FC<QRScannerProps> = ({ open, onOpenChange }) => {
     }
   };
 
+  const generateQRCode = async () => {
+    if (!profile || !user) return;
+
+    try {
+      const qrData = {
+        type: 'opay_user',
+        userId: user.id,
+        fullName: profile.full_name || 'مستخدم OpaY',
+        phone: profile.phone || '',
+        timestamp: Date.now()
+      };
+
+      const qrString = JSON.stringify(qrData);
+      const url = await QRCode.toDataURL(qrString, {
+        errorCorrectionLevel: 'M',
+        type: 'image/png',
+        margin: 1,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF',
+        },
+        width: 256,
+      });
+
+      setQrCodeUrl(url);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      toast({
+        title: "خطأ في إنشاء الكود",
+        description: "لم نتمكن من إنشاء QR كود",
+        variant: "destructive"
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (step === 'show-qr' && profile && user) {
+      generateQRCode();
+    }
+  }, [step, profile, user]);
+
   const handleTransfer = async () => {
     if (!scannedUser || !amount || parseFloat(amount) <= 0) {
       toast({
@@ -131,7 +176,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ open, onOpenChange }) => {
   };
 
   const resetForm = () => {
-    setStep('scan');
+    setStep('choose');
     setScannedUser(null);
     setAmount('');
     setNote('');
@@ -148,11 +193,85 @@ export const QRScanner: React.FC<QRScannerProps> = ({ open, onOpenChange }) => {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center">
-            {step === 'scan' ? 'مسح QR كود' : 'تأكيد التحويل'}
+            {step === 'choose' && 'مسح QR كود'}
+            {step === 'scan' && 'مسح QR كود'}
+            {step === 'confirm' && 'تأكيد التحويل'}
+            {step === 'show-qr' && 'QR كود الخاص بك'}
           </DialogTitle>
         </DialogHeader>
 
-        {step === 'scan' ? (
+        {step === 'choose' ? (
+          <div className="space-y-4">
+            <div className="text-center p-6">
+              <p className="text-lg font-medium mb-6">اختر العملية المطلوبة</p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <Button
+                  onClick={() => setStep('scan')}
+                  className="flex-col h-24 text-lg font-medium bg-primary hover:bg-primary/90"
+                >
+                  <Camera className="h-8 w-8 mb-2" />
+                  إرسال
+                </Button>
+                
+                <Button
+                  onClick={() => setStep('show-qr')}
+                  variant="outline"
+                  className="flex-col h-24 text-lg font-medium border-2"
+                >
+                  <QrCode className="h-8 w-8 mb-2" />
+                  استقبال
+                </Button>
+              </div>
+              
+              <p className="text-sm text-muted-foreground mt-4">
+                إرسال: امسح QR كود لإرسال الأموال<br/>
+                استقبال: اعرض QR كود الخاص بك للآخرين
+              </p>
+            </div>
+          </div>
+        ) : step === 'show-qr' ? (
+          <div className="space-y-4">
+            <div className="text-center p-6">
+              {qrCodeUrl ? (
+                <div className="space-y-4">
+                  <img 
+                    src={qrCodeUrl} 
+                    alt="QR Code"
+                    className="mx-auto rounded-lg border w-48 h-48"
+                  />
+                  
+                  <div className="space-y-2">
+                    <p className="font-medium">{profile?.full_name || 'مستخدم OpaY'}</p>
+                    <div className="flex items-center justify-center space-x-2 space-x-reverse text-sm text-muted-foreground">
+                      <Phone className="h-4 w-4" />
+                      <span>{profile?.phone || 'رقم الهاتف'}</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-48 h-48 mx-auto mb-4 bg-muted rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <QrCode className="h-16 w-16 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">جاري إنشاء QR كود...</p>
+                  </div>
+                </div>
+              )}
+              
+              <p className="text-sm text-muted-foreground mt-4">
+                اطلب من الآخرين مسح هذا الكود لتحويل الأموال إليك
+              </p>
+            </div>
+            
+            <Button
+              onClick={() => setStep('choose')}
+              variant="outline"
+              className="w-full"
+            >
+              رجوع
+            </Button>
+          </div>
+        ) : step === 'scan' ? (
           <div className="space-y-4">
             <div className="text-center p-8 border-2 border-dashed border-muted rounded-lg">
               <Camera className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -204,6 +323,14 @@ export const QRScanner: React.FC<QRScannerProps> = ({ open, onOpenChange }) => {
                 }}
               />
             </div>
+            
+            <Button
+              onClick={() => setStep('choose')}
+              variant="outline"
+              className="w-full"
+            >
+              رجوع
+            </Button>
           </div>
         ) : (
           <div className="space-y-4">
