@@ -9,8 +9,9 @@ import { useTransfers } from '@/hooks/useTransfers';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { Separator } from '@/components/ui/separator';
-import { Camera, X, Send, User, Phone, QrCode } from 'lucide-react';
+import { Camera, X, Send, User, Phone, QrCode, StopCircle } from 'lucide-react';
 import QRCode from 'qrcode';
+import { BrowserMultiFormatReader } from '@zxing/library';
 
 interface QRScannerProps {
   open: boolean;
@@ -24,17 +25,21 @@ interface ScannedUser {
 }
 
 export const QRScanner: React.FC<QRScannerProps> = ({ open, onOpenChange }) => {
-  const [step, setStep] = useState<'choose' | 'scan' | 'confirm' | 'show-qr'>('choose');
+  const [step, setStep] = useState<'choose' | 'scan' | 'confirm' | 'show-qr' | 'camera'>('choose');
   const [scannedUser, setScannedUser] = useState<ScannedUser | null>(null);
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [isScanning, setIsScanning] = useState(false);
   const { processTransfer } = useTransfers();
   const { profile } = useProfile();
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const codeReader = useRef<BrowserMultiFormatReader | null>(null);
 
   const handleQRResult = (data: string) => {
     try {
@@ -175,13 +180,87 @@ export const QRScanner: React.FC<QRScannerProps> = ({ open, onOpenChange }) => {
     }
   };
 
+  const startCamera = async () => {
+    try {
+      setIsScanning(true);
+      setStep('camera');
+      
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: 'environment', // Use rear camera
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+      
+      streamRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        
+        // Initialize QR code reader
+        codeReader.current = new BrowserMultiFormatReader();
+        
+        // Start scanning
+        try {
+          const result = await codeReader.current.decodeFromVideoDevice(
+            null, // Use default device
+            videoRef.current,
+            (result, error) => {
+              if (result) {
+                handleQRResult(result.getText());
+                stopCamera();
+              }
+            }
+          );
+        } catch (err) {
+          console.error('QR scanning error:', err);
+        }
+      }
+    } catch (error) {
+      console.error('Camera access error:', error);
+      toast({
+        title: "خطأ في الوصول للكاميرا",
+        description: "لم نتمكن من الوصول للكاميرا. يرجى التأكد من الأذونات.",
+        variant: "destructive"
+      });
+      setStep('scan');
+      setIsScanning(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    
+    if (codeReader.current) {
+      codeReader.current.reset();
+    }
+    
+    setIsScanning(false);
+  };
+
   const resetForm = () => {
+    stopCamera();
     setStep('choose');
     setScannedUser(null);
     setAmount('');
     setNote('');
     setIsProcessing(false);
   };
+
+  // Cleanup on component unmount or dialog close
+  useEffect(() => {
+    if (!open) {
+      stopCamera();
+    }
+    return () => {
+      stopCamera();
+    };
+  }, [open]);
 
   const handleClose = () => {
     resetForm();
@@ -195,6 +274,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ open, onOpenChange }) => {
           <DialogTitle className="text-center">
             {step === 'choose' && 'مسح QR كود'}
             {step === 'scan' && 'مسح QR كود'}
+            {step === 'camera' && 'امسح QR كود'}
             {step === 'confirm' && 'تأكيد التحويل'}
             {step === 'show-qr' && 'QR كود الخاص بك'}
           </DialogTitle>
@@ -207,7 +287,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ open, onOpenChange }) => {
               
               <div className="grid grid-cols-2 gap-4">
                 <Button
-                  onClick={() => setStep('scan')}
+                  onClick={startCamera}
                   className="flex-col h-24 text-lg font-medium bg-primary hover:bg-primary/90"
                 >
                   <Camera className="h-8 w-8 mb-2" />
@@ -270,6 +350,45 @@ export const QRScanner: React.FC<QRScannerProps> = ({ open, onOpenChange }) => {
             >
               رجوع
             </Button>
+          </div>
+        ) : step === 'camera' ? (
+          <div className="space-y-4">
+            <div className="relative bg-black rounded-lg overflow-hidden">
+              <video
+                ref={videoRef}
+                className="w-full h-64 object-cover"
+                playsInline
+                muted
+              />
+              
+              {/* Scanning overlay */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-48 h-48 border-2 border-white/50 rounded-lg relative">
+                  <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-primary rounded-tl-lg"></div>
+                  <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-primary rounded-tr-lg"></div>
+                  <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-primary rounded-bl-lg"></div>
+                  <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-primary rounded-br-lg"></div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground mb-4">
+                وجّه الكاميرا نحو QR كود المستلم
+              </p>
+              
+              <Button
+                onClick={() => {
+                  stopCamera();
+                  setStep('choose');
+                }}
+                variant="outline"
+                className="w-full"
+              >
+                <StopCircle className="h-4 w-4 ml-2" />
+                إيقاف الكاميرا
+              </Button>
+            </div>
           </div>
         ) : step === 'scan' ? (
           <div className="space-y-4">
