@@ -306,14 +306,15 @@ export default function CardsPage() {
 
   // Calculate pricing based on card value
   const calculatePricing = (cardValue: number) => {
-    // Merchant cost (what app sells to merchant) - 3% discount from face value
-    const merchantCost = cardValue * 0.97;
-    // Customer price (what merchant sells to customer) - face value + 2% markup
-    const customerPrice = cardValue * 1.02;
+    // Company sells to merchant: face value + commission (3%)
+    const merchantCost = cardValue + (cardValue * 0.03);
+    // Merchant sells to customer: face value + merchant commission (5%)
+    const customerPrice = cardValue + (cardValue * 0.05);
     
     return {
       merchantCost: Math.round(merchantCost),
-      customerPrice: Math.round(customerPrice)
+      customerPrice: Math.round(customerPrice),
+      faceValue: cardValue // User gets full face value when redeeming
     };
   };
 
