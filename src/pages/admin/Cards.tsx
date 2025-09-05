@@ -76,6 +76,38 @@ export default function CardsPage() {
     }
   };
 
+  // Generate secure random card code
+  const generateSecureCardCode = () => {
+    // Generate cryptographically secure random bytes
+    const array = new Uint8Array(16);
+    crypto.getRandomValues(array);
+    
+    // Convert to base36 (0-9, a-z) for readability
+    const randomStr = Array.from(array)
+      .map(b => (b % 36).toString(36))
+      .join('')
+      .toUpperCase();
+    
+    // Format: PREFIX-XXXXXXXXXXXX-XXXX
+    const part1 = randomStr.slice(0, 12);
+    const part2 = randomStr.slice(12, 16);
+    
+    return prefix 
+      ? `${prefix.toUpperCase()}-${part1}-${part2}`
+      : `GC-${part1}-${part2}`;
+  };
+
+  // Check if card code is unique
+  const isCodeUnique = async (code: string) => {
+    const { data, error } = await supabase
+      .from('gift_cards')
+      .select('id')
+      .eq('card_code', code)
+      .single();
+    
+    return !data; // Returns true if no existing card found
+  };
+
   // Generate gift cards
   const generateGiftCards = async () => {
     if (amount <= 0 || quantity <= 0) {
@@ -87,17 +119,40 @@ export default function CardsPage() {
       return;
     }
 
+    if (quantity > 100) {
+      toast({
+        title: "خطأ",
+        description: "لا يمكن إنشاء أكثر من 100 بطاقة في المرة الواحدة",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setGenerating(true);
     try {
       const cards = [];
-      const currentYear = new Date().getFullYear();
-      const timestamp = Date.now().toString().slice(-6);
+      const generatedCodes = new Set<string>();
       
-      for (let i = 1; i <= quantity; i++) {
-        const cardCode = prefix 
-          ? `${prefix}-${currentYear}-${timestamp}-${i.toString().padStart(3, '0')}`
-          : `${amount}-${currentYear}-${timestamp}-${i.toString().padStart(3, '0')}`;
+      // Generate unique codes
+      for (let i = 0; i < quantity; i++) {
+        let cardCode: string;
+        let attempts = 0;
+        const maxAttempts = 10;
         
+        // Ensure uniqueness (both locally and in database)
+        do {
+          cardCode = generateSecureCardCode();
+          attempts++;
+          
+          if (attempts > maxAttempts) {
+            throw new Error('فشل في إنشاء كود فريد بعد محاولات متعددة');
+          }
+        } while (
+          generatedCodes.has(cardCode) || 
+          !(await isCodeUnique(cardCode))
+        );
+        
+        generatedCodes.add(cardCode);
         cards.push({
           card_code: cardCode,
           amount: amount,
