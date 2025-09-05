@@ -496,6 +496,10 @@ export type Database = {
         Args: { _admin_id: string; _reason: string; _withdrawal_id: string }
         Returns: undefined
       }
+      validate_luhn_check_digit: {
+        Args: { _card_code: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user"
