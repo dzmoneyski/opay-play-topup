@@ -213,7 +213,113 @@ export default function CardsPage() {
     setQrCodes(prev => ({ ...prev, ...newQrCodes }));
   };
 
-  // Export unused gift cards to PDF
+  // Create professional card HTML for PDF export
+  const createCardHTML = (card: any) => {
+    const qrCode = qrCodes[card.id];
+    return `
+      <div style="
+        width: 340px;
+        height: 216px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 16px;
+        padding: 20px;
+        color: white;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        direction: rtl;
+        position: relative;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        overflow: hidden;
+      ">
+        <!-- Background pattern -->
+        <div style="
+          position: absolute;
+          top: -50px;
+          right: -50px;
+          width: 150px;
+          height: 150px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.1);
+        "></div>
+        <div style="
+          position: absolute;
+          bottom: -30px;
+          left: -30px;
+          width: 100px;
+          height: 100px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.05);
+        "></div>
+        
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div>
+            <h1 style="margin: 0; font-size: 24px; font-weight: bold;">OpaY</h1>
+            <p style="margin: 0; font-size: 14px; opacity: 0.9;">بطاقة شحن رقمية</p>
+          </div>
+          <div style="
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+          ">💳</div>
+        </div>
+        
+        <!-- Main content -->
+        <div style="display: flex; gap: 20px; align-items: center;">
+          <!-- QR Code -->
+          <div style="
+            background: white;
+            padding: 8px;
+            border-radius: 8px;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">
+            ${qrCode ? `<img src="${qrCode}" style="width: 64px; height: 64px;" />` : '<div style="width: 64px; height: 64px; background: #f0f0f0; border-radius: 4px;"></div>'}
+          </div>
+          
+          <!-- Card Info -->
+          <div style="flex: 1;">
+            <div style="margin-bottom: 12px;">
+              <p style="margin: 0; font-size: 12px; opacity: 0.8;">القيمة</p>
+              <p style="margin: 0; font-size: 28px; font-weight: bold;">${formatCurrency(card.amount)}</p>
+            </div>
+            
+            <div style="margin-bottom: 8px;">
+              <p style="margin: 0; font-size: 10px; opacity: 0.7;">رقم البطاقة</p>
+              <p style="margin: 0; font-size: 14px; font-family: 'Courier New', monospace; letter-spacing: 1px;">
+                ${card.card_code}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="
+          position: absolute;
+          bottom: 16px;
+          right: 20px;
+          left: 20px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 10px;
+          opacity: 0.8;
+        ">
+          <span>امسح رمز QR للاستخدام</span>
+          <span>${formatDate(card.created_at).split(' ')[0]}</span>
+        </div>
+      </div>
+    `;
+  };
+
+  // Export unused gift cards to PDF with professional design
   const exportToPDF = async () => {
     setExportingPDF(true);
     try {
@@ -229,69 +335,92 @@ export default function CardsPage() {
       }
 
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const cardsPerPage = 6; // 2x3 grid
-      const cardWidth = 85;
-      const cardHeight = 54; // Standard credit card size
+      const cardsPerPage = 4; // 2x2 grid for better quality
+      const cardWidth = 90; // Wider cards
+      const cardHeight = 57; // Taller cards
       const marginX = 10;
-      const marginY = 20;
+      const marginY = 15;
       const spacingX = 10;
-      const spacingY = 10;
+      const spacingY = 15;
 
+      // Add title page
+      pdf.setFontSize(24);
+      pdf.text('OpaY Gift Cards', 105, 30, { align: 'center' });
+      pdf.setFontSize(16);
+      pdf.text(`Total Cards: ${unusedCards.length}`, 105, 45, { align: 'center' });
+      pdf.text(`Generated: ${new Date().toLocaleDateString('ar-DZ')}`, 105, 60, { align: 'center' });
+      
       for (let i = 0; i < unusedCards.length; i++) {
         const card = unusedCards[i];
         const pageIndex = Math.floor(i / cardsPerPage);
         const cardIndex = i % cardsPerPage;
         
-        // Add new page if needed
-        if (cardIndex === 0 && i > 0) {
+        // Add new page if needed (first page after title, then every cardsPerPage)
+        if (i === 0 || cardIndex === 0) {
           pdf.addPage();
         }
         
-        // Calculate position
+        // Calculate position - 2x2 grid
         const col = cardIndex % 2;
         const row = Math.floor(cardIndex / 2);
         const x = marginX + col * (cardWidth + spacingX);
         const y = marginY + row * (cardHeight + spacingY);
         
-        // Draw card border
-        pdf.setDrawColor(0);
-        pdf.setLineWidth(0.5);
-        pdf.rect(x, y, cardWidth, cardHeight);
+        // Create temporary container for card HTML
+        const tempContainer = document.createElement('div');
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.top = '-9999px';
+        tempContainer.style.left = '-9999px';
+        tempContainer.innerHTML = createCardHTML(card);
+        document.body.appendChild(tempContainer);
         
-        // Add title
-        pdf.setFontSize(12);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('بطاقة شحن', x + cardWidth/2, y + 10, { align: 'center' });
-        
-        // Add QR code
-        const qrCode = qrCodes[card.id] || await generateQRCode(card.card_code);
-        if (qrCode) {
-          try {
-            pdf.addImage(qrCode, 'PNG', x + 10, y + 15, 25, 25);
-          } catch (error) {
-            console.warn('Failed to add QR code to PDF:', error);
-          }
+        try {
+          // Convert HTML to canvas
+          const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
+            width: 340,
+            height: 216,
+            scale: 2,
+            backgroundColor: null,
+            useCORS: true,
+            allowTaint: true
+          });
+          
+          // Add canvas to PDF
+          const imgData = canvas.toDataURL('image/png');
+          pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight, '', 'FAST');
+          
+        } catch (error) {
+          console.warn('Failed to render card:', error);
+          
+          // Fallback: simple text-based card
+          pdf.setDrawColor(100, 100, 100);
+          pdf.setLineWidth(0.5);
+          pdf.roundedRect(x, y, cardWidth, cardHeight, 3, 3);
+          
+          pdf.setFontSize(14);
+          pdf.text('OpaY Gift Card', x + cardWidth/2, y + 15, { align: 'center' });
+          
+          pdf.setFontSize(12);
+          pdf.text(`Value: ${formatCurrency(card.amount)}`, x + cardWidth/2, y + 25, { align: 'center' });
+          
+          pdf.setFontSize(10);
+          pdf.text(`Code: ${card.card_code}`, x + cardWidth/2, y + 35, { align: 'center' });
+          
+          pdf.setFontSize(8);
+          pdf.text(`Created: ${formatDate(card.created_at).split(' ')[0]}`, x + cardWidth/2, y + 45, { align: 'center' });
         }
         
-        // Add card details
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(`القيمة: ${formatCurrency(card.amount)}`, x + 40, y + 25);
-        pdf.text(`الكود: ${card.card_code.slice(0, 8)}...`, x + 40, y + 30);
-        pdf.text(`تاريخ الإنشاء: ${formatDate(card.created_at).split(' ')[0]}`, x + 40, y + 35);
-        
-        // Add footer
-        pdf.setFontSize(8);
-        pdf.text('امسح رمز QR لاستخدام البطاقة', x + cardWidth/2, y + cardHeight - 5, { align: 'center' });
+        // Clean up
+        document.body.removeChild(tempContainer);
       }
 
       // Save PDF
-      const fileName = `gift_cards_${new Date().toISOString().split('T')[0]}.pdf`;
+      const fileName = `opay_gift_cards_${new Date().toISOString().split('T')[0]}.pdf`;
       pdf.save(fileName);
       
       toast({
         title: "تم التصدير بنجاح",
-        description: `تم تصدير ${unusedCards.length} بطاقة إلى PDF`,
+        description: `تم تصدير ${unusedCards.length} بطاقة احترافية إلى PDF`,
       });
     } catch (error) {
       console.error('Error exporting to PDF:', error);
