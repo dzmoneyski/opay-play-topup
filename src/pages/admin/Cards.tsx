@@ -348,19 +348,20 @@ export default function CardsPage() {
           top: 40px;
           left: 0;
           right: 0;
-          height: 32px;
+          height: 40px;
           background: linear-gradient(90deg, #000000 0%, #1a1a1a 100%);
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 0 24px;
         ">
           <div style="
             color: #ffffff;
-            font-size: 16px;
-            font-weight: 700;
+            font-size: 18px;
+            font-weight: 800;
             text-align: center;
-            letter-spacing: 0.5px;
+            direction: rtl;
+            font-family: 'Arial', sans-serif;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
           ">بيع: ${pricing.customerPrice} دج</div>
         </div>
         
