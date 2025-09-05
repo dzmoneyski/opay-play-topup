@@ -213,9 +213,8 @@ export default function CardsPage() {
     setQrCodes(prev => ({ ...prev, ...newQrCodes }));
   };
 
-  // Create professional front card design
+  // Create professional front card design (without QR code)
   const createFrontCardHTML = (card: any) => {
-    const qrCode = qrCodes[card.id];
     return `
       <div style="
         width: 340px;
@@ -271,74 +270,22 @@ export default function CardsPage() {
           ">بطاقة شحن رقمية</p>
         </div>
         
-        <!-- Main Amount -->
+        <!-- Main Amount - Centered -->
         <div style="
           position: absolute;
           left: 24px;
-          top: 85px;
-          right: 140px;
+          right: 24px;
+          top: 50%;
+          transform: translateY(-50%);
+          text-align: center;
         ">
           <p style="
             margin: 0;
-            font-size: 12px;
-            opacity: 0.8;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-          ">AMOUNT</p>
-          <p style="
-            margin: 4px 0 0 0;
-            font-size: 36px;
-            font-weight: 800;
+            font-size: 48px;
+            font-weight: 900;
             line-height: 1;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            text-shadow: 0 4px 8px rgba(0,0,0,0.4);
           ">${formatCurrency(card.amount)}</p>
-        </div>
-        
-        <!-- QR Code -->
-        <div style="
-          position: absolute;
-          right: 24px;
-          top: 85px;
-          width: 100px;
-          height: 100px;
-          background: white;
-          border-radius: 12px;
-          padding: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        ">
-          ${qrCode ? `<img src="${qrCode}" style="width: 84px; height: 84px; border-radius: 4px;" />` : '<div style="width: 84px; height: 84px; background: #f3f4f6; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 12px;">QR CODE</div>'}
-        </div>
-        
-        <!-- Card Number -->
-        <div style="
-          position: absolute;
-          bottom: 24px;
-          left: 24px;
-          right: 24px;
-        ">
-          <p style="
-            margin: 0;
-            font-size: 10px;
-            opacity: 0.7;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-          ">CARD NUMBER</p>
-          <p style="
-            margin: 4px 0 0 0;
-            font-size: 16px;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 2px;
-            font-weight: 600;
-            background: rgba(0,0,0,0.1);
-            padding: 8px 12px;
-            border-radius: 8px;
-            backdrop-filter: blur(10px);
-          ">${card.card_code}</p>
         </div>
         
         <!-- Holographic Effect -->
@@ -357,8 +304,9 @@ export default function CardsPage() {
     `;
   };
 
-  // Create professional back card design
+  // Create professional back card design (with QR code)
   const createBackCardHTML = (card: any) => {
+    const qrCode = qrCodes[card.id];
     return `
       <div style="
         width: 340px;
@@ -381,81 +329,56 @@ export default function CardsPage() {
           background: linear-gradient(90deg, #000000 0%, #1a1a1a 100%);
         "></div>
         
-        <!-- Signature Panel -->
+        <!-- QR Code Section -->
         <div style="
           position: absolute;
-          top: 90px;
-          left: 24px;
           right: 24px;
-          height: 36px;
-          background: #f8f9fa;
-          border-radius: 4px;
+          top: 90px;
+          width: 100px;
+          height: 100px;
+          background: white;
+          border-radius: 12px;
+          padding: 8px;
           display: flex;
           align-items: center;
-          padding: 0 12px;
+          justify-content: center;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         ">
-          <span style="
-            color: #6b7280;
-            font-size: 12px;
-            font-style: italic;
-          ">تفعيل عند الاستخدام الأول</span>
+          ${qrCode ? `<img src="${qrCode}" style="width: 84px; height: 84px; border-radius: 4px;" />` : '<div style="width: 84px; height: 84px; background: #f3f4f6; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 12px;">QR CODE</div>'}
         </div>
         
-        <!-- Security Features -->
+        <!-- Card Code Section -->
         <div style="
           position: absolute;
           bottom: 60px;
           left: 24px;
-          right: 24px;
+          right: 140px;
         ">
           <p style="
-            margin: 0 0 8px 0;
-            font-size: 10px;
-            opacity: 0.8;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            margin: 0;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
             font-weight: 600;
-          ">Security Features</p>
-          <div style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          ">
-            <div style="font-size: 12px; opacity: 0.9;">
-              • 256-bit Encryption<br>
-              • Secure QR Technology<br>
-              • Anti-Fraud Protection
-            </div>
-            <div style="
-              background: rgba(255,255,255,0.1);
-              padding: 8px 12px;
-              border-radius: 6px;
-              font-size: 10px;
-              text-align: center;
-            ">
-              <div>VALID UNTIL</div>
-              <div style="font-weight: 600; margin-top: 2px;">
-                ${new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).getFullYear()}
-              </div>
-            </div>
-          </div>
+            background: rgba(255,255,255,0.1);
+            padding: 12px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+          ">${card.card_code}</p>
         </div>
         
-        <!-- Footer Info -->
+        <!-- Footer -->
         <div style="
           position: absolute;
           bottom: 20px;
           left: 24px;
           right: 24px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          font-size: 8px;
+          text-align: center;
+          font-size: 10px;
           opacity: 0.7;
         ">
-          <span>OpaY Algeria © 2024</span>
-          <span>support@opay.dz</span>
-          <span>ISO 27001 Certified</span>
+          <span>OpaY Algeria</span>
         </div>
       </div>
     `;
