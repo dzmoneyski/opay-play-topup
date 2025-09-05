@@ -351,10 +351,18 @@ export default function CardsPage() {
     };
   };
 
+  // Format code as 11 digits + '-' + check digit
+  const formatCardCode = (code: string) => {
+    const digits = (code || '').replace(/\D/g, '');
+    if (digits.length >= 2) return `${digits.slice(0, -1)}-${digits.slice(-1)}`;
+    return digits;
+  };
+
   // Create professional back card design (with QR code and pricing)
   const createBackCardHTML = (card: any) => {
     const qrCode = qrCodes[card.id];
     const pricing = calculatePricing(card.amount);
+    const formattedCardCode = formatCardCode(card.card_code);
     
     return `
       <div style="
@@ -427,7 +435,7 @@ export default function CardsPage() {
             border-radius: 8px;
             backdrop-filter: blur(10px);
             text-align: center;
-          ">${card.card_code}</p>
+          ">${formattedCardCode}</p>
         </div>
         
         <!-- Footer -->

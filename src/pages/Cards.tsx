@@ -71,41 +71,41 @@ const Cards = () => {
                     <div className="w-8 h-6 bg-white/20 rounded"></div>
                   </div>
                   
-                   <div className="space-y-4">
-                     <div>
-                       <Label htmlFor="cardCode" className="text-white/80 text-sm block mb-2">
-                         رقم البطاقة
-                       </Label>
-                       <div className="flex justify-center" dir="ltr">
-                         <InputOTP
-                           value={cardCode}
-                           onChange={setCardCode}
-                           maxLength={12}
-                           disabled={loading}
-                         >
-                           <InputOTPGroup>
-                             <InputOTPSlot index={0} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                             <InputOTPSlot index={1} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                             <InputOTPSlot index={2} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                             <InputOTPSlot index={3} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                             <InputOTPSlot index={4} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                           </InputOTPGroup>
-                           <InputOTPSeparator className="text-white/60" />
-                           <InputOTPGroup>
-                             <InputOTPSlot index={5} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                             <InputOTPSlot index={6} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                             <InputOTPSlot index={7} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                             <InputOTPSlot index={8} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                             <InputOTPSlot index={9} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                             <InputOTPSlot index={10} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                             <InputOTPSlot index={11} className="bg-white/10 border-white/20 text-white text-lg font-bold ring-2 ring-yellow-400/50" />
-                           </InputOTPGroup>
-                         </InputOTP>
-                       </div>
-                       <p className="text-xs text-white/60 text-center mt-2" dir="rtl">
-                         آخر رقم هو رقم التحقق
-                       </p>
-                     </div>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="cardCode" className="text-white/80 text-sm block mb-2">
+                        رقم البطاقة
+                      </Label>
+                      <div className="flex justify-center" dir="ltr">
+                        <InputOTP
+                          value={cardCode}
+                          onChange={(val) => setCardCode(val.replace(/\D/g, '').slice(0, 12))}
+                          maxLength={12}
+                          disabled={loading}
+                        >
+                          <InputOTPGroup>
+                            <InputOTPSlot index={0} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={1} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={2} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={3} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={4} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={5} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={6} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={7} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={8} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={9} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={10} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                          </InputOTPGroup>
+                          <div className="px-2 text-white/90 text-xl font-extrabold">-</div>
+                          <InputOTPGroup>
+                            <InputOTPSlot index={11} className="bg-white/10 border-white/20 text-white text-lg font-bold ring-2 ring-yellow-400/50" />
+                          </InputOTPGroup>
+                        </InputOTP>
+                      </div>
+                      <p className="text-xs text-white/60 text-center mt-2" dir="rtl">
+                        آخر رقم هو رقم التحقق
+                      </p>
+                    </div>
                     
                     <div className="flex justify-between items-center text-xs opacity-60">
                       <span>VALID</span>
@@ -119,9 +119,9 @@ const Cards = () => {
               <Button 
                 type="submit" 
                 className="w-full h-12 text-lg"
-                disabled={loading || !cardCode.trim()}
+                disabled={loading || cardCode.length !== 12}
               >
-                {loading ? 'جاري التحقق...' : 'تحويل'}
+                {loading ? 'جاري التحقق...' : 'تفعيل'}
               </Button>
             </form>
 
