@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useAdminWithdrawals } from '@/hooks/useAdminWithdrawals';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   ArrowUpFromLine, 
   Search, 
@@ -19,17 +21,23 @@ import {
   CreditCard,
   MapPin,
   X,
-  Eye
+  Eye,
+  Upload,
+  Loader2
 } from 'lucide-react';
 
 export default function WithdrawalsPage() {
   const { withdrawals, loading, approveWithdrawal, rejectWithdrawal } = useAdminWithdrawals();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedStatus, setSelectedStatus] = React.useState('all');
   const [selectedWithdrawal, setSelectedWithdrawal] = React.useState<any>(null);
   const [rejectReason, setRejectReason] = React.useState('');
   const [approveNotes, setApproveNotes] = React.useState('');
+  const [receiptFile, setReceiptFile] = React.useState<File | null>(null);
   const [actionLoading, setActionLoading] = React.useState(false);
+  const [approveDialogOpen, setApproveDialogOpen] = React.useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
 
   const filteredWithdrawals = withdrawals.filter(withdrawal => {
     const matchesSearch = 
@@ -128,20 +136,81 @@ export default function WithdrawalsPage() {
   };
 
   const handleApprove = async (withdrawalId: string) => {
+    if (!receiptFile) {
+      toast({
+        title: "خطأ",
+        description: "يرجى رفع صورة إيصال السحب",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setActionLoading(true);
-    await approveWithdrawal(withdrawalId, approveNotes);
-    setApproveNotes('');
-    setActionLoading(false);
+    try {
+      // Upload receipt image
+      const fileExt = receiptFile.name.split('.').pop();
+      const fileName = `withdrawal_receipt_${withdrawalId}_${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('deposit-receipts')
+        .upload(fileName, receiptFile);
+
+      if (uploadError) throw uploadError;
+
+      // Approve withdrawal with receipt reference
+      const receiptNotes = `تم رفع إيصال السحب: ${fileName}. ${approveNotes}`;
+      await approveWithdrawal(withdrawalId, receiptNotes);
+      
+      // Reset form
+      setApproveNotes('');
+      setReceiptFile(null);
+      setApproveDialogOpen(false);
+      
+      toast({
+        title: "تم قبول طلب السحب",
+        description: "تم رفع إيصال السحب بنجاح"
+      });
+    } catch (error) {
+      console.error('Error approving withdrawal:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في رفع الإيصال أو قبول الطلب",
+        variant: "destructive"
+      });
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleReject = async (withdrawalId: string) => {
     if (!rejectReason.trim()) {
+      toast({
+        title: "خطأ", 
+        description: "يرجى إدخال سبب الرفض",
+        variant: "destructive"
+      });
       return;
     }
     setActionLoading(true);
-    await rejectWithdrawal(withdrawalId, rejectReason);
-    setRejectReason('');
-    setActionLoading(false);
+    try {
+      await rejectWithdrawal(withdrawalId, rejectReason);
+      setRejectReason('');
+      setRejectDialogOpen(false);
+      
+      toast({
+        title: "تم رفض طلب السحب",
+        description: "تم إرسال سبب الرفض للمستخدم"
+      });
+    } catch (error) {
+      console.error('Error rejecting withdrawal:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في رفض الطلب",
+        variant: "destructive"
+      });
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   return (
@@ -344,9 +413,16 @@ export default function WithdrawalsPage() {
                       
                       {withdrawal.status === 'pending' && (
                         <div className="flex gap-1">
-                          <Dialog>
+                          <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
                             <DialogTrigger asChild>
-                              <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                              <Button 
+                                size="sm" 
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={() => {
+                                  setSelectedWithdrawal(withdrawal);
+                                  setApproveDialogOpen(true);
+                                }}
+                              >
                                 موافقة
                               </Button>
                             </DialogTrigger>
@@ -354,10 +430,23 @@ export default function WithdrawalsPage() {
                               <DialogHeader>
                                 <DialogTitle>موافقة على طلب السحب</DialogTitle>
                                 <DialogDescription>
-                                  هل أنت متأكد من موافقتك على هذا الطلب؟ سيتم خصم المبلغ من رصيد المستخدم.
+                                  يرجى رفع صورة إيصال السحب لإرسالها للمستخدم
                                 </DialogDescription>
                               </DialogHeader>
                               <div className="space-y-4">
+                                <div>
+                                  <Label htmlFor="receipt-upload">صورة إيصال السحب *</Label>
+                                  <Input
+                                    id="receipt-upload"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                                    className="mt-1"
+                                  />
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    الرجاء رفع صورة إيصال السحب كدليل للمستخدم
+                                  </p>
+                                </div>
                                 <div>
                                   <Label htmlFor="approve-notes">ملاحظات إضافية (اختياري)</Label>
                                   <Textarea
@@ -369,20 +458,48 @@ export default function WithdrawalsPage() {
                                 </div>
                                 <div className="flex gap-2">
                                   <Button 
-                                    onClick={() => handleApprove(withdrawal.id)}
-                                    disabled={actionLoading}
-                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => handleApprove(selectedWithdrawal?.id)}
+                                    disabled={actionLoading || !receiptFile}
+                                    className="bg-green-600 hover:bg-green-700 flex-1"
                                   >
-                                    {actionLoading ? "جاري المعالجة..." : "تأكيد الموافقة"}
+                                    {actionLoading ? (
+                                      <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        جاري الرفع...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Upload className="h-4 w-4 mr-2" />
+                                        تأكيد الموافقة
+                                      </>
+                                    )}
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    onClick={() => {
+                                      setApproveDialogOpen(false);
+                                      setReceiptFile(null);
+                                      setApproveNotes('');
+                                    }}
+                                    className="flex-1"
+                                  >
+                                    إلغاء
                                   </Button>
                                 </div>
                               </div>
                             </DialogContent>
                           </Dialog>
 
-                          <Dialog>
+                          <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
                             <DialogTrigger asChild>
-                              <Button size="sm" variant="destructive">
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => {
+                                  setSelectedWithdrawal(withdrawal);
+                                  setRejectDialogOpen(true);
+                                }}
+                              >
                                 رفض
                               </Button>
                             </DialogTrigger>
@@ -390,7 +507,7 @@ export default function WithdrawalsPage() {
                               <DialogHeader>
                                 <DialogTitle>رفض طلب السحب</DialogTitle>
                                 <DialogDescription>
-                                  يرجى إدخال سبب رفض هذا الطلب
+                                  يرجى إدخال سبب رفض هذا الطلب بوضوح
                                 </DialogDescription>
                               </DialogHeader>
                               <div className="space-y-4">
@@ -400,17 +517,42 @@ export default function WithdrawalsPage() {
                                     id="reject-reason"
                                     value={rejectReason}
                                     onChange={(e) => setRejectReason(e.target.value)}
-                                    placeholder="اذكر سبب رفض الطلب..."
+                                    placeholder="اذكر سبب رفض الطلب بالتفصيل..."
                                     required
+                                    rows={4}
                                   />
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    سيتم إرسال هذا السبب للمستخدم
+                                  </p>
                                 </div>
                                 <div className="flex gap-2">
                                   <Button 
-                                    onClick={() => handleReject(withdrawal.id)}
+                                    onClick={() => handleReject(selectedWithdrawal?.id)}
                                     disabled={actionLoading || !rejectReason.trim()}
                                     variant="destructive"
+                                    className="flex-1"
                                   >
-                                    {actionLoading ? "جاري المعالجة..." : "تأكيد الرفض"}
+                                    {actionLoading ? (
+                                      <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        جاري الرفض...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <X className="h-4 w-4 mr-2" />
+                                        تأكيد الرفض
+                                      </>
+                                    )}
+                                  </Button>
+                                  <Button 
+                                    variant="outline"
+                                    onClick={() => {
+                                      setRejectDialogOpen(false);
+                                      setRejectReason('');
+                                    }}
+                                    className="flex-1"
+                                  >
+                                    إلغاء
                                   </Button>
                                 </div>
                               </div>
