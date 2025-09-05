@@ -342,36 +342,7 @@ export default function CardsPage() {
         overflow: hidden;
         box-shadow: 0 20px 40px rgba(31, 41, 55, 0.3);
       ">
-        <!-- Pricing Section - Top Left -->
-        <div style="
-          position: absolute;
-          top: 20px;
-          left: 24px;
-          background: rgba(16, 185, 129, 0.9);
-          border-radius: 8px;
-          padding: 8px 12px;
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255,255,255,0.1);
-        ">
-          <div style="
-            font-size: 10px;
-            opacity: 0.9;
-            margin-bottom: 2px;
-          ">سعر التاجر</div>
-          <div style="
-            font-size: 14px;
-            font-weight: 700;
-            margin-bottom: 4px;
-          ">${pricing.merchantCost.toFixed(0)} دج</div>
-          <div style="
-            font-size: 9px;
-            opacity: 0.8;
-            border-top: 1px solid rgba(255,255,255,0.2);
-            padding-top: 2px;
-          ">بيع: ${pricing.customerPrice.toFixed(0)} دج</div>
-        </div>
-        
-        <!-- Magnetic Strip -->
+        <!-- Magnetic Strip with Pricing -->
         <div style="
           position: absolute;
           top: 40px;
@@ -379,7 +350,17 @@ export default function CardsPage() {
           right: 0;
           height: 32px;
           background: linear-gradient(90deg, #000000 0%, #1a1a1a 100%);
-        "></div>
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 24px;
+        ">
+          <div style="
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 700;
+          ">تاجر: ${pricing.merchantCost} دج | بيع: ${pricing.customerPrice} دج</div>
+        </div>
         
         <!-- QR Code Section -->
         <div style="
