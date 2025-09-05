@@ -26,7 +26,14 @@ export const useGiftCards = () => {
 
       if (error) throw error;
 
-      const result = data as { success: boolean; error?: string; message?: string; amount?: number; locked_until?: string; remaining_seconds?: number };
+      const result = data as { 
+        success: boolean; 
+        error?: string; 
+        message?: string; 
+        amount?: number;
+        locked_until?: string;
+        remaining_seconds?: number;
+      };
 
       if (result.success) {
         toast({
@@ -35,14 +42,22 @@ export const useGiftCards = () => {
         });
         return true;
       } else {
-        const lockedMsg = result.locked_until 
-          ? ` تم الإيقاف حتى ${new Date(result.locked_until).toLocaleString('ar-DZ')}`
-          : '';
-        toast({
-          title: "خطأ",
-          description: `${result.error}${lockedMsg}`,
-          variant: "destructive",
-        });
+        // Handle lockout with countdown
+        if (result.locked_until && result.remaining_seconds) {
+          const hours = Math.floor(result.remaining_seconds / 3600);
+          const minutes = Math.floor((result.remaining_seconds % 3600) / 60);
+          toast({
+            title: "تم إيقاف الحساب مؤقتاً",
+            description: `${result.error}. الوقت المتبقي: ${hours}س ${minutes}د`,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "خطأ",
+            description: result.error,
+            variant: "destructive",
+          });
+        }
         return false;
       }
     } catch (error) {
