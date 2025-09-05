@@ -81,16 +81,42 @@ export default function CardsPage() {
     }
   };
 
-  // Generate secure random card code for QR
+  // Generate secure random card code (11 digits + 1 check digit)
   const generateSecureCardCode = () => {
-    const bytes = new Uint8Array(16);
-    crypto.getRandomValues(bytes);
+    // Generate 11 random digits
+    const digits = [];
+    for (let i = 0; i < 11; i++) {
+      digits.push(Math.floor(Math.random() * 10));
+    }
     
-    // Create a secure random string for QR code
-    return Array.from(bytes)
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('')
-      .toUpperCase();
+    // Calculate check digit using Luhn algorithm
+    const checkDigit = calculateLuhnCheckDigit(digits);
+    digits.push(checkDigit);
+    
+    return digits.join('');
+  };
+
+  // Luhn algorithm for check digit calculation
+  const calculateLuhnCheckDigit = (digits: number[]) => {
+    let sum = 0;
+    let isEven = true;
+    
+    // Process digits from right to left (excluding check digit position)
+    for (let i = digits.length - 1; i >= 0; i--) {
+      let digit = digits[i];
+      
+      if (isEven) {
+        digit *= 2;
+        if (digit > 9) {
+          digit -= 9;
+        }
+      }
+      
+      sum += digit;
+      isEven = !isEven;
+    }
+    
+    return (10 - (sum % 10)) % 10;
   };
 
   // Check if card code is unique

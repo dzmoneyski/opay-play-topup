@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useGiftCards } from '@/hooks/useGiftCards';
@@ -71,22 +71,41 @@ const Cards = () => {
                     <div className="w-8 h-6 bg-white/20 rounded"></div>
                   </div>
                   
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="cardCode" className="text-white/80 text-sm block mb-2">
-                        رقم البطاقة
-                      </Label>
-                      <Input
-                        id="cardCode"
-                        type="text"
-                        value={cardCode}
-                        onChange={(e) => setCardCode(e.target.value)}
-                        placeholder="XXXX-XXXX-XXXX"
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50 text-lg font-mono tracking-widest text-center"
-                        disabled={loading}
-                        required
-                      />
-                    </div>
+                   <div className="space-y-4">
+                     <div>
+                       <Label htmlFor="cardCode" className="text-white/80 text-sm block mb-2">
+                         رقم البطاقة
+                       </Label>
+                       <div className="flex justify-center" dir="ltr">
+                         <InputOTP
+                           value={cardCode}
+                           onChange={setCardCode}
+                           maxLength={12}
+                           disabled={loading}
+                         >
+                           <InputOTPGroup>
+                             <InputOTPSlot index={0} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                             <InputOTPSlot index={1} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                             <InputOTPSlot index={2} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                             <InputOTPSlot index={3} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                             <InputOTPSlot index={4} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                           </InputOTPGroup>
+                           <InputOTPSeparator className="text-white/60" />
+                           <InputOTPGroup>
+                             <InputOTPSlot index={5} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                             <InputOTPSlot index={6} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                             <InputOTPSlot index={7} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                             <InputOTPSlot index={8} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                             <InputOTPSlot index={9} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                             <InputOTPSlot index={10} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                             <InputOTPSlot index={11} className="bg-white/10 border-white/20 text-white text-lg font-bold ring-2 ring-yellow-400/50" />
+                           </InputOTPGroup>
+                         </InputOTP>
+                       </div>
+                       <p className="text-xs text-white/60 text-center mt-2" dir="rtl">
+                         آخر رقم هو رقم التحقق
+                       </p>
+                     </div>
                     
                     <div className="flex justify-between items-center text-xs opacity-60">
                       <span>VALID</span>
