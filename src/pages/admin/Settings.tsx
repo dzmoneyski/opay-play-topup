@@ -101,6 +101,12 @@ export default function SettingsPage() {
     }
   });
 
+  const [walletSettings, setWalletSettings] = React.useState({
+    baridimob: '0551234567',
+    ccp: '1234567890123',
+    edahabiya: '0987654321'
+  });
+
   const [platformRevenue, setPlatformRevenue] = React.useState({
     total_revenue: 0,
     monthly_revenue: 0,
@@ -181,6 +187,29 @@ export default function SettingsPage() {
     loadFeeSettings();
   }, []);
 
+  // Load wallet settings
+  React.useEffect(() => {
+    const loadWalletSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('platform_settings')
+          .select('setting_value')
+          .eq('setting_key', 'payment_wallets')
+          .single();
+
+        if (error) throw error;
+
+        if (data?.setting_value) {
+          setWalletSettings(data.setting_value as any);
+        }
+      } catch (error) {
+        console.error('Error loading wallet settings:', error);
+      }
+    };
+
+    loadWalletSettings();
+  }, []);
+
   const handleInputChange = (key: string, value: any) => {
     setSettings(prev => ({
       ...prev,
@@ -224,6 +253,30 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Error saving settings:', error);
       alert('خطأ في حفظ الإعدادات');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveWallets = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('platform_settings')
+        .upsert({
+          setting_key: 'payment_wallets',
+          setting_value: walletSettings as any,
+          description: 'أرقام محافظ الإيداع للطرق المختلفة'
+        }, { onConflict: 'setting_key' });
+      
+      if (error) throw error;
+
+      console.log('Wallet settings saved successfully');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error('Error saving wallet settings:', error);
+      alert('خطأ في حفظ إعدادات المحافظ');
     } finally {
       setSaving(false);
     }
@@ -614,6 +667,68 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Payment Wallets Management */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              إدارة محافظ الإيداع
+            </CardTitle>
+            <CardDescription>
+              إعدادات أرقام المحافظ للطرق المختلفة للإيداع
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="baridimob_wallet">محفظة Baridimob</Label>
+              <Input
+                id="baridimob_wallet"
+                value={walletSettings.baridimob}
+                onChange={(e) => setWalletSettings({...walletSettings, baridimob: e.target.value})}
+                placeholder="رقم محفظة Baridimob"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="ccp_wallet">محفظة CCP</Label>
+              <Input
+                id="ccp_wallet"
+                value={walletSettings.ccp}
+                onChange={(e) => setWalletSettings({...walletSettings, ccp: e.target.value})}
+                placeholder="رقم حساب CCP"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edahabiya_wallet">محفظة الذهبية</Label>
+              <Input
+                id="edahabiya_wallet"
+                value={walletSettings.edahabiya}
+                onChange={(e) => setWalletSettings({...walletSettings, edahabiya: e.target.value})}
+                placeholder="رقم محفظة الذهبية"
+              />
+            </div>
+            
+            <Button 
+              onClick={handleSaveWallets} 
+              disabled={saving}
+              className="w-full"
+            >
+              {saving ? (
+                <>
+                  <Clock className="h-4 w-4 mr-2 animate-spin" />
+                  جاري الحفظ...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  حفظ إعدادات المحافظ
+                </>
+              )}
+            </Button>
           </CardContent>
         </Card>
 

@@ -11,6 +11,7 @@ import { useBalance } from '@/hooks/useBalance';
 import { useToast } from '@/hooks/use-toast';
 import { useFeeSettings } from '@/hooks/useFeeSettings';
 import { calculateFee, formatCurrency } from '@/lib/feeCalculator';
+import { usePaymentWallets } from '@/hooks/usePaymentWallets';
 import { 
   CreditCard,
   Upload,
@@ -24,17 +25,12 @@ import {
 } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 
-const PaymentWallets = {
-  baridimob: "0551234567",
-  ccp: "1234567890123",
-  edahabiya: "0987654321"
-};
-
 export default function Deposits() {
   const { deposits, loading, createDeposit } = useDeposits();
   const { balance, loading: balanceLoading, fetchBalance } = useBalance();
   const { toast } = useToast();
   const { feeSettings } = useFeeSettings();
+  const { wallets, loading: walletsLoading } = usePaymentWallets();
   const [selectedMethod, setSelectedMethod] = React.useState<PaymentMethod>('baridimob');
   const [amount, setAmount] = React.useState('');
   const [transactionId, setTransactionId] = React.useState('');
@@ -188,11 +184,13 @@ export default function Deposits() {
                 <div className="p-4 bg-gradient-primary rounded-lg text-white">
                   <h3 className="font-semibold mb-2">محفظة الإيداع</h3>
                   <div className="flex items-center justify-between">
-                    <span className="text-lg font-mono">{PaymentWallets.baridimob}</span>
+                    <span className="text-lg font-mono">
+                      {walletsLoading ? "جاري التحميل..." : (wallets?.baridimob || "0551234567")}
+                    </span>
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => navigator.clipboard.writeText(PaymentWallets.baridimob)}
+                      onClick={() => navigator.clipboard.writeText(wallets?.baridimob || "0551234567")}
                     >
                       نسخ
                     </Button>
