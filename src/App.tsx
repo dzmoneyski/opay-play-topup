@@ -14,6 +14,7 @@ import AdminPanel from "./pages/AdminPanel";
 import IdentityVerificationPage from "./pages/IdentityVerificationPage";
 import Deposits from "./pages/Deposits";
 import Transfer from "./pages/Transfer";
+import Withdrawals from "./pages/Withdrawals";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -67,6 +68,11 @@ const App = () => {
               <Route path="/transfer" element={
                 <ProtectedRoute requireActivation={false}>
                   <Transfer />
+                </ProtectedRoute>
+              } />
+              <Route path="/withdrawals" element={
+                <ProtectedRoute requireActivation={false}>
+                  <Withdrawals />
                 </ProtectedRoute>
               } />
               <Route path="/identity-verification" element={
