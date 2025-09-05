@@ -50,6 +50,10 @@ export default function CardsPage() {
   const [showCodes, setShowCodes] = useState<Record<string, boolean>>({});
   const [qrCodes, setQrCodes] = useState<Record<string, string>>({});
   
+  // Selection and bulk actions state
+  const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set());
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+  
   // Generation form state
   const [amount, setAmount] = useState<number>(1000);
   const [quantity, setQuantity] = useState<number>(10);
@@ -647,6 +651,71 @@ export default function CardsPage() {
     }
   };
 
+  // Bulk selection functions
+  const handleSelectCard = (cardId: string, checked: boolean) => {
+    setSelectedCards(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(cardId);
+      } else {
+        newSet.delete(cardId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      // Only select unused cards (as they can be deleted)
+      const unusedCardIds = filteredCards
+        .filter(card => !card.is_used)
+        .map(card => card.id);
+      setSelectedCards(new Set(unusedCardIds));
+    } else {
+      setSelectedCards(new Set());
+    }
+  };
+
+  const bulkDeleteCards = async () => {
+    if (selectedCards.size === 0) return;
+
+    const selectedCardsList = Array.from(selectedCards);
+    const cardsToDelete = giftCards.filter(card => selectedCardsList.includes(card.id));
+    
+    const confirmed = window.confirm(
+      `هل أنت متأكد من حذف ${selectedCards.size} بطاقة؟\n\n⚠️ تحذير: هذا الإجراء لا يمكن التراجع عنه وسيتم حذف البطاقات نهائياً من قاعدة البيانات.`
+    );
+
+    if (!confirmed) return;
+
+    setBulkDeleteLoading(true);
+    try {
+      const { error } = await supabase
+        .from('gift_cards')
+        .delete()
+        .in('id', selectedCardsList);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم الحذف المتعدد بنجاح",
+        description: `تم حذف ${selectedCards.size} بطاقة من قاعدة البيانات`,
+      });
+
+      setSelectedCards(new Set());
+      fetchGiftCards();
+    } catch (error) {
+      console.error('Error bulk deleting cards:', error);
+      toast({
+        title: "خطأ في الحذف المتعدد",
+        description: "فشل في حذف البطاقات المحددة",
+        variant: "destructive",
+      });
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
+
   // Export gift cards
   const exportGiftCards = () => {
     const csvContent = [
@@ -689,6 +758,11 @@ export default function CardsPage() {
   const usedCards = giftCards.filter(c => c.is_used).length;
   const unusedCards = giftCards.filter(c => !c.is_used).length;
   const totalValue = giftCards.reduce((sum, card) => sum + (card.is_used ? 0 : card.amount), 0);
+  
+  // Selection statistics
+  const selectableCards = filteredCards.filter(card => !card.is_used);
+  const isAllSelected = selectableCards.length > 0 && selectedCards.size === selectableCards.length;
+  const isPartiallySelected = selectedCards.size > 0 && selectedCards.size < selectableCards.length;
 
   React.useEffect(() => {
     fetchGiftCards();
@@ -956,6 +1030,55 @@ export default function CardsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Bulk Selection Controls */}
+          {selectableCards.length > 0 && (
+            <div className="mb-4 p-4 bg-muted/30 rounded-lg border border-dashed">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = isPartiallySelected;
+                      }}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm font-medium">
+                      {selectedCards.size > 0 
+                        ? `تم اختيار ${selectedCards.size} من ${selectableCards.length} بطاقة`
+                        : `اختيار الكل (${selectableCards.length} بطاقة متاحة)`
+                      }
+                    </span>
+                  </label>
+                </div>
+                
+                {selectedCards.size > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedCards(new Set())}
+                    >
+                      إلغاء التحديد
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={bulkDeleteCards}
+                      disabled={bulkDeleteLoading}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {bulkDeleteLoading ? 'جاري الحذف...' : `حذف المحدد (${selectedCards.size})`}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -966,7 +1089,19 @@ export default function CardsPage() {
               {filteredCards.map((card) => (
                 <div key={card.id} className="border rounded-lg p-4 hover:bg-muted/20 transition-colors">
                   <div className="flex items-center justify-between">
-                    <div className="flex-1">
+                    {/* Selection checkbox */}
+                    {!card.is_used && (
+                      <div className="flex items-center mr-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedCards.has(card.id)}
+                          onChange={(e) => handleSelectCard(card.id, e.target.checked)}
+                          className="rounded border-gray-300"
+                        />
+                      </div>
+                    )}
+                    
+                    <div className={`flex-1 ${card.is_used ? 'mr-0' : 'mr-3'}`}>
                       <div className="flex items-start gap-4 mb-2">
                         <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center text-white">
                           <Gift className="h-5 w-5" />
@@ -986,7 +1121,7 @@ export default function CardsPage() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                               <span className="font-mono text-xs">
-                                {showCodes[card.id] ? card.card_code : '••••••••••••••••'}
+                                {showCodes[card.id] ? formatCardCode(card.card_code) : '••••••••••••-•'}
                               </span>
                               <Button
                                 variant="ghost"
