@@ -352,14 +352,16 @@ export default function CardsPage() {
           background: linear-gradient(90deg, #000000 0%, #1a1a1a 100%);
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          justify-content: center;
           padding: 0 24px;
         ">
           <div style="
             color: #ffffff;
-            font-size: 12px;
+            font-size: 16px;
             font-weight: 700;
-          ">تاجر: ${pricing.merchantCost} دج | بيع: ${pricing.customerPrice} دج</div>
+            text-align: center;
+            letter-spacing: 0.5px;
+          ">بيع: ${pricing.customerPrice} دج</div>
         </div>
         
         <!-- QR Code Section -->
