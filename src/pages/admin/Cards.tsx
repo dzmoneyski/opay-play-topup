@@ -76,25 +76,21 @@ export default function CardsPage() {
     }
   };
 
-  // Generate secure random card code
+  // Generate secure random numeric card code in format XXXX-XXXX-XXXX (12 digits)
   const generateSecureCardCode = () => {
-    // Generate cryptographically secure random bytes
-    const array = new Uint8Array(16);
-    crypto.getRandomValues(array);
-    
-    // Convert to base36 (0-9, a-z) for readability
-    const randomStr = Array.from(array)
-      .map(b => (b % 36).toString(36))
-      .join('')
-      .toUpperCase();
-    
-    // Format: PREFIX-XXXXXXXXXXXX-XXXX
-    const part1 = randomStr.slice(0, 12);
-    const part2 = randomStr.slice(12, 16);
-    
-    return prefix 
-      ? `${prefix.toUpperCase()}-${part1}-${part2}`
-      : `GC-${part1}-${part2}`;
+    const bytes = new Uint8Array(12);
+    crypto.getRandomValues(bytes);
+
+    // Map each byte to a digit 0-9 and build 12-digit string
+    const digits = Array.from(bytes)
+      .map((b) => (b % 10).toString())
+      .join('');
+
+    const part1 = digits.slice(0, 4);
+    const part2 = digits.slice(4, 8);
+    const part3 = digits.slice(8, 12);
+
+    return `${part1}-${part2}-${part3}`;
   };
 
   // Check if card code is unique
@@ -103,7 +99,7 @@ export default function CardsPage() {
       .from('gift_cards')
       .select('id')
       .eq('card_code', code)
-      .single();
+      .maybeSingle();
     
     return !data; // Returns true if no existing card found
   };
