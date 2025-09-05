@@ -9,6 +9,8 @@ import { useUserRoles } from "@/hooks/useUserRoles";
 import { useBalance } from "@/hooks/useBalance";
 import { useToast } from "@/hooks/use-toast";
 import { useTransactionHistory } from "@/hooks/useTransactionHistory";
+import { QRScanner } from "@/components/QRScanner";
+import { QRCodeGenerator } from "@/components/QRCodeGenerator";
 import { 
   Wallet, 
   CreditCard, 
@@ -45,6 +47,8 @@ const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showBalance, setShowBalance] = React.useState(true);
+  const [showQRScanner, setShowQRScanner] = React.useState(false);
+  const [showQRGenerator, setShowQRGenerator] = React.useState(false);
 
   const handleServiceClick = (service: any) => {
     if (service.action === 'disabled') {
@@ -122,11 +126,46 @@ const Index = () => {
   ];
 
   const quickActions = [
-    { icon: <QrCode className="h-5 w-5" />, title: "مسح QR", desc: "ادفع بسرعة" },
-    { icon: <Smartphone className="h-5 w-5" />, title: "شحن هاتف", desc: "رصيد الجوال" },
-    { icon: <Gift className="h-5 w-5" />, title: "الهدايا", desc: "بطاقات هدايا" },
-    { icon: <MapPin className="h-5 w-5" />, title: "المتاجر", desc: "أقرب كشك" }
+    { 
+      icon: <QrCode className="h-5 w-5" />, 
+      title: "مسح QR", 
+      desc: "ادفع بسرعة",
+      action: "qr_scan"
+    },
+    { 
+      icon: <Smartphone className="h-5 w-5" />, 
+      title: "شحن هاتف", 
+      desc: "رصيد الجوال",
+      action: "disabled"
+    },
+    { 
+      icon: <Gift className="h-5 w-5" />, 
+      title: "الهدايا", 
+      desc: "بطاقات هدايا",
+      action: "disabled"
+    },
+    { 
+      icon: <MapPin className="h-5 w-5" />, 
+      title: "المتاجر", 
+      desc: "أقرب كشك",
+      action: "disabled"
+    }
   ];
+
+  const handleQuickAction = (action: string) => {
+    if (action === 'qr_scan') {
+      setShowQRScanner(true);
+      return;
+    }
+    
+    if (action === 'disabled') {
+      toast({
+        title: "خدمة غير متاحة",
+        description: "ستكون هذه الخدمة متاحة قريباً",
+      });
+      return;
+    }
+  };
 
   const getTransactionIcon = (iconType: string) => {
     switch (iconType) {
@@ -255,14 +294,24 @@ const Index = () => {
                   <span className="text-xl text-white/80 font-medium">دج</span>
                 </div>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setShowBalance(!showBalance)}
-                className="text-white/70 hover:text-white hover:bg-white/10 border border-white/20"
-              >
-                {showBalance ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setShowQRGenerator(true)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/70 hover:text-white hover:bg-white/10 border border-white/20"
+                >
+                  <QrCode className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowBalance(!showBalance)}
+                  className="text-white/70 hover:text-white hover:bg-white/10 border border-white/20"
+                >
+                  {showBalance ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </Button>
+              </div>
             </div>
             
             {/* Quick Actions Row */}
@@ -272,6 +321,7 @@ const Index = () => {
                   key={index}
                   variant="ghost" 
                   className="flex-col h-auto py-3 text-white/80 hover:text-white hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all"
+                  onClick={() => handleQuickAction(action.action)}
                 >
                   {action.icon}
                   <span className="text-xs mt-1">{action.title}</span>
@@ -478,6 +528,18 @@ const Index = () => {
           </Card>
         </div>
       </div>
+
+      {/* QR Scanner Modal */}
+      <QRScanner 
+        open={showQRScanner}
+        onOpenChange={setShowQRScanner}
+      />
+
+      {/* QR Code Generator Modal */}
+      <QRCodeGenerator 
+        open={showQRGenerator}
+        onOpenChange={setShowQRGenerator}
+      />
     </div>
   );
 };
