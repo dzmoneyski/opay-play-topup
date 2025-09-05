@@ -254,6 +254,57 @@ export type Database = {
         }
         Relationships: []
       }
+      withdrawals: {
+        Row: {
+          account_holder_name: string | null
+          account_number: string | null
+          admin_notes: string | null
+          amount: number
+          cash_location: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          withdrawal_method: string
+        }
+        Insert: {
+          account_holder_name?: string | null
+          account_number?: string | null
+          admin_notes?: string | null
+          amount: number
+          cash_location?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          withdrawal_method: string
+        }
+        Update: {
+          account_holder_name?: string | null
+          account_number?: string | null
+          admin_notes?: string | null
+          amount?: number
+          cash_location?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          withdrawal_method?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -272,6 +323,10 @@ export type Database = {
       }
       approve_verification_request: {
         Args: { _admin_id: string; _request_id: string }
+        Returns: undefined
+      }
+      approve_withdrawal: {
+        Args: { _admin_id: string; _notes?: string; _withdrawal_id: string }
         Returns: undefined
       }
       has_role: {
@@ -299,6 +354,10 @@ export type Database = {
       }
       reject_verification_request: {
         Args: { _admin_id: string; _reason: string; _request_id: string }
+        Returns: undefined
+      }
+      reject_withdrawal: {
+        Args: { _admin_id: string; _reason: string; _withdrawal_id: string }
         Returns: undefined
       }
     }
