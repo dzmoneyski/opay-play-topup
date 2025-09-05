@@ -15,6 +15,7 @@ import IdentityVerificationPage from "./pages/IdentityVerificationPage";
 import Deposits from "./pages/Deposits";
 import Transfer from "./pages/Transfer";
 import Withdrawals from "./pages/Withdrawals";
+import Cards from "./pages/Cards";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -78,6 +79,11 @@ const App = () => {
               <Route path="/identity-verification" element={
                 <ProtectedRoute requireActivation={false}>
                   <IdentityVerificationPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/cards" element={
+                <ProtectedRoute requireActivation={false}>
+                  <Cards />
                 </ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />

@@ -68,6 +68,11 @@ const Index = () => {
       return;
     }
 
+    if (service.action === 'cards') {
+      navigate('/cards');
+      return;
+    }
+
     // السماح بالدخول إلى صفحة الخدمة بغض النظر عن حالة التفعيل
     // التحقق من التفعيل سيتم عند محاولة تنفيذ العملية الفعلية
     console.log(`Navigating to service: ${service.title}`);
@@ -110,7 +115,7 @@ const Index = () => {
       title: "فعّل بطاقة",
       subtitle: "أدخل كود بطاقة OpaY",
       gradient: "bg-gradient-primary",
-      action: "activate"
+      action: "cards"
     }
   ];
 

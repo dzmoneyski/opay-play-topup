@@ -59,6 +59,39 @@ export type Database = {
         }
         Relationships: []
       }
+      gift_cards: {
+        Row: {
+          amount: number
+          card_code: string
+          created_at: string
+          id: string
+          is_used: boolean
+          updated_at: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          amount: number
+          card_code: string
+          created_at?: string
+          id?: string
+          is_used?: boolean
+          updated_at?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          amount?: number
+          card_code?: string
+          created_at?: string
+          id?: string
+          is_used?: boolean
+          updated_at?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -351,6 +384,10 @@ export type Database = {
       recalculate_user_balance: {
         Args: { _user_id: string }
         Returns: undefined
+      }
+      redeem_gift_card: {
+        Args: { _card_code: string; _user_id: string }
+        Returns: Json
       }
       reject_verification_request: {
         Args: { _admin_id: string; _reason: string; _request_id: string }
