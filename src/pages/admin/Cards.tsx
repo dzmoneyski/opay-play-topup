@@ -188,8 +188,15 @@ export default function CardsPage() {
     }
   };
 
-  // Delete gift card
-  const deleteGiftCard = async (cardId: string) => {
+  // Delete gift card with confirmation
+  const deleteGiftCard = async (cardId: string, cardCode: string) => {
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `هل أنت متأكد من حذف البطاقة؟\n\nالكود: ${cardCode}\n\n⚠️ تحذير: هذا الإجراء لا يمكن التراجع عنه وسيتم حذف البطاقة نهائياً من قاعدة البيانات.`
+    );
+
+    if (!confirmed) return;
+
     try {
       const { error } = await supabase
         .from('gift_cards')
@@ -199,16 +206,17 @@ export default function CardsPage() {
       if (error) throw error;
 
       toast({
-        title: "تم الحذف",
-        description: "تم حذف البطاقة بنجاح",
+        title: "تم الحذف نهائياً",
+        description: `تم حذف البطاقة ${cardCode} من قاعدة البيانات`,
       });
       
+      // Refresh the list to reflect the deletion
       fetchGiftCards();
     } catch (error) {
       console.error('Error deleting gift card:', error);
       toast({
-        title: "خطأ",
-        description: "فشل في حذف البطاقة",
+        title: "خطأ في الحذف",
+        description: "فشل في حذف البطاقة من قاعدة البيانات",
         variant: "destructive",
       });
     }
@@ -520,7 +528,7 @@ export default function CardsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => deleteGiftCard(card.id)}
+                          onClick={() => deleteGiftCard(card.id, card.card_code)}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                           <Trash2 className="h-4 w-4" />
