@@ -1,80 +1,58 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { useBalance } from '@/hooks/useBalance';
 import { useWithdrawals } from '@/hooks/useWithdrawals';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowUpRight, MapPin, Banknote, CreditCard, ArrowLeft, AlertCircle, CheckCircle, Clock, X } from 'lucide-react';
+import { 
+  ArrowUpRight,
+  MapPin,
+  Banknote,
+  CreditCard,
+  ArrowRight,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Wallet,
+  Receipt
+} from 'lucide-react';
 import BackButton from '@/components/BackButton';
 
-const Withdrawals = () => {
-  const { balance } = useBalance();
+const WithdrawalMethods = {
+  opay: { name: "OPay", icon: CreditCard },
+  barid_bank: { name: "بريد الجزائر", icon: Banknote },
+  ccp: { name: "البريد والمواصلات CCP", icon: Banknote },
+  cash: { name: "سحب نقدي", icon: MapPin }
+};
+
+export default function Withdrawals() {
+  const { balance, loading: balanceLoading } = useBalance();
   const { withdrawals, loading, createWithdrawal } = useWithdrawals();
   const { toast } = useToast();
 
+  const [selectedMethod, setSelectedMethod] = React.useState<string>('opay');
   const [formData, setFormData] = React.useState({
     amount: '',
-    withdrawal_method: '',
     account_number: '',
     account_holder_name: '',
     cash_location: '',
     notes: ''
   });
-
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-  const withdrawalMethods = [
-    { value: 'opay', label: 'OPay', icon: <CreditCard className="h-4 w-4" /> },
-    { value: 'barid_bank', label: 'بريد الجزائر', icon: <Banknote className="h-4 w-4" /> },
-    { value: 'ccp', label: 'البريد والمواصلات CCP', icon: <Banknote className="h-4 w-4" /> },
-    { value: 'cash', label: 'سحب نقدي', icon: <MapPin className="h-4 w-4" /> }
-  ];
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="text-yellow-600 border-yellow-200"><Clock className="h-3 w-3 mr-1" />قيد الانتظار</Badge>;
-      case 'approved':
-        return <Badge variant="outline" className="text-blue-600 border-blue-200"><CheckCircle className="h-3 w-3 mr-1" />معتمد</Badge>;
-      case 'completed':
-        return <Badge variant="outline" className="text-green-600 border-green-200"><CheckCircle className="h-3 w-3 mr-1" />مكتمل</Badge>;
-      case 'rejected':
-        return <Badge variant="outline" className="text-red-600 border-red-200"><X className="h-3 w-3 mr-1" />مرفوض</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-DZ', {
-      style: 'currency',
-      currency: 'DZD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Intl.DateTimeFormat('ar-DZ', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(new Date(dateString));
-  };
+  const [submitting, setSubmitting] = React.useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.amount || !formData.withdrawal_method) {
+    if (!formData.amount) {
       toast({
-        title: "خطأ",
-        description: "يرجى إكمال جميع الحقول المطلوبة",
+        title: "بيانات ناقصة",
+        description: "يرجى إدخال المبلغ المطلوب سحبه",
         variant: "destructive"
       });
       return;
@@ -85,7 +63,7 @@ const Withdrawals = () => {
     // التحقق من الحد الأدنى والأقصى للسحب
     if (amount < 500) {
       toast({
-        title: "خطأ",
+        title: "مبلغ غير صحيح",
         description: "الحد الأدنى للسحب هو 500 دج",
         variant: "destructive"
       });
@@ -94,7 +72,7 @@ const Withdrawals = () => {
 
     if (amount > 200000) {
       toast({
-        title: "خطأ",
+        title: "مبلغ غير صحيح",
         description: "الحد الأقصى للسحب هو 200,000 دج",
         variant: "destructive"
       });
@@ -106,36 +84,36 @@ const Withdrawals = () => {
     if ((balance?.balance || 0) < totalAmount) {
       toast({
         title: "رصيد غير كافي",
-        description: `رصيدك الحالي ${formatCurrency(balance?.balance || 0)} غير كافي للسحب مع العمولة`,
+        description: `رصيدك الحالي ${(balance?.balance || 0).toFixed(2)} دج غير كافي للسحب مع العمولة`,
         variant: "destructive"
       });
       return;
     }
 
     // التحقق من الحقول المطلوبة حسب طريقة السحب
-    if (formData.withdrawal_method === 'cash' && !formData.cash_location) {
+    if (selectedMethod === 'cash' && !formData.cash_location) {
       toast({
-        title: "خطأ",
+        title: "بيانات ناقصة",
         description: "يرجى تحديد موقع الاستلام للسحب النقدي",
         variant: "destructive"
       });
       return;
     }
 
-    if (formData.withdrawal_method !== 'cash' && (!formData.account_number || !formData.account_holder_name)) {
+    if (selectedMethod !== 'cash' && (!formData.account_number || !formData.account_holder_name)) {
       toast({
-        title: "خطأ",
+        title: "بيانات ناقصة",
         description: "يرجى إدخال رقم الحساب واسم صاحب الحساب",
         variant: "destructive"
       });
       return;
     }
 
-    setIsSubmitting(true);
+    setSubmitting(true);
     try {
       await createWithdrawal({
         amount: totalAmount,
-        withdrawal_method: formData.withdrawal_method,
+        withdrawal_method: selectedMethod,
         account_number: formData.account_number || undefined,
         account_holder_name: formData.account_holder_name || undefined,
         cash_location: formData.cash_location || undefined,
@@ -143,14 +121,13 @@ const Withdrawals = () => {
       });
 
       toast({
-        title: "تم إرسال طلب السحب",
-        description: "سيتم مراجعة طلبك ومعالجته خلال 24 ساعة",
+        title: "تم إرسال طلب السحب بنجاح",
+        description: "سيتم مراجعة طلبك ومعالجته خلال 24 ساعة"
       });
 
       // إعادة تعيين النموذج
       setFormData({
         amount: '',
-        withdrawal_method: '',
         account_number: '',
         account_holder_name: '',
         cash_location: '',
@@ -159,210 +136,610 @@ const Withdrawals = () => {
     } catch (error) {
       console.error('Error creating withdrawal:', error);
       toast({
-        title: "خطأ",
+        title: "خطأ في الإرسال",
         description: "فشل في إرسال طلب السحب. يرجى المحاولة مرة أخرى",
         variant: "destructive"
       });
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return (
+          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+            <Clock className="w-3 h-3 mr-1" />
+            قيد المراجعة
+          </Badge>
+        );
+      case 'approved':
+        return (
+          <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            معتمد
+          </Badge>
+        );
+      case 'completed':
+        return (
+          <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            مكتمل
+          </Badge>
+        );
+      case 'rejected':
+        return (
+          <Badge variant="destructive">
+            <XCircle className="w-3 h-3 mr-1" />
+            مرفوض
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ar-DZ', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return amount.toFixed(2);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900" dir="rtl">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <BackButton />
+    <div className="min-h-screen bg-gradient-hero p-4 sm:p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <BackButton />
+        
+        {/* Header */}
+        <div className="text-center text-white space-y-4">
+          <div className="flex items-center justify-center gap-3">
+            <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
+              <ArrowUpRight className="h-8 w-8" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">سحب الأموال</h1>
+              <p className="text-white/80">اختر طريقة السحب المناسبة لك</p>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* نموذج طلب السحب */}
-          <Card className="shadow-card border-0 bg-gradient-card backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-gradient-primary">
-                  <ArrowUpRight className="h-5 w-5 text-white" />
-                </div>
-                طلب سحب جديد
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* عرض الرصيد المتاح */}
-                <div className="bg-gradient-glass backdrop-blur-xl border border-white/10 rounded-xl p-4">
-                  <p className="text-sm text-muted-foreground mb-1">الرصيد المتاح</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {formatCurrency(balance?.balance || 0)}
+        {/* Current Balance */}
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center gap-4">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-1">الرصيد المتاح</p>
+                {balanceLoading ? (
+                  <div className="h-8 bg-muted rounded animate-pulse w-24 mx-auto" />
+                ) : (
+                  <p className="text-2xl font-bold text-primary">
+                    {formatCurrency(balance?.balance || 0)} دج
                   </p>
-                </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-                {/* المبلغ */}
-                <div className="space-y-2">
-                  <Label htmlFor="amount">المبلغ المطلوب سحبه (دج) *</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    min="500"
-                    max="200000"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    placeholder="ادخل المبلغ"
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    الحد الأدنى: 500 دج • الحد الأقصى: 200,000 دج • العمولة: 50 دج
-                  </p>
-                  {formData.amount && (
-                    <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
-                      المبلغ مع العمولة: {formatCurrency(parseFloat(formData.amount) + 50)}
+        <Tabs value={selectedMethod} onValueChange={setSelectedMethod} className="space-y-6">
+          {/* Withdrawal Method Selection */}
+          <TabsList className="grid w-full grid-cols-4 bg-white/10 backdrop-blur-sm">
+            <TabsTrigger value="opay" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+              OPay
+            </TabsTrigger>
+            <TabsTrigger value="barid_bank" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+              بريد الجزائر
+            </TabsTrigger>
+            <TabsTrigger value="ccp" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+              CCP
+            </TabsTrigger>
+            <TabsTrigger value="cash" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+              سحب نقدي
+            </TabsTrigger>
+          </TabsList>
+
+          {/* OPay Withdrawal */}
+          <TabsContent value="opay" className="space-y-6">
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  سحب عبر OPay
+                </CardTitle>
+                <CardDescription>
+                  املأ بيانات حساب OPay الخاص بك لتلقي المبلغ
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="amount">المبلغ المطلوب سحبه (دج)</Label>
+                      <Input
+                        id="amount"
+                        type="number"
+                        placeholder="مثال: 5000"
+                        value={formData.amount}
+                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                        required
+                        min="500"
+                        max="200000"
+                        step="0.01"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        الحد الأدنى: 500 دج • الحد الأقصى: 200,000 دج
+                      </p>
                     </div>
-                  )}
-                </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="account_number">رقم محفظة OPay</Label>
+                      <Input
+                        id="account_number"
+                        type="text"
+                        placeholder="رقم محفظة OPay"
+                        value={formData.account_number}
+                        onChange={(e) => setFormData({ ...formData, account_number: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
 
-                {/* طريقة السحب */}
-                <div className="space-y-2">
-                  <Label htmlFor="withdrawal_method">طريقة السحب *</Label>
-                  <Select value={formData.withdrawal_method} onValueChange={(value) => setFormData({ ...formData, withdrawal_method: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر طريقة السحب" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {withdrawalMethods.map((method) => (
-                        <SelectItem key={method.value} value={method.value}>
-                          <div className="flex items-center gap-2">
-                            {method.icon}
-                            {method.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* حقول إضافية حسب طريقة السحب */}
-                {formData.withdrawal_method === 'cash' ? (
                   <div className="space-y-2">
-                    <Label htmlFor="cash_location">موقع الاستلام *</Label>
+                    <Label htmlFor="account_holder_name">اسم صاحب المحفظة</Label>
                     <Input
-                      id="cash_location"
-                      value={formData.cash_location}
-                      onChange={(e) => setFormData({ ...formData, cash_location: e.target.value })}
-                      placeholder="ادخل الموقع المفضل للاستلام"
+                      id="account_holder_name"
+                      type="text"
+                      placeholder="الاسم الكامل لصاحب المحفظة"
+                      value={formData.account_holder_name}
+                      onChange={(e) => setFormData({ ...formData, account_holder_name: e.target.value })}
                       required
                     />
                   </div>
-                ) : formData.withdrawal_method && (
-                  <>
+
+                  {/* عرض العمولة */}
+                  {formData.amount && (
+                    <div className="p-4 bg-gradient-primary rounded-lg text-white">
+                      <h3 className="font-semibold mb-2">تفاصيل السحب</h3>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span>المبلغ المطلوب:</span>
+                          <span>{formatCurrency(parseFloat(formData.amount) || 0)} دج</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>عمولة السحب:</span>
+                          <span>50.00 دج</span>
+                        </div>
+                        <Separator className="my-2 bg-white/20" />
+                        <div className="flex justify-between font-semibold">
+                          <span>إجمالي المخصوم:</span>
+                          <span>{formatCurrency((parseFloat(formData.amount) || 0) + 50)} دج</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">ملاحظات إضافية (اختياري)</Label>
+                    <Textarea
+                      id="notes"
+                      placeholder="أي ملاحظات إضافية..."
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      rows={3}
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-primary hover:opacity-90"
+                    disabled={submitting || loading}
+                    size="lg"
+                  >
+                    {submitting ? (
+                      <>
+                        <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        جاري الإرسال...
+                      </>
+                    ) : (
+                      <>
+                        إرسال طلب السحب
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Barid Bank Withdrawal */}
+          <TabsContent value="barid_bank" className="space-y-6">
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Banknote className="h-5 w-5" />
+                  سحب عبر بريد الجزائر
+                </CardTitle>
+                <CardDescription>
+                  املأ بيانات حساب بريد الجزائر الخاص بك لتلقي المبلغ
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="account_number">رقم الحساب *</Label>
+                      <Label htmlFor="amount">المبلغ المطلوب سحبه (دج)</Label>
+                      <Input
+                        id="amount"
+                        type="number"
+                        placeholder="مثال: 5000"
+                        value={formData.amount}
+                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                        required
+                        min="500"
+                        max="200000"
+                        step="0.01"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="account_number">رقم الحساب</Label>
                       <Input
                         id="account_number"
+                        type="text"
+                        placeholder="رقم حساب بريد الجزائر"
                         value={formData.account_number}
                         onChange={(e) => setFormData({ ...formData, account_number: e.target.value })}
-                        placeholder="ادخل رقم الحساب"
                         required
                       />
                     </div>
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="account_holder_name">اسم صاحب الحساب *</Label>
-                      <Input
-                        id="account_holder_name"
-                        value={formData.account_holder_name}
-                        onChange={(e) => setFormData({ ...formData, account_holder_name: e.target.value })}
-                        placeholder="ادخل اسم صاحب الحساب"
-                        required
-                      />
-                    </div>
-                  </>
-                )}
+                  <div className="space-y-2">
+                    <Label htmlFor="account_holder_name">اسم صاحب الحساب</Label>
+                    <Input
+                      id="account_holder_name"
+                      type="text"
+                      placeholder="الاسم الكامل لصاحب الحساب"
+                      value={formData.account_holder_name}
+                      onChange={(e) => setFormData({ ...formData, account_holder_name: e.target.value })}
+                      required
+                    />
+                  </div>
 
-                {/* ملاحظات */}
-                <div className="space-y-2">
-                  <Label htmlFor="notes">ملاحظات إضافية</Label>
-                  <Textarea
-                    id="notes"
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="أي ملاحظات إضافية..."
-                    rows={3}
-                  />
-                </div>
-
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "جاري الإرسال..." : "إرسال طلب السحب"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* قائمة طلبات السحب */}
-          <Card className="shadow-card border-0 bg-gradient-card backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle>طلبات السحب السابقة</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-20 bg-muted/50 rounded animate-pulse" />
-                  ))}
-                </div>
-              ) : withdrawals.length === 0 ? (
-                <div className="text-center py-8">
-                  <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">لا توجد طلبات سحب سابقة</p>
-                </div>
-              ) : (
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {withdrawals.map((withdrawal) => (
-                    <div key={withdrawal.id} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-semibold text-lg">
-                            {formatCurrency(withdrawal.amount)}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {withdrawalMethods.find(m => m.value === withdrawal.withdrawal_method)?.label}
-                          </p>
+                  {/* عرض العمولة */}
+                  {formData.amount && (
+                    <div className="p-4 bg-gradient-primary rounded-lg text-white">
+                      <h3 className="font-semibold mb-2">تفاصيل السحب</h3>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span>المبلغ المطلوب:</span>
+                          <span>{formatCurrency(parseFloat(formData.amount) || 0)} دج</span>
                         </div>
-                        {getStatusBadge(withdrawal.status)}
+                        <div className="flex justify-between">
+                          <span>عمولة السحب:</span>
+                          <span>50.00 دج</span>
+                        </div>
+                        <Separator className="my-2 bg-white/20" />
+                        <div className="flex justify-between font-semibold">
+                          <span>إجمالي المخصوم:</span>
+                          <span>{formatCurrency((parseFloat(formData.amount) || 0) + 50)} دج</span>
+                        </div>
                       </div>
-                      
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">ملاحظات إضافية (اختياري)</Label>
+                    <Textarea
+                      id="notes"
+                      placeholder="أي ملاحظات إضافية..."
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      rows={3}
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-primary hover:opacity-90"
+                    disabled={submitting || loading}
+                    size="lg"
+                  >
+                    {submitting ? (
+                      <>
+                        <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        جاري الإرسال...
+                      </>
+                    ) : (
+                      <>
+                        إرسال طلب السحب
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* CCP Withdrawal */}
+          <TabsContent value="ccp" className="space-y-6">
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Banknote className="h-5 w-5" />
+                  سحب عبر CCP
+                </CardTitle>
+                <CardDescription>
+                  املأ بيانات حساب CCP الخاص بك لتلقي المبلغ
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="amount">المبلغ المطلوب سحبه (دج)</Label>
+                      <Input
+                        id="amount"
+                        type="number"
+                        placeholder="مثال: 5000"
+                        value={formData.amount}
+                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                        required
+                        min="500"
+                        max="200000"
+                        step="0.01"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="account_number">رقم الحساب CCP</Label>
+                      <Input
+                        id="account_number"
+                        type="text"
+                        placeholder="رقم حساب CCP"
+                        value={formData.account_number}
+                        onChange={(e) => setFormData({ ...formData, account_number: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="account_holder_name">اسم صاحب الحساب</Label>
+                    <Input
+                      id="account_holder_name"
+                      type="text"
+                      placeholder="الاسم الكامل لصاحب الحساب"
+                      value={formData.account_holder_name}
+                      onChange={(e) => setFormData({ ...formData, account_holder_name: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  {/* عرض العمولة */}
+                  {formData.amount && (
+                    <div className="p-4 bg-gradient-primary rounded-lg text-white">
+                      <h3 className="font-semibold mb-2">تفاصيل السحب</h3>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span>المبلغ المطلوب:</span>
+                          <span>{formatCurrency(parseFloat(formData.amount) || 0)} دج</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>عمولة السحب:</span>
+                          <span>50.00 دج</span>
+                        </div>
+                        <Separator className="my-2 bg-white/20" />
+                        <div className="flex justify-between font-semibold">
+                          <span>إجمالي المخصوم:</span>
+                          <span>{formatCurrency((parseFloat(formData.amount) || 0) + 50)} دج</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">ملاحظات إضافية (اختياري)</Label>
+                    <Textarea
+                      id="notes"
+                      placeholder="أي ملاحظات إضافية..."
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      rows={3}
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-primary hover:opacity-90"
+                    disabled={submitting || loading}
+                    size="lg"
+                  >
+                    {submitting ? (
+                      <>
+                        <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        جاري الإرسال...
+                      </>
+                    ) : (
+                      <>
+                        إرسال طلب السحب
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Cash Withdrawal */}
+          <TabsContent value="cash" className="space-y-6">
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  سحب نقدي
+                </CardTitle>
+                <CardDescription>
+                  حدد موقع الاستلام المفضل لاستلام المبلغ نقداً
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="amount">المبلغ المطلوب سحبه (دج)</Label>
+                      <Input
+                        id="amount"
+                        type="number"
+                        placeholder="مثال: 5000"
+                        value={formData.amount}
+                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                        required
+                        min="500"
+                        max="200000"
+                        step="0.01"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="cash_location">موقع الاستلام</Label>
+                      <Input
+                        id="cash_location"
+                        type="text"
+                        placeholder="مثال: وسط المدينة - الجزائر العاصمة"
+                        value={formData.cash_location}
+                        onChange={(e) => setFormData({ ...formData, cash_location: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* عرض العمولة */}
+                  {formData.amount && (
+                    <div className="p-4 bg-gradient-primary rounded-lg text-white">
+                      <h3 className="font-semibold mb-2">تفاصيل السحب</h3>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span>المبلغ المطلوب:</span>
+                          <span>{formatCurrency(parseFloat(formData.amount) || 0)} دج</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>عمولة السحب:</span>
+                          <span>50.00 دج</span>
+                        </div>
+                        <Separator className="my-2 bg-white/20" />
+                        <div className="flex justify-between font-semibold">
+                          <span>إجمالي المخصوم:</span>
+                          <span>{formatCurrency((parseFloat(formData.amount) || 0) + 50)} دج</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">ملاحظات إضافية (اختياري)</Label>
+                    <Textarea
+                      id="notes"
+                      placeholder="أي ملاحظات إضافية حول موقع الاستلام أو وقت مفضل..."
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      rows={3}
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-primary hover:opacity-90"
+                    disabled={submitting || loading}
+                    size="lg"
+                  >
+                    {submitting ? (
+                      <>
+                        <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        جاري الإرسال...
+                      </>
+                    ) : (
+                      <>
+                        إرسال طلب السحب النقدي
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Withdrawal History */}
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" />
+              تاريخ عمليات السحب
+            </CardTitle>
+            <CardDescription>
+              جميع طلبات السحب السابقة
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-16 bg-muted rounded animate-pulse" />
+                ))}
+              </div>
+            ) : withdrawals.length === 0 ? (
+              <div className="text-center py-8">
+                <ArrowUpRight className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">لا توجد عمليات سحب سابقة</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {withdrawals.map((withdrawal) => (
+                  <div key={withdrawal.id} className="border rounded-lg p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{formatCurrency(withdrawal.amount)} دج</span>
+                        <span className="text-sm text-muted-foreground">
+                          عبر {WithdrawalMethods[withdrawal.withdrawal_method as keyof typeof WithdrawalMethods]?.name || withdrawal.withdrawal_method}
+                        </span>
+                      </div>
+                      {getStatusBadge(withdrawal.status)}
+                    </div>
+                    <div className="text-sm text-muted-foreground space-y-1">
                       {withdrawal.withdrawal_method === 'cash' ? (
-                        <p className="text-sm">
-                          <strong>موقع الاستلام:</strong> {withdrawal.cash_location}
-                        </p>
+                        <p>موقع الاستلام: {withdrawal.cash_location}</p>
                       ) : (
-                        <div className="text-sm space-y-1">
-                          <p><strong>رقم الحساب:</strong> {withdrawal.account_number}</p>
-                          <p><strong>اسم الحساب:</strong> {withdrawal.account_holder_name}</p>
-                        </div>
+                        <>
+                          <p>رقم الحساب: {withdrawal.account_number}</p>
+                          <p>اسم الحساب: {withdrawal.account_holder_name}</p>
+                        </>
                       )}
-                      
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(withdrawal.created_at)}
-                      </p>
-                      
+                      <p>تاريخ الطلب: {formatDate(withdrawal.created_at)}</p>
                       {withdrawal.admin_notes && (
-                        <div className="bg-muted/50 p-2 rounded text-sm">
-                          <strong>ملاحظة الإدارة:</strong> {withdrawal.admin_notes}
-                        </div>
+                        <p className="text-blue-600 font-medium">ملاحظة: {withdrawal.admin_notes}</p>
                       )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
-};
-
-export default Withdrawals;
+}
