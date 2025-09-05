@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useBalance } from '@/hooks/useBalance';
 import { useWithdrawals } from '@/hooks/useWithdrawals';
 import { useToast } from '@/hooks/use-toast';
+import { useFeeSettings } from '@/hooks/useFeeSettings';
+import { calculateFee, formatCurrency } from '@/lib/feeCalculator';
 import { 
   ArrowUpRight,
   MapPin,
@@ -35,6 +37,7 @@ export default function Withdrawals() {
   const { balance, loading: balanceLoading } = useBalance();
   const { withdrawals, loading, createWithdrawal } = useWithdrawals();
   const { toast } = useToast();
+  const { feeSettings } = useFeeSettings();
 
   const [selectedMethod, setSelectedMethod] = React.useState<string>('opay');
   const [formData, setFormData] = React.useState({
@@ -45,6 +48,11 @@ export default function Withdrawals() {
     notes: ''
   });
   const [submitting, setSubmitting] = React.useState(false);
+
+  // حساب الرسوم
+  const withdrawalAmount = parseFloat(formData.amount) || 0;
+  const withdrawalFee = calculateFee(withdrawalAmount, feeSettings?.withdrawal_fees || null);
+  const totalDeducted = withdrawalAmount + withdrawalFee.fee_amount;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,11 +88,10 @@ export default function Withdrawals() {
     }
 
     // التحقق من الرصيد المتاح
-    const totalAmount = amount + 50; // إضافة العمولة
-    if ((balance?.balance || 0) < totalAmount) {
+    if ((balance?.balance || 0) < totalDeducted) {
       toast({
         title: "رصيد غير كافي",
-        description: `رصيدك الحالي ${(balance?.balance || 0).toFixed(2)} دج غير كافي للسحب مع العمولة`,
+        description: `رصيدك الحالي ${formatCurrency(balance?.balance || 0)} دج غير كافي للسحب مع الرسوم`,
         variant: "destructive"
       });
       return;
@@ -112,7 +119,7 @@ export default function Withdrawals() {
     setSubmitting(true);
     try {
       await createWithdrawal({
-        amount: totalAmount,
+        amount: totalDeducted,
         withdrawal_method: selectedMethod,
         account_number: formData.account_number || undefined,
         account_holder_name: formData.account_holder_name || undefined,
@@ -305,23 +312,23 @@ export default function Withdrawals() {
                     />
                   </div>
 
-                  {/* عرض العمولة */}
-                  {formData.amount && (
-                    <div className="p-4 bg-gradient-primary rounded-lg text-white">
-                      <h3 className="font-semibold mb-2">تفاصيل السحب</h3>
-                      <div className="space-y-1 text-sm">
+                  {/* عرض الرسوم */}
+                  {withdrawalAmount > 0 && (
+                    <div className="p-4 bg-gradient-secondary/10 rounded-xl border border-accent/20">
+                      <h3 className="font-semibold text-foreground mb-3">تفاصيل السحب</h3>
+                      <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span>المبلغ المطلوب:</span>
-                          <span>{formatCurrency(parseFloat(formData.amount) || 0)} دج</span>
+                          <span className="text-muted-foreground">المبلغ المطلوب:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(withdrawalAmount)} دج</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>عمولة السحب:</span>
-                          <span>50.00 دج</span>
+                          <span className="text-muted-foreground">رسوم السحب:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(withdrawalFee.fee_amount)} دج</span>
                         </div>
-                        <Separator className="my-2 bg-white/20" />
+                        <div className="h-px bg-border my-2"></div>
                         <div className="flex justify-between font-semibold">
-                          <span>إجمالي المخصوم:</span>
-                          <span>{formatCurrency((parseFloat(formData.amount) || 0) + 50)} دج</span>
+                          <span className="text-foreground">إجمالي المخصوم من رصيدك:</span>
+                          <span className="text-primary">{formatCurrency(totalDeducted)} دج</span>
                         </div>
                       </div>
                     </div>
@@ -416,23 +423,23 @@ export default function Withdrawals() {
                     />
                   </div>
 
-                  {/* عرض العمولة */}
-                  {formData.amount && (
-                    <div className="p-4 bg-gradient-primary rounded-lg text-white">
-                      <h3 className="font-semibold mb-2">تفاصيل السحب</h3>
-                      <div className="space-y-1 text-sm">
+                  {/* عرض الرسوم */}
+                  {withdrawalAmount > 0 && (
+                    <div className="p-4 bg-gradient-secondary/10 rounded-xl border border-accent/20">
+                      <h3 className="font-semibold text-foreground mb-3">تفاصيل السحب</h3>
+                      <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span>المبلغ المطلوب:</span>
-                          <span>{formatCurrency(parseFloat(formData.amount) || 0)} دج</span>
+                          <span className="text-muted-foreground">المبلغ المطلوب:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(withdrawalAmount)} دج</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>عمولة السحب:</span>
-                          <span>50.00 دج</span>
+                          <span className="text-muted-foreground">رسوم السحب:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(withdrawalFee.fee_amount)} دج</span>
                         </div>
-                        <Separator className="my-2 bg-white/20" />
+                        <div className="h-px bg-border my-2"></div>
                         <div className="flex justify-between font-semibold">
-                          <span>إجمالي المخصوم:</span>
-                          <span>{formatCurrency((parseFloat(formData.amount) || 0) + 50)} دج</span>
+                          <span className="text-foreground">إجمالي المخصوم من رصيدك:</span>
+                          <span className="text-primary">{formatCurrency(totalDeducted)} دج</span>
                         </div>
                       </div>
                     </div>
@@ -527,23 +534,23 @@ export default function Withdrawals() {
                     />
                   </div>
 
-                  {/* عرض العمولة */}
-                  {formData.amount && (
-                    <div className="p-4 bg-gradient-primary rounded-lg text-white">
-                      <h3 className="font-semibold mb-2">تفاصيل السحب</h3>
-                      <div className="space-y-1 text-sm">
+                  {/* عرض الرسوم */}
+                  {withdrawalAmount > 0 && (
+                    <div className="p-4 bg-gradient-secondary/10 rounded-xl border border-accent/20">
+                      <h3 className="font-semibold text-foreground mb-3">تفاصيل السحب</h3>
+                      <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span>المبلغ المطلوب:</span>
-                          <span>{formatCurrency(parseFloat(formData.amount) || 0)} دج</span>
+                          <span className="text-muted-foreground">المبلغ المطلوب:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(withdrawalAmount)} دج</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>عمولة السحب:</span>
-                          <span>50.00 دج</span>
+                          <span className="text-muted-foreground">رسوم السحب:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(withdrawalFee.fee_amount)} دج</span>
                         </div>
-                        <Separator className="my-2 bg-white/20" />
+                        <div className="h-px bg-border my-2"></div>
                         <div className="flex justify-between font-semibold">
-                          <span>إجمالي المخصوم:</span>
-                          <span>{formatCurrency((parseFloat(formData.amount) || 0) + 50)} دج</span>
+                          <span className="text-foreground">إجمالي المخصوم من رصيدك:</span>
+                          <span className="text-primary">{formatCurrency(totalDeducted)} دج</span>
                         </div>
                       </div>
                     </div>
@@ -626,23 +633,23 @@ export default function Withdrawals() {
                     </div>
                   </div>
 
-                  {/* عرض العمولة */}
-                  {formData.amount && (
-                    <div className="p-4 bg-gradient-primary rounded-lg text-white">
-                      <h3 className="font-semibold mb-2">تفاصيل السحب</h3>
-                      <div className="space-y-1 text-sm">
+                  {/* عرض الرسوم */}
+                  {withdrawalAmount > 0 && (
+                    <div className="p-4 bg-gradient-secondary/10 rounded-xl border border-accent/20">
+                      <h3 className="font-semibold text-foreground mb-3">تفاصيل السحب</h3>
+                      <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span>المبلغ المطلوب:</span>
-                          <span>{formatCurrency(parseFloat(formData.amount) || 0)} دج</span>
+                          <span className="text-muted-foreground">المبلغ المطلوب:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(withdrawalAmount)} دج</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>عمولة السحب:</span>
-                          <span>50.00 دج</span>
+                          <span className="text-muted-foreground">رسوم السحب:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(withdrawalFee.fee_amount)} دج</span>
                         </div>
-                        <Separator className="my-2 bg-white/20" />
+                        <div className="h-px bg-border my-2"></div>
                         <div className="flex justify-between font-semibold">
-                          <span>إجمالي المخصوم:</span>
-                          <span>{formatCurrency((parseFloat(formData.amount) || 0) + 50)} دج</span>
+                          <span className="text-foreground">إجمالي المخصوم من رصيدك:</span>
+                          <span className="text-primary">{formatCurrency(totalDeducted)} دج</span>
                         </div>
                       </div>
                     </div>

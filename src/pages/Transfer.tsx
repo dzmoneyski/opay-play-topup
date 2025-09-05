@@ -10,6 +10,8 @@ import { useBalance } from '@/hooks/useBalance';
 import { useTransfers } from '@/hooks/useTransfers';
 import { useContacts } from '@/hooks/useContacts';
 import { useToast } from '@/hooks/use-toast';
+import { useFeeSettings } from '@/hooks/useFeeSettings';
+import { calculateFee, formatCurrency } from '@/lib/feeCalculator';
 import BackButton from '@/components/BackButton';
 import { 
   Send, 
@@ -31,6 +33,7 @@ const Transfer = () => {
   const { contacts } = useContacts();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { feeSettings } = useFeeSettings();
   
   const [transferData, setTransferData] = useState({
     recipient: '',
@@ -40,6 +43,10 @@ const Transfer = () => {
   const [showBalance, setShowBalance] = useState(true);
 
   const quickAmounts = [100, 500, 1000, 2000, 5000];
+
+  const amount = parseFloat(transferData.amount) || 0;
+  const transferFee = calculateFee(amount, feeSettings?.transfer_fees || null);
+  const totalDeducted = amount + transferFee.fee_amount;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,10 +60,10 @@ const Transfer = () => {
       return;
     }
 
-    if (parseFloat(transferData.amount) > (balance?.balance || 0)) {
+    if (totalDeducted > (balance?.balance || 0)) {
       toast({
         title: "رصيد غير كافي",
-        description: "المبلغ المطلوب أكبر من رصيدك المتاح",
+        description: `رصيدك الحالي ${formatCurrency(balance?.balance || 0)} دج غير كافي للتحويل مع الرسوم`,
         variant: "destructive"
       });
       return;
@@ -206,6 +213,32 @@ const Transfer = () => {
                     </div>
                   </div>
 
+                  {/* Fee Preview */}
+                  {amount > 0 && (
+                    <div className="p-4 bg-gradient-secondary/10 rounded-xl border border-accent/20">
+                      <h3 className="font-semibold text-foreground mb-3">ملخص التحويل</h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">المبلغ المرسل:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(amount)} دج</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">رسوم التحويل:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(transferFee.fee_amount)} دج</span>
+                        </div>
+                        <div className="h-px bg-border my-2"></div>
+                        <div className="flex justify-between font-semibold">
+                          <span className="text-foreground">إجمالي المخصوم من رصيدك:</span>
+                          <span className="text-primary">{formatCurrency(totalDeducted)} دج</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">المستلم سيحصل على:</span>
+                          <span className="font-medium text-green-600">{formatCurrency(amount)} دج</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Note */}
                   <div className="space-y-2">
                     <Label htmlFor="note" className="text-foreground font-medium">
@@ -296,7 +329,7 @@ const Transfer = () => {
                     <ul className="text-sm text-muted-foreground space-y-1">
                       <li>• تشفير عالي المستوى</li>
                       <li>• تأكيد فوري للتحويل</li>
-                      <li>• بدون رسوم إضافية</li>
+                      <li>• رسوم منافسة وشفافة</li>
                       <li>• متاح 24/7</li>
                     </ul>
                   </div>

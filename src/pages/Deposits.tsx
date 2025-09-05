@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDeposits, PaymentMethod } from '@/hooks/useDeposits';
 import { useBalance } from '@/hooks/useBalance';
 import { useToast } from '@/hooks/use-toast';
+import { useFeeSettings } from '@/hooks/useFeeSettings';
+import { calculateFee, formatCurrency } from '@/lib/feeCalculator';
 import { 
   CreditCard,
   Upload,
@@ -32,11 +34,17 @@ export default function Deposits() {
   const { deposits, loading, createDeposit } = useDeposits();
   const { balance, loading: balanceLoading, fetchBalance } = useBalance();
   const { toast } = useToast();
+  const { feeSettings } = useFeeSettings();
   const [selectedMethod, setSelectedMethod] = React.useState<PaymentMethod>('baridimob');
   const [amount, setAmount] = React.useState('');
   const [transactionId, setTransactionId] = React.useState('');
   const [receiptFile, setReceiptFile] = React.useState<File | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
+
+  // حساب الرسوم
+  const depositAmount = parseFloat(amount) || 0;
+  const depositFee = calculateFee(depositAmount, feeSettings?.deposit_fees || null);
+  const netAmount = depositFee.net_amount;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -222,6 +230,28 @@ export default function Deposits() {
                       />
                     </div>
                   </div>
+
+                  {/* Fee Preview */}
+                  {depositAmount > 0 && (
+                    <div className="p-4 bg-gradient-secondary/10 rounded-xl border border-accent/20">
+                      <h3 className="font-semibold text-foreground mb-3">ملخص الإيداع</h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">المبلغ المرسل:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(depositAmount)} دج</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">رسوم الإيداع:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(depositFee.fee_amount)} دج</span>
+                        </div>
+                        <div className="h-px bg-border my-2"></div>
+                        <div className="flex justify-between font-semibold">
+                          <span className="text-foreground">صافي المبلغ المضاف لرصيدك:</span>
+                          <span className="text-green-600">{formatCurrency(netAmount)} دج</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label htmlFor="receipt">صورة الوصل</Label>
