@@ -120,28 +120,6 @@ const Cards = () => {
           </CardContent>
         </Card>
 
-        {/* Sample Cards Info */}
-        <Card className="bg-muted/30">
-          <CardHeader>
-            <CardTitle className="text-sm">بطاقات تجريبية متاحة:</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-2 text-xs">
-              <div className="flex justify-between p-2 bg-background rounded">
-                <span className="font-mono">1000-2024-0001</span>
-                <span className="font-bold">1000 دج</span>
-              </div>
-              <div className="flex justify-between p-2 bg-background rounded">
-                <span className="font-mono">2000-2024-0001</span>
-                <span className="font-bold">2000 دج</span>
-              </div>
-              <div className="flex justify-between p-2 bg-background rounded">
-                <span className="font-mono">5000-2024-0001</span>
-                <span className="font-bold">5000 دج</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
