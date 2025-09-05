@@ -304,9 +304,24 @@ export default function CardsPage() {
     `;
   };
 
-  // Create professional back card design (with QR code)
+  // Calculate pricing based on card value
+  const calculatePricing = (cardValue: number) => {
+    // Merchant cost (what app sells to merchant) - 3% discount from face value
+    const merchantCost = cardValue * 0.97;
+    // Customer price (what merchant sells to customer) - face value + 2% markup
+    const customerPrice = cardValue * 1.02;
+    
+    return {
+      merchantCost: Math.round(merchantCost),
+      customerPrice: Math.round(customerPrice)
+    };
+  };
+
+  // Create professional back card design (with QR code and pricing)
   const createBackCardHTML = (card: any) => {
     const qrCode = qrCodes[card.id];
+    const pricing = calculatePricing(card.amount);
+    
     return `
       <div style="
         width: 340px;
@@ -319,6 +334,35 @@ export default function CardsPage() {
         overflow: hidden;
         box-shadow: 0 20px 40px rgba(31, 41, 55, 0.3);
       ">
+        <!-- Pricing Section - Top Left -->
+        <div style="
+          position: absolute;
+          top: 20px;
+          left: 24px;
+          background: rgba(16, 185, 129, 0.9);
+          border-radius: 8px;
+          padding: 8px 12px;
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255,255,255,0.1);
+        ">
+          <div style="
+            font-size: 10px;
+            opacity: 0.9;
+            margin-bottom: 2px;
+          ">سعر التاجر</div>
+          <div style="
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 4px;
+          ">${pricing.merchantCost.toFixed(0)} دج</div>
+          <div style="
+            font-size: 9px;
+            opacity: 0.8;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 2px;
+          ">بيع: ${pricing.customerPrice.toFixed(0)} دج</div>
+        </div>
+        
         <!-- Magnetic Strip -->
         <div style="
           position: absolute;
