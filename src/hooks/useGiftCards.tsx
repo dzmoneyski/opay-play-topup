@@ -21,13 +21,12 @@ export const useGiftCards = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc('redeem_gift_card', {
-        _card_code: cardCode.trim(),
-        _user_id: user.id
+        _card_code: cardCode.trim()
       });
 
       if (error) throw error;
 
-      const result = data as { success: boolean; error?: string; message?: string; amount?: number };
+      const result = data as { success: boolean; error?: string; message?: string; amount?: number; locked_until?: string; remaining_seconds?: number };
 
       if (result.success) {
         toast({
@@ -36,9 +35,12 @@ export const useGiftCards = () => {
         });
         return true;
       } else {
+        const lockedMsg = result.locked_until 
+          ? ` تم الإيقاف حتى ${new Date(result.locked_until).toLocaleString('ar-DZ')}`
+          : '';
         toast({
           title: "خطأ",
-          description: result.error,
+          description: `${result.error}${lockedMsg}`,
           variant: "destructive",
         });
         return false;

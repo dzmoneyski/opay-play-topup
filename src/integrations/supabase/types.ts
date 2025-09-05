@@ -96,6 +96,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          failed_redeem_attempts: number
           full_name: string | null
           id: string
           identity_verification_status: string | null
@@ -106,12 +107,14 @@ export type Database = {
           phone: string | null
           phone_verification_code: string | null
           phone_verification_expires_at: string | null
+          redeem_locked_until: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          failed_redeem_attempts?: number
           full_name?: string | null
           id?: string
           identity_verification_status?: string | null
@@ -122,12 +125,14 @@ export type Database = {
           phone?: string | null
           phone_verification_code?: string | null
           phone_verification_expires_at?: string | null
+          redeem_locked_until?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          failed_redeem_attempts?: number
           full_name?: string | null
           id?: string
           identity_verification_status?: string | null
@@ -138,6 +143,7 @@ export type Database = {
           phone?: string | null
           phone_verification_code?: string | null
           phone_verification_expires_at?: string | null
+          redeem_locked_until?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -386,7 +392,7 @@ export type Database = {
         Returns: undefined
       }
       redeem_gift_card: {
-        Args: { _card_code: string; _user_id: string }
+        Args: { _card_code: string }
         Returns: Json
       }
       reject_verification_request: {
