@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Settings as SettingsIcon, 
   CreditCard,
@@ -15,8 +17,28 @@ import {
   DollarSign,
   Percent,
   Clock,
-  Save
+  Save,
+  PiggyBank,
+  TrendingUp,
+  Calculator,
+  AlertCircle,
+  Calendar
 } from 'lucide-react';
+
+interface FeeConfig {
+  percentage: number;
+  fixed_amount: number;
+  min_fee: number;
+  max_fee: number;
+  enabled: boolean;
+  paid_by?: string;
+}
+
+interface FeeSettings {
+  deposit_fees: FeeConfig;
+  withdrawal_fees: FeeConfig;
+  transfer_fees: FeeConfig & { paid_by: string };
+}
 
 export default function SettingsPage() {
   const [settings, setSettings] = React.useState({
@@ -26,13 +48,11 @@ export default function SettingsPage() {
     support_email: 'support@opay-dz.com',
     support_phone: '0800123456',
     
-    // Payment Settings
+    // Payment Limits
     min_deposit: 1000,
     max_deposit: 500000,
     min_withdrawal: 500,
     max_withdrawal: 200000,
-    withdrawal_fee: 50,
-    transfer_fee: 25,
     
     // Verification Settings
     phone_verification_enabled: true,
@@ -56,7 +76,110 @@ export default function SettingsPage() {
     maintenance_message: 'النظام قيد الصيانة. سنعود قريباً.'
   });
 
+  const [feeSettings, setFeeSettings] = React.useState<FeeSettings>({
+    deposit_fees: {
+      percentage: 0.5,
+      fixed_amount: 0,
+      min_fee: 10,
+      max_fee: 500,
+      enabled: true
+    },
+    withdrawal_fees: {
+      percentage: 1.5,
+      fixed_amount: 20,
+      min_fee: 20,
+      max_fee: 1000,
+      enabled: true
+    },
+    transfer_fees: {
+      percentage: 0.5,
+      fixed_amount: 0,
+      min_fee: 5,
+      max_fee: 200,
+      enabled: true,
+      paid_by: 'sender'
+    }
+  });
+
+  const [platformRevenue, setPlatformRevenue] = React.useState({
+    total_revenue: 0,
+    monthly_revenue: 0,
+    deposit_fees_total: 0,
+    withdrawal_fees_total: 0,
+    transfer_fees_total: 0
+  });
+
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
+
+  // Load fee settings on component mount
+  React.useEffect(() => {
+    const loadFeeSettings = async () => {
+      try {
+        const { data: settingsData, error } = await supabase
+          .from('platform_settings')
+          .select('*')
+          .in('setting_key', ['deposit_fees', 'withdrawal_fees', 'transfer_fees']);
+
+        if (error) throw error;
+
+        if (settingsData && settingsData.length > 0) {
+          const newFeeSettings: any = {};
+          settingsData.forEach(setting => {
+            newFeeSettings[setting.setting_key] = setting.setting_value;
+          });
+          setFeeSettings(prev => ({ ...prev, ...newFeeSettings }));
+        }
+
+        // Load platform revenue
+        const { data: revenueData, error: revenueError } = await supabase
+          .from('platform_ledger')
+          .select('transaction_type, fee_amount, created_at');
+
+        if (revenueError) throw revenueError;
+
+        if (revenueData) {
+          const totalRevenue = revenueData.reduce((sum, item) => sum + Number(item.fee_amount), 0);
+          const currentMonth = new Date().getMonth();
+          const currentYear = new Date().getFullYear();
+          
+          const monthlyRevenue = revenueData
+            .filter(item => {
+              const itemDate = new Date(item.created_at);
+              return itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear;
+            })
+            .reduce((sum, item) => sum + Number(item.fee_amount), 0);
+
+          const depositFeesTotal = revenueData
+            .filter(item => item.transaction_type === 'deposit_fee')
+            .reduce((sum, item) => sum + Number(item.fee_amount), 0);
+
+          const withdrawalFeesTotal = revenueData
+            .filter(item => item.transaction_type === 'withdrawal_fee')
+            .reduce((sum, item) => sum + Number(item.fee_amount), 0);
+
+          const transferFeesTotal = revenueData
+            .filter(item => item.transaction_type === 'transfer_fee')
+            .reduce((sum, item) => sum + Number(item.fee_amount), 0);
+
+          setPlatformRevenue({
+            total_revenue: totalRevenue,
+            monthly_revenue: monthlyRevenue,
+            deposit_fees_total: depositFeesTotal,
+            withdrawal_fees_total: withdrawalFeesTotal,
+            transfer_fees_total: transferFeesTotal
+          });
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFeeSettings();
+  }, []);
 
   const handleInputChange = (key: string, value: any) => {
     setSettings(prev => ({
@@ -65,12 +188,79 @@ export default function SettingsPage() {
     }));
   };
 
-  const handleSave = () => {
-    // هنا سيتم حفظ الإعدادات في قاعدة البيانات
-    console.log('Saving settings:', settings);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleFeeSettingChange = (feeType: keyof FeeSettings, key: string, value: any) => {
+    setFeeSettings(prev => ({
+      ...prev,
+      [feeType]: {
+        ...prev[feeType],
+        [key]: value
+      }
+    }));
   };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      // Save fee settings to database
+      const feeUpdates = Object.entries(feeSettings).map(([key, value]) => ({
+        setting_key: key,
+        setting_value: value,
+        description: key === 'deposit_fees' ? 'إعدادات رسوم الإيداع' :
+                    key === 'withdrawal_fees' ? 'إعدادات رسوم السحب' :
+                    'إعدادات رسوم التحويل'
+      }));
+
+      for (const update of feeUpdates) {
+        const { error } = await supabase
+          .from('platform_settings')
+          .upsert(update, { onConflict: 'setting_key' });
+        
+        if (error) throw error;
+      }
+
+      console.log('Settings saved successfully');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      alert('خطأ في حفظ الإعدادات');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('ar-DZ', {
+      style: 'currency',
+      currency: 'DZD',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
+  const calculateFeePreview = (amount: number, config: FeeConfig) => {
+    if (!config.enabled) return { fee: 0, net: amount };
+    
+    let fee = (amount * config.percentage / 100) + config.fixed_amount;
+    fee = Math.max(fee, config.min_fee);
+    fee = Math.min(fee, config.max_fee);
+    
+    return { fee: Math.round(fee), net: amount - Math.round(fee) };
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-muted rounded w-1/3" />
+          <div className="grid gap-4 lg:grid-cols-2">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-64 bg-muted rounded" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -79,16 +269,354 @@ export default function SettingsPage() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">إعدادات النظام</h1>
           <p className="text-muted-foreground mt-2">
-            إدارة إعدادات المنصة والتحكم في السلوكيات العامة
+            إدارة إعدادات المنصة والتحكم في الرسوم والأرباح
           </p>
         </div>
-        <Button onClick={handleSave} className="bg-gradient-primary">
+        <Button onClick={handleSave} disabled={saving} className="bg-gradient-primary">
           <Save className="w-4 h-4 mr-2" />
-          {saved ? 'تم الحفظ!' : 'حفظ التغييرات'}
+          {saving ? 'جاري الحفظ...' : saved ? 'تم الحفظ!' : 'حفظ التغييرات'}
         </Button>
       </div>
 
+      {/* Platform Revenue Overview */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">إجمالي الأرباح</CardTitle>
+            <TrendingUp className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {formatCurrency(platformRevenue.total_revenue)}
+            </div>
+            <p className="text-xs text-muted-foreground">جميع الرسوم المحصلة</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">أرباح هذا الشهر</CardTitle>
+            <Calendar className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              {formatCurrency(platformRevenue.monthly_revenue)}
+            </div>
+            <p className="text-xs text-muted-foreground">الشهر الحالي</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">رسوم الإيداع</CardTitle>
+            <DollarSign className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">
+              {formatCurrency(platformRevenue.deposit_fees_total)}
+            </div>
+            <p className="text-xs text-muted-foreground">إجمالي رسوم الإيداع</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">رسوم السحب والتحويل</CardTitle>
+            <Percent className="h-4 w-4 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              {formatCurrency(platformRevenue.withdrawal_fees_total + platformRevenue.transfer_fees_total)}
+            </div>
+            <p className="text-xs text-muted-foreground">رسوم السحب + التحويل</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* Fee Settings - Deposit */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PiggyBank className="h-5 w-5" />
+              رسوم الإيداع
+            </CardTitle>
+            <CardDescription>
+              إعدادات رسوم الإيداع والحدود
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>تفعيل رسوم الإيداع</Label>
+                <p className="text-sm text-muted-foreground">تطبيق رسوم على عمليات الإيداع</p>
+              </div>
+              <Switch
+                checked={feeSettings.deposit_fees.enabled}
+                onCheckedChange={(checked) => handleFeeSettingChange('deposit_fees', 'enabled', checked)}
+              />
+            </div>
+
+            {feeSettings.deposit_fees.enabled && (
+              <div className="space-y-4 pt-4 border-t">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>نسبة مئوية (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={feeSettings.deposit_fees.percentage}
+                      onChange={(e) => handleFeeSettingChange('deposit_fees', 'percentage', parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>مبلغ ثابت (دج)</Label>
+                    <Input
+                      type="number"
+                      value={feeSettings.deposit_fees.fixed_amount}
+                      onChange={(e) => handleFeeSettingChange('deposit_fees', 'fixed_amount', parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>حد أدنى للرسوم (دج)</Label>
+                    <Input
+                      type="number"
+                      value={feeSettings.deposit_fees.min_fee}
+                      onChange={(e) => handleFeeSettingChange('deposit_fees', 'min_fee', parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>حد أقصى للرسوم (دج)</Label>
+                    <Input
+                      type="number"
+                      value={feeSettings.deposit_fees.max_fee}
+                      onChange={(e) => handleFeeSettingChange('deposit_fees', 'max_fee', parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+
+                {/* Fee Preview */}
+                <div className="bg-muted/30 p-3 rounded-md">
+                  <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <Calculator className="h-4 w-4" />
+                    معاينة الرسوم
+                  </h4>
+                  <div className="space-y-1 text-xs">
+                    {[1000, 10000, 50000].map(amount => {
+                      const preview = calculateFeePreview(amount, feeSettings.deposit_fees);
+                      return (
+                        <div key={amount} className="flex justify-between">
+                          <span>إيداع {formatCurrency(amount)}:</span>
+                          <span>رسوم {formatCurrency(preview.fee)} | صافي {formatCurrency(preview.net)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Fee Settings - Withdrawal */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              رسوم السحب
+            </CardTitle>
+            <CardDescription>
+              إعدادات رسوم السحب والحدود
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>تفعيل رسوم السحب</Label>
+                <p className="text-sm text-muted-foreground">تطبيق رسوم على عمليات السحب</p>
+              </div>
+              <Switch
+                checked={feeSettings.withdrawal_fees.enabled}
+                onCheckedChange={(checked) => handleFeeSettingChange('withdrawal_fees', 'enabled', checked)}
+              />
+            </div>
+
+            {feeSettings.withdrawal_fees.enabled && (
+              <div className="space-y-4 pt-4 border-t">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>نسبة مئوية (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={feeSettings.withdrawal_fees.percentage}
+                      onChange={(e) => handleFeeSettingChange('withdrawal_fees', 'percentage', parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>مبلغ ثابت (دج)</Label>
+                    <Input
+                      type="number"
+                      value={feeSettings.withdrawal_fees.fixed_amount}
+                      onChange={(e) => handleFeeSettingChange('withdrawal_fees', 'fixed_amount', parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>حد أدنى للرسوم (دج)</Label>
+                    <Input
+                      type="number"
+                      value={feeSettings.withdrawal_fees.min_fee}
+                      onChange={(e) => handleFeeSettingChange('withdrawal_fees', 'min_fee', parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>حد أقصى للرسوم (دج)</Label>
+                    <Input
+                      type="number"
+                      value={feeSettings.withdrawal_fees.max_fee}
+                      onChange={(e) => handleFeeSettingChange('withdrawal_fees', 'max_fee', parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+
+                {/* Fee Preview */}
+                <div className="bg-muted/30 p-3 rounded-md">
+                  <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <Calculator className="h-4 w-4" />
+                    معاينة الرسوم
+                  </h4>
+                  <div className="space-y-1 text-xs">
+                    {[1000, 10000, 50000].map(amount => {
+                      const preview = calculateFeePreview(amount, feeSettings.withdrawal_fees);
+                      return (
+                        <div key={amount} className="flex justify-between">
+                          <span>سحب {formatCurrency(amount)}:</span>
+                          <span>رسوم {formatCurrency(preview.fee)} | إجمالي {formatCurrency(amount + preview.fee)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Fee Settings - Transfer */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              رسوم التحويل
+            </CardTitle>
+            <CardDescription>
+              إعدادات رسوم التحويل بين المستخدمين
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>تفعيل رسوم التحويل</Label>
+                <p className="text-sm text-muted-foreground">تطبيق رسوم على التحويلات</p>
+              </div>
+              <Switch
+                checked={feeSettings.transfer_fees.enabled}
+                onCheckedChange={(checked) => handleFeeSettingChange('transfer_fees', 'enabled', checked)}
+              />
+            </div>
+
+            {feeSettings.transfer_fees.enabled && (
+              <div className="space-y-4 pt-4 border-t">
+                <div className="space-y-2">
+                  <Label>من يدفع الرسوم؟</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={feeSettings.transfer_fees.paid_by === 'sender' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleFeeSettingChange('transfer_fees', 'paid_by', 'sender')}
+                      className="flex-1"
+                    >
+                      المرسل
+                    </Button>
+                    <Button
+                      variant={feeSettings.transfer_fees.paid_by === 'recipient' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleFeeSettingChange('transfer_fees', 'paid_by', 'recipient')}
+                      className="flex-1"
+                    >
+                      المستلم
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>نسبة مئوية (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={feeSettings.transfer_fees.percentage}
+                      onChange={(e) => handleFeeSettingChange('transfer_fees', 'percentage', parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>مبلغ ثابت (دج)</Label>
+                    <Input
+                      type="number"
+                      value={feeSettings.transfer_fees.fixed_amount}
+                      onChange={(e) => handleFeeSettingChange('transfer_fees', 'fixed_amount', parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>حد أدنى للرسوم (دج)</Label>
+                    <Input
+                      type="number"
+                      value={feeSettings.transfer_fees.min_fee}
+                      onChange={(e) => handleFeeSettingChange('transfer_fees', 'min_fee', parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>حد أقصى للرسوم (دج)</Label>
+                    <Input
+                      type="number"
+                      value={feeSettings.transfer_fees.max_fee}
+                      onChange={(e) => handleFeeSettingChange('transfer_fees', 'max_fee', parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+
+                {/* Fee Preview */}
+                <div className="bg-muted/30 p-3 rounded-md">
+                  <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <Calculator className="h-4 w-4" />
+                    معاينة الرسوم ({feeSettings.transfer_fees.paid_by === 'sender' ? 'المرسل يدفع' : 'المستلم يدفع'})
+                  </h4>
+                  <div className="space-y-1 text-xs">
+                    {[500, 2000, 10000].map(amount => {
+                      const preview = calculateFeePreview(amount, feeSettings.transfer_fees);
+                      return (
+                        <div key={amount} className="flex justify-between">
+                          <span>تحويل {formatCurrency(amount)}:</span>
+                          <span>رسوم {formatCurrency(preview.fee)} | يستلم {formatCurrency(preview.net)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* General Settings */}
         <Card>
           <CardHeader>
@@ -141,15 +669,15 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Payment Settings */}
+        {/* Payment Limits */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5" />
-              إعدادات الدفع
+              حدود العمليات المالية
             </CardTitle>
             <CardDescription>
-              حدود وعمولات العمليات المالية
+              الحدود الدنيا والعليا للمعاملات
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -193,28 +721,6 @@ export default function SettingsPage() {
                   type="number"
                   value={settings.max_withdrawal}
                   onChange={(e) => handleInputChange('max_withdrawal', parseInt(e.target.value))}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="withdrawal_fee">عمولة السحب (دج)</Label>
-                <Input
-                  id="withdrawal_fee"
-                  type="number"
-                  value={settings.withdrawal_fee}
-                  onChange={(e) => handleInputChange('withdrawal_fee', parseInt(e.target.value))}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="transfer_fee">عمولة التحويل (دج)</Label>
-                <Input
-                  id="transfer_fee"
-                  type="number"
-                  value={settings.transfer_fee}
-                  onChange={(e) => handleInputChange('transfer_fee', parseInt(e.target.value))}
                 />
               </div>
             </div>
@@ -446,6 +952,52 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Platform Revenue Analytics */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            تحليلات الأرباح
+          </CardTitle>
+          <CardDescription>
+            عرض تفصيلي لأرباح المنصة من الرسوم
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <PiggyBank className="h-4 w-4 text-green-600" />
+                <span className="font-medium text-green-800">رسوم الإيداع</span>
+              </div>
+              <div className="text-xl font-bold text-green-600">
+                {formatCurrency(platformRevenue.deposit_fees_total)}
+              </div>
+            </div>
+
+            <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <CreditCard className="h-4 w-4 text-orange-600" />
+                <span className="font-medium text-orange-800">رسوم السحب</span>
+              </div>
+              <div className="text-xl font-bold text-orange-600">
+                {formatCurrency(platformRevenue.withdrawal_fees_total)}
+              </div>
+            </div>
+
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="h-4 w-4 text-blue-600" />
+                <span className="font-medium text-blue-800">رسوم التحويل</span>
+              </div>
+              <div className="text-xl font-bold text-blue-600">
+                {formatCurrency(platformRevenue.transfer_fees_total)}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
