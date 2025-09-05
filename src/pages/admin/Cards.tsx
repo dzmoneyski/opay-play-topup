@@ -304,17 +304,24 @@ export default function CardsPage() {
     `;
   };
 
-  // Calculate pricing based on card value
+  // Fee settings state
+  const [feeSettings, setFeeSettings] = useState({
+    companyFee: 1, // 1% للشركة
+    merchantFee: 2 // 2% للتاجر
+  });
+
+  // Calculate pricing based on card value and current fee settings
   const calculatePricing = (cardValue: number) => {
-    // Company sells to merchant: face value + commission (3%)
-    const merchantCost = cardValue + (cardValue * 0.03);
-    // Merchant sells to customer: face value + merchant commission (5%)
-    const customerPrice = cardValue + (cardValue * 0.05);
+    // Company sells to merchant: face value + company commission
+    const merchantCost = cardValue + (cardValue * (feeSettings.companyFee / 100));
+    // Merchant sells to customer: face value + total commission (company + merchant)
+    const customerPrice = cardValue + (cardValue * ((feeSettings.companyFee + feeSettings.merchantFee) / 100));
     
     return {
       merchantCost: Math.round(merchantCost),
       customerPrice: Math.round(customerPrice),
-      faceValue: cardValue // User gets full face value when redeeming
+      faceValue: cardValue, // User gets full face value when redeeming
+      totalFeePercent: feeSettings.companyFee + feeSettings.merchantFee
     };
   };
 
@@ -834,6 +841,64 @@ export default function CardsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Fee Settings Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-bold">إعدادات الرسوم</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            تحكم في نسب الرسوم للشركة والتاجر
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="companyFee">رسوم الشركة (%)</Label>
+              <Input
+                id="companyFee"
+                type="number"
+                value={feeSettings.companyFee}
+                onChange={(e) => setFeeSettings({
+                  ...feeSettings,
+                  companyFee: Math.max(0, Math.min(10, Number(e.target.value)))
+                })}
+                min="0"
+                max="10"
+                step="0.1"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="merchantFee">رسوم التاجر (%)</Label>
+              <Input
+                id="merchantFee"
+                type="number"
+                value={feeSettings.merchantFee}
+                onChange={(e) => setFeeSettings({
+                  ...feeSettings,
+                  merchantFee: Math.max(0, Math.min(10, Number(e.target.value)))
+                })}
+                min="0"
+                max="10"
+                step="0.1"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>إجمالي الرسوم</Label>
+              <div className="p-2 bg-muted rounded-md text-center font-bold">
+                {(feeSettings.companyFee + feeSettings.merchantFee).toFixed(1)}%
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-sm text-blue-800">
+              <strong>مثال على بطاقة 1000 دج:</strong><br/>
+              • سعر الشركة للتاجر: {calculatePricing(1000).merchantCost} دج<br/>
+              • سعر التاجر للمستخدم: {calculatePricing(1000).customerPrice} دج<br/>
+              • المستخدم يحصل على: 1000 دج (القيمة كاملة)
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Search and Filters */}
       <Card>
