@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useGiftCards } from '@/hooks/useGiftCards';
 import { useBalance } from '@/hooks/useBalance';
-import { CreditCard, Wallet } from 'lucide-react';
+import { CreditCard, Wallet, QrCode } from 'lucide-react';
 import BackButton from '@/components/BackButton';
+import { QRScannerForCards } from '@/components/QRScannerForCards';
 
 const Cards = () => {
   const [cardCode, setCardCode] = useState('');
+  const [showQRScanner, setShowQRScanner] = useState(false);
   const { redeemGiftCard, loading } = useGiftCards();
   const { balance } = useBalance();
 
@@ -115,14 +117,36 @@ const Cards = () => {
                 </div>
               </div>
 
-              {/* Submit Button */}
-              <Button 
-                type="submit" 
-                className="w-full h-12 text-lg"
-                disabled={loading || cardCode.length !== 12}
-              >
-                {loading ? 'جاري التحقق...' : 'تفعيل'}
-              </Button>
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 text-lg"
+                  disabled={loading || cardCode.length !== 12}
+                >
+                  {loading ? 'جاري التحقق...' : 'تفعيل'}
+                </Button>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-muted-foreground/20" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">أو</span>
+                  </div>
+                </div>
+                
+                <Button 
+                  type="button"
+                  onClick={() => setShowQRScanner(true)}
+                  variant="outline"
+                  className="w-full h-12 text-lg border-2 border-primary/20 hover:border-primary/40"
+                  disabled={loading}
+                >
+                  <QrCode className="h-5 w-5 ml-2" />
+                  مسح QR كود
+                </Button>
+              </div>
             </form>
 
             {/* Instructions */}
@@ -138,6 +162,16 @@ const Cards = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* QR Scanner Modal */}
+        <QRScannerForCards
+          open={showQRScanner}
+          onOpenChange={setShowQRScanner}
+          onSuccess={() => {
+            // Optionally refresh balance or show success message
+            setCardCode('');
+          }}
+        />
 
       </div>
     </div>
