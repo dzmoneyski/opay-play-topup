@@ -27,20 +27,20 @@ export const usePaymentWallets = () => {
       if (data?.setting_value) {
         setWallets(data.setting_value as unknown as PaymentWallets);
       } else {
-        // Set default wallet values if no data exists
+        // Set default wallets if no settings exist
         setWallets({
           baridimob: "0551234567",
-          ccp: "002345678910",
-          edahabiya: "0661234567"
+          ccp: "غير متاح",
+          edahabiya: "غير متاح"
         });
       }
     } catch (error) {
       console.error('Error fetching payment wallets:', error);
-      // Set default values even on error to prevent UI issues
+      // Set default wallets on error to prevent app breaking
       setWallets({
         baridimob: "0551234567",
-        ccp: "002345678910", 
-        edahabiya: "0661234567"
+        ccp: "غير متاح",
+        edahabiya: "غير متاح"
       });
     } finally {
       setLoading(false);
