@@ -85,33 +85,30 @@ const Cards = () => {
                           maxLength={12}
                           disabled={loading}
                         >
-                          <div className="flex justify-between items-center w-full px-1">
+                          <div className="flex justify-between items-center w-full">
                             {/* First group of 4 digits */}
-                            <InputOTPGroup className="gap-1">
-                              <InputOTPSlot index={0} className="w-8 h-10 bg-white/10 border-white/20 text-white text-lg font-bold rounded-md" />
-                              <InputOTPSlot index={1} className="w-8 h-10 bg-white/10 border-white/20 text-white text-lg font-bold rounded-md" />
-                              <InputOTPSlot index={2} className="w-8 h-10 bg-white/10 border-white/20 text-white text-lg font-bold rounded-md" />
-                              <InputOTPSlot index={3} className="w-8 h-10 bg-white/10 border-white/20 text-white text-lg font-bold rounded-md" />
+                            <InputOTPGroup className="flex gap-1">
+                              <InputOTPSlot index={0} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
+                              <InputOTPSlot index={1} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
+                              <InputOTPSlot index={2} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
+                              <InputOTPSlot index={3} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
                             </InputOTPGroup>
                             
                             {/* Second group of 4 digits */}
-                            <InputOTPGroup className="gap-1">
-                              <InputOTPSlot index={4} className="w-8 h-10 bg-white/10 border-white/20 text-white text-lg font-bold rounded-md" />
-                              <InputOTPSlot index={5} className="w-8 h-10 bg-white/10 border-white/20 text-white text-lg font-bold rounded-md" />
-                              <InputOTPSlot index={6} className="w-8 h-10 bg-white/10 border-white/20 text-white text-lg font-bold rounded-md" />
-                              <InputOTPSlot index={7} className="w-8 h-10 bg-white/10 border-white/20 text-white text-lg font-bold rounded-md" />
+                            <InputOTPGroup className="flex gap-1">
+                              <InputOTPSlot index={4} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
+                              <InputOTPSlot index={5} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
+                              <InputOTPSlot index={6} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
+                              <InputOTPSlot index={7} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
                             </InputOTPGroup>
                             
-                            {/* Third group of 3 digits */}
-                            <InputOTPGroup className="gap-1">
-                              <InputOTPSlot index={8} className="w-8 h-10 bg-white/10 border-white/20 text-white text-lg font-bold rounded-md" />
-                              <InputOTPSlot index={9} className="w-8 h-10 bg-white/10 border-white/20 text-white text-lg font-bold rounded-md" />
-                              <InputOTPSlot index={10} className="w-8 h-10 bg-white/10 border-white/20 text-white text-lg font-bold rounded-md" />
-                            </InputOTPGroup>
-                            
-                            {/* Check digit with special styling */}
-                            <InputOTPGroup>
-                              <InputOTPSlot index={11} className="w-10 h-10 bg-gradient-to-br from-yellow-400/20 to-orange-400/20 border-2 border-yellow-400/50 text-yellow-100 text-lg font-extrabold rounded-md shadow-lg" />
+                            {/* Third group of 4 digits including check digit */}
+                            <InputOTPGroup className="flex gap-1">
+                              <InputOTPSlot index={8} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
+                              <InputOTPSlot index={9} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
+                              <InputOTPSlot index={10} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
+                              {/* Check digit with special styling but same size */}
+                              <InputOTPSlot index={11} className="w-7 h-9 bg-gradient-to-br from-yellow-400/20 to-orange-400/20 border-2 border-yellow-400/50 text-yellow-100 text-base font-extrabold rounded-md" />
                             </InputOTPGroup>
                           </div>
                         </InputOTP>
