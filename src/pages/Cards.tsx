@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useGiftCards } from '@/hooks/useGiftCards';
@@ -79,39 +78,17 @@ const Cards = () => {
                         رقم البطاقة
                       </Label>
                       <div className="w-full" dir="ltr">
-                        <InputOTP
+                        <input
+                          id="cardCode"
+                          type="text"
                           value={cardCode}
-                          onChange={(val) => setCardCode(val.replace(/\D/g, '').slice(0, 12))}
+                          onChange={(e) => setCardCode(e.target.value.replace(/\D/g, '').slice(0, 12))}
                           maxLength={12}
                           disabled={loading}
-                        >
-                          <div className="flex justify-between items-center w-full">
-                            {/* First group of 4 digits */}
-                            <InputOTPGroup className="flex gap-1">
-                              <InputOTPSlot index={0} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
-                              <InputOTPSlot index={1} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
-                              <InputOTPSlot index={2} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
-                              <InputOTPSlot index={3} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
-                            </InputOTPGroup>
-                            
-                            {/* Second group of 4 digits */}
-                            <InputOTPGroup className="flex gap-1">
-                              <InputOTPSlot index={4} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
-                              <InputOTPSlot index={5} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
-                              <InputOTPSlot index={6} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
-                              <InputOTPSlot index={7} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
-                            </InputOTPGroup>
-                            
-                            {/* Third group of 4 digits including check digit */}
-                            <InputOTPGroup className="flex gap-1">
-                              <InputOTPSlot index={8} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
-                              <InputOTPSlot index={9} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
-                              <InputOTPSlot index={10} className="w-7 h-9 bg-white/10 border-white/20 text-white text-base font-bold rounded-md" />
-                              {/* Check digit with special styling but same size */}
-                              <InputOTPSlot index={11} className="w-7 h-9 bg-gradient-to-br from-yellow-400/20 to-orange-400/20 border-2 border-yellow-400/50 text-yellow-100 text-base font-extrabold rounded-md" />
-                            </InputOTPGroup>
-                          </div>
-                        </InputOTP>
+                          placeholder="000000000000"
+                          className="w-full h-12 bg-white/10 border-2 border-white/20 rounded-lg text-white text-center text-xl font-bold tracking-[0.5em] placeholder:text-white/30 placeholder:tracking-[0.5em] focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all duration-200 disabled:opacity-50"
+                          style={{ letterSpacing: '0.5em' }}
+                        />
                       </div>
                       <p className="text-xs text-white/60 text-center mt-2" dir="rtl">
                         آخر رقم هو رقم التحقق
