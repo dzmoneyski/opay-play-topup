@@ -3,10 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Smartphone, CreditCard, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 const Welcome = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
   const slides = [
     {
@@ -30,12 +32,19 @@ const Welcome = () => {
   ];
 
   useEffect(() => {
-    // التحقق إذا كان المستخدم شاهد المقدمة من قبل
+    if (loading) return; // انتظر حالة المصادقة
     const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
+
     if (hasSeenWelcome) {
-      navigate('/auth');
+      navigate(user ? '/' : '/auth');
+      return;
     }
-  }, [navigate]);
+
+    // إن كان المستخدم مسجلاً الدخول ووصل هنا، أعده للصفحة الرئيسية
+    if (user) {
+      navigate('/', { replace: true });
+    }
+  }, [navigate, user, loading]);
 
   const handleNext = () => {
     if (currentSlide < slides.length - 1) {
@@ -43,7 +52,7 @@ const Welcome = () => {
     } else {
       // حفظ أن المستخدم شاهد المقدمة
       localStorage.setItem('hasSeenWelcome', 'true');
-      navigate('/auth');
+      navigate(user ? '/' : '/auth');
     }
   };
 
