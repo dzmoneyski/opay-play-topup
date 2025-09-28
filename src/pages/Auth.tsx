@@ -39,10 +39,9 @@ const Auth = () => {
     confirmPassword: ''
   });
 
-  // Redirect if already authenticated
   React.useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      navigate('/');
     }
   }, [user, navigate]);
 
@@ -75,7 +74,7 @@ const Auth = () => {
         title: "تم تسجيل الدخول بنجاح",
         description: "مرحباً بك في محفظة OpaY",
       });
-      navigate('/dashboard');
+      navigate('/');
     }
 
     setIsLoading(false);

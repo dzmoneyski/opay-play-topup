@@ -18,21 +18,22 @@ interface Profile {
 }
 
 export const useProfile = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    if (user) {
+    if (user && session) {
+      setLoading(true);
       fetchProfile();
     } else {
       setProfile(null);
       setLoading(false);
     }
-  }, [user]);
+  }, [user, session]);
 
   const fetchProfile = async () => {
-    if (!user) return;
+    if (!user || !session) return;
 
     try {
       const { data, error } = await supabase

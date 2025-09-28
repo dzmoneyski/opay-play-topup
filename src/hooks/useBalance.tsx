@@ -13,10 +13,10 @@ export interface UserBalance {
 export const useBalance = () => {
   const [balance, setBalance] = React.useState<UserBalance | null>(null);
   const [loading, setLoading] = React.useState(false);
-  const { user } = useAuth();
+  const { user, session } = useAuth();
 
   const fetchBalance = React.useCallback(async () => {
-    if (!user) return;
+    if (!user || !session) return;
     
     setLoading(true);
     try {
@@ -54,7 +54,7 @@ export const useBalance = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, session]);
 
   React.useEffect(() => {
     fetchBalance();
@@ -62,7 +62,7 @@ export const useBalance = () => {
 
   // Add real-time subscription for balance updates
   React.useEffect(() => {
-    if (!user) return;
+    if (!user || !session) return;
 
     const channel = supabase
       .channel('balance-changes')
@@ -83,7 +83,7 @@ export const useBalance = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchBalance]);
+  }, [user, session, fetchBalance]);
 
   return {
     balance,
