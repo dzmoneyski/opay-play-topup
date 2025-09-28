@@ -82,10 +82,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const signIn = React.useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
+
+    if (!error) {
+      // Eagerly sync state to avoid a gap where requests use anon token
+      const { data: sessionData } = await supabase.auth.getSession();
+      setSession(sessionData.session);
+      setUser(sessionData.session?.user ?? null);
+      setLoading(false);
+    }
+
     return { error };
   }, []);
 
