@@ -37,6 +37,15 @@ const useAuthDebugState = () => {
   const [peerCount, setPeerCount] = React.useState(0);
   const peersRef = React.useRef<Map<string, number>>(new Map());
   const myIdRef = React.useRef<string>(Math.random().toString(36).slice(2));
+  const [networkActivity, setNetworkActivity] = React.useState<Array<{
+    time: string;
+    method: string;
+    url: string;
+    status: number;
+    error?: any;
+  }>>([]);
+  const [tokenRefreshAttempts, setTokenRefreshAttempts] = React.useState(0);
+  const [lastSessionChange, setLastSessionChange] = React.useState<string | null>(null);
 
   // Persist toggle
   React.useEffect(() => {
@@ -92,6 +101,13 @@ const useAuthDebugState = () => {
       setEvent(ev);
       setUserId(session?.user?.id ?? null);
       setAccessExp(parseJwtExp(session?.access_token ?? null));
+      setLastSessionChange(new Date().toLocaleTimeString());
+      
+      // Track token refresh attempts
+      if (ev === 'TOKEN_REFRESHED') {
+        setTokenRefreshAttempts(prev => prev + 1);
+      }
+      
       setLogs((l) => [
         {
           ts: Date.now(),
@@ -101,6 +117,11 @@ const useAuthDebugState = () => {
             hasSession: !!session,
             userId: session?.user?.id,
             expiresAt: session?.expires_at,
+            accessToken: session?.access_token ? `${session.access_token.slice(0, 20)}...` : null,
+            refreshToken: session?.refresh_token ? `${session.refresh_token.slice(0, 20)}...` : null,
+            tokenType: session?.token_type,
+            providerToken: session?.provider_token,
+            providerRefreshToken: session?.provider_refresh_token
           },
         },
         ...l,
@@ -124,14 +145,33 @@ const useAuthDebugState = () => {
     const original = window.fetch;
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const urlStr = typeof input === 'string' ? input : (input as URL).toString();
+      const method = init?.method || 'GET';
+      const startTime = Date.now();
+      
       const res = await original(input as any, init);
+      const duration = Date.now() - startTime;
+      
       try {
         if (urlStr.includes('supabase.co')) {
           const pathname = new URL(urlStr).pathname;
+          
+          // Track all Supabase requests
+          setNetworkActivity(prev => [
+            {
+              time: new Date().toLocaleTimeString(),
+              method,
+              url: pathname,
+              status: res.status,
+              error: res.status >= 400 ? `${res.status} ${res.statusText}` : undefined
+            },
+            ...prev.slice(0, 19) // Keep last 20
+          ]);
+          
           if (res.status === 401 || res.status === 429) {
             const clone = res.clone();
             let body: any = null;
             try { body = await clone.json(); } catch { body = await clone.text().catch(() => null); }
+            
             // Counters and detectors
             if (res.status === 429 && pathname.endsWith('/token')) {
               setRecent429TokenCount((c) => c + 1);
@@ -139,12 +179,18 @@ const useAuthDebugState = () => {
             if (res.status === 401 && body && typeof body === 'object' && (body.message || '').includes('row-level security')) {
               setRlsDetected(true);
             }
+            
             setLogs((l) => [
               {
                 ts: Date.now(),
                 kind: 'http_error',
                 message: `HTTP ${res.status} on ${pathname}`,
-                details: { body },
+                details: { 
+                  body, 
+                  method, 
+                  duration: `${duration}ms`,
+                  headers: Object.fromEntries(res.headers.entries())
+                },
               },
               ...l,
             ]);
@@ -156,7 +202,7 @@ const useAuthDebugState = () => {
     return () => { window.fetch = original; };
   }, [enabled]);
 
-  return { enabled, setEnabled, logs, event, expiresIn, userId, recent429TokenCount, rlsDetected, peerCount };
+  return { enabled, setEnabled, logs, event, expiresIn, userId, recent429TokenCount, rlsDetected, peerCount, networkActivity, tokenRefreshAttempts, lastSessionChange };
 };
 
 const Badge: React.FC<{ label: string; tone?: 'ok' | 'warn' | 'err' }>
@@ -172,7 +218,7 @@ const Badge: React.FC<{ label: string; tone?: 'ok' | 'warn' | 'err' }>
 );
 
 const AuthDebug: React.FC = () => {
-  const { enabled, setEnabled, logs, event, expiresIn, userId, recent429TokenCount, rlsDetected, peerCount } = useAuthDebugState();
+  const { enabled, setEnabled, logs, event, expiresIn, userId, recent429TokenCount, rlsDetected, peerCount, networkActivity, tokenRefreshAttempts, lastSessionChange } = useAuthDebugState();
 
   // Derived cause hints
   const lastHttpErr = logs.find((l) => l.kind === 'http_error');
@@ -214,6 +260,24 @@ const AuthDebug: React.FC = () => {
         <div>ينتهي الرمز بعد: <span className="font-mono">{expiresIn != null ? `${expiresIn}s` : '—'}</span></div>
         <div>التبويبات المفتوحة: <span className="font-mono">{peerCount}</span></div>
         <div>عدد 429 على /token: <span className="font-mono">{recent429TokenCount}</span></div>
+        <div>محاولات تجديد الرمز: <span className="font-mono">{tokenRefreshAttempts}</span></div>
+        {lastSessionChange && <div>آخر تغيير جلسة: <span className="font-mono">{lastSessionChange}</span></div>}
+        {networkActivity.length > 0 && (
+          <details className="mt-2">
+            <summary className="cursor-pointer text-blue-200">نشاط الشبكة ({networkActivity.length})</summary>
+            <div className="mt-1 space-y-1 max-h-24 overflow-auto">
+              {networkActivity.slice(0, 10).map((req, idx) => (
+                <div key={idx} className="text-xs">
+                  <span className="text-white/50">{req.time}</span> 
+                  <span className={`ml-2 ${req.error ? 'text-red-300' : 'text-green-300'}`}>
+                    {req.method} {req.url} ({req.status})
+                  </span>
+                  {req.error && <span className="text-red-200"> - {req.error}</span>}
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
         {rlsDetected && <div className="text-red-200">تحذير: رُصد خطأ RLS (Row Level Security) على الجداول. قد يمنع العمليات ويؤدي لسلوك غير متوقع.</div>}
         {cause && <div className="text-amber-200">السبب المرجح: {cause}</div>}
         <div className="text-white/60">نصيحة: تجنّب فتح التطبيق في عدة تبويبات أثناء الاختبار، وتحقق من سياسات RLS.</div>
