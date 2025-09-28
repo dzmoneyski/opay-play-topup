@@ -154,13 +154,13 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
   // If user already has a pending or verified identity
   if (profile?.identity_verification_status === 'pending') {
     return (
-      <Card className="border-yellow-200 bg-yellow-50">
+      <Card className="border-warning/30 bg-warning/5">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-yellow-800">
+          <CardTitle className="flex items-center gap-2 text-warning">
             <AlertCircle className="h-5 w-5" />
             طلب قيد المراجعة
           </CardTitle>
-          <CardDescription className="text-yellow-700">
+          <CardDescription className="text-warning/80">
             تم إرسال طلب تحقق الهوية الخاص بك وهو قيد المراجعة حالياً. سيتم إشعارك بالنتيجة قريباً.
           </CardDescription>
         </CardHeader>
@@ -170,13 +170,13 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
 
   if (profile?.identity_verification_status === 'verified') {
     return (
-      <Card className="border-green-200 bg-green-50">
+      <Card className="border-success/30 bg-success/5">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-800">
+          <CardTitle className="flex items-center gap-2 text-success">
             <CheckCircle className="h-5 w-5" />
             تم تحقق الهوية
           </CardTitle>
-          <CardDescription className="text-green-700">
+          <CardDescription className="text-success/80">
             تم تحقق هويتك بنجاح وتم تفعيل حسابك.
           </CardDescription>
         </CardHeader>
@@ -234,9 +234,9 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
                 disabled={loading}
               />
               {profile?.full_name && fullNameOnId && fullNameOnId !== profile.full_name && (
-                <div className="flex items-center gap-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-sm">
-                  <AlertCircle className="h-4 w-4 text-yellow-600" />
-                  <span className="text-yellow-800">
+                <div className="flex items-center gap-2 p-2 bg-warning/10 border border-warning/30 rounded text-sm">
+                  <AlertCircle className="h-4 w-4 text-warning" />
+                  <span className="text-warning">
                     الاسم المدخل لا يطابق اسم الحساب ({profile.full_name})
                   </span>
                 </div>
@@ -288,7 +288,7 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
           {/* Front Image Upload */}
           <div className="space-y-2">
             <Label>صورة الهوية - الوجه الأمامي</Label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
               {frontImagePreview ? (
                 <div className="space-y-4">
                   <img 
@@ -311,10 +311,10 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <Camera className="h-12 w-12 text-gray-400 mx-auto" />
+                  <Camera className="h-12 w-12 text-muted-foreground mx-auto" />
                   <div>
-                    <p className="text-sm text-gray-600 mb-2">انقر لاختيار صورة الوجه الأمامي للهوية</p>
-                    <p className="text-xs text-gray-400">JPG, PNG - أقل من 5MB</p>
+                    <p className="text-sm text-foreground mb-2">انقر لاختيار صورة الوجه الأمامي للهوية</p>
+                    <p className="text-xs text-muted-foreground">JPG, PNG - أقل من 5MB</p>
                   </div>
                   <input
                     type="file"
@@ -338,7 +338,7 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
           {/* Back Image Upload */}
           <div className="space-y-2">
             <Label>صورة الهوية - الوجه الخلفي</Label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
               {backImagePreview ? (
                 <div className="space-y-4">
                   <img 
@@ -361,10 +361,10 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <Camera className="h-12 w-12 text-gray-400 mx-auto" />
+                  <Camera className="h-12 w-12 text-muted-foreground mx-auto" />
                   <div>
-                    <p className="text-sm text-gray-600 mb-2">انقر لاختيار صورة الوجه الخلفي للهوية</p>
-                    <p className="text-xs text-gray-400">JPG, PNG - أقل من 5MB</p>
+                    <p className="text-sm text-foreground mb-2">انقر لاختيار صورة الوجه الخلفي للهوية</p>
+                    <p className="text-xs text-muted-foreground">JPG, PNG - أقل من 5MB</p>
                   </div>
                   <input
                     type="file"

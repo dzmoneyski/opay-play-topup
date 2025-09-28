@@ -6,7 +6,7 @@ import { useGiftCards } from '@/hooks/useGiftCards';
 import { useBalance } from '@/hooks/useBalance';
 import { CreditCard, Wallet, QrCode } from 'lucide-react';
 import BackButton from '@/components/BackButton';
-import { QRScannerForCards } from '@/components/QRScannerForCards';
+import { UnifiedQRScanner } from '@/components/UnifiedQRScanner';
 
 const Cards = () => {
   const [cardCode, setCardCode] = useState('');
@@ -150,11 +150,12 @@ const Cards = () => {
         </Card>
 
         {/* QR Scanner Modal */}
-        <QRScannerForCards
+        <UnifiedQRScanner 
+          mode="gift-card"
           open={showQRScanner}
           onOpenChange={setShowQRScanner}
+          onGiftCardSuccess={redeemGiftCard}
           onSuccess={() => {
-            // Optionally refresh balance or show success message
             setCardCode('');
           }}
         />
