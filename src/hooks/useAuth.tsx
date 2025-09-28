@@ -50,6 +50,84 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Cross-tab leader election to avoid hitting /token rate limits
+  React.useEffect(() => {
+    const LEADER_KEY = 'auth_leader_v1';
+    const HEARTBEAT_MS = 10000; // renew every 10s
+    const STALE_MS = 25000; // leader considered stale after 25s
+    const leaderId = Math.random().toString(36).slice(2);
+    let heartbeatTimer: number | undefined;
+
+    const isLeaderRecordAlive = (raw: string | null) => {
+      if (!raw) return false;
+      try {
+        const v = JSON.parse(raw) as { id: string; ts: number };
+        return Date.now() - v.ts < STALE_MS;
+      } catch { return false; }
+    };
+
+    const becomeLeader = () => {
+      localStorage.setItem(LEADER_KEY, JSON.stringify({ id: leaderId, ts: Date.now() }));
+      const anyAuth = (supabase.auth as unknown as { startAutoRefresh?: () => void; stopAutoRefresh?: () => void });
+      anyAuth.startAutoRefresh?.();
+      // Heartbeat
+      heartbeatTimer = window.setInterval(() => {
+        localStorage.setItem(LEADER_KEY, JSON.stringify({ id: leaderId, ts: Date.now() }));
+      }, HEARTBEAT_MS) as unknown as number;
+    };
+
+    const resignLeadership = () => {
+      const current = localStorage.getItem(LEADER_KEY);
+      try {
+        const v = current ? JSON.parse(current) as { id: string } : null;
+        if (v?.id === leaderId) localStorage.removeItem(LEADER_KEY);
+      } catch {}
+      if (heartbeatTimer) window.clearInterval(heartbeatTimer);
+      const anyAuth = (supabase.auth as unknown as { startAutoRefresh?: () => void; stopAutoRefresh?: () => void });
+      anyAuth.stopAutoRefresh?.();
+    };
+
+    const elect = () => {
+      const current = localStorage.getItem(LEADER_KEY);
+      if (!isLeaderRecordAlive(current)) {
+        becomeLeader();
+      } else {
+        // Follow mode: ensure auto refresh is stopped in followers
+        const anyAuth = (supabase.auth as unknown as { stopAutoRefresh?: () => void });
+        anyAuth.stopAutoRefresh?.();
+      }
+    };
+
+    // Try to elect on mount
+    elect();
+
+    // React to storage changes
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== LEADER_KEY) return;
+      const current = localStorage.getItem(LEADER_KEY);
+      if (!isLeaderRecordAlive(current)) {
+        // Leader stale -> attempt to become leader
+        becomeLeader();
+      } else {
+        // Someone else is leader -> be follower
+        if (heartbeatTimer) window.clearInterval(heartbeatTimer);
+        const anyAuth = (supabase.auth as unknown as { stopAutoRefresh?: () => void });
+        anyAuth.stopAutoRefresh?.();
+      }
+    };
+    window.addEventListener('storage', onStorage);
+
+    // Cleanup
+    const onUnload = () => resignLeadership();
+    window.addEventListener('beforeunload', onUnload);
+
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('beforeunload', onUnload);
+      resignLeadership();
+    };
+  }, []);
+
   const signUp = React.useCallback(async (email: string, password: string, fullName?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
