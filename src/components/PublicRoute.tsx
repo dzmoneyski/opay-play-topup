@@ -7,6 +7,7 @@ interface PublicRouteProps {
 
 const PublicRoute = ({ children }: PublicRouteProps) => {
   const { user, loading } = useAuth();
+  console.debug('[Route] PublicRoute', { loading, userId: user?.id });
 
   if (loading) {
     return (

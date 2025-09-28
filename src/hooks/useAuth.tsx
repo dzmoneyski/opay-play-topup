@@ -34,6 +34,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
+        console.debug('[Auth] onAuthStateChange', { event, hasSession: !!newSession, userId: newSession?.user?.id });
         // Minimize re-renders: only update when values actually change
         setSession((prev) => {
           if (prev?.access_token === newSession?.access_token) return prev;
@@ -55,6 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // THEN check for existing session (authoritative init)
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.debug('[Auth] getSession result', { hasSession: !!session, userId: session?.user?.id });
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
