@@ -17,6 +17,7 @@ import Transfer from "./pages/Transfer";
 import Withdrawals from "./pages/Withdrawals";
 import Cards from "./pages/Cards";
 import NotFound from "./pages/NotFound";
+import AuthDebug from "@/components/AuthDebug";
 
 const queryClient = new QueryClient({
   defaultOptions: {
