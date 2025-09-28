@@ -31,6 +31,13 @@ const useAuthDebugState = () => {
   const [expiresIn, setExpiresIn] = React.useState<number | null>(null);
   const [userId, setUserId] = React.useState<string | null>(null);
 
+  // Extra diagnostics
+  const [recent429TokenCount, setRecent429TokenCount] = React.useState(0);
+  const [rlsDetected, setRlsDetected] = React.useState(false);
+  const [peerCount, setPeerCount] = React.useState(0);
+  const peersRef = React.useRef<Map<string, number>>(new Map());
+  const myIdRef = React.useRef<string>(() => Math.random().toString(36).slice(2)) as React.MutableRefObject<string>;
+
   // Persist toggle
   React.useEffect(() => {
     localStorage.setItem('auth_debug', enabled ? '1' : '0');
@@ -48,6 +55,36 @@ const useAuthDebugState = () => {
     });
     return () => { mounted = false; };
   }, []);
+
+  // Multi-tab detection (BroadcastChannel)
+  React.useEffect(() => {
+    if (!enabled) return;
+    if (!('BroadcastChannel' in window)) return;
+    const bc = new BroadcastChannel('auth-debug');
+    const myId = (myIdRef.current = typeof myIdRef.current === 'string' ? myIdRef.current : Math.random().toString(36).slice(2));
+    const heartbeat = () => {
+      bc.postMessage({ type: 'ping', id: myId, ts: Date.now() });
+    };
+    const onMsg = (e: MessageEvent) => {
+      const msg = e.data || {};
+      if (!msg || !msg.type) return;
+      if (msg.type === 'ping' && typeof msg.id === 'string') {
+        peersRef.current.set(msg.id, Date.now());
+        // Cleanup stale peers (>10s)
+        for (const [id, ts] of peersRef.current.entries()) {
+          if (Date.now() - ts > 10000) peersRef.current.delete(id);
+        }
+        // Exclude self
+        const count = Array.from(peersRef.current.keys()).filter((id) => id !== myId).length;
+        setPeerCount(count);
+      }
+    };
+    bc.addEventListener('message', onMsg);
+    const id = setInterval(heartbeat, 3000);
+    // initial hello
+    heartbeat();
+    return () => { clearInterval(id); bc.removeEventListener('message', onMsg); bc.close(); };
+  }, [enabled]);
 
   // Auth state changes
   React.useEffect(() => {
@@ -86,19 +123,27 @@ const useAuthDebugState = () => {
     if (!enabled) return;
     const original = window.fetch;
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === 'string' ? input : (input as URL).toString();
+      const urlStr = typeof input === 'string' ? input : (input as URL).toString();
       const res = await original(input as any, init);
       try {
-        if (url.includes('supabase.co')) {
+        if (urlStr.includes('supabase.co')) {
+          const pathname = new URL(urlStr).pathname;
           if (res.status === 401 || res.status === 429) {
             const clone = res.clone();
             let body: any = null;
             try { body = await clone.json(); } catch { body = await clone.text().catch(() => null); }
+            // Counters and detectors
+            if (res.status === 429 && pathname.endsWith('/token')) {
+              setRecent429TokenCount((c) => c + 1);
+            }
+            if (res.status === 401 && body && typeof body === 'object' && (body.message || '').includes('row-level security')) {
+              setRlsDetected(true);
+            }
             setLogs((l) => [
               {
                 ts: Date.now(),
                 kind: 'http_error',
-                message: `HTTP ${res.status} on ${new URL(url).pathname}`,
+                message: `HTTP ${res.status} on ${pathname}`,
                 details: { body },
               },
               ...l,
@@ -111,7 +156,7 @@ const useAuthDebugState = () => {
     return () => { window.fetch = original; };
   }, [enabled]);
 
-  return { enabled, setEnabled, logs, event, expiresIn, userId };
+  return { enabled, setEnabled, logs, event, expiresIn, userId, recent429TokenCount, rlsDetected, peerCount };
 };
 
 const Badge: React.FC<{ label: string; tone?: 'ok' | 'warn' | 'err' }>
@@ -127,19 +172,16 @@ const Badge: React.FC<{ label: string; tone?: 'ok' | 'warn' | 'err' }>
 );
 
 const AuthDebug: React.FC = () => {
-  const { enabled, setEnabled, logs, event, expiresIn, userId } = useAuthDebugState();
+  const { enabled, setEnabled, logs, event, expiresIn, userId, recent429TokenCount, rlsDetected, peerCount } = useAuthDebugState();
 
   // Derived cause hints
   const lastHttpErr = logs.find((l) => l.kind === 'http_error');
   const cause = React.useMemo(() => {
     if (!enabled) return null;
     if (event === 'SIGNED_OUT') {
-      if (lastHttpErr?.details && (lastHttpErr.details as any)) {
-        const status = (lastHttpErr.details as any).status ?? undefined;
-      }
-      const recent429 = logs.find((l) => l.kind === 'http_error' && l.message.includes('HTTP 429'));
-      if (recent429) return 'احتمال كبير: تم منع تحديث الرمز (429 rate limit) فتم إنهاء الجلسة.';
-      return 'تم تسجيل الخروج. الأسباب المحتملة: انتهاء صلاحية الرمز، إلغاء الرمز، أو تبديل الجلسة.';
+      const recent429Token = logs.find((l) => l.kind === 'http_error' && l.message.includes('HTTP 429') && l.message.includes('/token'));
+      if (recent429Token) return 'احتمال كبير: تم منع تحديث الرمز (429 على /token) فتم إنهاء الجلسة.';
+      return 'تم تسجيل الخروج. الأسباب المحتملة: انتهاء صلاحية الرمز، إلغاء الرمز، تعدد التبويبات، أو تبديل الجلسة.';
     }
     if (event === 'TOKEN_REFRESHED') return 'تم تحديث رمز الدخول بنجاح.';
     if (event === 'SIGNED_IN') return 'تم تسجيل الدخول. راقب العدّ التنازلي لانتهاء الرمز.';
@@ -170,8 +212,11 @@ const AuthDebug: React.FC = () => {
       <div className="px-3 py-2 text-sm space-y-1 border-b border-white/10">
         <div>المستخدم: <span className="font-mono">{userId ?? '—'}</span></div>
         <div>ينتهي الرمز بعد: <span className="font-mono">{expiresIn != null ? `${expiresIn}s` : '—'}</span></div>
+        <div>التبويبات المفتوحة: <span className="font-mono">{peerCount}</span></div>
+        <div>عدد 429 على /token: <span className="font-mono">{recent429TokenCount}</span></div>
+        {rlsDetected && <div className="text-red-200">تحذير: رُصد خطأ RLS (Row Level Security) على الجداول. قد يمنع العمليات ويؤدي لسلوك غير متوقع.</div>}
         {cause && <div className="text-amber-200">السبب المرجح: {cause}</div>}
-        <div className="text-white/60">نصيحة: إن ظهر 429 على /token فهذا يعني تخطي الحد وسيحدث خروج تلقائي.</div>
+        <div className="text-white/60">نصيحة: تجنّب فتح التطبيق في عدة تبويبات أثناء الاختبار، وتحقق من سياسات RLS.</div>
       </div>
       <div className="max-h-[34vh] overflow-auto text-xs divide-y divide-white/5">
         {logs.slice(0, 30).map((l, idx) => (

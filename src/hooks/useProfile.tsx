@@ -45,23 +45,9 @@ export const useProfile = () => {
         console.error('Error fetching profile:', error);
       }
 
-      if (!data) {
-        // Auto-create a minimal profile if missing
-        const { data: created, error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            user_id: user.id,
-            full_name: (user.user_metadata as any)?.full_name ?? null
-          })
-          .select()
-          .single();
-
-        if (insertError) {
-          console.error('Error creating profile:', insertError);
-          setProfile(null);
-        } else {
-          setProfile(created as Profile);
-        }
+        // الملف غير موجود. نتجنب محاولة الإنشاء من الواجهة لتفادي أخطاء RLS وتكرار الطلبات.
+        console.warn('Profile missing; skipping auto-create to avoid RLS errors.');
+        setProfile(null);
       } else {
         setProfile(data as Profile);
       }
