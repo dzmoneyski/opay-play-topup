@@ -15,11 +15,11 @@ export interface TransactionHistoryItem {
 export const useTransactionHistory = () => {
   const [transactions, setTransactions] = useState<TransactionHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, session } = useAuth();
 
   const fetchTransactionHistory = async () => {
-    if (!user) return;
-
+    if (!user || !session) return;
+ 
     setLoading(true);
     try {
       // Fetch deposits
@@ -121,7 +121,7 @@ export const useTransactionHistory = () => {
 
   useEffect(() => {
     fetchTransactionHistory();
-  }, [user]);
+  }, [user?.id, session]);
 
   return { transactions, loading, refetch: fetchTransactionHistory };
 };

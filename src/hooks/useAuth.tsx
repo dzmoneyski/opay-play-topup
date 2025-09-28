@@ -33,9 +33,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   React.useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      (event, newSession) => {
+        // Minimize re-renders: only update when values actually change
+        setSession((prev) => {
+          if (prev?.access_token === newSession?.access_token) return prev;
+          return newSession ?? null;
+        });
+        setUser((prev) => {
+          const nextUser = newSession?.user ?? null;
+          // Update on explicit sign-in/out, or when user id changes
+          if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') return nextUser;
+          if (prev?.id === nextUser?.id) return prev;
+          return nextUser;
+        });
         // Avoid premature redirects on initial session check
         if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
           setLoading(false);

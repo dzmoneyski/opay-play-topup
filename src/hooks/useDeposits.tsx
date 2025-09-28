@@ -24,10 +24,10 @@ export const useDeposits = () => {
   const [deposits, setDeposits] = React.useState<Deposit[]>([]);
   const [loading, setLoading] = React.useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
 
   const fetchDeposits = React.useCallback(async () => {
-    if (!user) return;
+    if (!user || !session) return;
     
     setLoading(true);
     try {
@@ -49,7 +49,7 @@ export const useDeposits = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user?.id, session, toast]);
 
   React.useEffect(() => {
     fetchDeposits();

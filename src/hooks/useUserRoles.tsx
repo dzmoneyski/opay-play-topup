@@ -10,23 +10,23 @@ interface UserRole {
 }
 
 export const useUserRoles = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [roles, setRoles] = React.useState<UserRole[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [isAdmin, setIsAdmin] = React.useState(false);
 
   React.useEffect(() => {
-    if (user) {
+    if (user && session) {
       fetchUserRoles();
     } else {
       setRoles([]);
       setIsAdmin(false);
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.id, session]);
 
   const fetchUserRoles = async () => {
-    if (!user) return;
+    if (!user || !session) return;
 
     try {
       const { data, error } = await supabase

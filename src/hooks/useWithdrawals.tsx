@@ -22,10 +22,10 @@ export interface Withdrawal {
 export const useWithdrawals = () => {
   const [withdrawals, setWithdrawals] = React.useState<Withdrawal[]>([]);
   const [loading, setLoading] = React.useState(false);
-  const { user } = useAuth();
+  const { user, session } = useAuth();
 
   const fetchWithdrawals = React.useCallback(async () => {
-    if (!user) return;
+    if (!user || !session) return;
     
     setLoading(true);
     try {
@@ -42,7 +42,7 @@ export const useWithdrawals = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.id, session]);
 
   const createWithdrawal = React.useCallback(async (withdrawalData: {
     amount: number;
@@ -69,7 +69,7 @@ export const useWithdrawals = () => {
     await fetchWithdrawals();
     
     return data;
-  }, [user, fetchWithdrawals]);
+  }, [user?.id, session, fetchWithdrawals]);
 
   React.useEffect(() => {
     fetchWithdrawals();
@@ -77,7 +77,7 @@ export const useWithdrawals = () => {
 
   // إضافة اشتراك في الوقت الفعلي لتحديثات السحب
   React.useEffect(() => {
-    if (!user) return;
+    if (!user || !session) return;
 
     const channel = supabase
       .channel('withdrawal-changes')
@@ -98,7 +98,7 @@ export const useWithdrawals = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchWithdrawals]);
+  }, [user?.id, session, fetchWithdrawals]);
 
   return {
     withdrawals,
