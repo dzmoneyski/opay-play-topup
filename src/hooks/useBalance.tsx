@@ -12,7 +12,7 @@ export interface UserBalance {
 
 export const useBalance = () => {
   const [balance, setBalance] = React.useState<UserBalance | null>(null);
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
   const { user } = useAuth();
 
   const fetchBalance = React.useCallback(async () => {
@@ -20,17 +20,16 @@ export const useBalance = () => {
     
     setLoading(true);
     try {
-      // First, recalculate balance based on approved deposits
-      await supabase.rpc('recalculate_user_balance', { _user_id: user.id });
-      
-      // Then fetch the updated balance
+      // Fetch the current balance
       const { data, error } = await supabase
         .from('user_balances')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
 
       // If no balance exists, create one
       if (!data) {
@@ -43,13 +42,32 @@ export const useBalance = () => {
           .select()
           .single();
 
-        if (insertError) throw insertError;
-        setBalance(newBalance);
+        if (insertError) {
+          console.error('Error creating balance:', insertError);
+          // If insert fails, set a default balance for display
+          setBalance({
+            id: 'temp',
+            user_id: user.id,
+            balance: 0.00,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        } else {
+          setBalance(newBalance);
+        }
       } else {
         setBalance(data);
       }
     } catch (error) {
       console.error('Error fetching balance:', error);
+      // Set a default balance for display on error
+      setBalance({
+        id: 'temp',
+        user_id: user?.id || '',
+        balance: 0.00,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
     } finally {
       setLoading(false);
     }
