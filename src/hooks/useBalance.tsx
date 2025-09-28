@@ -32,22 +32,9 @@ export const useBalance = () => {
 
       if (error) throw error;
 
-      // If no balance exists, create one
-      if (!data) {
-        const { data: newBalance, error: insertError } = await supabase
-          .from('user_balances')
-          .insert({
-            user_id: user.id,
-            balance: 0.00
-          })
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        setBalance(newBalance);
-      } else {
-        setBalance(data);
-      }
+      // If no balance exists yet (e.g., before any transactions), just keep it null
+      // It will appear automatically after first deposit/transfer or after next recalc when authenticated
+      setBalance(data ?? null);
     } catch (error) {
       console.error('Error fetching balance:', error);
     } finally {
