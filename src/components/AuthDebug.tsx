@@ -36,7 +36,7 @@ const useAuthDebugState = () => {
   const [rlsDetected, setRlsDetected] = React.useState(false);
   const [peerCount, setPeerCount] = React.useState(0);
   const peersRef = React.useRef<Map<string, number>>(new Map());
-  const myIdRef = React.useRef<string>(() => Math.random().toString(36).slice(2)) as React.MutableRefObject<string>;
+  const myIdRef = React.useRef<string>(Math.random().toString(36).slice(2));
 
   // Persist toggle
   React.useEffect(() => {

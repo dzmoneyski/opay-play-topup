@@ -45,6 +45,7 @@ export const useProfile = () => {
         console.error('Error fetching profile:', error);
       }
 
+      if (!data) {
         // الملف غير موجود. نتجنب محاولة الإنشاء من الواجهة لتفادي أخطاء RLS وتكرار الطلبات.
         console.warn('Profile missing; skipping auto-create to avoid RLS errors.');
         setProfile(null);
