@@ -23,6 +23,7 @@ export const useProfile = () => {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
+    console.log('useProfile effect triggered, user:', !!user);
     if (user) {
       fetchProfile();
     } else {
@@ -32,8 +33,12 @@ export const useProfile = () => {
   }, [user]);
 
   const fetchProfile = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
+    console.log('Fetching profile for user:', user.id);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -42,17 +47,20 @@ export const useProfile = () => {
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching profile:', error);
-        // Don't return early on error, set loading to false
-        setLoading(false);
-        return;
+        console.error('Profile fetch error:', error);
+        // Don't return early on error, just log it
       }
 
       if (data) {
+        console.log('Profile found:', !!data);
         setProfile(data as Profile);
+      } else {
+        console.log('No profile data found');
+        setProfile(null);
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Exception fetching profile:', error);
+      setProfile(null);
     } finally {
       setLoading(false);
     }
