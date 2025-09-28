@@ -20,7 +20,7 @@ const ProtectedRoute = ({ children, requireActivation = false }: ProtectedRouteP
     return <Navigate to="/auth" replace />;
   }
 
-  // Only redirect to activation if explicitly required
+  // Only redirect to activation if explicitly required AND profile is loaded
   if (requireActivation && profile && !profile.is_account_activated) {
     return <Navigate to="/activate" replace />;
   }
