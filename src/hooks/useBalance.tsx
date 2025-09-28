@@ -12,76 +12,52 @@ export interface UserBalance {
 
 export const useBalance = () => {
   const [balance, setBalance] = React.useState<UserBalance | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState(false);
   const { user } = useAuth();
 
   const fetchBalance = React.useCallback(async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    if (!user) return;
     
-    console.log('Fetching balance for user:', user.id);
     setLoading(true);
     try {
-      // Fetch the current balance
+      // First, recalculate balance based on approved deposits
+      await supabase.rpc('recalculate_user_balance', { _user_id: user.id });
+      
+      // Then fetch the updated balance
       const { data, error } = await supabase
         .from('user_balances')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Balance fetch error:', error);
-        // Don't throw, just set default balance
-        setBalance({
-          id: 'temp',
-          user_id: user.id,
-          balance: 0.00,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-        return;
-      }
+      if (error) throw error;
 
-      if (data) {
-        console.log('Balance found:', data.balance);
-        setBalance(data);
+      // If no balance exists, create one
+      if (!data) {
+        const { data: newBalance, error: insertError } = await supabase
+          .from('user_balances')
+          .insert({
+            user_id: user.id,
+            balance: 0.00
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        setBalance(newBalance);
       } else {
-        console.log('No balance data found, setting default');
-        // Set default balance without trying to create in DB
-        setBalance({
-          id: 'temp',
-          user_id: user.id,
-          balance: 0.00,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
+        setBalance(data);
       }
     } catch (error) {
-      console.error('Exception fetching balance:', error);
-      // Set a default balance for display on error
-      setBalance({
-        id: 'temp',
-        user_id: user.id,
-        balance: 0.00,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
+      console.error('Error fetching balance:', error);
     } finally {
       setLoading(false);
     }
   }, [user]);
 
   React.useEffect(() => {
-    console.log('useBalance effect triggered, user:', !!user);
-    if (user) {
-      fetchBalance();
-    } else {
-      setBalance(null);
-      setLoading(false);
-    }
-  }, [user, fetchBalance]);
+    fetchBalance();
+  }, [fetchBalance]);
 
   // Add real-time subscription for balance updates
   React.useEffect(() => {
@@ -98,7 +74,6 @@ export const useBalance = () => {
           filter: `user_id=eq.${user.id}`
         },
         () => {
-          console.log('Real-time balance update received');
           fetchBalance();
         }
       )

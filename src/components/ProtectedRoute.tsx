@@ -1,7 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { Navigate } from 'react-router-dom';
-import { LoadingScreen } from '@/components/LoadingSpinner';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,29 +11,23 @@ const ProtectedRoute = ({ children, requireActivation = false }: ProtectedRouteP
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
 
-  console.log('ProtectedRoute:', { 
-    user: !!user, 
-    authLoading, 
-    profileLoading,
-    profileExists: !!profile,
-    requireActivation,
-    isActivated: profile?.is_account_activated 
-  });
-
-  // Only show loading if auth is actually loading
-  if (authLoading) {
-    return <LoadingScreen />;
+  if (authLoading || profileLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-xl">جاري التحميل...</p>
+        </div>
+      </div>
+    );
   }
 
-  // If no user after auth loading is complete, redirect to auth
   if (!user) {
-    console.log('No user found, redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 
-  // Only redirect to activation if explicitly required AND we have profile data AND not activated
+  // Only redirect to activation if explicitly required
   if (requireActivation && profile && !profile.is_account_activated) {
-    console.log('Account not activated, redirecting to activate');
     return <Navigate to="/activate" replace />;
   }
 

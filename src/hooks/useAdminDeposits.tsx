@@ -33,19 +33,30 @@ export const useAdminDeposits = () => {
     
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // First get all deposits
+      const { data: depositsData, error: depositsError } = await supabase
         .from('deposits')
-        .select(`
-          *,
-          profiles(
-            full_name,
-            phone
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setDeposits((data as any) || []);
+      if (depositsError) throw depositsError;
+
+      // Then get profile data for each unique user_id
+      const userIds = [...new Set(depositsData?.map(d => d.user_id) || [])];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, phone')
+        .in('user_id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combine deposits with profile data
+      const depositsWithProfiles = depositsData?.map(deposit => ({
+        ...deposit,
+        profiles: profilesData?.find(profile => profile.user_id === deposit.user_id) || null
+      })) || [];
+
+      setDeposits(depositsWithProfiles as any[]);
     } catch (error) {
       console.error('Error fetching deposits:', error);
       toast({
@@ -61,30 +72,6 @@ export const useAdminDeposits = () => {
   React.useEffect(() => {
     fetchDeposits();
   }, [fetchDeposits]);
-
-  // Real-time subscription
-  React.useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel('deposits-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'deposits',
-        },
-        () => {
-          fetchDeposits();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, fetchDeposits]);
 
   const approveDeposit = async (depositId: string, notes?: string, adjustedAmount?: number) => {
     if (!user) return { success: false, error: "غير مصرح" };
@@ -104,7 +91,7 @@ export const useAdminDeposits = () => {
         deposit.id === depositId 
           ? { 
               ...deposit, 
-              status: 'approved' as const, 
+              status: 'approved', 
               processed_by: user.id,
               processed_at: new Date().toISOString(),
               admin_notes: notes || null,
@@ -161,7 +148,7 @@ export const useAdminDeposits = () => {
         deposit.id === depositId 
           ? { 
               ...deposit, 
-              status: 'rejected' as const, 
+              status: 'rejected', 
               processed_by: user.id,
               processed_at: new Date().toISOString(),
               admin_notes: reason

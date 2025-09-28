@@ -9,7 +9,7 @@ import { useUserRoles } from "@/hooks/useUserRoles";
 import { useBalance } from "@/hooks/useBalance";
 import { useToast } from "@/hooks/use-toast";
 import { useTransactionHistory } from "@/hooks/useTransactionHistory";
-import { UnifiedQRScanner } from '@/components/UnifiedQRScanner';
+import { QRScanner } from "@/components/QRScanner";
 import {
   Wallet, 
   CreditCard, 
@@ -528,16 +528,9 @@ const Index = () => {
       </div>
 
       {/* QR Scanner Modal */}
-      <UnifiedQRScanner 
-        mode="transfer"
+      <QRScanner 
         open={showQRScanner}
         onOpenChange={setShowQRScanner}
-        onTransferSuccess={async (data) => {
-          // This would need actual processTransfer implementation
-          return { success: true };
-        }}
-        userProfile={profile}
-        userId={user?.id}
       />
     </div>
   );

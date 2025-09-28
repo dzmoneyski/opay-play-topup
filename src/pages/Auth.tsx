@@ -42,7 +42,7 @@ const Auth = () => {
   // Redirect if already authenticated
   React.useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate('/dashboard');
     }
   }, [user, navigate]);
 
@@ -75,7 +75,7 @@ const Auth = () => {
         title: "تم تسجيل الدخول بنجاح",
         description: "مرحباً بك في محفظة OpaY",
       });
-      navigate('/');
+      navigate('/dashboard');
     }
 
     setIsLoading(false);
@@ -152,7 +152,7 @@ const Auth = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/dashboard')}
           className="w-12 h-12 p-0 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-white/20 transition-all group"
         >
           <ArrowLeft className="h-5 w-5 text-white group-hover:text-white transition-colors" />
@@ -342,10 +342,10 @@ const Auth = () => {
         <div className="text-center mt-6 animate-slide-up" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/auth')}
             className="text-white/80 hover:text-white hover:bg-white/10"
           >
-            العودة إلى الصفحة الرئيسية
+            العودة إلى صفحة التسجيل
           </Button>
         </div>
       </div>

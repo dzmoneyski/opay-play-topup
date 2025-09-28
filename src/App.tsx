@@ -17,8 +17,6 @@ import Transfer from "./pages/Transfer";
 import Withdrawals from "./pages/Withdrawals";
 import Cards from "./pages/Cards";
 import NotFound from "./pages/NotFound";
-import Welcome from "./pages/Welcome";
-import FirstLaunchHandler from "./components/FirstLaunchHandler";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,62 +35,59 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <FirstLaunchHandler>
-              <Routes>
-                <Route path="/welcome" element={<Welcome />} />
-                <Route path="/" element={
-                  <ProtectedRoute requireActivation={false}>
-                    <Index />
-                  </ProtectedRoute>
-                } />
-                <Route path="/auth" element={
-                  <PublicRoute>
-                    <Auth />
-                  </PublicRoute>
-                } />
-                <Route path="/activate" element={
-                  <ProtectedRoute requireActivation={false}>
-                    <AccountActivation />
-                  </ProtectedRoute>
-                } />
-                <Route path="/dashboard" element={
-                  <ProtectedRoute requireActivation={false}>
-                    <Navigate to="/" replace />
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/*" element={
-                  <ProtectedRoute requireActivation={false}>
-                    <AdminPanel />
-                  </ProtectedRoute>
-                } />
-                <Route path="/deposits" element={
-                  <ProtectedRoute requireActivation={false}>
-                    <Deposits />
-                  </ProtectedRoute>
-                } />
-                <Route path="/transfer" element={
-                  <ProtectedRoute requireActivation={false}>
-                    <Transfer />
-                  </ProtectedRoute>
-                } />
-                <Route path="/withdrawals" element={
-                  <ProtectedRoute requireActivation={false}>
-                    <Withdrawals />
-                  </ProtectedRoute>
-                } />
-                <Route path="/identity-verification" element={
-                  <ProtectedRoute requireActivation={false}>
-                    <IdentityVerificationPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/cards" element={
-                  <ProtectedRoute requireActivation={false}>
-                    <Cards />
-                  </ProtectedRoute>
-                } />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </FirstLaunchHandler>
+            <Routes>
+              <Route path="/" element={
+                <ProtectedRoute requireActivation={false}>
+                  <Index />
+                </ProtectedRoute>
+              } />
+              <Route path="/auth" element={
+                <PublicRoute>
+                  <Auth />
+                </PublicRoute>
+              } />
+              <Route path="/activate" element={
+                <ProtectedRoute requireActivation={false}>
+                  <AccountActivation />
+                </ProtectedRoute>
+              } />
+              <Route path="/dashboard" element={
+                <ProtectedRoute requireActivation={false}>
+                  <Navigate to="/" replace />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/*" element={
+                <ProtectedRoute requireActivation={false}>
+                  <AdminPanel />
+                </ProtectedRoute>
+              } />
+              <Route path="/deposits" element={
+                <ProtectedRoute requireActivation={false}>
+                  <Deposits />
+                </ProtectedRoute>
+              } />
+              <Route path="/transfer" element={
+                <ProtectedRoute requireActivation={false}>
+                  <Transfer />
+                </ProtectedRoute>
+              } />
+              <Route path="/withdrawals" element={
+                <ProtectedRoute requireActivation={false}>
+                  <Withdrawals />
+                </ProtectedRoute>
+              } />
+              <Route path="/identity-verification" element={
+                <ProtectedRoute requireActivation={false}>
+                  <IdentityVerificationPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/cards" element={
+                <ProtectedRoute requireActivation={false}>
+                  <Cards />
+                </ProtectedRoute>
+              } />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

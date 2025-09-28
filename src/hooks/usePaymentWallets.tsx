@@ -20,27 +20,19 @@ export const usePaymentWallets = () => {
         .from('platform_settings')
         .select('setting_value')
         .eq('setting_key', 'payment_wallets')
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
 
       if (data?.setting_value) {
         setWallets(data.setting_value as unknown as PaymentWallets);
-      } else {
-        // Set default wallets if no settings exist
-        setWallets({
-          baridimob: "0551234567",
-          ccp: "غير متاح",
-          edahabiya: "غير متاح"
-        });
       }
     } catch (error) {
       console.error('Error fetching payment wallets:', error);
-      // Set default wallets on error to prevent app breaking
-      setWallets({
-        baridimob: "0551234567",
-        ccp: "غير متاح",
-        edahabiya: "غير متاح"
+      toast({
+        title: "خطأ في تحميل البيانات",
+        description: "فشل في تحميل إعدادات محافظ الإيداع",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
