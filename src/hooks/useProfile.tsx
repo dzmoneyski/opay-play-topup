@@ -31,6 +31,8 @@ export const useProfile = () => {
     }
   }, [user, session]);
 
+  const triedCreateRef = React.useRef(false);
+
   const fetchProfile = async () => {
     if (!user || !session) return;
 
@@ -46,9 +48,28 @@ export const useProfile = () => {
       }
 
       if (!data) {
-        // الملف غير موجود. نتجنب محاولة الإنشاء من الواجهة لتفادي أخطاء RLS وتكرار الطلبات.
-        console.warn('Profile missing; skipping auto-create to avoid RLS errors.');
-        setProfile(null);
+        // جرّب إنشاء ملف شخصي تلقائياً للمستخدم الحالي إذا كان مفقوداً
+        if (!triedCreateRef.current) {
+          triedCreateRef.current = true;
+          const derivedName = (user.user_metadata?.full_name as string | undefined)
+            || user.email?.split('@')[0]
+            || 'مستخدم';
+
+          const { data: inserted, error: insertError } = await supabase
+            .from('profiles')
+            .insert({ user_id: user.id, full_name: derivedName })
+            .select()
+            .maybeSingle();
+
+          if (insertError) {
+            console.warn('Auto-create profile failed (will proceed without it):', insertError.message);
+            setProfile(null);
+          } else {
+            setProfile(inserted as Profile);
+          }
+        } else {
+          setProfile(null);
+        }
       } else {
         setProfile(data as Profile);
       }
