@@ -20,10 +20,7 @@ export const useBalance = () => {
     
     setLoading(true);
     try {
-      // First, recalculate balance based on approved deposits
-      await supabase.rpc('recalculate_user_balance', { _user_id: user.id });
-      
-      // Then fetch the updated balance
+      // Fetch the current balance only (avoid RPC loops)
       const { data, error } = await supabase
         .from('user_balances')
         .select('*')
@@ -32,24 +29,28 @@ export const useBalance = () => {
 
       if (error) throw error;
 
-      // If no balance exists, create one
       if (!data) {
-        const { data: newBalance, error: insertError } = await supabase
-          .from('user_balances')
-          .insert({
-            user_id: user.id,
-            balance: 0.00
-          })
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        setBalance(newBalance);
+        // No balance row yet -> show 0.00 without inserting (RLS-safe)
+        setBalance({
+          id: 'placeholder',
+          user_id: user.id,
+          balance: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as any);
       } else {
         setBalance(data);
       }
     } catch (error) {
       console.error('Error fetching balance:', error);
+      // Fallback to 0.00 to avoid blocking UX
+      setBalance({
+        id: 'placeholder',
+        user_id: user!.id,
+        balance: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } as any);
     } finally {
       setLoading(false);
     }

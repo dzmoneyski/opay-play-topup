@@ -39,16 +39,17 @@ export const useProfile = () => {
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching profile:', error);
-        return;
+        setProfile(null);
+      } else {
+        setProfile((data as Profile) ?? null);
       }
-
-      setProfile(data as Profile);
     } catch (error) {
       console.error('Error fetching profile:', error);
+      setProfile(null);
     } finally {
       setLoading(false);
     }
