@@ -20,20 +20,30 @@ export const usePaymentWallets = () => {
         .from('platform_settings')
         .select('setting_value')
         .eq('setting_key', 'payment_wallets')
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
       if (data?.setting_value) {
         setWallets(data.setting_value as unknown as PaymentWallets);
+      } else {
+        // إذا لم توجد بيانات، استخدم القيم الافتراضية
+        const defaultWallets = {
+          baridimob: '',
+          ccp: '',
+          edahabiya: ''
+        };
+        setWallets(defaultWallets);
       }
     } catch (error) {
       console.error('Error fetching payment wallets:', error);
-      toast({
-        title: "خطأ في تحميل البيانات",
-        description: "فشل في تحميل إعدادات محافظ الإيداع",
-        variant: "destructive"
-      });
+      // لا تظهر toast error للمستخدمين العاديين
+      const defaultWallets = {
+        baridimob: '',
+        ccp: '',
+        edahabiya: ''
+      };
+      setWallets(defaultWallets);
     } finally {
       setLoading(false);
     }
