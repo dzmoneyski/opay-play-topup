@@ -18,39 +18,37 @@ interface Profile {
 }
 
 export const useProfile = () => {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    if (user && session) {
-      setLoading(true);
+    if (user) {
       fetchProfile();
     } else {
       setProfile(null);
       setLoading(false);
     }
-  }, [user, session]);
+  }, [user]);
 
   const fetchProfile = async () => {
-    if (!user || !session) return;
+    if (!user) return;
 
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error('Error fetching profile:', error);
-        setProfile(null);
-      } else {
-        setProfile((data as Profile) ?? null);
+        return;
       }
+
+      setProfile(data as Profile);
     } catch (error) {
       console.error('Error fetching profile:', error);
-      setProfile(null);
     } finally {
       setLoading(false);
     }

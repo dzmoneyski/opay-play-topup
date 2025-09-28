@@ -13,14 +13,17 @@ export interface UserBalance {
 export const useBalance = () => {
   const [balance, setBalance] = React.useState<UserBalance | null>(null);
   const [loading, setLoading] = React.useState(false);
-  const { user, session } = useAuth();
+  const { user } = useAuth();
 
   const fetchBalance = React.useCallback(async () => {
-    if (!user || !session) return;
+    if (!user) return;
     
     setLoading(true);
     try {
-      // Fetch the current balance only (avoid RPC loops)
+      // First, recalculate balance based on approved deposits
+      await supabase.rpc('recalculate_user_balance', { _user_id: user.id });
+      
+      // Then fetch the updated balance
       const { data, error } = await supabase
         .from('user_balances')
         .select('*')
@@ -29,32 +32,28 @@ export const useBalance = () => {
 
       if (error) throw error;
 
+      // If no balance exists, create one
       if (!data) {
-        // No balance row yet -> show 0.00 without inserting (RLS-safe)
-        setBalance({
-          id: 'placeholder',
-          user_id: user.id,
-          balance: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        } as any);
+        const { data: newBalance, error: insertError } = await supabase
+          .from('user_balances')
+          .insert({
+            user_id: user.id,
+            balance: 0.00
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        setBalance(newBalance);
       } else {
         setBalance(data);
       }
     } catch (error) {
       console.error('Error fetching balance:', error);
-      // Fallback to 0.00 to avoid blocking UX
-      setBalance({
-        id: 'placeholder',
-        user_id: user!.id,
-        balance: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      } as any);
     } finally {
       setLoading(false);
     }
-  }, [user, session]);
+  }, [user]);
 
   React.useEffect(() => {
     fetchBalance();
@@ -62,7 +61,7 @@ export const useBalance = () => {
 
   // Add real-time subscription for balance updates
   React.useEffect(() => {
-    if (!user || !session) return;
+    if (!user) return;
 
     const channel = supabase
       .channel('balance-changes')
@@ -83,7 +82,7 @@ export const useBalance = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, session, fetchBalance]);
+  }, [user, fetchBalance]);
 
   return {
     balance,

@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useGiftCards } from '@/hooks/useGiftCards';
 import { useBalance } from '@/hooks/useBalance';
-import { CreditCard, Wallet, QrCode } from 'lucide-react';
+import { CreditCard, Wallet } from 'lucide-react';
 import BackButton from '@/components/BackButton';
-import { QRScannerForCards } from '@/components/QRScannerForCards';
 
 const Cards = () => {
   const [cardCode, setCardCode] = useState('');
-  const [showQRScanner, setShowQRScanner] = useState(false);
   const { redeemGiftCard, loading } = useGiftCards();
   const { balance } = useBalance();
 
@@ -77,18 +76,31 @@ const Cards = () => {
                       <Label htmlFor="cardCode" className="text-white/80 text-sm block mb-2">
                         رقم البطاقة
                       </Label>
-                      <div className="w-full" dir="ltr">
-                        <input
-                          id="cardCode"
-                          type="text"
+                      <div className="flex justify-center" dir="ltr">
+                        <InputOTP
                           value={cardCode}
-                          onChange={(e) => setCardCode(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                          onChange={(val) => setCardCode(val.replace(/\D/g, '').slice(0, 12))}
                           maxLength={12}
                           disabled={loading}
-                          placeholder="000000000000"
-                          className="w-full h-12 bg-white/10 border-2 border-white/20 rounded-lg text-white text-center text-xl font-bold tracking-[0.5em] placeholder:text-white/30 placeholder:tracking-[0.5em] focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all duration-200 disabled:opacity-50"
-                          style={{ letterSpacing: '0.5em' }}
-                        />
+                        >
+                          <InputOTPGroup>
+                            <InputOTPSlot index={0} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={1} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={2} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={3} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={4} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={5} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={6} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={7} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={8} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={9} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                            <InputOTPSlot index={10} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                          </InputOTPGroup>
+                          <div className="px-2 text-white/90 text-xl font-extrabold">-</div>
+                          <InputOTPGroup>
+                            <InputOTPSlot index={11} className="bg-white/10 border-white/20 text-white text-lg font-bold ring-2 ring-yellow-400/50" />
+                          </InputOTPGroup>
+                        </InputOTP>
                       </div>
                       <p className="text-xs text-white/60 text-center mt-2" dir="rtl">
                         آخر رقم هو رقم التحقق
@@ -103,36 +115,14 @@ const Cards = () => {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="space-y-3">
-                <Button 
-                  type="submit" 
-                  className="w-full h-12 text-lg"
-                  disabled={loading || cardCode.length !== 12}
-                >
-                  {loading ? 'جاري التحقق...' : 'تفعيل'}
-                </Button>
-                
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-muted-foreground/20" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">أو</span>
-                  </div>
-                </div>
-                
-                <Button 
-                  type="button"
-                  onClick={() => setShowQRScanner(true)}
-                  variant="outline"
-                  className="w-full h-12 text-lg border-2 border-primary/20 hover:border-primary/40"
-                  disabled={loading}
-                >
-                  <QrCode className="h-5 w-5 ml-2" />
-                  مسح QR كود
-                </Button>
-              </div>
+              {/* Submit Button */}
+              <Button 
+                type="submit" 
+                className="w-full h-12 text-lg"
+                disabled={loading || cardCode.length !== 12}
+              >
+                {loading ? 'جاري التحقق...' : 'تفعيل'}
+              </Button>
             </form>
 
             {/* Instructions */}
@@ -148,16 +138,6 @@ const Cards = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* QR Scanner Modal */}
-        <QRScannerForCards
-          open={showQRScanner}
-          onOpenChange={setShowQRScanner}
-          onSuccess={() => {
-            // Optionally refresh balance or show success message
-            setCardCode('');
-          }}
-        />
 
       </div>
     </div>

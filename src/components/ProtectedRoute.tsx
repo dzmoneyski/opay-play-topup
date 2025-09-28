@@ -1,5 +1,5 @@
 import { useAuth } from '@/hooks/useAuth';
-
+import { useProfile } from '@/hooks/useProfile';
 import { Navigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
@@ -9,9 +9,9 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children, requireActivation = false }: ProtectedRouteProps) => {
   const { user, loading: authLoading } = useAuth();
-  console.debug('[Route] ProtectedRoute', { authLoading, userId: user?.id });
+  const { profile, loading: profileLoading } = useProfile();
 
-  if (authLoading) {
+  if (authLoading || profileLoading) {
     return (
       <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
         <div className="text-white text-center">
@@ -26,10 +26,10 @@ const ProtectedRoute = ({ children, requireActivation = false }: ProtectedRouteP
     return <Navigate to="/auth" replace />;
   }
 
-  // Activation check disabled by default; enable when requireActivation is true in routes
-  // if (requireActivation && profile && !profile.is_account_activated) {
-  //   return <Navigate to="/activate" replace />;
-  // }
+  // Only redirect to activation if explicitly required
+  if (requireActivation && profile && !profile.is_account_activated) {
+    return <Navigate to="/activate" replace />;
+  }
 
   return <>{children}</>;
 };

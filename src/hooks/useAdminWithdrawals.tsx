@@ -28,11 +28,11 @@ export interface AdminWithdrawal {
 export const useAdminWithdrawals = () => {
   const [withdrawals, setWithdrawals] = React.useState<AdminWithdrawal[]>([]);
   const [loading, setLoading] = React.useState(false);
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const fetchWithdrawals = React.useCallback(async () => {
-    if (!user || !session) return;
+    if (!user) return;
     
     setLoading(true);
     try {
@@ -81,7 +81,7 @@ export const useAdminWithdrawals = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, session, toast]);
+  }, [user, toast]);
 
   const approveWithdrawal = React.useCallback(async (withdrawalId: string, notes?: string) => {
     if (!user) return;
@@ -110,7 +110,7 @@ export const useAdminWithdrawals = () => {
         variant: "destructive"
       });
     }
-  }, [user?.id, session, toast, fetchWithdrawals]);
+  }, [user, toast, fetchWithdrawals]);
 
   const rejectWithdrawal = React.useCallback(async (withdrawalId: string, reason: string) => {
     if (!user) return;
@@ -139,7 +139,7 @@ export const useAdminWithdrawals = () => {
         variant: "destructive"
       });
     }
-  }, [user?.id, session, toast, fetchWithdrawals]);
+  }, [user, toast, fetchWithdrawals]);
 
   React.useEffect(() => {
     fetchWithdrawals();
@@ -147,8 +147,8 @@ export const useAdminWithdrawals = () => {
 
   // إضافة اشتراك في الوقت الفعلي لتحديثات السحب
   React.useEffect(() => {
-    if (!user || !session) return;
- 
+    if (!user) return;
+
     const channel = supabase
       .channel('admin-withdrawal-changes')
       .on(
@@ -167,7 +167,7 @@ export const useAdminWithdrawals = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, session, fetchWithdrawals]);
+  }, [user, fetchWithdrawals]);
 
   return {
     withdrawals,

@@ -33,30 +33,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   React.useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        console.debug('[Auth] onAuthStateChange', { event, hasSession: !!newSession, userId: newSession?.user?.id });
-        // Minimize re-renders: only update when values actually change
-        setSession((prev) => {
-          if (prev?.access_token === newSession?.access_token) return prev;
-          return newSession ?? null;
-        });
-        setUser((prev) => {
-          const nextUser = newSession?.user ?? null;
-          // Update on explicit sign-in/out, or when user id changes
-          if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') return nextUser;
-          if (prev?.id === nextUser?.id) return prev;
-          return nextUser;
-        });
-        // Avoid premature redirects on initial session check
-        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-          setLoading(false);
-        }
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
       }
     );
 
-    // THEN check for existing session (authoritative init)
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.debug('[Auth] getSession result', { hasSession: !!session, userId: session?.user?.id });
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -82,19 +67,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const signIn = React.useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
-
-    if (!error) {
-      // Eagerly sync state to avoid a gap where requests use anon token
-      const { data: sessionData } = await supabase.auth.getSession();
-      setSession(sessionData.session);
-      setUser(sessionData.session?.user ?? null);
-      setLoading(false);
-    }
-
     return { error };
   }, []);
 
