@@ -81,6 +81,12 @@ const Cards = () => {
                         type="text"
                         value={cardCode}
                         onChange={(e) => setCardCode(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                        onPaste={(e) => {
+                          e.preventDefault();
+                          const pastedText = e.clipboardData.getData('text');
+                          const numbersOnly = pastedText.replace(/\D/g, '').slice(0, 12);
+                          setCardCode(numbersOnly);
+                        }}
                         placeholder="000000000000"
                         maxLength={12}
                         disabled={loading}
