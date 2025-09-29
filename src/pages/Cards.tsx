@@ -5,18 +5,102 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useGiftCards } from '@/hooks/useGiftCards';
 import { useBalance } from '@/hooks/useBalance';
-import { CreditCard, Wallet } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { CreditCard, Wallet, QrCode } from 'lucide-react';
 import BackButton from '@/components/BackButton';
+import { BrowserMultiFormatReader } from '@zxing/library';
 
 const Cards = () => {
   const [cardCode, setCardCode] = useState('');
+  const [showScanner, setShowScanner] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const { redeemGiftCard, loading } = useGiftCards();
   const { balance } = useBalance();
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const streamRef = React.useRef<MediaStream | null>(null);
+  const codeReaderRef = React.useRef<BrowserMultiFormatReader | null>(null);
+  const { toast } = useToast();
 
   const formatCardDisplay = (value: string) => {
     if (value.length <= 11) return value;
     return `${value.slice(0, 11)}-${value.slice(11)}`;
   };
+
+  const startScanner = async () => {
+    try {
+      setIsScanning(true);
+      setShowScanner(true);
+      
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+      
+      streamRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        
+        codeReaderRef.current = new BrowserMultiFormatReader();
+        
+        try {
+          await codeReaderRef.current.decodeFromVideoDevice(
+            null,
+            videoRef.current,
+            (result) => {
+              if (result) {
+                const scannedText = result.getText();
+                const numbersOnly = scannedText.replace(/\D/g, '').slice(0, 12);
+                if (numbersOnly.length === 12) {
+                  setCardCode(numbersOnly);
+                  stopScanner();
+                  toast({
+                    title: "تم المسح",
+                    description: "تم قراءة رمز البطاقة بنجاح",
+                  });
+                }
+              }
+            }
+          );
+        } catch (err) {
+          console.error('QR scanning error:', err);
+        }
+      }
+    } catch (error) {
+      console.error('Camera access error:', error);
+      toast({
+        title: "خطأ في الوصول للكاميرا",
+        description: "لم نتمكن من الوصول للكاميرا. يرجى التأكد من الأذونات.",
+        variant: "destructive"
+      });
+      setShowScanner(false);
+      setIsScanning(false);
+    }
+  };
+
+  const stopScanner = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    
+    if (codeReaderRef.current) {
+      codeReaderRef.current.reset();
+    }
+    
+    setIsScanning(false);
+    setShowScanner(false);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      stopScanner();
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,6 +197,18 @@ const Cards = () => {
                 </div>
               </div>
 
+              {/* QR Scanner Button */}
+              <Button 
+                type="button"
+                onClick={startScanner}
+                variant="outline"
+                className="w-full h-12 text-base gap-2"
+                disabled={loading || isScanning}
+              >
+                <QrCode className="h-5 w-5" />
+                مسح QR Code
+              </Button>
+
               {/* Submit Button */}
               <Button 
                 type="submit" 
@@ -136,6 +232,50 @@ const Cards = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* QR Scanner Modal */}
+        {showScanner && (
+          <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm">
+            <div className="container flex flex-col h-full max-w-md mx-auto p-4">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">مسح QR Code البطاقة</h2>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={stopScanner}
+                >
+                  إغلاق
+                </Button>
+              </div>
+              <div className="flex-1 relative">
+                <div className="relative bg-black rounded-lg overflow-hidden h-96">
+                  <video
+                    ref={videoRef}
+                    className="w-full h-full object-cover"
+                    playsInline
+                    muted
+                  />
+                  
+                  {/* Scanning overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-64 h-64 border-2 border-white/50 rounded-lg relative">
+                      <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-lg"></div>
+                      <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-lg"></div>
+                      <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-lg"></div>
+                      <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-lg"></div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-center mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    وجّه الكاميرا نحو QR كود البطاقة
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
