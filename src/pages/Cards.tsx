@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useGiftCards } from '@/hooks/useGiftCards';
@@ -63,7 +63,7 @@ const Cards = () => {
               {/* Plastic Card Visual */}
               <div className="relative max-w-sm mx-auto">
                 <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 rounded-2xl p-6 text-white shadow-2xl shadow-blue-500/20">
-                  <div className="flex justify-between items-start mb-6">
+                  <div className="flex justify-between items-start mb-8">
                     <div>
                       <div className="text-base font-bold opacity-90 mb-0.5">OPAL CARD</div>
                       <div className="text-xs opacity-70 tracking-wider">GIFT CARD</div>
@@ -76,40 +76,19 @@ const Cards = () => {
                       <Label htmlFor="cardCode" className="text-white/70 text-xs block mb-3 tracking-wide">
                         رقم البطاقة
                       </Label>
-                      <div className="flex justify-center items-center gap-1.5" dir="ltr">
-                        <InputOTP
-                          value={cardCode}
-                          onChange={(val) => setCardCode(val.replace(/\D/g, '').slice(0, 12))}
-                          maxLength={12}
-                          disabled={loading}
-                        >
-                          <InputOTPGroup className="gap-1">
-                            <InputOTPSlot index={0} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
-                            <InputOTPSlot index={1} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
-                            <InputOTPSlot index={2} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
-                            <InputOTPSlot index={3} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
-                          </InputOTPGroup>
-                          <div className="w-2 h-0.5 bg-white/30 rounded mx-1"></div>
-                          <InputOTPGroup className="gap-1">
-                            <InputOTPSlot index={4} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
-                            <InputOTPSlot index={5} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
-                            <InputOTPSlot index={6} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
-                            <InputOTPSlot index={7} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
-                          </InputOTPGroup>
-                          <div className="w-2 h-0.5 bg-white/30 rounded mx-1"></div>
-                          <InputOTPGroup className="gap-1">
-                            <InputOTPSlot index={8} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
-                            <InputOTPSlot index={9} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
-                            <InputOTPSlot index={10} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
-                          </InputOTPGroup>
-                          <div className="w-2 h-0.5 bg-white/30 rounded mx-1"></div>
-                          <InputOTPGroup>
-                            <InputOTPSlot index={11} className="w-7 h-9 bg-yellow-400/10 border-yellow-400/30 text-yellow-300 text-base font-mono font-bold rounded backdrop-blur-sm ring-1 ring-yellow-400/40" />
-                          </InputOTPGroup>
-                        </InputOTP>
-                      </div>
+                      <Input
+                        id="cardCode"
+                        type="text"
+                        value={cardCode}
+                        onChange={(e) => setCardCode(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                        placeholder="000000000000"
+                        maxLength={12}
+                        disabled={loading}
+                        className="bg-white/5 border-white/10 text-white text-center text-xl font-mono font-bold tracking-[0.3em] placeholder:text-white/30 placeholder:tracking-[0.3em] focus:bg-white/10 focus:border-white/30 h-14 backdrop-blur-sm"
+                        dir="ltr"
+                      />
                       <p className="text-xs text-white/50 text-center mt-2.5 tracking-wide" dir="rtl">
-                        آخر رقم هو رقم التحقق
+                        أدخل الرقم المكون من 12 خانة (آخر رقم للتحقق)
                       </p>
                     </div>
                     
