@@ -84,7 +84,7 @@ const Cards = () => {
                         placeholder="000000000000"
                         maxLength={12}
                         disabled={loading}
-                        className="bg-white/5 border-white/10 text-white text-center text-xl font-mono font-bold tracking-[0.3em] placeholder:text-white/30 placeholder:tracking-[0.3em] focus:bg-white/10 focus:border-white/30 h-14 backdrop-blur-sm"
+                        className="bg-white/5 border-white/10 text-white text-center text-xl font-mono font-bold tracking-wide placeholder:text-white/30 placeholder:tracking-wide focus:bg-white/10 focus:border-white/30 h-14 backdrop-blur-sm"
                         dir="ltr"
                       />
                       <p className="text-xs text-white/50 text-center mt-2.5 tracking-wide" dir="rtl">
