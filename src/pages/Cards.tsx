@@ -13,6 +13,11 @@ const Cards = () => {
   const { redeemGiftCard, loading } = useGiftCards();
   const { balance } = useBalance();
 
+  const formatCardDisplay = (value: string) => {
+    if (value.length <= 11) return value;
+    return `${value.slice(0, 11)}-${value.slice(11)}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cardCode.trim()) return;
@@ -79,16 +84,18 @@ const Cards = () => {
                       <Input
                         id="cardCode"
                         type="text"
-                        value={cardCode}
-                        onChange={(e) => setCardCode(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                        value={formatCardDisplay(cardCode)}
+                        onChange={(e) => {
+                          const cleaned = e.target.value.replace(/\D/g, '').slice(0, 12);
+                          setCardCode(cleaned);
+                        }}
                         onPaste={(e) => {
                           e.preventDefault();
                           const pastedText = e.clipboardData.getData('text');
                           const numbersOnly = pastedText.replace(/\D/g, '').slice(0, 12);
                           setCardCode(numbersOnly);
                         }}
-                        placeholder="000000000000"
-                        maxLength={12}
+                        placeholder="00000000000-0"
                         disabled={loading}
                         className="bg-white/5 border-white/10 text-white text-center text-xl font-mono font-bold tracking-wide placeholder:text-white/30 placeholder:tracking-wide focus:bg-white/10 focus:border-white/30 h-14 backdrop-blur-sm"
                         dir="ltr"
