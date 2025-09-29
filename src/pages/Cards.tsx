@@ -61,53 +61,59 @@ const Cards = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Plastic Card Visual */}
-              <div className="relative">
-                <div className="bg-gradient-to-br from-blue-600 to-purple-700 rounded-xl p-6 text-white shadow-lg">
-                  <div className="flex justify-between items-start mb-8">
+              <div className="relative max-w-sm mx-auto">
+                <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 rounded-2xl p-6 text-white shadow-2xl shadow-blue-500/20">
+                  <div className="flex justify-between items-start mb-6">
                     <div>
-                      <div className="text-sm opacity-80 mb-1">OPAL CARD</div>
-                      <div className="text-xs opacity-60">GIFT CARD</div>
+                      <div className="text-base font-bold opacity-90 mb-0.5">OPAL CARD</div>
+                      <div className="text-xs opacity-70 tracking-wider">GIFT CARD</div>
                     </div>
-                    <div className="w-8 h-6 bg-white/20 rounded"></div>
+                    <div className="w-10 h-7 bg-gradient-to-br from-yellow-400/30 to-orange-400/30 rounded backdrop-blur-sm border border-white/20"></div>
                   </div>
                   
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     <div>
-                      <Label htmlFor="cardCode" className="text-white/80 text-sm block mb-2">
+                      <Label htmlFor="cardCode" className="text-white/70 text-xs block mb-3 tracking-wide">
                         رقم البطاقة
                       </Label>
-                      <div className="flex justify-center" dir="ltr">
+                      <div className="flex justify-center items-center gap-1.5" dir="ltr">
                         <InputOTP
                           value={cardCode}
                           onChange={(val) => setCardCode(val.replace(/\D/g, '').slice(0, 12))}
                           maxLength={12}
                           disabled={loading}
                         >
-                          <InputOTPGroup>
-                            <InputOTPSlot index={0} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                            <InputOTPSlot index={1} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                            <InputOTPSlot index={2} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                            <InputOTPSlot index={3} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                            <InputOTPSlot index={4} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                            <InputOTPSlot index={5} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                            <InputOTPSlot index={6} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                            <InputOTPSlot index={7} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                            <InputOTPSlot index={8} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                            <InputOTPSlot index={9} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
-                            <InputOTPSlot index={10} className="bg-white/10 border-white/20 text-white text-lg font-bold" />
+                          <InputOTPGroup className="gap-1">
+                            <InputOTPSlot index={0} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
+                            <InputOTPSlot index={1} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
+                            <InputOTPSlot index={2} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
+                            <InputOTPSlot index={3} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
                           </InputOTPGroup>
-                          <div className="px-2 text-white/90 text-xl font-extrabold">-</div>
+                          <div className="w-2 h-0.5 bg-white/30 rounded mx-1"></div>
+                          <InputOTPGroup className="gap-1">
+                            <InputOTPSlot index={4} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
+                            <InputOTPSlot index={5} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
+                            <InputOTPSlot index={6} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
+                            <InputOTPSlot index={7} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
+                          </InputOTPGroup>
+                          <div className="w-2 h-0.5 bg-white/30 rounded mx-1"></div>
+                          <InputOTPGroup className="gap-1">
+                            <InputOTPSlot index={8} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
+                            <InputOTPSlot index={9} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
+                            <InputOTPSlot index={10} className="w-7 h-9 bg-white/5 border-white/10 text-white text-base font-mono font-semibold rounded backdrop-blur-sm" />
+                          </InputOTPGroup>
+                          <div className="w-2 h-0.5 bg-white/30 rounded mx-1"></div>
                           <InputOTPGroup>
-                            <InputOTPSlot index={11} className="bg-white/10 border-white/20 text-white text-lg font-bold ring-2 ring-yellow-400/50" />
+                            <InputOTPSlot index={11} className="w-7 h-9 bg-yellow-400/10 border-yellow-400/30 text-yellow-300 text-base font-mono font-bold rounded backdrop-blur-sm ring-1 ring-yellow-400/40" />
                           </InputOTPGroup>
                         </InputOTP>
                       </div>
-                      <p className="text-xs text-white/60 text-center mt-2" dir="rtl">
+                      <p className="text-xs text-white/50 text-center mt-2.5 tracking-wide" dir="rtl">
                         آخر رقم هو رقم التحقق
                       </p>
                     </div>
                     
-                    <div className="flex justify-between items-center text-xs opacity-60">
+                    <div className="flex justify-between items-center text-xs opacity-50 tracking-widest pt-2 border-t border-white/10">
                       <span>VALID</span>
                       <span>ALGERIA</span>
                     </div>
