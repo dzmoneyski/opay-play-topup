@@ -325,16 +325,6 @@ const Auth = () => {
               </TabsContent>
             </Tabs>
 
-            {/* Info Notice */}
-            <div className="mt-6 p-4 bg-white/5 border border-white/10 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-white/70 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-white/80">
-                  <p className="font-medium mb-1">معلومة مهمة:</p>
-                  <p>سيتم إرسال رابط تفعيل إلى بريدك الإلكتروني بعد التسجيل. يرجى التحقق من صندوق الوارد أو البريد المزعج.</p>
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
 
