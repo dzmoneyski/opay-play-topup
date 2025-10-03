@@ -17,7 +17,7 @@ import {
   AlertCircle,
   ArrowLeft
 } from 'lucide-react';
-import opayLogo from '@/assets/opay-logo.png';
+import opayLogo from '@/assets/opay-icon-circle.png';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -167,7 +167,8 @@ const Auth = () => {
             <img 
               src={opayLogo} 
               alt="OpaY الجزائر" 
-              className="w-48 h-auto drop-shadow-2xl animate-glow-pulse"
+              className="w-24 h-auto drop-shadow-2xl animate-glow-pulse"
+              loading="lazy"
             />
           </div>
         </div>
