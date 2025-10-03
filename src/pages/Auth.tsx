@@ -17,6 +17,7 @@ import {
   AlertCircle,
   ArrowLeft
 } from 'lucide-react';
+import opayLogo from '@/assets/opay-logo.png';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -162,11 +163,13 @@ const Auth = () => {
       <div className="w-full max-w-md relative z-10">
         {/* Header */}
         <div className="text-center mb-8 animate-slide-up">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-primary rounded-3xl shadow-glow mb-6 animate-glow-pulse">
-            <Wallet className="h-10 w-10 text-white" />
+          <div className="inline-flex items-center justify-center mb-6">
+            <img 
+              src={opayLogo} 
+              alt="OpaY الجزائر" 
+              className="w-48 h-auto drop-shadow-2xl animate-glow-pulse"
+            />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">OpaY الجزائر</h1>
-          <p className="text-white/80">محفظتك الرقمية المتطورة</p>
         </div>
 
         {/* Auth Card */}
