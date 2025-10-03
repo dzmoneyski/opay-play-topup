@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { 
-  Wallet,
   Mail, 
   Lock, 
   User, 
@@ -17,6 +16,7 @@ import {
   AlertCircle,
   ArrowLeft
 } from 'lucide-react';
+import opayGatewayLogo from '@/assets/opay-gateway-logo.png';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -163,7 +163,7 @@ const Auth = () => {
         {/* Header */}
         <div className="text-center mb-8 animate-slide-up">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-primary rounded-3xl shadow-glow mb-6 animate-glow-pulse">
-            <Wallet className="h-10 w-10 text-white" />
+            <img src={opayGatewayLogo} alt="OpaY Logo" className="w-14 h-14 object-contain" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">OpaY الجزائر</h1>
           <p className="text-white/80">محفظتك الرقمية المتطورة</p>
