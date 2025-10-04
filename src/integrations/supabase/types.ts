@@ -92,6 +92,36 @@ export type Database = {
         }
         Relationships: []
       }
+      phone_verification_codes: {
+        Row: {
+          attempts: number
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       platform_ledger: {
         Row: {
           created_at: string
@@ -171,8 +201,6 @@ export type Database = {
           is_phone_verified: boolean | null
           national_id: string | null
           phone: string | null
-          phone_verification_code: string | null
-          phone_verification_expires_at: string | null
           redeem_locked_until: string | null
           updated_at: string
           user_id: string
@@ -189,8 +217,6 @@ export type Database = {
           is_phone_verified?: boolean | null
           national_id?: string | null
           phone?: string | null
-          phone_verification_code?: string | null
-          phone_verification_expires_at?: string | null
           redeem_locked_until?: string | null
           updated_at?: string
           user_id: string
@@ -207,8 +233,6 @@ export type Database = {
           is_phone_verified?: boolean | null
           national_id?: string | null
           phone?: string | null
-          phone_verification_code?: string | null
-          phone_verification_expires_at?: string | null
           redeem_locked_until?: string | null
           updated_at?: string
           user_id?: string
@@ -441,6 +465,10 @@ export type Database = {
       calculate_fee: {
         Args: { _amount: number; _fee_config: Json }
         Returns: Json
+      }
+      cleanup_expired_verification_codes: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       get_user_gift_card_redemptions: {
         Args: Record<PropertyKey, never>

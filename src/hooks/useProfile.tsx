@@ -12,8 +12,6 @@ interface Profile {
   is_phone_verified: boolean;
   is_identity_verified: boolean;
   is_account_activated: boolean;
-  phone_verification_code: string | null;
-  phone_verification_expires_at: string | null;
   identity_verification_status: 'pending' | 'verified' | 'rejected';
 }
 
@@ -110,14 +108,30 @@ export const useProfile = () => {
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 10); // Expires in 10 minutes
 
-    const { error } = await updateProfile({
-      phone,
-      phone_verification_code: verificationCode,
-      phone_verification_expires_at: expiresAt.toISOString(),
-    });
+    // Update phone in profile
+    const { error: profileError } = await updateProfile({ phone });
+    if (profileError) {
+      return { error: profileError };
+    }
+
+    // Delete any existing verification code for this user
+    await supabase
+      .from('phone_verification_codes')
+      .delete()
+      .eq('user_id', user.id);
+
+    // Insert new verification code in secure table
+    const { error } = await supabase
+      .from('phone_verification_codes')
+      .insert({
+        user_id: user.id,
+        phone,
+        code: verificationCode,
+        expires_at: expiresAt.toISOString()
+      });
 
     if (error) {
-      return { error };
+      return { error: error.message };
     }
 
     // In a real app, you would send the SMS here
@@ -129,27 +143,49 @@ export const useProfile = () => {
   const verifyPhoneCode = async (code: string) => {
     if (!user || !profile) return { error: 'No user or profile found' };
 
-    if (!profile.phone_verification_code) {
+    // Fetch verification code from secure table
+    const { data: verificationData, error: fetchError } = await supabase
+      .from('phone_verification_codes')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (fetchError) {
+      return { error: fetchError.message };
+    }
+
+    if (!verificationData) {
       return { error: 'لم يتم طلب رمز التفعيل' };
     }
 
-    if (profile.phone_verification_expires_at && new Date() > new Date(profile.phone_verification_expires_at)) {
+    if (new Date() > new Date(verificationData.expires_at)) {
       return { error: 'انتهت صلاحية رمز التفعيل' };
     }
 
-    if (profile.phone_verification_code !== code) {
+    if (verificationData.code !== code) {
+      // Increment attempts
+      await supabase
+        .from('phone_verification_codes')
+        .update({ attempts: verificationData.attempts + 1 })
+        .eq('user_id', user.id);
+      
       return { error: 'رمز التفعيل غير صحيح' };
     }
 
-    const { error } = await updateProfile({
-      is_phone_verified: true,
-      phone_verification_code: null,
-      phone_verification_expires_at: null,
+    // Code is correct - update profile
+    const { error: updateError } = await updateProfile({
+      is_phone_verified: true
     });
 
-    if (error) {
-      return { error };
+    if (updateError) {
+      return { error: updateError };
     }
+
+    // Delete verification code after successful verification
+    await supabase
+      .from('phone_verification_codes')
+      .delete()
+      .eq('user_id', user.id);
 
     return { success: true };
   };
