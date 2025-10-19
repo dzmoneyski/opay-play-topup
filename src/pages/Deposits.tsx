@@ -21,7 +21,9 @@ import {
   XCircle,
   Banknote,
   Wallet,
-  Receipt
+  Receipt,
+  Building2,
+  HandCoins
 } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 
@@ -155,7 +157,7 @@ export default function Deposits() {
 
         <Tabs value={selectedMethod} onValueChange={(value) => setSelectedMethod(value as PaymentMethod)} className="space-y-6">
           {/* Payment Method Selection */}
-          <TabsList className="grid w-full grid-cols-3 bg-white/10 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-5 bg-white/10 backdrop-blur-sm">
             <TabsTrigger value="baridimob" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
               Baridimob
             </TabsTrigger>
@@ -164,6 +166,12 @@ export default function Deposits() {
             </TabsTrigger>
             <TabsTrigger value="edahabiya" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
               Edahabiya
+            </TabsTrigger>
+            <TabsTrigger value="atm" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+              صراف آلي
+            </TabsTrigger>
+            <TabsTrigger value="cash" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+              كاش
             </TabsTrigger>
           </TabsList>
 
@@ -330,6 +338,246 @@ export default function Deposits() {
                   <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">هذه الخدمة ستكون متاحة قريباً</p>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="atm" className="space-y-6">
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  إيداع عبر الصراف الآلي
+                </CardTitle>
+                <CardDescription>
+                  قم بالإيداع عبر الصراف الآلي ثم املأ النموذج
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* ATM Instructions */}
+                <div className="p-4 bg-gradient-primary rounded-lg text-white">
+                  <h3 className="font-semibold mb-2">معلومات الإيداع</h3>
+                  <div className="space-y-2 text-sm">
+                    <p>• توجه إلى أقرب صراف آلي</p>
+                    <p>• قم بإيداع المبلغ في الحساب المحدد</p>
+                    <p>• احتفظ بإيصال الإيداع</p>
+                    <p>• املأ النموذج أدناه وأرفق صورة الإيصال</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Deposit Form */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="amount">المبلغ المودع (دج)</Label>
+                      <Input
+                        id="amount"
+                        type="number"
+                        placeholder="مثال: 5000"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        required
+                        min="1"
+                        step="0.01"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="transactionId">رقم الإيصال</Label>
+                      <Input
+                        id="transactionId"
+                        type="text"
+                        placeholder="رقم إيصال الصراف الآلي"
+                        value={transactionId}
+                        onChange={(e) => setTransactionId(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Fee Preview */}
+                  {depositAmount > 0 && (
+                    <div className="p-4 bg-gradient-secondary/10 rounded-xl border border-accent/20">
+                      <h3 className="font-semibold text-foreground mb-3">ملخص الإيداع</h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">المبلغ المودع:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(depositAmount)} دج</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">رسوم الإيداع:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(depositFee.fee_amount)} دج</span>
+                        </div>
+                        <div className="h-px bg-border my-2"></div>
+                        <div className="flex justify-between font-semibold">
+                          <span className="text-foreground">صافي المبلغ المضاف لرصيدك:</span>
+                          <span className="text-green-600">{formatCurrency(netAmount)} دج</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="receipt">صورة الإيصال</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="receipt"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                        required
+                        className="cursor-pointer"
+                      />
+                      <Upload className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    {receiptFile && (
+                      <p className="text-sm text-muted-foreground">
+                        تم اختيار: {receiptFile.name}
+                      </p>
+                    )}
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-primary hover:opacity-90"
+                    disabled={submitting || loading}
+                    size="lg"
+                  >
+                    {submitting ? (
+                      <>
+                        <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        جاري الإرسال...
+                      </>
+                    ) : (
+                      <>
+                        إرسال طلب الإيداع
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="cash" className="space-y-6">
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <HandCoins className="h-5 w-5" />
+                  إيداع نقدي (كاش)
+                </CardTitle>
+                <CardDescription>
+                  قم بالإيداع النقدي في أحد فروعنا ثم املأ النموذج
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Cash Instructions */}
+                <div className="p-4 bg-gradient-primary rounded-lg text-white">
+                  <h3 className="font-semibold mb-2">تعليمات الإيداع النقدي</h3>
+                  <div className="space-y-2 text-sm">
+                    <p>• توجه إلى أحد فروعنا المعتمدة</p>
+                    <p>• قم بتسليم المبلغ النقدي للموظف المختص</p>
+                    <p>• احصل على إيصال الإيداع</p>
+                    <p>• املأ النموذج أدناه وأرفق صورة الإيصال</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Deposit Form */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="amount">المبلغ المودع (دج)</Label>
+                      <Input
+                        id="amount"
+                        type="number"
+                        placeholder="مثال: 5000"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        required
+                        min="1"
+                        step="0.01"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="transactionId">رقم الإيصال</Label>
+                      <Input
+                        id="transactionId"
+                        type="text"
+                        placeholder="رقم إيصال الإيداع النقدي"
+                        value={transactionId}
+                        onChange={(e) => setTransactionId(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Fee Preview */}
+                  {depositAmount > 0 && (
+                    <div className="p-4 bg-gradient-secondary/10 rounded-xl border border-accent/20">
+                      <h3 className="font-semibold text-foreground mb-3">ملخص الإيداع</h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">المبلغ المودع:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(depositAmount)} دج</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">رسوم الإيداع:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(depositFee.fee_amount)} دج</span>
+                        </div>
+                        <div className="h-px bg-border my-2"></div>
+                        <div className="flex justify-between font-semibold">
+                          <span className="text-foreground">صافي المبلغ المضاف لرصيدك:</span>
+                          <span className="text-green-600">{formatCurrency(netAmount)} دج</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="receipt">صورة الإيصال</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="receipt"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                        required
+                        className="cursor-pointer"
+                      />
+                      <Upload className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    {receiptFile && (
+                      <p className="text-sm text-muted-foreground">
+                        تم اختيار: {receiptFile.name}
+                      </p>
+                    )}
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-primary hover:opacity-90"
+                    disabled={submitting || loading}
+                    size="lg"
+                  >
+                    {submitting ? (
+                      <>
+                        <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        جاري الإرسال...
+                      </>
+                    ) : (
+                      <>
+                        إرسال طلب الإيداع
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </form>
               </CardContent>
             </Card>
           </TabsContent>
