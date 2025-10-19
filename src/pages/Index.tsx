@@ -207,9 +207,11 @@ const Index = () => {
         <div className="container mx-auto px-4 py-8 relative z-10">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center">
-                <div className="bg-primary/10 p-2 rounded-full shadow-glow border border-primary/20 animate-glow-pulse w-16 h-16 flex items-center justify-center">
-                  <img src={opayLogo} alt="OpaY Logo" className="w-12 h-12 rounded-full object-cover" />
-                </div>
+              <img 
+                src={opayLogo} 
+                alt="OpaY Logo" 
+                className="w-16 h-16 rounded-full object-cover transition-all duration-300 hover:shadow-[0_0_30px_rgba(99,102,241,0.6)] hover:scale-110 cursor-pointer" 
+              />
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
