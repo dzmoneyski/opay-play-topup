@@ -1,3 +1,4 @@
+import opayLogo from '@/assets/opay-final-logo.png';
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -207,8 +208,8 @@ const Index = () => {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <div className="bg-gradient-primary p-3 rounded-2xl shadow-glow animate-glow-pulse">
-                  <Wallet className="h-8 w-8 text-white" />
+                <div className="bg-primary/10 p-3 rounded-2xl shadow-glow border border-primary/20 animate-glow-pulse">
+                  <img src={opayLogo} alt="OpaY Logo" className="h-12 w-12 rounded-full object-cover" />
                 </div>
               </div>
               <div className="animate-slide-up">
