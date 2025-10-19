@@ -206,15 +206,9 @@ const Index = () => {
         <div className="absolute inset-0 bg-gradient-glass"></div>
         <div className="container mx-auto px-4 py-8 relative z-10">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="bg-primary/10 p-3 rounded-2xl shadow-glow border border-primary/20 animate-glow-pulse">
-                  <img src={opayLogo} alt="OpaY Logo" className="h-12 w-12 rounded-full object-cover" />
-                </div>
-              </div>
-              <div className="animate-slide-up">
-                <h1 className="text-3xl font-bold text-white mb-1">OpaY الجزائر</h1>
-                <p className="text-white/80">محفظتك الرقمية المتطورة</p>
+            <div className="flex items-center">
+              <div className="bg-primary/10 p-3 rounded-2xl shadow-glow border border-primary/20 animate-glow-pulse">
+                <img src={opayLogo} alt="OpaY Logo" className="h-12 w-12 rounded-full object-cover" />
               </div>
             </div>
             <div className="flex items-center gap-3">
