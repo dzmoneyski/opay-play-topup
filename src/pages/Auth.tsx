@@ -16,7 +16,7 @@ import {
   AlertCircle,
   ArrowLeft
 } from 'lucide-react';
-import opayGatewayLogo from '@/assets/opay-professional-logo.png';
+import opayGatewayLogo from '@/assets/opay-final-logo.png';
 
 const Auth = () => {
   const navigate = useNavigate();
