@@ -207,9 +207,9 @@ const Index = () => {
         <div className="container mx-auto px-4 py-8 relative z-10">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center">
-              <div className="bg-primary/10 p-3 rounded-2xl shadow-glow border border-primary/20 animate-glow-pulse">
-                <img src={opayLogo} alt="OpaY Logo" className="h-12 w-12 rounded-full object-cover" />
-              </div>
+                <div className="bg-primary/10 p-2 rounded-full shadow-glow border border-primary/20 animate-glow-pulse w-16 h-16 flex items-center justify-center">
+                  <img src={opayLogo} alt="OpaY Logo" className="w-12 h-12 rounded-full object-cover" />
+                </div>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
