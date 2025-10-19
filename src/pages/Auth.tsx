@@ -163,7 +163,7 @@ const Auth = () => {
         {/* Header */}
         <div className="text-center mb-8 animate-slide-up">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 border border-primary/20 shadow-glow mb-6 animate-glow-pulse">
-            <img src={opayGatewayLogo} alt="OpaY gateway logo" className="w-9 h-9 object-contain" loading="lazy" />
+            <img src={opayGatewayLogo} alt="OpaY gateway logo" className="w-14 h-14 rounded-full object-cover" loading="lazy" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">OpaY الجزائر</h1>
           <p className="text-white/80">محفظتك الرقمية المتطورة</p>
