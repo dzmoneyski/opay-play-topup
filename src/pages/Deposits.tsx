@@ -27,7 +27,9 @@ import {
   Eye,
   EyeOff,
   Copy,
-  Check
+  Check,
+  Phone,
+  AlertCircle
 } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import baridimobLogo from '@/assets/baridimob-logo.png';
@@ -761,170 +763,109 @@ export default function Deposits() {
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-foreground mb-1">إيداع نقدي (كاش)</h2>
-                    <p className="text-muted-foreground">قم بالإيداع النقدي في أحد فروعنا</p>
+                    <p className="text-muted-foreground">اتصل بنا لمعرفة أقرب نقطة إيداع</p>
                   </div>
                 </div>
               </div>
               
-              <CardContent className="p-8 lg:p-10 space-y-8">
-                {/* Cash Instructions */}
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-secondary rounded-3xl blur-lg opacity-20"></div>
-                  <div className="relative p-8 bg-gradient-to-br from-secondary/10 to-accent/10 rounded-3xl border-2 border-secondary/20">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-3 rounded-2xl bg-gradient-secondary">
-                        <HandCoins className="h-6 w-6 text-white" />
-                      </div>
-                      <h3 className="font-bold text-foreground text-xl">تعليمات الإيداع النقدي</h3>
-                    </div>
-                    <ul className="space-y-3">
-                      {[
-                        'توجه إلى أحد فروعنا المعتمدة',
-                        'قم بتسليم المبلغ النقدي للموظف المختص',
-                        'احصل على إيصال الإيداع',
-                        'املأ النموذج أدناه وأرفق صورة الإيصال'
-                      ].map((item, i) => (
-                        <li key={i} className="flex items-start gap-3 text-muted-foreground">
-                          <div className="w-2 h-2 rounded-full bg-accent flex-shrink-0 mt-2"></div>
-                          <span className="text-base font-medium">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                <Separator className="bg-border/50" />
-
-                {/* Same form structure */}
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <Label htmlFor="amount" className="text-foreground font-semibold text-base flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-primary/10">
-                          <Banknote className="h-4 w-4 text-primary" />
+              <CardContent className="p-8 lg:p-10">
+                {/* Contact Information */}
+                <div className="space-y-8">
+                  {/* Main Call to Action */}
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-gold rounded-3xl blur-2xl opacity-20 animate-pulse"></div>
+                    <div className="relative p-10 bg-gradient-to-br from-accent/15 to-accent/5 rounded-3xl border-2 border-accent/30 text-center">
+                      <div className="flex justify-center mb-6">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-gold rounded-full blur-lg opacity-50 animate-pulse"></div>
+                          <div className="relative p-6 rounded-full bg-gradient-gold shadow-lg">
+                            <Phone className="h-12 w-12 text-white" />
+                          </div>
                         </div>
-                        المبلغ المودع (دج)
-                      </Label>
-                      <div className="relative group">
-                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
-                        <Input
-                          id="amount"
-                          type="number"
-                          placeholder="مثال: 5000"
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
-                          required
-                          min="1"
-                          step="0.01"
-                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-12 text-base rounded-xl font-medium"
-                        />
                       </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <Label htmlFor="transactionId" className="text-foreground font-semibold text-base flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-primary/10">
-                          <Receipt className="h-4 w-4 text-primary" />
+                      
+                      <h3 className="text-3xl font-bold text-foreground mb-4">للإيداع النقدي</h3>
+                      <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
+                        اتصل بنا الآن وسنرشدك إلى أقرب نقطة إيداع نقدي لشحن حسابك بسهولة
+                      </p>
+                      
+                      {/* Phone Number Display */}
+                      <div className="relative inline-block">
+                        <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-md opacity-30"></div>
+                        <div className="relative bg-white dark:bg-card rounded-2xl p-6 shadow-lg border-2 border-primary/20">
+                          <p className="text-sm text-muted-foreground mb-2 font-medium">رقم الاتصال</p>
+                          <a 
+                            href="tel:0553980661"
+                            className="text-4xl lg:text-5xl font-bold text-primary hover:text-primary/80 transition-colors font-mono tracking-wide block"
+                            dir="ltr"
+                          >
+                            0553 980 661
+                          </a>
                         </div>
-                        رقم الإيصال
-                      </Label>
-                      <div className="relative group">
-                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
-                        <Input
-                          id="transactionId"
-                          type="text"
-                          placeholder="رقم إيصال الإيداع النقدي"
-                          value={transactionId}
-                          onChange={(e) => setTransactionId(e.target.value)}
-                          required
-                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-12 text-base rounded-xl font-medium"
-                        />
+                      </div>
+
+                      {/* Call Button */}
+                      <div className="mt-10">
+                        <a 
+                          href="tel:0553980661"
+                          className="relative inline-block"
+                        >
+                          <div className="absolute -inset-1 bg-gradient-gold rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
+                          <Button
+                            size="lg"
+                            className="relative bg-gradient-gold hover:opacity-90 text-white font-bold py-6 px-12 text-xl transition-all hover:scale-[1.02] hover:shadow-elevated rounded-2xl"
+                          >
+                            <Phone className="h-6 w-6 ml-2" />
+                            اتصل الآن
+                          </Button>
+                        </a>
                       </div>
                     </div>
                   </div>
 
-                  {depositAmount > 0 && (
-                    <div className="relative p-8 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 rounded-3xl border-2 border-primary/10 shadow-lg">
-                      <div className="flex items-center gap-4 mb-6">
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-md opacity-50"></div>
-                          <div className="relative p-3 rounded-2xl bg-gradient-primary shadow-lg">
-                            <CheckCircle className="h-6 w-6 text-white" />
-                          </div>
+                  {/* Instructions */}
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-secondary rounded-3xl blur-lg opacity-10"></div>
+                    <div className="relative p-8 bg-gradient-to-br from-secondary/5 to-accent/5 rounded-3xl border border-border/30">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="p-3 rounded-2xl bg-gradient-secondary">
+                          <CheckCircle className="h-6 w-6 text-white" />
                         </div>
-                        <h3 className="font-bold text-foreground text-xl">ملخص الإيداع</h3>
+                        <h3 className="font-bold text-foreground text-xl">خطوات الإيداع النقدي</h3>
                       </div>
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center p-4 bg-background/50 rounded-2xl backdrop-blur-sm">
-                          <span className="text-muted-foreground font-semibold text-base">المبلغ المودع:</span>
-                          <span className="font-bold text-foreground text-xl">{formatCurrency(depositAmount)} دج</span>
-                        </div>
-                        <div className="flex justify-between items-center p-4 bg-background/50 rounded-2xl backdrop-blur-sm">
-                          <span className="text-muted-foreground font-semibold text-base">رسوم الإيداع:</span>
-                          <span className="font-bold text-foreground text-xl">{formatCurrency(depositFee.fee_amount)} دج</span>
-                        </div>
-                        <div className="h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent my-2"></div>
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-green-500/5 rounded-2xl blur-sm"></div>
-                          <div className="relative flex justify-between items-center p-5 bg-green-500/10 rounded-2xl border border-green-500/20">
-                            <span className="font-bold text-foreground text-lg">صافي المبلغ المضاف:</span>
-                            <span className="font-bold text-green-600 text-2xl">{formatCurrency(netAmount)} دج</span>
-                          </div>
-                        </div>
-                      </div>
+                      <ul className="space-y-4">
+                        {[
+                          { step: '1', text: 'اتصل بالرقم أعلاه للتواصل مع فريق الدعم' },
+                          { step: '2', text: 'سنرشدك إلى أقرب نقطة إيداع نقدي معتمدة' },
+                          { step: '3', text: 'توجه إلى الموقع وقم بإيداع المبلغ المطلوب' },
+                          { step: '4', text: 'ستتم إضافة المبلغ إلى حسابك فوراً بعد التأكيد' }
+                        ].map((item, i) => (
+                          <li key={i} className="flex items-start gap-4 text-muted-foreground group hover:text-foreground transition-colors">
+                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                              {item.step}
+                            </div>
+                            <span className="text-base font-medium pt-2">{item.text}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                  )}
+                  </div>
 
-                  <div className="space-y-3">
-                    <Label htmlFor="receipt" className="text-foreground font-semibold text-base flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-primary/10">
-                        <Upload className="h-4 w-4 text-primary" />
+                  {/* Additional Info */}
+                  <div className="relative p-6 bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl border border-primary/10">
+                    <div className="flex items-start gap-4">
+                      <div className="p-2 rounded-xl bg-primary/10 flex-shrink-0">
+                        <AlertCircle className="h-5 w-5 text-primary" />
                       </div>
-                      صورة الإيصال
-                    </Label>
-                    <div className="relative group">
-                      <div className="absolute -inset-0.5 bg-gradient-primary rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
-                      <Input
-                        id="receipt"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
-                        required
-                        className="relative cursor-pointer bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-12 text-sm rounded-xl"
-                      />
-                    </div>
-                    {receiptFile && (
-                      <div className="p-4 bg-green-500/10 rounded-2xl border border-green-500/20">
-                        <p className="text-sm text-green-700 dark:text-green-400 font-medium flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4" />
-                          تم اختيار: {receiptFile.name}
+                      <div>
+                        <h4 className="font-bold text-foreground mb-2">ملاحظة هامة</h4>
+                        <p className="text-muted-foreground text-sm leading-relaxed">
+                          الإيداع النقدي متاح في نقاط معتمدة فقط. اتصل بنا لمعرفة أقرب موقع إليك. جميع العمليات آمنة ومضمونة بنسبة 100%.
                         </p>
                       </div>
-                    )}
+                    </div>
                   </div>
-
-                  <div className="relative pt-2">
-                    <div className="absolute -inset-1 bg-gradient-primary rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
-                    <Button
-                      type="submit"
-                      className="relative w-full bg-gradient-primary hover:opacity-90 text-white font-bold py-5 text-lg transition-all hover:scale-[1.02] hover:shadow-elevated rounded-2xl overflow-hidden group"
-                      disabled={submitting || loading}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-                      {submitting ? (
-                        <>
-                          <Clock className="h-5 w-5 animate-spin ml-2 relative z-10" />
-                          <span className="relative z-10">جاري الإرسال...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="relative z-10">إرسال طلب الإيداع</span>
-                          <ArrowRight className="h-5 w-5 mr-2 relative z-10" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </form>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
