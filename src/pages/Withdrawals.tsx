@@ -29,6 +29,8 @@ import BackButton from '@/components/BackButton';
 import opayLogo from '@/assets/opay-final-logo.png';
 import baridLogo from '@/assets/baridimob-logo.png';
 import ccpLogo from '@/assets/ccp-logo.png';
+import albarakaLogo from '@/assets/albaraka-logo.png';
+import badrLogo from '@/assets/badr-logo.png';
 import { LucideIcon } from 'lucide-react';
 
 type WithdrawalMethod = {
@@ -41,6 +43,8 @@ const WithdrawalMethods: Record<string, WithdrawalMethod> = {
   opay: { name: "OPay", logo: opayLogo },
   barid_bank: { name: "بريد الجزائر", logo: baridLogo },
   ccp: { name: "البريد والمواصلات CCP", logo: ccpLogo },
+  albaraka: { name: "بنك البركة", logo: albarakaLogo },
+  badr: { name: "بنك البدر", logo: badrLogo },
   cash: { name: "سحب نقدي", icon: Wallet }
 };
 
@@ -249,7 +253,7 @@ export default function Withdrawals() {
         </Card>
 
         {/* Withdrawal Method Selection */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           {Object.entries(WithdrawalMethods).map(([key, method]) => (
             <button
               key={key}
@@ -646,15 +650,77 @@ export default function Withdrawals() {
             </Card>
           </TabsContent>
 
+          {/* Albaraka Bank - Coming Soon */}
+          <TabsContent value="albaraka" className="space-y-6">
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl border-2 border-primary/20">
+              <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded-lg shadow-sm">
+                    <img src={albarakaLogo} alt="بنك البركة" className="h-8 w-8 object-contain" />
+                  </div>
+                  <span className="text-2xl">سحب عبر بنك البركة</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-12">
+                <div className="text-center space-y-6">
+                  <div className="mx-auto w-24 h-24 bg-gradient-primary/10 rounded-full flex items-center justify-center">
+                    <Clock className="h-12 w-12 text-primary" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-3xl font-bold text-primary">قريباً</h3>
+                    <p className="text-lg text-muted-foreground">
+                      سيتوفر السحب عبر بنك البركة قريباً
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      نعمل على إضافة هذه الميزة لتسهيل عمليات السحب
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Badr Bank - Coming Soon */}
+          <TabsContent value="badr" className="space-y-6">
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl border-2 border-primary/20">
+              <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded-lg shadow-sm">
+                    <img src={badrLogo} alt="بنك البدر" className="h-8 w-8 object-contain" />
+                  </div>
+                  <span className="text-2xl">سحب عبر بنك البدر</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-12">
+                <div className="text-center space-y-6">
+                  <div className="mx-auto w-24 h-24 bg-gradient-primary/10 rounded-full flex items-center justify-center">
+                    <Clock className="h-12 w-12 text-primary" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-3xl font-bold text-primary">قريباً</h3>
+                    <p className="text-lg text-muted-foreground">
+                      سيتوفر السحب عبر بنك البدر قريباً
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      نعمل على إضافة هذه الميزة لتسهيل عمليات السحب
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Cash Withdrawal */}
           <TabsContent value="cash" className="space-y-6">
-            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  سحب نقدي
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl border-2 border-primary/20">
+              <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-3 bg-gradient-primary rounded-lg shadow-sm">
+                    <Wallet className="h-8 w-8 text-white" />
+                  </div>
+                  <span className="text-2xl">سحب نقدي</span>
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-base">
                   حدد موقع الاستلام المفضل لاستلام المبلغ نقداً
                 </CardDescription>
               </CardHeader>

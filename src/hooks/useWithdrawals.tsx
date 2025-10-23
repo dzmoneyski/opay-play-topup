@@ -6,7 +6,7 @@ export interface Withdrawal {
   id: string;
   user_id: string;
   amount: number;
-  withdrawal_method: string;
+  withdrawal_method: 'opay' | 'barid_bank' | 'ccp' | 'albaraka' | 'badr' | 'cash';
   account_number?: string;
   account_holder_name?: string;
   cash_location?: string;
@@ -36,7 +36,7 @@ export const useWithdrawals = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setWithdrawals(data || []);
+      setWithdrawals((data || []) as Withdrawal[]);
     } catch (error) {
       console.error('Error fetching withdrawals:', error);
     } finally {
