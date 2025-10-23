@@ -42,7 +42,7 @@ type WithdrawalMethod = {
 const WithdrawalMethods: Record<string, WithdrawalMethod> = {
   opay: { name: "OPay", logo: opayLogo },
   barid_bank: { name: "بريد الجزائر", logo: baridLogo },
-  ccp: { name: "البريد والمواصلات CCP", logo: ccpLogo },
+  ccp: { name: "CCP", logo: ccpLogo },
   albaraka: { name: "بنك البركة", logo: albarakaLogo },
   badr: { name: "بنك البدر", logo: badrLogo },
   cash: { name: "سحب نقدي", icon: Wallet }
