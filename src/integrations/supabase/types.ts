@@ -443,17 +443,20 @@ export type Database = {
         Args: { _amount: number; _note?: string; _target_user: string }
         Returns: Json
       }
-      approve_deposit: {
-        Args:
-          | {
+      approve_deposit:
+        | {
+            Args: {
               _adjusted_amount?: number
               _admin_id: string
               _deposit_id: string
               _notes?: string
             }
-          | { _admin_id: string; _deposit_id: string; _notes?: string }
-        Returns: undefined
-      }
+            Returns: undefined
+          }
+        | {
+            Args: { _admin_id: string; _deposit_id: string; _notes?: string }
+            Returns: undefined
+          }
       approve_verification_request: {
         Args: { _admin_id: string; _request_id: string }
         Returns: undefined
@@ -466,12 +469,9 @@ export type Database = {
         Args: { _amount: number; _fee_config: Json }
         Returns: Json
       }
-      cleanup_expired_verification_codes: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_expired_verification_codes: { Args: never; Returns: undefined }
       get_user_gift_card_redemptions: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           amount: number
           created_at: string
@@ -494,10 +494,7 @@ export type Database = {
         }
         Returns: Json
       }
-      recalculate_all_balances: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      recalculate_all_balances: { Args: never; Returns: undefined }
       recalculate_user_balance: {
         Args: { _user_id: string }
         Returns: undefined
@@ -512,10 +509,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      redeem_gift_card: {
-        Args: { _card_code: string }
-        Returns: Json
-      }
+      redeem_gift_card: { Args: { _card_code: string }; Returns: Json }
       reject_verification_request: {
         Args: { _admin_id: string; _reason: string; _request_id: string }
         Returns: undefined
