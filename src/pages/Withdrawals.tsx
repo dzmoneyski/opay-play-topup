@@ -31,6 +31,7 @@ import baridLogo from '@/assets/baridimob-logo.png';
 import ccpLogo from '@/assets/ccp-logo.png';
 import albarakaLogo from '@/assets/albaraka-logo.png';
 import badrLogo from '@/assets/badr-logo.png';
+import cardlessLogo from '@/assets/cardless-withdrawal-logo.png';
 import { LucideIcon } from 'lucide-react';
 
 type WithdrawalMethod = {
@@ -45,7 +46,7 @@ const WithdrawalMethods: Record<string, WithdrawalMethod> = {
   ccp: { name: "CCP", logo: ccpLogo },
   albaraka: { name: "بنك البركة", logo: albarakaLogo },
   badr: { name: "بنك البدر", logo: badrLogo },
-  cash: { name: "السحب بدون بطاقة", icon: Wallet }
+  cash: { name: "السحب بدون بطاقة", logo: cardlessLogo }
 };
 
 export default function Withdrawals() {
@@ -715,8 +716,8 @@ export default function Withdrawals() {
             <Card className="bg-white/95 backdrop-blur-sm shadow-xl border-2 border-primary/20">
               <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
                 <CardTitle className="flex items-center gap-3">
-                  <div className="p-3 bg-gradient-primary rounded-lg shadow-sm">
-                    <Wallet className="h-8 w-8 text-white" />
+                  <div className="p-2 bg-white rounded-lg shadow-sm">
+                    <img src={cardlessLogo} alt="السحب بدون بطاقة" className="h-8 w-8 object-contain" />
                   </div>
                   <span className="text-2xl">السحب بدون بطاقة</span>
                 </CardTitle>
