@@ -281,23 +281,25 @@ export default function Deposits() {
               >
                 <div className="flex flex-col items-center gap-4">
                   {method.logo ? (
-                    <div className="relative w-20 h-20 flex items-center justify-center">
+                    <div className="relative w-24 h-24 flex items-center justify-center">
                       <div className={`absolute inset-0 rounded-2xl transition-opacity ${
                         selectedMethod === method.id ? 'bg-primary/10 opacity-100' : 'opacity-0 group-hover:opacity-50'
                       }`}></div>
-                      <img 
-                        src={method.logo} 
-                        alt={method.name} 
-                        className="relative w-16 h-16 object-contain"
-                      />
+                      <div className="relative w-20 h-20 flex items-center justify-center p-2 bg-white rounded-xl shadow-sm">
+                        <img 
+                          src={method.logo} 
+                          alt={method.name} 
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
                     </div>
                   ) : method.icon && (
-                    <div className={`relative p-4 rounded-2xl transition-all ${
+                    <div className={`relative w-24 h-24 flex items-center justify-center p-4 rounded-2xl transition-all ${
                       selectedMethod === method.id 
                         ? 'bg-gradient-primary' 
                         : 'bg-white/10 group-hover:bg-white/20'
                     }`}>
-                      <method.icon className={`h-8 w-8 ${
+                      <method.icon className={`h-12 w-12 ${
                         selectedMethod === method.id ? 'text-white' : 'text-white/70 group-hover:text-white'
                       }`} />
                     </div>
