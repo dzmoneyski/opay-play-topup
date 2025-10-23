@@ -23,9 +23,16 @@ import {
   Wallet,
   Receipt,
   Building2,
-  HandCoins
+  HandCoins,
+  Eye,
+  EyeOff,
+  Copy,
+  Check
 } from 'lucide-react';
 import BackButton from '@/components/BackButton';
+import baridimobLogo from '@/assets/baridimob-logo.png';
+import ccpLogo from '@/assets/ccp-logo.png';
+import edahabiyaLogo from '@/assets/edahabiya-logo.png';
 
 export default function Deposits() {
   const { deposits, loading, createDeposit } = useDeposits();
@@ -38,6 +45,8 @@ export default function Deposits() {
   const [transactionId, setTransactionId] = React.useState('');
   const [receiptFile, setReceiptFile] = React.useState<File | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
+  const [showBalance, setShowBalance] = React.useState(true);
+  const [copied, setCopied] = React.useState(false);
 
   // حساب الرسوم
   const depositAmount = parseFloat(amount) || 0;
@@ -119,203 +128,410 @@ export default function Deposits() {
     });
   };
 
+  const handleCopy = async (text: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast({
+      title: "تم النسخ",
+      description: "تم نسخ الرقم بنجاح",
+    });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const paymentMethods = [
+    { 
+      id: 'baridimob', 
+      name: 'Baridimob', 
+      logo: baridimobLogo,
+      description: 'الدفع عبر محفظة بريدي موب'
+    },
+    { 
+      id: 'ccp', 
+      name: 'CCP', 
+      logo: ccpLogo,
+      description: 'الدفع عبر حساب البريد'
+    },
+    { 
+      id: 'edahabiya', 
+      name: 'Edahabiya', 
+      logo: edahabiyaLogo,
+      description: 'الدفع عبر بطاقة الذهبية'
+    },
+    { 
+      id: 'atm', 
+      name: 'صراف آلي', 
+      icon: Building2,
+      description: 'الإيداع عبر الصراف الآلي'
+    },
+    { 
+      id: 'cash', 
+      name: 'دفع نقدي', 
+      icon: HandCoins,
+      description: 'الإيداع النقدي في الفروع'
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-hero p-4 sm:p-6 lg:p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <BackButton />
+    <div className="min-h-screen bg-gradient-hero relative overflow-hidden" dir="rtl">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-96 h-96 bg-gradient-primary rounded-full opacity-10 blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-80 h-80 bg-gradient-gold rounded-full opacity-10 blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      </div>
+
+      <div className="container mx-auto px-4 py-6 lg:py-12 max-w-7xl relative z-10">
+        <div className="mb-8">
+          <BackButton />
+        </div>
         
-        {/* Header */}
-        <div className="text-center text-white space-y-4">
-          <div className="flex items-center justify-center gap-3">
-            <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-              <Wallet className="h-8 w-8" />
+        {/* Ultra Premium Header */}
+        <div className="text-center mb-12 animate-slide-up">
+          <div className="relative inline-block mb-6">
+            <div className="absolute inset-0 bg-gradient-primary rounded-[2.5rem] blur-2xl opacity-60 animate-pulse"></div>
+            <div className="relative p-6 rounded-[2.5rem] bg-gradient-primary shadow-glow">
+              <Wallet className="h-12 w-12 text-white" />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold">إيداع الأموال</h1>
-              <p className="text-white/80">اختر طريقة الدفع المناسبة لك</p>
-            </div>
+          </div>
+          <h1 className="text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight">
+            إيداع الأموال
+          </h1>
+          <p className="text-white/90 text-xl max-w-2xl mx-auto leading-relaxed">
+            اختر طريقة الدفع المناسبة لك وأودع أموالك بسهولة وأمان
+          </p>
+        </div>
+
+        {/* Ultra Premium Balance Card */}
+        <div className="mb-12 animate-slide-up relative" style={{ animationDelay: '0.1s' }}>
+          <div className="absolute inset-0 bg-gradient-primary rounded-3xl blur-2xl opacity-20"></div>
+          <Card className="relative bg-gradient-glass backdrop-blur-2xl border-0 shadow-elevated overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+            <CardContent className="p-8 lg:p-10 relative z-10">
+              <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+                <div className="flex-1 text-center lg:text-right">
+                  <div className="flex items-center justify-center lg:justify-start gap-3 mb-3">
+                    <div className="relative">
+                      <div className="w-3 h-3 rounded-full bg-green-400 animate-ping absolute"></div>
+                      <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                    </div>
+                    <p className="text-white/80 text-base font-semibold tracking-wide">الرصيد الحالي</p>
+                  </div>
+                  <div className="flex items-baseline justify-center lg:justify-start gap-4">
+                    {balanceLoading ? (
+                      <div className="h-16 bg-white/10 rounded-xl animate-pulse w-48" />
+                    ) : (
+                      <>
+                        <span className="text-5xl lg:text-6xl font-bold text-white tracking-tight">
+                          {showBalance ? `${(balance?.balance ?? 0).toFixed(2)}` : "••••••"}
+                        </span>
+                        <span className="text-2xl text-white/90 font-bold">دج</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-5">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => setShowBalance(!showBalance)}
+                    className="text-white/80 hover:text-white hover:bg-white/15 rounded-2xl h-14 w-14 transition-all hover:scale-110 backdrop-blur-sm border border-white/10"
+                  >
+                    {showBalance ? <EyeOff className="h-6 w-6" /> : <Eye className="h-6 w-6" />}
+                  </Button>
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-secondary rounded-3xl blur-lg opacity-50"></div>
+                    <div className="relative p-5 rounded-3xl bg-gradient-secondary shadow-lg">
+                      <Wallet className="h-8 w-8 text-white" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Premium Payment Methods Grid */}
+        <div className="mb-10 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <h2 className="text-2xl font-bold text-white mb-6 text-center">اختر طريقة الدفع</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            {paymentMethods.map((method) => (
+              <button
+                key={method.id}
+                onClick={() => setSelectedMethod(method.id as PaymentMethod)}
+                className={`relative group p-6 rounded-3xl border-2 transition-all hover:scale-105 ${
+                  selectedMethod === method.id
+                    ? 'bg-white border-primary shadow-elevated'
+                    : 'bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20'
+                }`}
+              >
+                <div className="flex flex-col items-center gap-4">
+                  {method.logo ? (
+                    <div className="relative w-20 h-20 flex items-center justify-center">
+                      <div className={`absolute inset-0 rounded-2xl transition-opacity ${
+                        selectedMethod === method.id ? 'bg-primary/10 opacity-100' : 'opacity-0 group-hover:opacity-50'
+                      }`}></div>
+                      <img 
+                        src={method.logo} 
+                        alt={method.name} 
+                        className="relative w-16 h-16 object-contain"
+                      />
+                    </div>
+                  ) : method.icon && (
+                    <div className={`relative p-4 rounded-2xl transition-all ${
+                      selectedMethod === method.id 
+                        ? 'bg-gradient-primary' 
+                        : 'bg-white/10 group-hover:bg-white/20'
+                    }`}>
+                      <method.icon className={`h-8 w-8 ${
+                        selectedMethod === method.id ? 'text-white' : 'text-white/70 group-hover:text-white'
+                      }`} />
+                    </div>
+                  )}
+                  <div className="text-center">
+                    <p className={`font-bold text-base ${
+                      selectedMethod === method.id ? 'text-foreground' : 'text-white'
+                    }`}>
+                      {method.name}
+                    </p>
+                    <p className={`text-xs mt-1 ${
+                      selectedMethod === method.id ? 'text-muted-foreground' : 'text-white/60'
+                    }`}>
+                      {method.description}
+                    </p>
+                  </div>
+                </div>
+                {selectedMethod === method.id && (
+                  <div className="absolute top-3 left-3">
+                    <div className="p-1 rounded-full bg-primary">
+                      <CheckCircle className="h-4 w-4 text-white" />
+                    </div>
+                  </div>
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Current Balance */}
-        <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-center gap-4">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-1">الرصيد الحالي</p>
-                {balanceLoading ? (
-                  <div className="h-8 bg-muted rounded animate-pulse w-24 mx-auto" />
-                ) : (
-                  <p className="text-2xl font-bold text-primary">
-                    {balance?.balance?.toFixed(2) || '0.00'} دج
-                  </p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         <Tabs value={selectedMethod} onValueChange={(value) => setSelectedMethod(value as PaymentMethod)} className="space-y-6">
-          {/* Payment Method Selection */}
-          <TabsList className="grid w-full grid-cols-5 bg-white/10 backdrop-blur-sm">
-            <TabsTrigger value="baridimob" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-              Baridimob
-            </TabsTrigger>
-            <TabsTrigger value="ccp" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-              CCP
-            </TabsTrigger>
-            <TabsTrigger value="edahabiya" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-              Edahabiya
-            </TabsTrigger>
-            <TabsTrigger value="atm" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-              صراف آلي
-            </TabsTrigger>
-            <TabsTrigger value="cash" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-              كاش
-            </TabsTrigger>
-          </TabsList>
+
 
           {/* Deposit Form */}
           <TabsContent value="baridimob" className="space-y-6">
-            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  إيداع عبر Baridimob
-                </CardTitle>
-                <CardDescription>
-                  أرسل المال إلى المحفظة المحددة أدناه ثم املأ النموذج
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
+            <Card className="bg-card/95 backdrop-blur-xl border border-border/30 shadow-elevated animate-slide-up overflow-hidden" style={{ animationDelay: '0.3s' }}>
+              {/* Premium Header */}
+              <div className="relative bg-gradient-to-br from-primary/10 via-accent/5 to-transparent border-b border-border/30 p-8">
+                <div className="flex items-center gap-5">
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-3xl blur-md opacity-50 bg-gradient-primary"></div>
+                    <div className="relative p-4 rounded-3xl bg-white shadow-lg">
+                      <img src={baridimobLogo} alt="Baridimob" className="h-12 w-12 object-contain" />
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground mb-1">إيداع عبر Baridimob</h2>
+                    <p className="text-muted-foreground">أرسل المال إلى المحفظة المحددة أدناه</p>
+                  </div>
+                </div>
+              </div>
+              
+              <CardContent className="p-8 lg:p-10 space-y-8">
                 {/* Wallet Information */}
-                <div className="p-4 bg-gradient-primary rounded-lg text-white">
-                  <h3 className="font-semibold mb-2">محفظة الإيداع</h3>
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-mono">
-                      {walletsLoading ? "جاري التحميل..." : (wallets?.baridimob || "0551234567")}
-                    </span>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => navigator.clipboard.writeText(wallets?.baridimob || "0551234567")}
-                    >
-                      نسخ
-                    </Button>
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-primary rounded-3xl blur-lg opacity-20"></div>
+                  <div className="relative p-8 bg-gradient-to-br from-primary/10 to-accent/10 rounded-3xl border-2 border-primary/20">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 rounded-2xl bg-gradient-primary">
+                        <Wallet className="h-6 w-6 text-white" />
+                      </div>
+                      <h3 className="font-bold text-foreground text-xl">محفظة الإيداع</h3>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white/50 dark:bg-black/20 rounded-2xl">
+                      <span className="text-2xl font-bold font-mono text-foreground">
+                        {walletsLoading ? "جاري التحميل..." : (wallets?.baridimob || "0551234567")}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        onClick={() => handleCopy(wallets?.baridimob || "0551234567")}
+                        className="hover:bg-gradient-primary hover:text-white hover:border-primary/50 transition-all hover:scale-105 rounded-2xl px-8 border-2 font-bold"
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="h-5 w-5 ml-2" />
+                            تم النسخ
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-5 w-5 ml-2" />
+                            نسخ الرقم
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
-                <Separator />
+                <Separator className="bg-border/50" />
 
                 {/* Deposit Form */}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="amount">المبلغ المرسل (دج)</Label>
-                      <Input
-                        id="amount"
-                        type="number"
-                        placeholder="مثال: 5000"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        required
-                        min="1"
-                        step="0.01"
-                      />
+                <form onSubmit={handleSubmit} className="space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <Label htmlFor="amount" className="text-foreground font-bold text-lg flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-primary/10">
+                          <Banknote className="h-5 w-5 text-primary" />
+                        </div>
+                        المبلغ المرسل (دج)
+                      </Label>
+                      <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                        <Input
+                          id="amount"
+                          type="number"
+                          placeholder="مثال: 5000"
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          required
+                          min="1"
+                          step="0.01"
+                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-lg rounded-2xl font-medium"
+                        />
+                      </div>
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="transactionId">معرف المعاملة</Label>
-                      <Input
-                        id="transactionId"
-                        type="text"
-                        placeholder="معرف المعاملة من Baridimob"
-                        value={transactionId}
-                        onChange={(e) => setTransactionId(e.target.value)}
-                        required
-                      />
+                    <div className="space-y-4">
+                      <Label htmlFor="transactionId" className="text-foreground font-bold text-lg flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-primary/10">
+                          <Receipt className="h-5 w-5 text-primary" />
+                        </div>
+                        معرف المعاملة
+                      </Label>
+                      <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                        <Input
+                          id="transactionId"
+                          type="text"
+                          placeholder="معرف المعاملة من Baridimob"
+                          value={transactionId}
+                          onChange={(e) => setTransactionId(e.target.value)}
+                          required
+                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-lg rounded-2xl font-medium"
+                        />
+                      </div>
                     </div>
                   </div>
 
                   {/* Fee Preview */}
                   {depositAmount > 0 && (
-                    <div className="p-4 bg-gradient-secondary/10 rounded-xl border border-accent/20">
-                      <h3 className="font-semibold text-foreground mb-3">ملخص الإيداع</h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">المبلغ المرسل:</span>
-                          <span className="font-medium text-foreground">{formatCurrency(depositAmount)} دج</span>
+                    <div className="relative p-8 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 rounded-3xl border-2 border-primary/10 shadow-lg">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-md opacity-50"></div>
+                          <div className="relative p-3 rounded-2xl bg-gradient-primary shadow-lg">
+                            <CheckCircle className="h-6 w-6 text-white" />
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">رسوم الإيداع:</span>
-                          <span className="font-medium text-foreground">{formatCurrency(depositFee.fee_amount)} دج</span>
+                        <h3 className="font-bold text-foreground text-xl">ملخص الإيداع</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center p-4 bg-background/50 rounded-2xl backdrop-blur-sm">
+                          <span className="text-muted-foreground font-semibold text-base">المبلغ المرسل:</span>
+                          <span className="font-bold text-foreground text-xl">{formatCurrency(depositAmount)} دج</span>
                         </div>
-                        <div className="h-px bg-border my-2"></div>
-                        <div className="flex justify-between font-semibold">
-                          <span className="text-foreground">صافي المبلغ المضاف لرصيدك:</span>
-                          <span className="text-green-600">{formatCurrency(netAmount)} دج</span>
+                        <div className="flex justify-between items-center p-4 bg-background/50 rounded-2xl backdrop-blur-sm">
+                          <span className="text-muted-foreground font-semibold text-base">رسوم الإيداع:</span>
+                          <span className="font-bold text-foreground text-xl">{formatCurrency(depositFee.fee_amount)} دج</span>
+                        </div>
+                        <div className="h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent my-2"></div>
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-green-500/5 rounded-2xl blur-sm"></div>
+                          <div className="relative flex justify-between items-center p-5 bg-green-500/10 rounded-2xl border border-green-500/20">
+                            <span className="font-bold text-foreground text-lg">صافي المبلغ المضاف:</span>
+                            <span className="font-bold text-green-600 text-2xl">{formatCurrency(netAmount)} دج</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="receipt">صورة الوصل</Label>
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-4">
+                    <Label htmlFor="receipt" className="text-foreground font-bold text-lg flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-primary/10">
+                        <Upload className="h-5 w-5 text-primary" />
+                      </div>
+                      صورة الوصل
+                    </Label>
+                    <div className="relative group">
+                      <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
                       <Input
                         id="receipt"
                         type="file"
                         accept="image/*"
                         onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
                         required
-                        className="cursor-pointer"
+                        className="relative cursor-pointer bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-base rounded-2xl"
                       />
-                      <Upload className="h-5 w-5 text-muted-foreground" />
                     </div>
                     {receiptFile && (
-                      <p className="text-sm text-muted-foreground">
-                        تم اختيار: {receiptFile.name}
-                      </p>
+                      <div className="p-4 bg-green-500/10 rounded-2xl border border-green-500/20">
+                        <p className="text-sm text-green-700 dark:text-green-400 font-medium flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4" />
+                          تم اختيار: {receiptFile.name}
+                        </p>
+                      </div>
                     )}
                   </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={submitting || loading}
-                    size="lg"
-                  >
-                    {submitting ? (
-                      <>
-                        <Clock className="h-4 w-4 mr-2 animate-spin" />
-                        جاري الإرسال...
-                      </>
-                    ) : (
-                      <>
-                        إرسال طلب الإيداع
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </>
-                    )}
-                  </Button>
+                  <div className="relative pt-4">
+                    <div className="absolute -inset-1 bg-gradient-primary rounded-3xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
+                    <Button
+                      type="submit"
+                      className="relative w-full bg-gradient-primary hover:opacity-90 text-white font-bold py-7 text-xl transition-all hover:scale-[1.02] hover:shadow-elevated rounded-3xl overflow-hidden group"
+                      disabled={submitting || loading}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                      {submitting ? (
+                        <>
+                          <Clock className="h-7 w-7 animate-spin ml-2 relative z-10" />
+                          <span className="relative z-10">جاري الإرسال...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="relative z-10">إرسال طلب الإيداع</span>
+                          <ArrowRight className="h-7 w-7 mr-2 relative z-10" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </form>
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="ccp" className="space-y-6">
-            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Banknote className="h-5 w-5" />
-                  إيداع عبر CCP
-                </CardTitle>
-                <CardDescription>
-                  قريباً - خدمة CCP قيد التطوير
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <Card className="bg-card/95 backdrop-blur-xl border border-border/30 shadow-elevated animate-slide-up overflow-hidden" style={{ animationDelay: '0.3s' }}>
+              <div className="relative bg-gradient-to-br from-secondary/10 via-accent/5 to-transparent border-b border-border/30 p-8">
+                <div className="flex items-center gap-5">
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-3xl blur-md opacity-50 bg-gradient-secondary"></div>
+                    <div className="relative p-4 rounded-3xl bg-white shadow-lg">
+                      <img src={ccpLogo} alt="CCP" className="h-12 w-12 object-contain" />
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground mb-1">إيداع عبر CCP</h2>
+                    <p className="text-muted-foreground">قريباً - خدمة CCP قيد التطوير</p>
+                  </div>
+                </div>
+              </div>
+              <CardContent className="p-8 lg:p-10">
+                <div className="text-center py-16">
+                  <div className="relative inline-block mb-6">
+                    <div className="absolute inset-0 bg-muted/30 rounded-full blur-md"></div>
+                    <div className="relative w-24 h-24 rounded-full bg-muted/30 flex items-center justify-center">
+                      <Clock className="h-12 w-12 text-muted-foreground/50" />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground mb-2">قريباً</h3>
                   <p className="text-muted-foreground">هذه الخدمة ستكون متاحة قريباً</p>
                 </div>
               </CardContent>
@@ -323,19 +539,30 @@ export default function Deposits() {
           </TabsContent>
 
           <TabsContent value="edahabiya" className="space-y-6">
-            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  إيداع عبر Edahabiya
-                </CardTitle>
-                <CardDescription>
-                  قريباً - خدمة Edahabiya قيد التطوير
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <Card className="bg-card/95 backdrop-blur-xl border border-border/30 shadow-elevated animate-slide-up overflow-hidden" style={{ animationDelay: '0.3s' }}>
+              <div className="relative bg-gradient-to-br from-accent/10 via-primary/5 to-transparent border-b border-border/30 p-8">
+                <div className="flex items-center gap-5">
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-3xl blur-md opacity-50 bg-gradient-gold"></div>
+                    <div className="relative p-4 rounded-3xl bg-white shadow-lg">
+                      <img src={edahabiyaLogo} alt="Edahabiya" className="h-12 w-12 object-contain" />
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground mb-1">إيداع عبر Edahabiya</h2>
+                    <p className="text-muted-foreground">قريباً - خدمة Edahabiya قيد التطوير</p>
+                  </div>
+                </div>
+              </div>
+              <CardContent className="p-8 lg:p-10">
+                <div className="text-center py-16">
+                  <div className="relative inline-block mb-6">
+                    <div className="absolute inset-0 bg-muted/30 rounded-full blur-md"></div>
+                    <div className="relative w-24 h-24 rounded-full bg-muted/30 flex items-center justify-center">
+                      <Clock className="h-12 w-12 text-muted-foreground/50" />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground mb-2">قريباً</h3>
                   <p className="text-muted-foreground">هذه الخدمة ستكون متاحة قريباً</p>
                 </div>
               </CardContent>
@@ -343,240 +570,360 @@ export default function Deposits() {
           </TabsContent>
 
           <TabsContent value="atm" className="space-y-6">
-            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
-                  إيداع عبر الصراف الآلي
-                </CardTitle>
-                <CardDescription>
-                  قم بالإيداع عبر الصراف الآلي ثم املأ النموذج
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
+            <Card className="bg-card/95 backdrop-blur-xl border border-border/30 shadow-elevated animate-slide-up overflow-hidden" style={{ animationDelay: '0.3s' }}>
+              <div className="relative bg-gradient-to-br from-primary/10 via-accent/5 to-transparent border-b border-border/30 p-8">
+                <div className="flex items-center gap-5">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-primary rounded-3xl blur-md opacity-50"></div>
+                    <div className="relative p-4 rounded-3xl bg-gradient-primary shadow-lg">
+                      <Building2 className="h-7 w-7 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground mb-1">إيداع عبر الصراف الآلي</h2>
+                    <p className="text-muted-foreground">قم بالإيداع عبر الصراف الآلي ثم املأ النموذج</p>
+                  </div>
+                </div>
+              </div>
+              
+              <CardContent className="p-8 lg:p-10 space-y-8">
                 {/* ATM Instructions */}
-                <div className="p-4 bg-gradient-primary rounded-lg text-white">
-                  <h3 className="font-semibold mb-2">معلومات الإيداع</h3>
-                  <div className="space-y-2 text-sm">
-                    <p>• توجه إلى أقرب صراف آلي</p>
-                    <p>• قم بإيداع المبلغ في الحساب المحدد</p>
-                    <p>• احتفظ بإيصال الإيداع</p>
-                    <p>• املأ النموذج أدناه وأرفق صورة الإيصال</p>
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-primary rounded-3xl blur-lg opacity-20"></div>
+                  <div className="relative p-8 bg-gradient-to-br from-primary/10 to-accent/10 rounded-3xl border-2 border-primary/20">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 rounded-2xl bg-gradient-primary">
+                        <Building2 className="h-6 w-6 text-white" />
+                      </div>
+                      <h3 className="font-bold text-foreground text-xl">تعليمات الإيداع</h3>
+                    </div>
+                    <ul className="space-y-3">
+                      {[
+                        'توجه إلى أقرب صراف آلي',
+                        'قم بإيداع المبلغ في الحساب المحدد',
+                        'احتفظ بإيصال الإيداع',
+                        'املأ النموذج أدناه وأرفق صورة الإيصال'
+                      ].map((item, i) => (
+                        <li key={i} className="flex items-start gap-3 text-muted-foreground">
+                          <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-2"></div>
+                          <span className="text-base font-medium">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
 
-                <Separator />
+                <Separator className="bg-border/50" />
 
-                {/* Deposit Form */}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="amount">المبلغ المودع (دج)</Label>
-                      <Input
-                        id="amount"
-                        type="number"
-                        placeholder="مثال: 5000"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        required
-                        min="1"
-                        step="0.01"
-                      />
+                {/* Same form structure as Baridimob but adjusted for ATM */}
+                <form onSubmit={handleSubmit} className="space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <Label htmlFor="amount" className="text-foreground font-bold text-lg flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-primary/10">
+                          <Banknote className="h-5 w-5 text-primary" />
+                        </div>
+                        المبلغ المودع (دج)
+                      </Label>
+                      <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                        <Input
+                          id="amount"
+                          type="number"
+                          placeholder="مثال: 5000"
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          required
+                          min="1"
+                          step="0.01"
+                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-lg rounded-2xl font-medium"
+                        />
+                      </div>
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="transactionId">رقم الإيصال</Label>
-                      <Input
-                        id="transactionId"
-                        type="text"
-                        placeholder="رقم إيصال الصراف الآلي"
-                        value={transactionId}
-                        onChange={(e) => setTransactionId(e.target.value)}
-                        required
-                      />
+                    <div className="space-y-4">
+                      <Label htmlFor="transactionId" className="text-foreground font-bold text-lg flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-primary/10">
+                          <Receipt className="h-5 w-5 text-primary" />
+                        </div>
+                        رقم الإيصال
+                      </Label>
+                      <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                        <Input
+                          id="transactionId"
+                          type="text"
+                          placeholder="رقم إيصال الصراف الآلي"
+                          value={transactionId}
+                          onChange={(e) => setTransactionId(e.target.value)}
+                          required
+                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-lg rounded-2xl font-medium"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Fee Preview */}
                   {depositAmount > 0 && (
-                    <div className="p-4 bg-gradient-secondary/10 rounded-xl border border-accent/20">
-                      <h3 className="font-semibold text-foreground mb-3">ملخص الإيداع</h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">المبلغ المودع:</span>
-                          <span className="font-medium text-foreground">{formatCurrency(depositAmount)} دج</span>
+                    <div className="relative p-8 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 rounded-3xl border-2 border-primary/10 shadow-lg">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-md opacity-50"></div>
+                          <div className="relative p-3 rounded-2xl bg-gradient-primary shadow-lg">
+                            <CheckCircle className="h-6 w-6 text-white" />
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">رسوم الإيداع:</span>
-                          <span className="font-medium text-foreground">{formatCurrency(depositFee.fee_amount)} دج</span>
+                        <h3 className="font-bold text-foreground text-xl">ملخص الإيداع</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center p-4 bg-background/50 rounded-2xl backdrop-blur-sm">
+                          <span className="text-muted-foreground font-semibold text-base">المبلغ المودع:</span>
+                          <span className="font-bold text-foreground text-xl">{formatCurrency(depositAmount)} دج</span>
                         </div>
-                        <div className="h-px bg-border my-2"></div>
-                        <div className="flex justify-between font-semibold">
-                          <span className="text-foreground">صافي المبلغ المضاف لرصيدك:</span>
-                          <span className="text-green-600">{formatCurrency(netAmount)} دج</span>
+                        <div className="flex justify-between items-center p-4 bg-background/50 rounded-2xl backdrop-blur-sm">
+                          <span className="text-muted-foreground font-semibold text-base">رسوم الإيداع:</span>
+                          <span className="font-bold text-foreground text-xl">{formatCurrency(depositFee.fee_amount)} دج</span>
+                        </div>
+                        <div className="h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent my-2"></div>
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-green-500/5 rounded-2xl blur-sm"></div>
+                          <div className="relative flex justify-between items-center p-5 bg-green-500/10 rounded-2xl border border-green-500/20">
+                            <span className="font-bold text-foreground text-lg">صافي المبلغ المضاف:</span>
+                            <span className="font-bold text-green-600 text-2xl">{formatCurrency(netAmount)} دج</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="receipt">صورة الإيصال</Label>
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-4">
+                    <Label htmlFor="receipt" className="text-foreground font-bold text-lg flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-primary/10">
+                        <Upload className="h-5 w-5 text-primary" />
+                      </div>
+                      صورة الإيصال
+                    </Label>
+                    <div className="relative group">
+                      <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
                       <Input
                         id="receipt"
                         type="file"
                         accept="image/*"
                         onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
                         required
-                        className="cursor-pointer"
+                        className="relative cursor-pointer bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-base rounded-2xl"
                       />
-                      <Upload className="h-5 w-5 text-muted-foreground" />
                     </div>
                     {receiptFile && (
-                      <p className="text-sm text-muted-foreground">
-                        تم اختيار: {receiptFile.name}
-                      </p>
+                      <div className="p-4 bg-green-500/10 rounded-2xl border border-green-500/20">
+                        <p className="text-sm text-green-700 dark:text-green-400 font-medium flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4" />
+                          تم اختيار: {receiptFile.name}
+                        </p>
+                      </div>
                     )}
                   </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={submitting || loading}
-                    size="lg"
-                  >
-                    {submitting ? (
-                      <>
-                        <Clock className="h-4 w-4 mr-2 animate-spin" />
-                        جاري الإرسال...
-                      </>
-                    ) : (
-                      <>
-                        إرسال طلب الإيداع
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </>
-                    )}
-                  </Button>
+                  <div className="relative pt-4">
+                    <div className="absolute -inset-1 bg-gradient-primary rounded-3xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
+                    <Button
+                      type="submit"
+                      className="relative w-full bg-gradient-primary hover:opacity-90 text-white font-bold py-7 text-xl transition-all hover:scale-[1.02] hover:shadow-elevated rounded-3xl overflow-hidden group"
+                      disabled={submitting || loading}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                      {submitting ? (
+                        <>
+                          <Clock className="h-7 w-7 animate-spin ml-2 relative z-10" />
+                          <span className="relative z-10">جاري الإرسال...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="relative z-10">إرسال طلب الإيداع</span>
+                          <ArrowRight className="h-7 w-7 mr-2 relative z-10" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </form>
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="cash" className="space-y-6">
-            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <HandCoins className="h-5 w-5" />
-                  إيداع نقدي (كاش)
-                </CardTitle>
-                <CardDescription>
-                  قم بالإيداع النقدي في أحد فروعنا ثم املأ النموذج
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
+            <Card className="bg-card/95 backdrop-blur-xl border border-border/30 shadow-elevated animate-slide-up overflow-hidden" style={{ animationDelay: '0.3s' }}>
+              <div className="relative bg-gradient-to-br from-secondary/10 via-accent/5 to-transparent border-b border-border/30 p-8">
+                <div className="flex items-center gap-5">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-secondary rounded-3xl blur-md opacity-50"></div>
+                    <div className="relative p-4 rounded-3xl bg-gradient-secondary shadow-lg">
+                      <HandCoins className="h-7 w-7 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground mb-1">إيداع نقدي (كاش)</h2>
+                    <p className="text-muted-foreground">قم بالإيداع النقدي في أحد فروعنا</p>
+                  </div>
+                </div>
+              </div>
+              
+              <CardContent className="p-8 lg:p-10 space-y-8">
                 {/* Cash Instructions */}
-                <div className="p-4 bg-gradient-primary rounded-lg text-white">
-                  <h3 className="font-semibold mb-2">تعليمات الإيداع النقدي</h3>
-                  <div className="space-y-2 text-sm">
-                    <p>• توجه إلى أحد فروعنا المعتمدة</p>
-                    <p>• قم بتسليم المبلغ النقدي للموظف المختص</p>
-                    <p>• احصل على إيصال الإيداع</p>
-                    <p>• املأ النموذج أدناه وأرفق صورة الإيصال</p>
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-secondary rounded-3xl blur-lg opacity-20"></div>
+                  <div className="relative p-8 bg-gradient-to-br from-secondary/10 to-accent/10 rounded-3xl border-2 border-secondary/20">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 rounded-2xl bg-gradient-secondary">
+                        <HandCoins className="h-6 w-6 text-white" />
+                      </div>
+                      <h3 className="font-bold text-foreground text-xl">تعليمات الإيداع النقدي</h3>
+                    </div>
+                    <ul className="space-y-3">
+                      {[
+                        'توجه إلى أحد فروعنا المعتمدة',
+                        'قم بتسليم المبلغ النقدي للموظف المختص',
+                        'احصل على إيصال الإيداع',
+                        'املأ النموذج أدناه وأرفق صورة الإيصال'
+                      ].map((item, i) => (
+                        <li key={i} className="flex items-start gap-3 text-muted-foreground">
+                          <div className="w-2 h-2 rounded-full bg-accent flex-shrink-0 mt-2"></div>
+                          <span className="text-base font-medium">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
 
-                <Separator />
+                <Separator className="bg-border/50" />
 
-                {/* Deposit Form */}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="amount">المبلغ المودع (دج)</Label>
-                      <Input
-                        id="amount"
-                        type="number"
-                        placeholder="مثال: 5000"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        required
-                        min="1"
-                        step="0.01"
-                      />
+                {/* Same form structure */}
+                <form onSubmit={handleSubmit} className="space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <Label htmlFor="amount" className="text-foreground font-bold text-lg flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-primary/10">
+                          <Banknote className="h-5 w-5 text-primary" />
+                        </div>
+                        المبلغ المودع (دج)
+                      </Label>
+                      <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                        <Input
+                          id="amount"
+                          type="number"
+                          placeholder="مثال: 5000"
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          required
+                          min="1"
+                          step="0.01"
+                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-lg rounded-2xl font-medium"
+                        />
+                      </div>
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="transactionId">رقم الإيصال</Label>
-                      <Input
-                        id="transactionId"
-                        type="text"
-                        placeholder="رقم إيصال الإيداع النقدي"
-                        value={transactionId}
-                        onChange={(e) => setTransactionId(e.target.value)}
-                        required
-                      />
+                    <div className="space-y-4">
+                      <Label htmlFor="transactionId" className="text-foreground font-bold text-lg flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-primary/10">
+                          <Receipt className="h-5 w-5 text-primary" />
+                        </div>
+                        رقم الإيصال
+                      </Label>
+                      <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                        <Input
+                          id="transactionId"
+                          type="text"
+                          placeholder="رقم إيصال الإيداع النقدي"
+                          value={transactionId}
+                          onChange={(e) => setTransactionId(e.target.value)}
+                          required
+                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-lg rounded-2xl font-medium"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Fee Preview */}
                   {depositAmount > 0 && (
-                    <div className="p-4 bg-gradient-secondary/10 rounded-xl border border-accent/20">
-                      <h3 className="font-semibold text-foreground mb-3">ملخص الإيداع</h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">المبلغ المودع:</span>
-                          <span className="font-medium text-foreground">{formatCurrency(depositAmount)} دج</span>
+                    <div className="relative p-8 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 rounded-3xl border-2 border-primary/10 shadow-lg">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-md opacity-50"></div>
+                          <div className="relative p-3 rounded-2xl bg-gradient-primary shadow-lg">
+                            <CheckCircle className="h-6 w-6 text-white" />
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">رسوم الإيداع:</span>
-                          <span className="font-medium text-foreground">{formatCurrency(depositFee.fee_amount)} دج</span>
+                        <h3 className="font-bold text-foreground text-xl">ملخص الإيداع</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center p-4 bg-background/50 rounded-2xl backdrop-blur-sm">
+                          <span className="text-muted-foreground font-semibold text-base">المبلغ المودع:</span>
+                          <span className="font-bold text-foreground text-xl">{formatCurrency(depositAmount)} دج</span>
                         </div>
-                        <div className="h-px bg-border my-2"></div>
-                        <div className="flex justify-between font-semibold">
-                          <span className="text-foreground">صافي المبلغ المضاف لرصيدك:</span>
-                          <span className="text-green-600">{formatCurrency(netAmount)} دج</span>
+                        <div className="flex justify-between items-center p-4 bg-background/50 rounded-2xl backdrop-blur-sm">
+                          <span className="text-muted-foreground font-semibold text-base">رسوم الإيداع:</span>
+                          <span className="font-bold text-foreground text-xl">{formatCurrency(depositFee.fee_amount)} دج</span>
+                        </div>
+                        <div className="h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent my-2"></div>
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-green-500/5 rounded-2xl blur-sm"></div>
+                          <div className="relative flex justify-between items-center p-5 bg-green-500/10 rounded-2xl border border-green-500/20">
+                            <span className="font-bold text-foreground text-lg">صافي المبلغ المضاف:</span>
+                            <span className="font-bold text-green-600 text-2xl">{formatCurrency(netAmount)} دج</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="receipt">صورة الإيصال</Label>
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-4">
+                    <Label htmlFor="receipt" className="text-foreground font-bold text-lg flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-primary/10">
+                        <Upload className="h-5 w-5 text-primary" />
+                      </div>
+                      صورة الإيصال
+                    </Label>
+                    <div className="relative group">
+                      <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
                       <Input
                         id="receipt"
                         type="file"
                         accept="image/*"
                         onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
                         required
-                        className="cursor-pointer"
+                        className="relative cursor-pointer bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-base rounded-2xl"
                       />
-                      <Upload className="h-5 w-5 text-muted-foreground" />
                     </div>
                     {receiptFile && (
-                      <p className="text-sm text-muted-foreground">
-                        تم اختيار: {receiptFile.name}
-                      </p>
+                      <div className="p-4 bg-green-500/10 rounded-2xl border border-green-500/20">
+                        <p className="text-sm text-green-700 dark:text-green-400 font-medium flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4" />
+                          تم اختيار: {receiptFile.name}
+                        </p>
+                      </div>
                     )}
                   </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={submitting || loading}
-                    size="lg"
-                  >
-                    {submitting ? (
-                      <>
-                        <Clock className="h-4 w-4 mr-2 animate-spin" />
-                        جاري الإرسال...
-                      </>
-                    ) : (
-                      <>
-                        إرسال طلب الإيداع
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </>
-                    )}
-                  </Button>
+                  <div className="relative pt-4">
+                    <div className="absolute -inset-1 bg-gradient-primary rounded-3xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
+                    <Button
+                      type="submit"
+                      className="relative w-full bg-gradient-primary hover:opacity-90 text-white font-bold py-7 text-xl transition-all hover:scale-[1.02] hover:shadow-elevated rounded-3xl overflow-hidden group"
+                      disabled={submitting || loading}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                      {submitting ? (
+                        <>
+                          <Clock className="h-7 w-7 animate-spin ml-2 relative z-10" />
+                          <span className="relative z-10">جاري الإرسال...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="relative z-10">إرسال طلب الإيداع</span>
+                          <ArrowRight className="h-7 w-7 mr-2 relative z-10" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </form>
               </CardContent>
             </Card>
