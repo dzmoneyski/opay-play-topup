@@ -45,7 +45,7 @@ const WithdrawalMethods: Record<string, WithdrawalMethod> = {
   ccp: { name: "CCP", logo: ccpLogo },
   albaraka: { name: "بنك البركة", logo: albarakaLogo },
   badr: { name: "بنك البدر", logo: badrLogo },
-  cash: { name: "نقداً", icon: Wallet }
+  cash: { name: "السحب بدون بطاقة", icon: Wallet }
 };
 
 export default function Withdrawals() {
@@ -718,10 +718,10 @@ export default function Withdrawals() {
                   <div className="p-3 bg-gradient-primary rounded-lg shadow-sm">
                     <Wallet className="h-8 w-8 text-white" />
                   </div>
-                  <span className="text-2xl">سحب نقدي</span>
+                  <span className="text-2xl">السحب بدون بطاقة</span>
                 </CardTitle>
                 <CardDescription className="text-base">
-                  حدد موقع الاستلام المفضل لاستلام المبلغ نقداً
+                  حدد موقع الاستلام المناسب للسحب من الصراف الآلي بدون بطاقة
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -801,7 +801,7 @@ export default function Withdrawals() {
                       </>
                     ) : (
                       <>
-                        إرسال طلب السحب النقدي
+                        إرسال طلب السحب بدون بطاقة
                         <ArrowRight className="h-4 w-4 ml-2" />
                       </>
                     )}
