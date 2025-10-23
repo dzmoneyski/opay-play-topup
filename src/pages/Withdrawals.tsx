@@ -26,11 +26,22 @@ import {
 } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 
-const WithdrawalMethods = {
-  opay: { name: "OPay", icon: CreditCard },
-  barid_bank: { name: "بريد الجزائر", icon: Banknote },
-  ccp: { name: "البريد والمواصلات CCP", icon: Banknote },
-  cash: { name: "سحب نقدي", icon: MapPin }
+import opayLogo from '@/assets/opay-final-logo.png';
+import baridLogo from '@/assets/baridimob-logo.png';
+import ccpLogo from '@/assets/ccp-logo.png';
+import { LucideIcon } from 'lucide-react';
+
+type WithdrawalMethod = {
+  name: string;
+  logo?: string;
+  icon?: LucideIcon;
+};
+
+const WithdrawalMethods: Record<string, WithdrawalMethod> = {
+  opay: { name: "OPay", logo: opayLogo },
+  barid_bank: { name: "بريد الجزائر", logo: baridLogo },
+  ccp: { name: "البريد والمواصلات CCP", logo: ccpLogo },
+  cash: { name: "سحب نقدي", icon: Wallet }
 };
 
 export default function Withdrawals() {
@@ -237,32 +248,73 @@ export default function Withdrawals() {
           </CardContent>
         </Card>
 
+        {/* Withdrawal Method Selection */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+          {Object.entries(WithdrawalMethods).map(([key, method]) => (
+            <button
+              key={key}
+              onClick={() => setSelectedMethod(key)}
+              className={`group relative p-6 rounded-2xl border-2 transition-all duration-300 ${
+                selectedMethod === key
+                  ? 'border-primary bg-white shadow-xl scale-105'
+                  : 'border-white/30 bg-white/10 backdrop-blur-sm hover:border-white/50 hover:bg-white/20'
+              }`}
+            >
+              <div className="flex flex-col items-center gap-4">
+                {method.logo ? (
+                  <div className="relative w-24 h-24 flex items-center justify-center">
+                    <div className={`absolute inset-0 rounded-2xl transition-opacity ${
+                      selectedMethod === key ? 'bg-primary/10 opacity-100' : 'opacity-0 group-hover:opacity-50'
+                    }`}></div>
+                    <div className="relative w-20 h-20 flex items-center justify-center p-2 bg-white rounded-xl shadow-sm">
+                      <img 
+                        src={method.logo} 
+                        alt={method.name} 
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  </div>
+                ) : method.icon && (
+                  <div className={`relative w-24 h-24 flex items-center justify-center p-4 rounded-2xl transition-all ${
+                    selectedMethod === key 
+                      ? 'bg-gradient-primary' 
+                      : 'bg-white/10 group-hover:bg-white/20'
+                  }`}>
+                    <method.icon className={`h-12 w-12 ${
+                      selectedMethod === key ? 'text-white' : 'text-white/70 group-hover:text-white'
+                    }`} />
+                  </div>
+                )}
+                <div className="text-center">
+                  <p className={`text-sm font-medium transition-colors ${
+                    selectedMethod === key ? 'text-primary' : 'text-white group-hover:text-white'
+                  }`}>
+                    {method.name}
+                  </p>
+                </div>
+              </div>
+              {selectedMethod === key && (
+                <div className="absolute -top-2 -right-2">
+                  <CheckCircle className="w-6 h-6 text-primary fill-white" />
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+
         <Tabs value={selectedMethod} onValueChange={setSelectedMethod} className="space-y-6">
-          {/* Withdrawal Method Selection */}
-          <TabsList className="grid w-full grid-cols-4 bg-white/10 backdrop-blur-sm">
-            <TabsTrigger value="opay" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-              OPay
-            </TabsTrigger>
-            <TabsTrigger value="barid_bank" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-              بريد الجزائر
-            </TabsTrigger>
-            <TabsTrigger value="ccp" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-              CCP
-            </TabsTrigger>
-            <TabsTrigger value="cash" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-              سحب نقدي
-            </TabsTrigger>
-          </TabsList>
 
           {/* OPay Withdrawal */}
           <TabsContent value="opay" className="space-y-6">
-            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  سحب عبر OPay
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl border-2 border-primary/20">
+              <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded-lg shadow-sm">
+                    <img src={opayLogo} alt="OPay" className="h-8 w-8 object-contain" />
+                  </div>
+                  <span className="text-2xl">سحب عبر OPay</span>
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-base">
                   املأ بيانات حساب OPay الخاص بك لتلقي المبلغ
                 </CardDescription>
               </CardHeader>
@@ -370,13 +422,15 @@ export default function Withdrawals() {
 
           {/* Barid Bank Withdrawal */}
           <TabsContent value="barid_bank" className="space-y-6">
-            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Banknote className="h-5 w-5" />
-                  سحب عبر بريد الجزائر
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl border-2 border-primary/20">
+              <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded-lg shadow-sm">
+                    <img src={baridLogo} alt="بريد الجزائر" className="h-8 w-8 object-contain" />
+                  </div>
+                  <span className="text-2xl">سحب عبر بريد الجزائر</span>
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-base">
                   املأ بيانات حساب بريد الجزائر الخاص بك لتلقي المبلغ
                 </CardDescription>
               </CardHeader>
@@ -481,13 +535,15 @@ export default function Withdrawals() {
 
           {/* CCP Withdrawal */}
           <TabsContent value="ccp" className="space-y-6">
-            <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Banknote className="h-5 w-5" />
-                  سحب عبر CCP
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl border-2 border-primary/20">
+              <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded-lg shadow-sm">
+                    <img src={ccpLogo} alt="CCP" className="h-8 w-8 object-contain" />
+                  </div>
+                  <span className="text-2xl">سحب عبر CCP</span>
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-base">
                   املأ بيانات حساب CCP الخاص بك لتلقي المبلغ
                 </CardDescription>
               </CardHeader>
@@ -691,53 +747,84 @@ export default function Withdrawals() {
         </Tabs>
 
         {/* Withdrawal History */}
-        <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Receipt className="h-5 w-5" />
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl border-2 border-primary/10">
+          <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
+            <CardTitle className="flex items-center gap-3 text-2xl">
+              <div className="p-2 bg-gradient-primary rounded-lg shadow-sm">
+                <Receipt className="h-6 w-6 text-white" />
+              </div>
               تاريخ عمليات السحب
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-base">
               جميع طلبات السحب السابقة
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             {loading ? (
               <div className="space-y-4">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-16 bg-muted rounded animate-pulse" />
+                  <div key={i} className="h-24 bg-muted/30 rounded-xl animate-pulse" />
                 ))}
               </div>
             ) : withdrawals.length === 0 ? (
-              <div className="text-center py-8">
-                <ArrowUpRight className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">لا توجد عمليات سحب سابقة</p>
+              <div className="text-center py-12">
+                <div className="mx-auto w-20 h-20 bg-gradient-primary/10 rounded-2xl flex items-center justify-center mb-4">
+                  <ArrowUpRight className="h-10 w-10 text-primary" />
+                </div>
+                <p className="text-muted-foreground text-lg">لا توجد عمليات سحب سابقة</p>
+                <p className="text-sm text-muted-foreground/70 mt-2">ابدأ أول عملية سحب الآن</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {withdrawals.map((withdrawal) => (
-                  <div key={withdrawal.id} className="border rounded-lg p-4 space-y-2">
+                  <div 
+                    key={withdrawal.id} 
+                    className="relative border-2 border-border/50 rounded-xl p-5 space-y-3 hover:border-primary/30 hover:shadow-md transition-all bg-gradient-to-br from-white to-white/50"
+                  >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">{formatCurrency(withdrawal.amount)} دج</span>
-                        <span className="text-sm text-muted-foreground">
-                          عبر {WithdrawalMethods[withdrawal.withdrawal_method as keyof typeof WithdrawalMethods]?.name || withdrawal.withdrawal_method}
-                        </span>
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-gradient-primary rounded-lg">
+                          <ArrowUpRight className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-xl text-foreground">{formatCurrency(withdrawal.amount)} دج</p>
+                          <p className="text-sm text-muted-foreground">
+                            عبر {WithdrawalMethods[withdrawal.withdrawal_method as keyof typeof WithdrawalMethods]?.name || withdrawal.withdrawal_method}
+                          </p>
+                        </div>
                       </div>
                       {getStatusBadge(withdrawal.status)}
                     </div>
-                    <div className="text-sm text-muted-foreground space-y-1">
+                    <Separator />
+                    <div className="text-sm text-muted-foreground space-y-2">
                       {withdrawal.withdrawal_method === 'cash' ? (
-                        <p>موقع الاستلام: {withdrawal.cash_location}</p>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-primary" />
+                          <span>موقع الاستلام: {withdrawal.cash_location}</span>
+                        </div>
                       ) : (
                         <>
-                          <p>رقم الحساب: {withdrawal.account_number}</p>
-                          <p>اسم الحساب: {withdrawal.account_holder_name}</p>
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="h-4 w-4 text-primary" />
+                            <span>رقم الحساب: {withdrawal.account_number}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Wallet className="h-4 w-4 text-primary" />
+                            <span>اسم الحساب: {withdrawal.account_holder_name}</span>
+                          </div>
                         </>
                       )}
-                      <p>تاريخ الطلب: {formatDate(withdrawal.created_at)}</p>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-primary" />
+                        <span>تاريخ الطلب: {formatDate(withdrawal.created_at)}</span>
+                      </div>
                       {withdrawal.admin_notes && (
-                        <p className="text-blue-600 font-medium">ملاحظة: {withdrawal.admin_notes}</p>
+                        <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                          <p className="text-blue-700 dark:text-blue-400 font-medium text-sm">
+                            <span className="font-bold">ملاحظة: </span>
+                            {withdrawal.admin_notes}
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>
