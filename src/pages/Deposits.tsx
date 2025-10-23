@@ -35,6 +35,8 @@ import BackButton from '@/components/BackButton';
 import baridimobLogo from '@/assets/baridimob-logo.png';
 import ccpLogo from '@/assets/ccp-logo.png';
 import edahabiyaLogo from '@/assets/edahabiya-logo.png';
+import albarakaLogo from '@/assets/albaraka-logo.png';
+import badrLogo from '@/assets/badr-logo.png';
 
 export default function Deposits() {
   const { deposits, loading, createDeposit } = useDeposits();
@@ -160,6 +162,18 @@ export default function Deposits() {
       description: 'الدفع عبر بطاقة الذهبية'
     },
     { 
+      id: 'albaraka', 
+      name: 'بنك البركة', 
+      logo: albarakaLogo,
+      description: 'الدفع عبر بنك البركة'
+    },
+    { 
+      id: 'badr', 
+      name: 'بنك البدر', 
+      logo: badrLogo,
+      description: 'الدفع عبر بنك البدر'
+    },
+    { 
       id: 'atm', 
       name: 'صراف آلي', 
       icon: Building2,
@@ -254,7 +268,7 @@ export default function Deposits() {
         {/* Premium Payment Methods Grid */}
         <div className="mb-10 animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <h2 className="text-2xl font-bold text-white mb-6 text-center">اختر طريقة الدفع</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
             {paymentMethods.map((method) => (
               <button
                 key={method.id}
@@ -553,6 +567,68 @@ export default function Deposits() {
                   <div>
                     <h2 className="text-2xl font-bold text-foreground mb-1">إيداع عبر Edahabiya</h2>
                     <p className="text-muted-foreground">قريباً - خدمة Edahabiya قيد التطوير</p>
+                  </div>
+                </div>
+              </div>
+              <CardContent className="p-8 lg:p-10">
+                <div className="text-center py-16">
+                  <div className="relative inline-block mb-6">
+                    <div className="absolute inset-0 bg-muted/30 rounded-full blur-md"></div>
+                    <div className="relative w-24 h-24 rounded-full bg-muted/30 flex items-center justify-center">
+                      <Clock className="h-12 w-12 text-muted-foreground/50" />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground mb-2">قريباً</h3>
+                  <p className="text-muted-foreground">هذه الخدمة ستكون متاحة قريباً</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="albaraka" className="space-y-6">
+            <Card className="bg-card/95 backdrop-blur-xl border border-border/30 shadow-elevated animate-slide-up overflow-hidden" style={{ animationDelay: '0.3s' }}>
+              <div className="relative bg-gradient-to-br from-primary/10 via-accent/5 to-transparent border-b border-border/30 p-8">
+                <div className="flex items-center gap-5">
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-3xl blur-md opacity-50 bg-gradient-primary"></div>
+                    <div className="relative p-4 rounded-3xl bg-white shadow-lg">
+                      <img src={albarakaLogo} alt="بنك البركة" className="h-12 w-12 object-contain" />
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground mb-1">إيداع عبر بنك البركة</h2>
+                    <p className="text-muted-foreground">قريباً - خدمة بنك البركة قيد التطوير</p>
+                  </div>
+                </div>
+              </div>
+              <CardContent className="p-8 lg:p-10">
+                <div className="text-center py-16">
+                  <div className="relative inline-block mb-6">
+                    <div className="absolute inset-0 bg-muted/30 rounded-full blur-md"></div>
+                    <div className="relative w-24 h-24 rounded-full bg-muted/30 flex items-center justify-center">
+                      <Clock className="h-12 w-12 text-muted-foreground/50" />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground mb-2">قريباً</h3>
+                  <p className="text-muted-foreground">هذه الخدمة ستكون متاحة قريباً</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="badr" className="space-y-6">
+            <Card className="bg-card/95 backdrop-blur-xl border border-border/30 shadow-elevated animate-slide-up overflow-hidden" style={{ animationDelay: '0.3s' }}>
+              <div className="relative bg-gradient-to-br from-secondary/10 via-accent/5 to-transparent border-b border-border/30 p-8">
+                <div className="flex items-center gap-5">
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-3xl blur-md opacity-50 bg-gradient-secondary"></div>
+                    <div className="relative p-4 rounded-3xl bg-white shadow-lg">
+                      <img src={badrLogo} alt="بنك البدر" className="h-12 w-12 object-contain" />
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground mb-1">إيداع عبر بنك البدر</h2>
+                    <p className="text-muted-foreground">قريباً - خدمة بنك البدر قيد التطوير</p>
                   </div>
                 </div>
               </div>
