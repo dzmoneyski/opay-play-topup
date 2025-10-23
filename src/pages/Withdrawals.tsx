@@ -45,7 +45,7 @@ const WithdrawalMethods: Record<string, WithdrawalMethod> = {
   ccp: { name: "CCP", logo: ccpLogo },
   albaraka: { name: "بنك البركة", logo: albarakaLogo },
   badr: { name: "بنك البدر", logo: badrLogo },
-  cash: { name: "سحب نقدي", icon: Wallet }
+  cash: { name: "نقداً", icon: Wallet }
 };
 
 export default function Withdrawals() {
