@@ -85,22 +85,53 @@ export default function Withdrawals() {
     const amount = parseFloat(formData.amount);
     
     // التحقق من الحد الأدنى والأقصى للسحب
-    if (amount < 500) {
-      toast({
-        title: "مبلغ غير صحيح",
-        description: "الحد الأدنى للسحب هو 500 دج",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (selectedMethod === 'cash') {
+      // للسحب بدون بطاقة: حد أقصى 20000 دج وأعداد زوجية فقط
+      if (amount < 500) {
+        toast({
+          title: "مبلغ غير صحيح",
+          description: "الحد الأدنى للسحب بدون بطاقة هو 500 دج",
+          variant: "destructive"
+        });
+        return;
+      }
 
-    if (amount > 200000) {
-      toast({
-        title: "مبلغ غير صحيح",
-        description: "الحد الأقصى للسحب هو 200,000 دج",
-        variant: "destructive"
-      });
-      return;
+      if (amount > 20000) {
+        toast({
+          title: "مبلغ غير صحيح",
+          description: "الحد الأقصى للسحب بدون بطاقة هو 20,000 دج",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (amount % 2 !== 0) {
+        toast({
+          title: "مبلغ غير صحيح",
+          description: "يجب أن يكون المبلغ عددًا زوجيًا للسحب من الصراف الآلي بدون بطاقة",
+          variant: "destructive"
+        });
+        return;
+      }
+    } else {
+      // باقي طرق السحب: حد أقصى 200000
+      if (amount < 500) {
+        toast({
+          title: "مبلغ غير صحيح",
+          description: "الحد الأدنى للسحب هو 500 دج",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (amount > 200000) {
+        toast({
+          title: "مبلغ غير صحيح",
+          description: "الحد الأقصى للسحب هو 200,000 دج",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     // التحقق من الرصيد المتاح
@@ -114,14 +145,7 @@ export default function Withdrawals() {
     }
 
     // التحقق من الحقول المطلوبة حسب طريقة السحب
-    if (selectedMethod === 'cash' && !formData.cash_location) {
-      toast({
-        title: "بيانات ناقصة",
-        description: "يرجى تحديد موقع الاستلام للسحب النقدي",
-        variant: "destructive"
-      });
-      return;
-    }
+    // للسحب بدون بطاقة لا نحتاج حقول إضافية
 
     if (selectedMethod !== 'cash' && (!formData.account_number || !formData.account_holder_name)) {
       toast({
@@ -143,10 +167,17 @@ export default function Withdrawals() {
         notes: formData.notes || undefined
       });
 
-      toast({
-        title: "تم إرسال طلب السحب بنجاح",
-        description: "سيتم مراجعة طلبك ومعالجته خلال 24 ساعة"
-      });
+      if (selectedMethod === 'cash') {
+        toast({
+          title: "تم إرسال طلب السحب بنجاح",
+          description: "سيتم مراجعة طلبك وإرسال كود السحب إلى هاتفك خلال 24 ساعة. استخدم الكود في أقرب صراف آلي للسحب بدون بطاقة."
+        });
+      } else {
+        toast({
+          title: "تم إرسال طلب السحب بنجاح",
+          description: "سيتم مراجعة طلبك ومعالجته خلال 24 ساعة"
+        });
+      }
 
       // إعادة تعيين النموذج
       setFormData({
@@ -722,37 +753,45 @@ export default function Withdrawals() {
                   <span className="text-2xl">السحب بدون بطاقة</span>
                 </CardTitle>
                 <CardDescription className="text-base">
-                  حدد موقع الاستلام المناسب للسحب من الصراف الآلي بدون بطاقة
+                  سيتم إرسال كود سحب إلى هاتفك بعد الموافقة. استخدمه في أقرب صراف آلي للسحب بدون بطاقة
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                          <Banknote className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="flex-1 space-y-2">
+                          <h4 className="font-semibold text-blue-900 dark:text-blue-100">كيفية السحب:</h4>
+                          <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
+                            <li>أدخل المبلغ المطلوب (عدد زوجي بحد أقصى 20,000 دج)</li>
+                            <li>سيصلك كود السحب على هاتفك بعد الموافقة</li>
+                            <li>توجه إلى أقرب صراف آلي واختر "السحب بدون بطاقة"</li>
+                            <li>أدخل الكود واسحب أموالك</li>
+                          </ol>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="amount">المبلغ المطلوب سحبه (دج)</Label>
                       <Input
                         id="amount"
                         type="number"
-                        placeholder="مثال: 5000"
+                        placeholder="مثال: 10000"
                         value={formData.amount}
                         onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                         required
                         min="500"
-                        max="200000"
-                        step="0.01"
+                        max="20000"
+                        step="2"
                       />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="cash_location">موقع الاستلام</Label>
-                      <Input
-                        id="cash_location"
-                        type="text"
-                        placeholder="مثال: وسط المدينة - الجزائر العاصمة"
-                        value={formData.cash_location}
-                        onChange={(e) => setFormData({ ...formData, cash_location: e.target.value })}
-                        required
-                      />
+                      <p className="text-xs text-muted-foreground">
+                        المبلغ يجب أن يكون عددًا زوجيًا • الحد الأدنى: 500 دج • الحد الأقصى: 20,000 دج
+                      </p>
                     </div>
                   </div>
 
@@ -782,7 +821,7 @@ export default function Withdrawals() {
                     <Label htmlFor="notes">ملاحظات إضافية (اختياري)</Label>
                     <Textarea
                       id="notes"
-                      placeholder="أي ملاحظات إضافية حول موقع الاستلام أو وقت مفضل..."
+                      placeholder="أي ملاحظات إضافية..."
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                       rows={3}
@@ -802,7 +841,7 @@ export default function Withdrawals() {
                       </>
                     ) : (
                       <>
-                        إرسال طلب السحب بدون بطاقة
+                        طلب كود السحب
                         <ArrowRight className="h-4 w-4 ml-2" />
                       </>
                     )}
