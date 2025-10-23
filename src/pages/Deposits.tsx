@@ -375,15 +375,15 @@ export default function Deposits() {
                 {/* Deposit Form */}
                 <form onSubmit={handleSubmit} className="space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <Label htmlFor="amount" className="text-foreground font-bold text-lg flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-primary/10">
-                          <Banknote className="h-5 w-5 text-primary" />
+                    <div className="space-y-3">
+                      <Label htmlFor="amount" className="text-foreground font-semibold text-base flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-primary/10">
+                          <Banknote className="h-4 w-4 text-primary" />
                         </div>
                         المبلغ المرسل (دج)
                       </Label>
                       <div className="relative group">
-                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
                         <Input
                           id="amount"
                           type="number"
@@ -393,20 +393,20 @@ export default function Deposits() {
                           required
                           min="1"
                           step="0.01"
-                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-lg rounded-2xl font-medium"
+                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-12 text-base rounded-xl font-medium"
                         />
                       </div>
                     </div>
                     
-                    <div className="space-y-4">
-                      <Label htmlFor="transactionId" className="text-foreground font-bold text-lg flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-primary/10">
-                          <Receipt className="h-5 w-5 text-primary" />
+                    <div className="space-y-3">
+                      <Label htmlFor="transactionId" className="text-foreground font-semibold text-base flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-primary/10">
+                          <Receipt className="h-4 w-4 text-primary" />
                         </div>
                         معرف المعاملة
                       </Label>
                       <div className="relative group">
-                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
                         <Input
                           id="transactionId"
                           type="text"
@@ -414,7 +414,7 @@ export default function Deposits() {
                           value={transactionId}
                           onChange={(e) => setTransactionId(e.target.value)}
                           required
-                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-lg rounded-2xl font-medium"
+                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-12 text-base rounded-xl font-medium"
                         />
                       </div>
                     </div>
@@ -453,22 +453,22 @@ export default function Deposits() {
                     </div>
                   )}
 
-                  <div className="space-y-4">
-                    <Label htmlFor="receipt" className="text-foreground font-bold text-lg flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-primary/10">
-                        <Upload className="h-5 w-5 text-primary" />
+                  <div className="space-y-3">
+                    <Label htmlFor="receipt" className="text-foreground font-semibold text-base flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-primary/10">
+                        <Upload className="h-4 w-4 text-primary" />
                       </div>
                       صورة الوصل
                     </Label>
                     <div className="relative group">
-                      <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                      <div className="absolute -inset-0.5 bg-gradient-primary rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
                       <Input
                         id="receipt"
                         type="file"
                         accept="image/*"
                         onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
                         required
-                        className="relative cursor-pointer bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-base rounded-2xl"
+                        className="relative cursor-pointer bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-12 text-sm rounded-xl"
                       />
                     </div>
                     {receiptFile && (
@@ -481,23 +481,23 @@ export default function Deposits() {
                     )}
                   </div>
 
-                  <div className="relative pt-4">
-                    <div className="absolute -inset-1 bg-gradient-primary rounded-3xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
+                  <div className="relative pt-2">
+                    <div className="absolute -inset-1 bg-gradient-primary rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
                     <Button
                       type="submit"
-                      className="relative w-full bg-gradient-primary hover:opacity-90 text-white font-bold py-7 text-xl transition-all hover:scale-[1.02] hover:shadow-elevated rounded-3xl overflow-hidden group"
+                      className="relative w-full bg-gradient-primary hover:opacity-90 text-white font-bold py-5 text-lg transition-all hover:scale-[1.02] hover:shadow-elevated rounded-2xl overflow-hidden group"
                       disabled={submitting || loading}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
                       {submitting ? (
                         <>
-                          <Clock className="h-7 w-7 animate-spin ml-2 relative z-10" />
+                          <Clock className="h-5 w-5 animate-spin ml-2 relative z-10" />
                           <span className="relative z-10">جاري الإرسال...</span>
                         </>
                       ) : (
                         <>
                           <span className="relative z-10">إرسال طلب الإيداع</span>
-                          <ArrowRight className="h-7 w-7 mr-2 relative z-10" />
+                          <ArrowRight className="h-5 w-5 mr-2 relative z-10" />
                         </>
                       )}
                     </Button>
@@ -616,17 +616,17 @@ export default function Deposits() {
                 <Separator className="bg-border/50" />
 
                 {/* Same form structure as Baridimob but adjusted for ATM */}
-                <form onSubmit={handleSubmit} className="space-y-8">
+                <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <Label htmlFor="amount" className="text-foreground font-bold text-lg flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-primary/10">
-                          <Banknote className="h-5 w-5 text-primary" />
+                    <div className="space-y-3">
+                      <Label htmlFor="amount" className="text-foreground font-semibold text-base flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-primary/10">
+                          <Banknote className="h-4 w-4 text-primary" />
                         </div>
                         المبلغ المودع (دج)
                       </Label>
                       <div className="relative group">
-                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
                         <Input
                           id="amount"
                           type="number"
@@ -636,20 +636,20 @@ export default function Deposits() {
                           required
                           min="1"
                           step="0.01"
-                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-lg rounded-2xl font-medium"
+                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-12 text-base rounded-xl font-medium"
                         />
                       </div>
                     </div>
                     
-                    <div className="space-y-4">
-                      <Label htmlFor="transactionId" className="text-foreground font-bold text-lg flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-primary/10">
-                          <Receipt className="h-5 w-5 text-primary" />
+                    <div className="space-y-3">
+                      <Label htmlFor="transactionId" className="text-foreground font-semibold text-base flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-primary/10">
+                          <Receipt className="h-4 w-4 text-primary" />
                         </div>
                         رقم الإيصال
                       </Label>
                       <div className="relative group">
-                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
                         <Input
                           id="transactionId"
                           type="text"
@@ -657,7 +657,7 @@ export default function Deposits() {
                           value={transactionId}
                           onChange={(e) => setTransactionId(e.target.value)}
                           required
-                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-lg rounded-2xl font-medium"
+                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-12 text-base rounded-xl font-medium"
                         />
                       </div>
                     </div>
@@ -695,22 +695,22 @@ export default function Deposits() {
                     </div>
                   )}
 
-                  <div className="space-y-4">
-                    <Label htmlFor="receipt" className="text-foreground font-bold text-lg flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-primary/10">
-                        <Upload className="h-5 w-5 text-primary" />
+                  <div className="space-y-3">
+                    <Label htmlFor="receipt" className="text-foreground font-semibold text-base flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-primary/10">
+                        <Upload className="h-4 w-4 text-primary" />
                       </div>
                       صورة الإيصال
                     </Label>
                     <div className="relative group">
-                      <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                      <div className="absolute -inset-0.5 bg-gradient-primary rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
                       <Input
                         id="receipt"
                         type="file"
                         accept="image/*"
                         onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
                         required
-                        className="relative cursor-pointer bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-base rounded-2xl"
+                        className="relative cursor-pointer bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-12 text-sm rounded-xl"
                       />
                     </div>
                     {receiptFile && (
@@ -723,23 +723,23 @@ export default function Deposits() {
                     )}
                   </div>
 
-                  <div className="relative pt-4">
-                    <div className="absolute -inset-1 bg-gradient-primary rounded-3xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
+                  <div className="relative pt-2">
+                    <div className="absolute -inset-1 bg-gradient-primary rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
                     <Button
                       type="submit"
-                      className="relative w-full bg-gradient-primary hover:opacity-90 text-white font-bold py-7 text-xl transition-all hover:scale-[1.02] hover:shadow-elevated rounded-3xl overflow-hidden group"
+                      className="relative w-full bg-gradient-primary hover:opacity-90 text-white font-bold py-5 text-lg transition-all hover:scale-[1.02] hover:shadow-elevated rounded-2xl overflow-hidden group"
                       disabled={submitting || loading}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
                       {submitting ? (
                         <>
-                          <Clock className="h-7 w-7 animate-spin ml-2 relative z-10" />
+                          <Clock className="h-5 w-5 animate-spin ml-2 relative z-10" />
                           <span className="relative z-10">جاري الإرسال...</span>
                         </>
                       ) : (
                         <>
                           <span className="relative z-10">إرسال طلب الإيداع</span>
-                          <ArrowRight className="h-7 w-7 mr-2 relative z-10" />
+                          <ArrowRight className="h-5 w-5 mr-2 relative z-10" />
                         </>
                       )}
                     </Button>
@@ -796,17 +796,17 @@ export default function Deposits() {
                 <Separator className="bg-border/50" />
 
                 {/* Same form structure */}
-                <form onSubmit={handleSubmit} className="space-y-8">
+                <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <Label htmlFor="amount" className="text-foreground font-bold text-lg flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-primary/10">
-                          <Banknote className="h-5 w-5 text-primary" />
+                    <div className="space-y-3">
+                      <Label htmlFor="amount" className="text-foreground font-semibold text-base flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-primary/10">
+                          <Banknote className="h-4 w-4 text-primary" />
                         </div>
                         المبلغ المودع (دج)
                       </Label>
                       <div className="relative group">
-                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
                         <Input
                           id="amount"
                           type="number"
@@ -816,20 +816,20 @@ export default function Deposits() {
                           required
                           min="1"
                           step="0.01"
-                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-lg rounded-2xl font-medium"
+                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-12 text-base rounded-xl font-medium"
                         />
                       </div>
                     </div>
                     
-                    <div className="space-y-4">
-                      <Label htmlFor="transactionId" className="text-foreground font-bold text-lg flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-primary/10">
-                          <Receipt className="h-5 w-5 text-primary" />
+                    <div className="space-y-3">
+                      <Label htmlFor="transactionId" className="text-foreground font-semibold text-base flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-primary/10">
+                          <Receipt className="h-4 w-4 text-primary" />
                         </div>
                         رقم الإيصال
                       </Label>
                       <div className="relative group">
-                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                        <div className="absolute -inset-0.5 bg-gradient-primary rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
                         <Input
                           id="transactionId"
                           type="text"
@@ -837,7 +837,7 @@ export default function Deposits() {
                           value={transactionId}
                           onChange={(e) => setTransactionId(e.target.value)}
                           required
-                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-lg rounded-2xl font-medium"
+                          className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-12 text-base rounded-xl font-medium"
                         />
                       </div>
                     </div>
@@ -875,22 +875,22 @@ export default function Deposits() {
                     </div>
                   )}
 
-                  <div className="space-y-4">
-                    <Label htmlFor="receipt" className="text-foreground font-bold text-lg flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-primary/10">
-                        <Upload className="h-5 w-5 text-primary" />
+                  <div className="space-y-3">
+                    <Label htmlFor="receipt" className="text-foreground font-semibold text-base flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-primary/10">
+                        <Upload className="h-4 w-4 text-primary" />
                       </div>
                       صورة الإيصال
                     </Label>
                     <div className="relative group">
-                      <div className="absolute -inset-0.5 bg-gradient-primary rounded-2xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                      <div className="absolute -inset-0.5 bg-gradient-primary rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
                       <Input
                         id="receipt"
                         type="file"
                         accept="image/*"
                         onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
                         required
-                        className="relative cursor-pointer bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-16 text-base rounded-2xl"
+                        className="relative cursor-pointer bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-primary/50 focus:border-primary focus:shadow-lg transition-all h-12 text-sm rounded-xl"
                       />
                     </div>
                     {receiptFile && (
@@ -903,23 +903,23 @@ export default function Deposits() {
                     )}
                   </div>
 
-                  <div className="relative pt-4">
-                    <div className="absolute -inset-1 bg-gradient-primary rounded-3xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
+                  <div className="relative pt-2">
+                    <div className="absolute -inset-1 bg-gradient-primary rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
                     <Button
                       type="submit"
-                      className="relative w-full bg-gradient-primary hover:opacity-90 text-white font-bold py-7 text-xl transition-all hover:scale-[1.02] hover:shadow-elevated rounded-3xl overflow-hidden group"
+                      className="relative w-full bg-gradient-primary hover:opacity-90 text-white font-bold py-5 text-lg transition-all hover:scale-[1.02] hover:shadow-elevated rounded-2xl overflow-hidden group"
                       disabled={submitting || loading}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
                       {submitting ? (
                         <>
-                          <Clock className="h-7 w-7 animate-spin ml-2 relative z-10" />
+                          <Clock className="h-5 w-5 animate-spin ml-2 relative z-10" />
                           <span className="relative z-10">جاري الإرسال...</span>
                         </>
                       ) : (
                         <>
                           <span className="relative z-10">إرسال طلب الإيداع</span>
-                          <ArrowRight className="h-7 w-7 mr-2 relative z-10" />
+                          <ArrowRight className="h-5 w-5 mr-2 relative z-10" />
                         </>
                       )}
                     </Button>
