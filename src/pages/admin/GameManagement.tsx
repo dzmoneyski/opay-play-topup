@@ -71,17 +71,43 @@ const GameManagement = () => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    const platformData = {
-      name: formData.get("name") as string,
-      name_ar: formData.get("name_ar") as string,
-      slug: formData.get("slug") as string,
-      category: formData.get("category") as string,
-      logo_url: formData.get("logo_url") as string,
-      is_active: formData.get("is_active") === "on",
-      display_order: parseInt(formData.get("display_order") as string) || 0,
-    };
+    let logoUrl = formData.get("logo_url") as string;
+    const logoFile = formData.get("logo_file") as File;
 
     try {
+      // Upload logo if file is provided
+      if (logoFile && logoFile.size > 0) {
+        const fileExt = logoFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('game-logos')
+          .upload(filePath, logoFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('game-logos')
+          .getPublicUrl(filePath);
+
+        logoUrl = publicUrl;
+      }
+
+      const platformData = {
+        name: formData.get("name") as string,
+        name_ar: formData.get("name_ar") as string,
+        slug: formData.get("slug") as string,
+        category: formData.get("category") as string,
+        logo_url: logoUrl,
+        is_active: formData.get("is_active") === "on",
+        display_order: parseInt(formData.get("display_order") as string) || 0,
+      };
+
       if (editingPlatform) {
         const { error } = await supabase
           .from("game_platforms")
@@ -98,6 +124,7 @@ const GameManagement = () => {
       }
       
       queryClient.invalidateQueries({ queryKey: ["admin-game-platforms"] });
+      queryClient.invalidateQueries({ queryKey: ["game-platforms"] });
       setPlatformDialogOpen(false);
       setEditingPlatform(null);
     } catch (error: any) {
@@ -276,14 +303,35 @@ const GameManagement = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="logo_url">رابط الشعار</Label>
-                  <Input
-                    id="logo_url"
-                    name="logo_url"
-                    type="url"
-                    placeholder="https://example.com/logo.png"
-                    defaultValue={editingPlatform?.logo_url || ""}
-                  />
+                  <Label htmlFor="logo_file">الشعار</Label>
+                  <div className="space-y-2">
+                    <Input
+                      id="logo_file"
+                      name="logo_file"
+                      type="file"
+                      accept="image/*"
+                      className="cursor-pointer"
+                    />
+                    {editingPlatform?.logo_url && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>الشعار الحالي:</span>
+                        <img 
+                          src={editingPlatform.logo_url} 
+                          alt="Current logo" 
+                          className="h-8 w-8 object-contain rounded"
+                        />
+                      </div>
+                    )}
+                    <Input
+                      id="logo_url"
+                      name="logo_url"
+                      type="hidden"
+                      defaultValue={editingPlatform?.logo_url || ""}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    اختر صورة من جهازك (PNG, JPG, WebP)
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
