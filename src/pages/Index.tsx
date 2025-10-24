@@ -404,7 +404,7 @@ const Index = () => {
                   </h3>
                   <p className="text-sm text-muted-foreground">{service.subtitle}</p>
                   {service.action === 'disabled' && (
-                    <div className="absolute inset-0 bg-background/50 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                    <div className="absolute inset-0 bg-background/20 backdrop-blur-[1px] rounded-lg flex items-center justify-center">
                       <Badge variant="secondary" className="font-medium">قريباً</Badge>
                     </div>
                   )}
