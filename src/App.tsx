@@ -16,6 +16,8 @@ import Deposits from "./pages/Deposits";
 import Transfer from "./pages/Transfer";
 import Withdrawals from "./pages/Withdrawals";
 import Cards from "./pages/Cards";
+import GameTopup from "./pages/GameTopup";
+import P2P from "./pages/P2P";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -84,6 +86,16 @@ const App = () => {
               <Route path="/cards" element={
                 <ProtectedRoute requireActivation={false}>
                   <Cards />
+                </ProtectedRoute>
+              } />
+              <Route path="/game-topup" element={
+                <ProtectedRoute requireActivation={false}>
+                  <GameTopup />
+                </ProtectedRoute>
+              } />
+              <Route path="/p2p" element={
+                <ProtectedRoute requireActivation={false}>
+                  <P2P />
                 </ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />

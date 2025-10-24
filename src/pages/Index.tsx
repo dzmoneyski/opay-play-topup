@@ -35,7 +35,9 @@ import {
   LogOut,
   Shield,
   Bell,
-  ArrowLeft
+  ArrowLeft,
+  Repeat2,
+  Gamepad2
 } from "lucide-react";
 
 const Index = () => {
@@ -78,6 +80,11 @@ const Index = () => {
       return;
     }
 
+    if (service.action === 'game-topup') {
+      navigate('/game-topup');
+      return;
+    }
+
     // السماح بالدخول إلى صفحة الخدمة بغض النظر عن حالة التفعيل
     // التحقق من التفعيل سيتم عند محاولة تنفيذ العملية الفعلية
     console.log(`Navigating to service: ${service.title}`);
@@ -107,6 +114,20 @@ const Index = () => {
       subtitle: "اسحب رصيدك إلى البنك",
       gradient: "bg-gradient-secondary",
       action: "withdraw"
+    },
+    {
+      icon: <Repeat2 className="h-6 w-6" />,
+      title: "P2P",
+      subtitle: "تداول آمن بين المستخدمين",
+      gradient: "bg-gradient-gold",
+      action: "disabled"
+    },
+    {
+      icon: <Gamepad2 className="h-6 w-6" />,
+      title: "شحن الألعاب",
+      subtitle: "PUBG، Free Fire، وأكثر",
+      gradient: "bg-gradient-primary",
+      action: "game-topup"
     },
     {
       icon: <ShoppingBag className="h-6 w-6" />,
