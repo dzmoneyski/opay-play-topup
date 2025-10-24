@@ -110,7 +110,7 @@ const GameTopup = () => {
           <Tabs defaultValue="games" className="space-y-6">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="games">الألعاب</TabsTrigger>
-              <TabsTrigger value="betting">منصات المراهنة</TabsTrigger>
+              <TabsTrigger value="betting">توقعات كرة القدم</TabsTrigger>
             </TabsList>
 
             <TabsContent value="games" className="space-y-6">
