@@ -59,6 +59,155 @@ export type Database = {
         }
         Relationships: []
       }
+      game_packages: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          name_ar: string
+          platform_id: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          name_ar: string
+          platform_id: string
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_ar?: string
+          platform_id?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_packages_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "game_platforms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_platforms: {
+        Row: {
+          category: string
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          name_ar: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          name_ar: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          name_ar?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      game_topup_orders: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          package_id: string
+          platform_id: string
+          player_id: string
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          package_id: string
+          platform_id: string
+          player_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          package_id?: string
+          platform_id?: string
+          player_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_topup_orders_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "game_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_topup_orders_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "game_platforms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gift_cards: {
         Row: {
           amount: number

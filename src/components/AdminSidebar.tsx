@@ -12,7 +12,8 @@ import {
   Settings,
   BarChart3,
   FileText,
-  Wallet
+  Wallet,
+  Gamepad2
 } from 'lucide-react';
 import {
   Sidebar,
@@ -41,6 +42,7 @@ const transactionItems = [
 
 const serviceItems = [
   { title: "البطاقات الرقمية", url: "/admin/cards", icon: Gift },
+  { title: "إدارة الألعاب", url: "/admin/games", icon: Gamepad2 },
   { title: "التقارير", url: "/admin/reports", icon: BarChart3 },
   { title: "سجل العمليات", url: "/admin/logs", icon: FileText },
 ];
