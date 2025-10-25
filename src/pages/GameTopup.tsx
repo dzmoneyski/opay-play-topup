@@ -192,6 +192,7 @@ const GameTopup = () => {
             {selectedPlatformData.category === 'betting' ? (
               <div className="mt-6">
                 <BettingForm
+                  key={selectedPlatform}
                   platformId={selectedPlatform}
                   platformName={selectedPlatformData.name_ar}
                 />
