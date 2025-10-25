@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useGamePlatforms, useGamePackages, useCreateGameTopupOrder } from "@/hooks/useGamePlatforms";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BettingForm } from "@/components/BettingForm";
 
 const GameTopup = () => {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ const GameTopup = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState("");
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
+  const [currentTab, setCurrentTab] = useState<'games' | 'betting'>('games');
   
   const { data: platforms, isLoading: platformsLoading } = useGamePlatforms();
   const { data: packages, isLoading: packagesLoading } = useGamePackages(selectedPlatform);
@@ -60,11 +62,18 @@ const GameTopup = () => {
     return pkg?.price || 0;
   };
 
-  const handlePlatformSelect = (platformId: string) => {
+  const handlePlatformSelect = (platformId: string, category: 'game' | 'betting') => {
     setSelectedPlatform(platformId);
     setSelectedPackage(null);
     setPlayerId("");
+    if (category === 'betting') {
+      setCurrentTab('betting');
+    } else {
+      setCurrentTab('games');
+    }
   };
+
+  const selectedPlatformData = platforms?.find(p => p.id === selectedPlatform);
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -107,7 +116,7 @@ const GameTopup = () => {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <Tabs defaultValue="games" className="space-y-6">
+          <Tabs value={currentTab} onValueChange={(v) => setCurrentTab(v as 'games' | 'betting')} className="space-y-6">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="games">الألعاب</TabsTrigger>
               <TabsTrigger value="betting">توقعات كرة القدم</TabsTrigger>
@@ -123,7 +132,7 @@ const GameTopup = () => {
                         ? 'ring-2 ring-primary shadow-lg scale-105'
                         : ''
                     }`}
-                    onClick={() => handlePlatformSelect(platform.id)}
+                    onClick={() => handlePlatformSelect(platform.id, 'game')}
                   >
                     <CardContent className="p-4 text-center">
                       <div className="aspect-square mb-3 rounded-xl bg-gradient-primary/10 flex items-center justify-center">
@@ -154,7 +163,7 @@ const GameTopup = () => {
                         ? 'ring-2 ring-primary shadow-lg scale-105'
                         : ''
                     }`}
-                    onClick={() => handlePlatformSelect(platform.id)}
+                    onClick={() => handlePlatformSelect(platform.id, 'betting')}
                   >
                     <CardContent className="p-4 text-center">
                       <div className="aspect-square mb-3 rounded-xl bg-gradient-gold/10 flex items-center justify-center">
@@ -177,96 +186,107 @@ const GameTopup = () => {
           </Tabs>
         )}
 
-        {/* Order Form */}
-        {selectedPlatform && (
-          <Card className="shadow-card border-0 bg-gradient-card mt-6 animate-fade-in">
-            <CardHeader>
-              <CardTitle>معلومات الشحن</CardTitle>
-              <CardDescription>
-                {platforms?.find(p => p.id === selectedPlatform)?.name_ar}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Player ID */}
-                <div className="space-y-2">
-                  <Label htmlFor="playerId">معرف اللاعب / الحساب</Label>
-                  <Input
-                    id="playerId"
-                    type="text"
-                    placeholder="أدخل معرف اللاعب أو رقم الحساب"
-                    value={playerId}
-                    onChange={(e) => setPlayerId(e.target.value)}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    يمكنك العثور على معرفك في إعدادات اللعبة أو الحساب
-                  </p>
-                </div>
+        {/* Order Form / Betting Form */}
+        {selectedPlatform && selectedPlatformData && (
+          <>
+            {selectedPlatformData.category === 'betting' ? (
+              <div className="mt-6">
+                <BettingForm
+                  platformId={selectedPlatform}
+                  platformName={selectedPlatformData.name_ar}
+                />
+              </div>
+            ) : (
+              <Card className="shadow-card border-0 bg-gradient-card mt-6 animate-fade-in">
+                <CardHeader>
+                  <CardTitle>معلومات الشحن</CardTitle>
+                  <CardDescription>
+                    {selectedPlatformData.name_ar}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Player ID */}
+                    <div className="space-y-2">
+                      <Label htmlFor="playerId">معرف اللاعب / الحساب</Label>
+                      <Input
+                        id="playerId"
+                        type="text"
+                        placeholder="أدخل معرف اللاعب أو رقم الحساب"
+                        value={playerId}
+                        onChange={(e) => setPlayerId(e.target.value)}
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        يمكنك العثور على معرفك في إعدادات اللعبة أو الحساب
+                      </p>
+                    </div>
 
-                {/* Package Selection */}
-                {playerId && (
-                  <div className="space-y-3">
-                    <Label>اختر الباقة</Label>
-                    {packagesLoading ? (
-                      <div className="flex justify-center py-4">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {packages?.map((pkg) => (
-                          <Card
-                            key={pkg.id}
-                            className={`cursor-pointer transition-all duration-300 hover:shadow-md ${
-                              selectedPackage === pkg.id
-                                ? 'ring-2 ring-primary shadow-md'
-                                : ''
-                            }`}
-                            onClick={() => setSelectedPackage(pkg.id)}
-                          >
-                            <CardContent className="p-4 text-center">
-                              <div className="font-semibold text-lg mb-1">
-                                {pkg.name_ar}
-                              </div>
-                              <Badge variant="secondary" className="bg-gradient-primary text-white">
-                                {pkg.price} دج
-                              </Badge>
-                            </CardContent>
-                          </Card>
-                        ))}
+                    {/* Package Selection */}
+                    {playerId && (
+                      <div className="space-y-3">
+                        <Label>اختر الباقة</Label>
+                        {packagesLoading ? (
+                          <div className="flex justify-center py-4">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {packages?.map((pkg) => (
+                              <Card
+                                key={pkg.id}
+                                className={`cursor-pointer transition-all duration-300 hover:shadow-md ${
+                                  selectedPackage === pkg.id
+                                    ? 'ring-2 ring-primary shadow-md'
+                                    : ''
+                                }`}
+                                onClick={() => setSelectedPackage(pkg.id)}
+                              >
+                                <CardContent className="p-4 text-center">
+                                  <div className="font-semibold text-lg mb-1">
+                                    {pkg.name_ar}
+                                  </div>
+                                  <Badge variant="secondary" className="bg-gradient-primary text-white">
+                                    {pkg.price} دج
+                                  </Badge>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
-                  </div>
-                )}
 
-                {/* Price Summary */}
-                {selectedPackage && (
-                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">السعر:</span>
-                      <span className="font-bold text-lg">{getSelectedPackagePrice()} دج</span>
-                    </div>
-                  </div>
-                )}
+                    {/* Price Summary */}
+                    {selectedPackage && (
+                      <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">السعر:</span>
+                          <span className="font-bold text-lg">{getSelectedPackagePrice()} دج</span>
+                        </div>
+                      </div>
+                    )}
 
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-primary hover:opacity-90"
-                  disabled={createOrder.isPending || !selectedPlatform || !playerId || !selectedPackage}
-                >
-                  {createOrder.isPending ? (
-                    <>
-                      <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                      جاري الشحن...
-                    </>
-                  ) : (
-                    "شحن الآن"
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                    {/* Submit Button */}
+                    <Button
+                      type="submit"
+                      className="w-full bg-gradient-primary hover:opacity-90"
+                      disabled={createOrder.isPending || !selectedPlatform || !playerId || !selectedPackage}
+                    >
+                      {createOrder.isPending ? (
+                        <>
+                          <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                          جاري الشحن...
+                        </>
+                      ) : (
+                        "شحن الآن"
+                      )}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+          </>
         )}
 
         {/* Info Card */}
