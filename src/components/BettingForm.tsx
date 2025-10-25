@@ -11,7 +11,7 @@ import {
   useVerifyBettingAccount,
   useCreateBettingDeposit,
   useCreateBettingWithdrawal,
-  useBettingAccount,
+  useUserBettingAccountForPlatform,
 } from "@/hooks/useBettingPlatforms";
 
 interface BettingFormProps {
@@ -31,7 +31,7 @@ export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformNa
   const verifyAccount = useVerifyBettingAccount();
   const createDeposit = useCreateBettingDeposit();
   const createWithdrawal = useCreateBettingWithdrawal();
-  const { data: bettingAccount } = useBettingAccount(platformId, playerId);
+  const { data: bettingAccount, refetch: refetchAccount } = useUserBettingAccountForPlatform(platformId);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,9 +43,8 @@ export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformNa
       },
       {
         onSuccess: (data: any) => {
-          if (data.success) {
-            setStep('actions');
-          }
+          // Refetch the account to get the latest status
+          refetchAccount();
         },
       }
     );
@@ -70,26 +69,65 @@ export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformNa
     });
   };
 
+  // Initialize playerId from existing account if available
+  React.useEffect(() => {
+    if (bettingAccount?.player_id && !playerId) {
+      setPlayerId(bettingAccount.player_id);
+    }
+    if (bettingAccount?.promo_code && !promoCode) {
+      setPromoCode(bettingAccount.promo_code);
+    }
+  }, [bettingAccount]);
+
   // If account is already verified, show actions directly
   React.useEffect(() => {
     if (bettingAccount?.is_verified) {
       setStep('actions');
     } else if (bettingAccount && !bettingAccount.is_verified) {
-      // Account exists but not verified yet
+      // Account exists but not verified yet - stay on verify step to show pending message
       setStep('verify');
     }
   }, [bettingAccount]);
+
+  // Check if account exists but not verified
+  const isPending = bettingAccount && !bettingAccount.is_verified;
 
   return (
     <Card className="shadow-card border-0 bg-gradient-card animate-fade-in">
       <CardHeader>
         <CardTitle>{platformName}</CardTitle>
         <CardDescription>
-          {step === 'verify' ? 'التحقق من حسابك' : 'الإيداع والسحب'}
+          {isPending 
+            ? 'طلبك قيد المراجعة' 
+            : step === 'verify' 
+            ? 'التحقق من حسابك' 
+            : 'الإيداع والسحب'}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {step === 'verify' ? (
+        {isPending ? (
+          <div className="space-y-4 text-center py-8">
+            <div className="flex justify-center">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-2">طلب التحقق قيد المراجعة</h3>
+              <p className="text-muted-foreground mb-4">
+                سيقوم المشرف بمراجعة طلبك والتحقق من حسابك على المنصة
+              </p>
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-muted-foreground">معرف اللاعب:</span>
+                  <Badge variant="secondary" className="font-mono">{playerId || bettingAccount?.player_id}</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">كود البرومو:</span>
+                  <Badge variant="secondary">{promoCode || bettingAccount?.promo_code}</Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : step === 'verify' ? (
           <form onSubmit={handleVerify} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="playerId">معرف اللاعب</Label>

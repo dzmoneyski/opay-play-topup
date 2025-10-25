@@ -48,10 +48,11 @@ export const useVerifyBettingAccount = () => {
     onSuccess: (data: any) => {
       if (data.success) {
         toast({
-          title: "تم التحقق بنجاح",
-          description: data.message,
+          title: "تم إرسال طلب التحقق",
+          description: "سيتم مراجعة طلبك من قبل المشرف. يرجى الانتظار...",
         });
         queryClient.invalidateQueries({ queryKey: ["betting-accounts"] });
+        queryClient.invalidateQueries({ queryKey: ["betting-account"] });
       } else {
         toast({
           title: "خطأ في التحقق",
@@ -180,6 +181,32 @@ export const useBettingAccount = (platformId: string | null, playerId: string) =
       return data as BettingAccount | null;
     },
     enabled: !!platformId && !!playerId,
+  });
+};
+
+// Get user's betting account for a specific platform (any player ID)
+export const useUserBettingAccountForPlatform = (platformId: string | null) => {
+  return useQuery({
+    queryKey: ["user-betting-account", platformId],
+    queryFn: async () => {
+      if (!platformId) return null;
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from("betting_accounts")
+        .select("*")
+        .eq("platform_id", platformId)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data as BettingAccount | null;
+    },
+    enabled: !!platformId,
   });
 };
 
