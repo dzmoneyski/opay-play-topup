@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Table,
   TableBody,
@@ -22,7 +23,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Loader2, CheckCircle, XCircle, Eye } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Eye, AlertCircle } from "lucide-react";
 import {
   useAdminBettingAccounts,
   useAdminBettingTransactions,
@@ -31,6 +32,7 @@ import {
   useApproveWithdrawal,
   useRejectWithdrawal,
 } from "@/hooks/useBettingPlatforms";
+import { BettingFormTest } from "@/components/BettingFormTest";
 
 const BettingManagement = () => {
   const [selectedAccount, setSelectedAccount] = useState<any>(null);
@@ -115,6 +117,19 @@ const BettingManagement = () => {
         <p className="text-muted-foreground">
           التحقق من الحسابات وإدارة عمليات الإيداع والسحب
         </p>
+      </div>
+
+      {/* Connection Test Alert */}
+      <Alert className="mb-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          اختبار الاتصال بقاعدة البيانات - تأكد من أن جميع الأنظمة تعمل بشكل صحيح
+        </AlertDescription>
+      </Alert>
+
+      {/* Test Component */}
+      <div className="mb-6">
+        <BettingFormTest />
       </div>
 
       <Tabs defaultValue="pending-accounts" className="space-y-6">

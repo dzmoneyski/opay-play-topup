@@ -74,6 +74,9 @@ export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformNa
   React.useEffect(() => {
     if (bettingAccount?.is_verified) {
       setStep('actions');
+    } else if (bettingAccount && !bettingAccount.is_verified) {
+      // Account exists but not verified yet
+      setStep('verify');
     }
   }, [bettingAccount]);
 
