@@ -14,6 +14,106 @@ export type Database = {
   }
   public: {
     Tables: {
+      betting_accounts: {
+        Row: {
+          created_at: string
+          id: string
+          is_verified: boolean
+          platform_id: string
+          player_id: string
+          promo_code: string
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_verified?: boolean
+          platform_id: string
+          player_id: string
+          promo_code?: string
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_verified?: boolean
+          platform_id?: string
+          player_id?: string
+          promo_code?: string
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "betting_accounts_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "game_platforms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      betting_transactions: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          created_at: string
+          id: string
+          platform_id: string
+          player_id: string
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          transaction_type: string
+          updated_at: string
+          user_id: string
+          withdrawal_code: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          created_at?: string
+          id?: string
+          platform_id: string
+          player_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          transaction_type: string
+          updated_at?: string
+          user_id: string
+          withdrawal_code?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          platform_id?: string
+          player_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          transaction_type?: string
+          updated_at?: string
+          user_id?: string
+          withdrawal_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "betting_transactions_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "game_platforms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deposits: {
         Row: {
           admin_notes: string | null
@@ -635,6 +735,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      process_betting_deposit: {
+        Args: { _amount: number; _platform_id: string; _player_id: string }
+        Returns: Json
+      }
       process_transfer: {
         Args: {
           amount_param: number
@@ -670,6 +774,10 @@ export type Database = {
       validate_luhn_check_digit: {
         Args: { _card_code: string }
         Returns: boolean
+      }
+      verify_betting_account: {
+        Args: { _platform_id: string; _player_id: string; _promo_code: string }
+        Returns: Json
       }
     }
     Enums: {
