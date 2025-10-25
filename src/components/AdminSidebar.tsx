@@ -43,6 +43,7 @@ const transactionItems = [
 const serviceItems = [
   { title: "البطاقات الرقمية", url: "/admin/cards", icon: Gift },
   { title: "إدارة الألعاب", url: "/admin/games", icon: Gamepad2 },
+  { title: "إدارة المراهنات", url: "/admin/betting", icon: Gamepad2 },
   { title: "التقارير", url: "/admin/reports", icon: BarChart3 },
   { title: "سجل العمليات", url: "/admin/logs", icon: FileText },
 ];

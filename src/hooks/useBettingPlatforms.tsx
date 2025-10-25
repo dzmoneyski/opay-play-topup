@@ -183,6 +183,199 @@ export const useBettingAccount = (platformId: string | null, playerId: string) =
   });
 };
 
+// Admin hooks
+export const useAdminBettingAccounts = () => {
+  return useQuery({
+    queryKey: ["admin-betting-accounts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("betting_accounts")
+        .select(`
+          *,
+          platform:game_platforms(*),
+          user:profiles(full_name, phone)
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+export const useAdminBettingTransactions = () => {
+  return useQuery({
+    queryKey: ["admin-betting-transactions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("betting_transactions")
+        .select(`
+          *,
+          platform:game_platforms(*),
+          user:profiles(full_name, phone)
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+export const useApproveBettingAccount = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (accountId: string) => {
+      const { error } = await supabase
+        .from("betting_accounts")
+        .update({ 
+          is_verified: true,
+          verified_at: new Date().toISOString()
+        })
+        .eq("id", accountId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "تم الموافقة",
+        description: "تم الموافقة على الحساب بنجاح",
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin-betting-accounts"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useRejectBettingAccount = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (accountId: string) => {
+      const { error } = await supabase
+        .from("betting_accounts")
+        .delete()
+        .eq("id", accountId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "تم الرفض",
+        description: "تم رفض الحساب وحذفه",
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin-betting-accounts"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useApproveWithdrawal = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { transactionId: string; adminNotes?: string }) => {
+      const { error } = await supabase
+        .from("betting_transactions")
+        .update({
+          status: 'completed',
+          processed_at: new Date().toISOString(),
+          admin_notes: data.adminNotes,
+        })
+        .eq("id", data.transactionId);
+
+      if (error) throw error;
+
+      // Get transaction details to credit user
+      const { data: transaction } = await supabase
+        .from("betting_transactions")
+        .select("user_id, amount")
+        .eq("id", data.transactionId)
+        .single();
+
+      if (transaction) {
+        // Credit user balance
+        const { data: balance } = await supabase
+          .from("user_balances")
+          .select("balance")
+          .eq("user_id", transaction.user_id)
+          .single();
+
+        await supabase
+          .from("user_balances")
+          .update({
+            balance: (balance?.balance || 0) + transaction.amount,
+          })
+          .eq("user_id", transaction.user_id);
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "تم الموافقة على السحب",
+        description: "تمت إضافة المبلغ إلى رصيد المستخدم",
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin-betting-transactions"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useRejectWithdrawal = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { transactionId: string; adminNotes?: string }) => {
+      const { error } = await supabase
+        .from("betting_transactions")
+        .update({
+          status: 'rejected',
+          processed_at: new Date().toISOString(),
+          admin_notes: data.adminNotes,
+        })
+        .eq("id", data.transactionId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "تم رفض السحب",
+        description: "تم رفض طلب السحب",
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin-betting-transactions"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};
+
 export const useBettingTransactions = () => {
   return useQuery({
     queryKey: ["betting-transactions"],
