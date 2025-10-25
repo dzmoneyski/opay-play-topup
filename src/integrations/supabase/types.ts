@@ -56,6 +56,13 @@ export type Database = {
             referencedRelation: "game_platforms"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "betting_accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       betting_transactions: {
@@ -111,6 +118,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "game_platforms"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "betting_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
