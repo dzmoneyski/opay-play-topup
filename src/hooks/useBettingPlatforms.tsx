@@ -93,8 +93,8 @@ export const useCreateBettingDeposit = () => {
     onSuccess: (data: any) => {
       if (data.success) {
         toast({
-          title: "تم الإيداع بنجاح",
-          description: data.message,
+          title: "تم إرسال طلب الإيداع",
+          description: "سيتم مراجعة طلبك من قبل المشرف. يرجى الانتظار...",
         });
         queryClient.invalidateQueries({ queryKey: ["betting-transactions"] });
         queryClient.invalidateQueries({ queryKey: ["balance"] });

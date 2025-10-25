@@ -33,14 +33,18 @@ import {
   useRejectWithdrawal,
 } from "@/hooks/useBettingPlatforms";
 import { BettingFormTest } from "@/components/BettingFormTest";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const BettingManagement = () => {
   const [selectedAccount, setSelectedAccount] = useState<any>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [selectedDeposit, setSelectedDeposit] = useState<any>(null);
   const [adminNotes, setAdminNotes] = useState("");
+  const { toast } = useToast();
 
   const { data: accounts, isLoading: accountsLoading } = useAdminBettingAccounts();
-  const { data: transactions, isLoading: transactionsLoading } = useAdminBettingTransactions();
+  const { data: transactions, isLoading: transactionsLoading, refetch: refetchTransactions } = useAdminBettingTransactions();
 
   const approveAccount = useApproveBettingAccount();
   const rejectAccount = useRejectBettingAccount();
@@ -52,6 +56,7 @@ const BettingManagement = () => {
   const deposits = transactions?.filter(t => t.transaction_type === 'deposit') || [];
   const withdrawals = transactions?.filter(t => t.transaction_type === 'withdrawal') || [];
   const pendingWithdrawals = withdrawals.filter(w => w.status === 'pending');
+  const pendingDeposits = deposits.filter(d => d.status === 'pending');
 
   const handleApproveAccount = (accountId: string) => {
     approveAccount.mutate(accountId, {
@@ -95,6 +100,73 @@ const BettingManagement = () => {
         },
       }
     );
+  };
+
+  const handleApproveDeposit = async () => {
+    if (!selectedDeposit) return;
+    
+    try {
+      const { data, error } = await supabase.rpc('approve_betting_deposit', {
+        _transaction_id: selectedDeposit.id,
+        _admin_notes: adminNotes || null,
+      });
+
+      if (error) throw error;
+
+      const result = data as any;
+      if (result?.success) {
+        toast({
+          title: "تمت الموافقة على الإيداع",
+          description: `تم خصم ${result.total_deducted} دج من رصيد المستخدم`,
+        });
+        refetchTransactions();
+        setSelectedDeposit(null);
+        setAdminNotes("");
+      } else {
+        toast({
+          title: "خطأ",
+          description: result?.error || "حدث خطأ أثناء الموافقة",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRejectDeposit = async () => {
+    if (!selectedDeposit) return;
+
+    try {
+      const { error } = await supabase
+        .from("betting_transactions")
+        .update({
+          status: 'rejected',
+          processed_at: new Date().toISOString(),
+          admin_notes: adminNotes || null,
+        })
+        .eq("id", selectedDeposit.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم رفض الإيداع",
+        description: "تم رفض طلب الإيداع",
+      });
+      refetchTransactions();
+      setSelectedDeposit(null);
+      setAdminNotes("");
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -143,6 +215,14 @@ const BettingManagement = () => {
             )}
           </TabsTrigger>
           <TabsTrigger value="verified-accounts">الحسابات المحققة</TabsTrigger>
+          <TabsTrigger value="deposits">
+            طلبات الإيداع
+            {pendingDeposits.length > 0 && (
+              <Badge variant="destructive" className="mr-2">
+                {pendingDeposits.length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="withdrawals">
             طلبات السحب
             {pendingWithdrawals.length > 0 && (
@@ -151,7 +231,6 @@ const BettingManagement = () => {
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="deposits">عمليات الإيداع</TabsTrigger>
         </TabsList>
 
         {/* Pending Accounts Tab */}
@@ -335,8 +414,8 @@ const BettingManagement = () => {
         <TabsContent value="deposits">
           <Card>
             <CardHeader>
-              <CardTitle>عمليات الإيداع</CardTitle>
-              <CardDescription>سجل جميع عمليات الإيداع</CardDescription>
+              <CardTitle>طلبات الإيداع</CardTitle>
+              <CardDescription>راجع طلبات الإيداع وقم بالموافقة عليها</CardDescription>
             </CardHeader>
             <CardContent>
               {transactionsLoading ? (
@@ -357,6 +436,7 @@ const BettingManagement = () => {
                       <TableHead>المبلغ</TableHead>
                       <TableHead>الحالة</TableHead>
                       <TableHead>التاريخ</TableHead>
+                      <TableHead>الإجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -369,6 +449,18 @@ const BettingManagement = () => {
                         <TableCell>{getStatusBadge(transaction.status)}</TableCell>
                         <TableCell>
                           {new Date(transaction.created_at).toLocaleDateString("ar-DZ")}
+                        </TableCell>
+                        <TableCell>
+                          {transaction.status === 'pending' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedDeposit(transaction)}
+                            >
+                              <Eye className="h-4 w-4 ml-1" />
+                              مراجعة
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -515,6 +607,74 @@ const BettingManagement = () => {
                 <CheckCircle className="h-4 w-4 ml-1" />
               )}
               موافقة وإضافة الرصيد
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Deposit Review Dialog */}
+      <Dialog open={!!selectedDeposit} onOpenChange={() => setSelectedDeposit(null)}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>مراجعة طلب الإيداع</DialogTitle>
+            <DialogDescription>
+              راجع طلب الإيداع قبل الموافقة. سيتم خصم المبلغ + العمولة من رصيد المستخدم.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>المستخدم</Label>
+              <p className="text-sm">{selectedDeposit?.user?.full_name || "غير محدد"}</p>
+            </div>
+            <div>
+              <Label>رقم الهاتف</Label>
+              <p className="text-sm">{selectedDeposit?.user?.phone || "غير محدد"}</p>
+            </div>
+            <div>
+              <Label>المنصة</Label>
+              <p className="text-sm">{selectedDeposit?.platform?.name_ar || "غير محدد"}</p>
+            </div>
+            <div>
+              <Label>معرف اللاعب</Label>
+              <p className="text-sm font-mono">{selectedDeposit?.player_id}</p>
+            </div>
+            <div>
+              <Label>المبلغ المطلوب</Label>
+              <p className="text-lg font-bold">{selectedDeposit?.amount} دج</p>
+            </div>
+            <div>
+              <Label>ملاحظات إدارية (اختياري)</Label>
+              <Textarea
+                value={adminNotes}
+                onChange={(e) => setAdminNotes(e.target.value)}
+                placeholder="أضف ملاحظات..."
+              />
+            </div>
+            <div className="bg-amber-500/10 p-4 rounded-lg border border-amber-500/20">
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                <strong>تحذير:</strong> عند الموافقة سيتم:
+              </p>
+              <ul className="text-sm text-amber-600 dark:text-amber-400 pr-4 mt-2 space-y-1">
+                <li>• خصم المبلغ + العمولة من رصيد المستخدم</li>
+                <li>• إيداع المبلغ في حساب اللاعب على المنصة</li>
+                <li>• لن يمكن التراجع عن العملية</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="destructive"
+              onClick={handleRejectDeposit}
+            >
+              <XCircle className="h-4 w-4 ml-1" />
+              رفض
+            </Button>
+            <Button
+              onClick={handleApproveDeposit}
+              className="bg-green-500 hover:bg-green-600"
+            >
+              <CheckCircle className="h-4 w-4 ml-1" />
+              موافقة وخصم الرصيد
             </Button>
           </DialogFooter>
         </DialogContent>
