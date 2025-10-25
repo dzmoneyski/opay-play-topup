@@ -47,6 +47,13 @@ export const useTransactionHistory = () => {
       const { data: giftCards, error: giftCardsError } = await supabase
         .rpc('get_user_gift_card_redemptions');
 
+      // Fetch betting transactions
+      const { data: bettingTransactions } = await supabase
+        .from('betting_transactions')
+        .select('*, game_platforms(name, name_ar)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
       const allTransactions: TransactionHistoryItem[] = [];
 
       // Process deposits
@@ -105,6 +112,21 @@ export const useTransactionHistory = () => {
           });
         });
       }
+
+      // Process betting transactions
+      bettingTransactions?.forEach(transaction => {
+        const platformName = (transaction as any).game_platforms?.name_ar || 'منصة مراهنات';
+        const typeText = transaction.transaction_type === 'deposit' ? 'إيداع' : 'سحب';
+        allTransactions.push({
+          id: transaction.id,
+          type: transaction.transaction_type === 'deposit' ? 'deposit' : 'withdrawal',
+          description: `${typeText} على ${platformName}`,
+          amount: transaction.transaction_type === 'deposit' ? -Number(transaction.amount) : Number(transaction.amount),
+          status: transaction.status,
+          created_at: transaction.created_at,
+          icon_type: transaction.transaction_type === 'deposit' ? 'send' : 'receive'
+        });
+      });
 
       // Sort by date (newest first)
       allTransactions.sort((a, b) => 

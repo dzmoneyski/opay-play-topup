@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, ArrowUpCircle, ArrowDownCircle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useBalance } from "@/hooks/useBalance";
 import {
   useVerifyBettingAccount,
@@ -13,6 +14,8 @@ import {
   useCreateBettingWithdrawal,
   useUserBettingAccountForPlatform,
 } from "@/hooks/useBettingPlatforms";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface BettingFormProps {
   platformId: string;
@@ -26,12 +29,37 @@ export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformNa
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawalCode, setWithdrawalCode] = useState("");
   const [withdrawalAmount, setWithdrawalAmount] = useState("");
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
 
   const { balance } = useBalance();
+  const { user } = useAuth();
   const verifyAccount = useVerifyBettingAccount();
   const createDeposit = useCreateBettingDeposit();
   const createWithdrawal = useCreateBettingWithdrawal();
   const { data: bettingAccount, refetch: refetchAccount } = useUserBettingAccountForPlatform(platformId);
+
+  const fetchTransactions = React.useCallback(async () => {
+    if (!user || !platformId) return;
+    
+    setLoadingTransactions(true);
+    try {
+      const { data, error } = await supabase
+        .from('betting_transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('platform_id', platformId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setTransactions(data || []);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    } finally {
+      setLoadingTransactions(false);
+    }
+  }, [user, platformId]);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +84,11 @@ export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformNa
       platform_id: platformId,
       player_id: playerId,
       amount: parseFloat(depositAmount),
+    }, {
+      onSuccess: () => {
+        setDepositAmount('');
+        fetchTransactions();
+      }
     });
   };
 
@@ -66,6 +99,12 @@ export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformNa
       player_id: playerId,
       withdrawal_code: withdrawalCode,
       amount: parseFloat(withdrawalAmount),
+    }, {
+      onSuccess: () => {
+        setWithdrawalCode('');
+        setWithdrawalAmount('');
+        fetchTransactions();
+      }
     });
   };
 
@@ -83,14 +122,26 @@ export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformNa
   React.useEffect(() => {
     if (bettingAccount?.is_verified) {
       setStep('actions');
+      fetchTransactions();
     } else if (bettingAccount && !bettingAccount.is_verified) {
       // Account exists but not verified yet - stay on verify step to show pending message
       setStep('verify');
     }
-  }, [bettingAccount]);
+  }, [bettingAccount, fetchTransactions]);
 
   // Check if account exists but not verified
   const isPending = bettingAccount && !bettingAccount.is_verified;
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      pending: { label: 'قيد المراجعة', variant: 'secondary' as const },
+      completed: { label: 'مكتمل', variant: 'default' as const },
+      rejected: { label: 'مرفوض', variant: 'destructive' as const }
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
 
   return (
     <Card className="shadow-card border-0 bg-gradient-card animate-fade-in">
@@ -288,6 +339,78 @@ export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformNa
                 </form>
               </TabsContent>
             </Tabs>
+
+            {/* Transactions History */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                معاملاتك الأخيرة
+              </h3>
+              
+              {loadingTransactions ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : transactions.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    لا توجد معاملات حتى الآن
+                  </CardContent>
+                </Card>
+              ) : (
+                <ScrollArea className="h-[400px]">
+                  <div className="space-y-3">
+                    {transactions.map((transaction) => (
+                      <Card key={transaction.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              {transaction.transaction_type === 'deposit' ? (
+                                <ArrowUpCircle className="h-5 w-5 text-destructive" />
+                              ) : (
+                                <ArrowDownCircle className="h-5 w-5 text-success" />
+                              )}
+                              <div>
+                                <p className="font-medium">
+                                  {transaction.transaction_type === 'deposit' ? 'إيداع' : 'سحب'}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {new Date(transaction.created_at).toLocaleDateString('ar-DZ', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                                {transaction.admin_notes && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    ملاحظة: {transaction.admin_notes}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-left">
+                              <p className="font-bold text-lg">
+                                {transaction.amount.toLocaleString('ar-DZ')} دج
+                              </p>
+                              {getStatusBadge(transaction.status)}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+              
+              <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  <AlertCircle className="inline h-4 w-4 ml-1" />
+                  <strong>ملاحظة:</strong> يتم خصم رسوم 2% من كل إيداع (حد أدنى 10 دج، حد أقصى 500 دج)
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
