@@ -11,13 +11,17 @@ import { useMerchantRequest } from '@/hooks/useMerchantRequest';
 import { useAuth } from '@/hooks/useAuth';
 import { Store, Gamepad2, Monitor, Building2, ArrowRight, CheckCircle2, TrendingUp, Users, Wallet, Zap, Shield, Clock, Star, Gift, Award, Sparkles, Phone, MapPin, CreditCard } from 'lucide-react';
 import BackButton from '@/components/BackButton';
-
 const BecomePartner = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { submitRequest, getMyRequest, loading } = useMerchantRequest();
+  const {
+    user
+  } = useAuth();
+  const {
+    submitRequest,
+    getMyRequest,
+    loading
+  } = useMerchantRequest();
   const [existingRequest, setExistingRequest] = useState<any>(null);
-  
   const [formData, setFormData] = useState({
     business_name: '',
     business_type: '',
@@ -26,34 +30,27 @@ const BecomePartner = () => {
     national_id: '',
     notes: ''
   });
-
   useEffect(() => {
     if (user) {
       checkExistingRequest();
     }
   }, [user]);
-
   const checkExistingRequest = async () => {
     const request = await getMyRequest();
     setExistingRequest(request);
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!formData.business_name || !formData.business_type || !formData.phone || !formData.address || !formData.national_id) {
       return;
     }
-
     const result = await submitRequest(formData);
     if (result.success) {
       checkExistingRequest();
     }
   };
-
   if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+    return <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardHeader>
             <CardTitle>يجب تسجيل الدخول</CardTitle>
@@ -65,25 +62,20 @@ const BecomePartner = () => {
             </Button>
           </CardContent>
         </Card>
-      </div>
-    );
+      </div>;
   }
-
   if (existingRequest) {
     const statusText = {
       pending: 'قيد المراجعة',
       approved: 'تمت الموافقة',
       rejected: 'مرفوض'
     }[existingRequest.status] || existingRequest.status;
-
     const statusColor = {
       pending: 'text-yellow-600',
       approved: 'text-green-600',
       rejected: 'text-red-600'
     }[existingRequest.status] || 'text-gray-600';
-
-    return (
-      <div className="min-h-screen p-4">
+    return <div className="min-h-screen p-4">
         <BackButton />
         <div className="max-w-2xl mx-auto mt-8">
           <Card>
@@ -104,27 +96,20 @@ const BecomePartner = () => {
                 <p className="text-sm text-muted-foreground">العنوان</p>
                 <p className="font-medium">{existingRequest.address}</p>
               </div>
-              {existingRequest.status === 'rejected' && existingRequest.rejection_reason && (
-                <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+              {existingRequest.status === 'rejected' && existingRequest.rejection_reason && <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
                   <p className="text-sm font-medium text-red-800 dark:text-red-200">سبب الرفض:</p>
                   <p className="text-sm text-red-600 dark:text-red-300 mt-1">{existingRequest.rejection_reason}</p>
-                </div>
-              )}
-              {existingRequest.status === 'approved' && (
-                <Button onClick={() => navigate('/merchant')} className="w-full">
+                </div>}
+              {existingRequest.status === 'approved' && <Button onClick={() => navigate('/merchant')} className="w-full">
                   <ArrowRight className="ml-2 h-4 w-4" />
                   الذهاب إلى لوحة التحكم
-                </Button>
-              )}
+                </Button>}
             </CardContent>
           </Card>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <BackButton />
       
       {/* Hero Section with Gradient */}
@@ -132,7 +117,9 @@ const BecomePartner = () => {
         <div className="absolute inset-0 bg-gradient-glass"></div>
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 left-10 w-72 h-72 bg-primary rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-secondary rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-secondary rounded-full blur-3xl animate-pulse" style={{
+          animationDelay: '1s'
+        }}></div>
         </div>
         
         <div className="container mx-auto max-w-6xl relative z-10">
@@ -153,15 +140,21 @@ const BecomePartner = () => {
             
             {/* Live Stats */}
             <div className="flex flex-wrap justify-center gap-8 mb-8">
-              <div className="text-center animate-scale-in" style={{ animationDelay: '0.2s' }}>
+              <div className="text-center animate-scale-in" style={{
+              animationDelay: '0.2s'
+            }}>
                 <div className="text-4xl font-bold text-white mb-1">500+</div>
                 <div className="text-white/70 text-sm">تاجر نشط</div>
               </div>
-              <div className="text-center animate-scale-in" style={{ animationDelay: '0.4s' }}>
+              <div className="text-center animate-scale-in" style={{
+              animationDelay: '0.4s'
+            }}>
                 <div className="text-4xl font-bold text-white mb-1">15,000+</div>
                 <div className="text-white/70 text-sm">عملية شهرياً</div>
               </div>
-              <div className="text-center animate-scale-in" style={{ animationDelay: '0.6s' }}>
+              <div className="text-center animate-scale-in" style={{
+              animationDelay: '0.6s'
+            }}>
                 <div className="text-4xl font-bold text-white mb-1">5%</div>
                 <div className="text-white/70 text-sm">عمولة تصل إلى</div>
               </div>
@@ -337,7 +330,7 @@ const BecomePartner = () => {
               انضم لمئات التجار الناجحين واربح من اليوم الأول 🚀
             </CardDescription>
           </CardHeader>
-          <CardContent className="px-8 pb-8">
+          <CardContent className="px-8 pb-8 bg-blue-200">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
@@ -345,14 +338,10 @@ const BecomePartner = () => {
                     <Store className="h-4 w-4" />
                     اسم النشاط التجاري *
                   </Label>
-                  <Input
-                    id="business_name"
-                    value={formData.business_name}
-                    onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
-                    placeholder="مثال: محل الهواتف الذكية"
-                    className="mt-2 h-12"
-                    required
-                  />
+                  <Input id="business_name" value={formData.business_name} onChange={e => setFormData({
+                  ...formData,
+                  business_name: e.target.value
+                })} placeholder="مثال: محل الهواتف الذكية" className="mt-2 h-12" required />
                 </div>
 
                 <div>
@@ -360,11 +349,10 @@ const BecomePartner = () => {
                     <Building2 className="h-4 w-4" />
                     نوع النشاط *
                   </Label>
-                  <Select
-                    value={formData.business_type}
-                    onValueChange={(value) => setFormData({ ...formData, business_type: value })}
-                    required
-                  >
+                  <Select value={formData.business_type} onValueChange={value => setFormData({
+                  ...formData,
+                  business_type: value
+                })} required>
                     <SelectTrigger className="mt-2 h-12">
                       <SelectValue placeholder="اختر نوع النشاط" />
                     </SelectTrigger>
@@ -404,15 +392,10 @@ const BecomePartner = () => {
                     <Phone className="h-4 w-4" />
                     رقم الهاتف *
                   </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="05xxxxxxxx"
-                    className="mt-2 h-12"
-                    required
-                  />
+                  <Input id="phone" type="tel" value={formData.phone} onChange={e => setFormData({
+                  ...formData,
+                  phone: e.target.value
+                })} placeholder="05xxxxxxxx" className="mt-2 h-12" required />
                   <p className="text-xs text-muted-foreground mt-1">سنتواصل معك عبر هذا الرقم</p>
                 </div>
 
@@ -421,14 +404,10 @@ const BecomePartner = () => {
                     <MapPin className="h-4 w-4" />
                     العنوان *
                   </Label>
-                  <Input
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="المدينة، الولاية"
-                    className="mt-2 h-12"
-                    required
-                  />
+                  <Input id="address" value={formData.address} onChange={e => setFormData({
+                  ...formData,
+                  address: e.target.value
+                })} placeholder="المدينة، الولاية" className="mt-2 h-12" required />
                 </div>
               </div>
 
@@ -437,27 +416,19 @@ const BecomePartner = () => {
                   <CreditCard className="h-4 w-4" />
                   رقم بطاقة التعريف الوطنية *
                 </Label>
-                <Input
-                  id="national_id"
-                  value={formData.national_id}
-                  onChange={(e) => setFormData({ ...formData, national_id: e.target.value })}
-                  placeholder="رقم البطاقة"
-                  className="mt-2 h-12"
-                  required
-                />
+                <Input id="national_id" value={formData.national_id} onChange={e => setFormData({
+                ...formData,
+                national_id: e.target.value
+              })} placeholder="رقم البطاقة" className="mt-2 h-12" required />
                 <p className="text-xs text-muted-foreground mt-1">للتحقق من هويتك (معلومات سرية ومحمية)</p>
               </div>
 
               <div>
                 <Label htmlFor="notes" className="text-base font-semibold">ملاحظات إضافية (اختياري)</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="أخبرنا المزيد عن نشاطك التجاري أو أي معلومات إضافية..."
-                  rows={4}
-                  className="mt-2 resize-none"
-                />
+                <Textarea id="notes" value={formData.notes} onChange={e => setFormData({
+                ...formData,
+                notes: e.target.value
+              })} placeholder="أخبرنا المزيد عن نشاطك التجاري أو أي معلومات إضافية..." rows={4} className="mt-2 resize-none" />
               </div>
 
               <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
@@ -474,23 +445,14 @@ const BecomePartner = () => {
                 </div>
               </div>
 
-              <Button 
-                type="submit" 
-                size="lg"
-                className="w-full h-14 text-lg font-bold bg-gradient-primary hover:opacity-90 transition-all duration-300 hover:scale-105 shadow-lg" 
-                disabled={loading}
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">
+              <Button type="submit" size="lg" className="w-full h-14 text-lg font-bold bg-gradient-primary hover:opacity-90 transition-all duration-300 hover:scale-105 shadow-lg" disabled={loading}>
+                {loading ? <span className="flex items-center gap-2">
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     جاري الإرسال...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
+                  </span> : <span className="flex items-center gap-2">
                     إرسال الطلب الآن
                     <ArrowRight className="h-5 w-5" />
-                  </span>
-                )}
+                  </span>}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">
@@ -503,8 +465,6 @@ const BecomePartner = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default BecomePartner;
