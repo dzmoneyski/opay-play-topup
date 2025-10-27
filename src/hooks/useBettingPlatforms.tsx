@@ -93,8 +93,8 @@ export const useCreateBettingDeposit = () => {
     onSuccess: (data: any) => {
       if (data.success) {
         toast({
-          title: "تم إرسال طلب الإيداع",
-          description: "سيتم مراجعة طلبك من قبل المشرف. يرجى الانتظار...",
+          title: "تم خصم المبلغ وإرسال الطلب",
+          description: `تم خصم ${data.total_deducted} دج (بما في ذلك العمولة ${data.fee_amount} دج)`,
         });
         queryClient.invalidateQueries({ queryKey: ["betting-transactions"] });
         queryClient.invalidateQueries({ queryKey: ["balance"] });
@@ -397,6 +397,39 @@ export const useRejectWithdrawal = () => {
       toast({
         title: "خطأ",
         description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useRejectBettingDeposit = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { transactionId: string; notes?: string }) => {
+      const { data: result, error } = await supabase.rpc('reject_betting_deposit', {
+        _transaction_id: data.transactionId,
+        _admin_notes: data.notes
+      }) as { data: any; error: any };
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: (data: any) => {
+      if (data?.success) {
+        toast({
+          title: "تم رفض الإيداع",
+          description: `تم إرجاع ${data.refunded_amount} دج إلى المستخدم`,
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["admin-betting-transactions"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ",
+        description: error.message || 'حدث خطأ أثناء رفض الإيداع',
         variant: "destructive",
       });
     },

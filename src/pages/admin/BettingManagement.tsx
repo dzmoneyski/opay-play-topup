@@ -29,6 +29,7 @@ import {
   useAdminBettingTransactions,
   useApproveBettingAccount,
   useRejectBettingAccount,
+  useRejectBettingDeposit,
   useApproveWithdrawal,
   useRejectWithdrawal,
 } from "@/hooks/useBettingPlatforms";
@@ -48,6 +49,7 @@ const BettingManagement = () => {
 
   const approveAccount = useApproveBettingAccount();
   const rejectAccount = useRejectBettingAccount();
+  const rejectDepositMutation = useRejectBettingDeposit();
   const approveWithdrawal = useApproveWithdrawal();
   const rejectWithdrawal = useRejectWithdrawal();
 
@@ -138,35 +140,22 @@ const BettingManagement = () => {
     }
   };
 
-  const handleRejectDeposit = async () => {
+  const handleRejectDeposit = () => {
     if (!selectedDeposit) return;
 
-    try {
-      const { error } = await supabase
-        .from("betting_transactions")
-        .update({
-          status: 'rejected',
-          processed_at: new Date().toISOString(),
-          admin_notes: adminNotes || null,
-        })
-        .eq("id", selectedDeposit.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "تم رفض الإيداع",
-        description: "تم رفض طلب الإيداع",
-      });
-      refetchTransactions();
-      setSelectedDeposit(null);
-      setAdminNotes("");
-    } catch (error: any) {
-      toast({
-        title: "خطأ",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
+    rejectDepositMutation.mutate(
+      {
+        transactionId: selectedDeposit.id,
+        notes: adminNotes || undefined
+      },
+      {
+        onSuccess: () => {
+          refetchTransactions();
+          setSelectedDeposit(null);
+          setAdminNotes("");
+        }
+      }
+    );
   };
 
   const getStatusBadge = (status: string) => {

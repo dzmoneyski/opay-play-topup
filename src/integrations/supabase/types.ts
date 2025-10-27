@@ -781,6 +781,10 @@ export type Database = {
         Returns: undefined
       }
       redeem_gift_card: { Args: { _card_code: string }; Returns: Json }
+      reject_betting_deposit: {
+        Args: { _admin_notes?: string; _transaction_id: string }
+        Returns: Json
+      }
       reject_verification_request: {
         Args: { _admin_id: string; _reason: string; _request_id: string }
         Returns: undefined
