@@ -321,7 +321,7 @@ const BecomePartner = () => {
 
         {/* Registration Form */}
         <Card className="max-w-3xl mx-auto mb-16 border-0 shadow-elevated bg-gradient-card backdrop-blur-sm animate-scale-in">
-          <CardHeader className="text-center pb-8">
+          <CardHeader className="text-center pb-8 bg-blue-200">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-primary mb-4 mx-auto">
               <Store className="h-8 w-8 text-white" />
             </div>
