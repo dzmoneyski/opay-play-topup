@@ -327,8 +327,11 @@ export type Database = {
           amount: number
           card_code: string
           created_at: string
+          generated_by_merchant_id: string | null
           id: string
           is_used: boolean
+          merchant_commission: number | null
+          merchant_purchase_price: number | null
           updated_at: string
           used_at: string | null
           used_by: string | null
@@ -337,8 +340,11 @@ export type Database = {
           amount: number
           card_code: string
           created_at?: string
+          generated_by_merchant_id?: string | null
           id?: string
           is_used?: boolean
+          merchant_commission?: number | null
+          merchant_purchase_price?: number | null
           updated_at?: string
           used_at?: string | null
           used_by?: string | null
@@ -347,11 +353,171 @@ export type Database = {
           amount?: number
           card_code?: string
           created_at?: string
+          generated_by_merchant_id?: string | null
           id?: string
           is_used?: boolean
+          merchant_commission?: number | null
+          merchant_purchase_price?: number | null
           updated_at?: string
           used_at?: string | null
           used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_cards_generated_by_merchant_id_fkey"
+            columns: ["generated_by_merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchant_requests: {
+        Row: {
+          address: string
+          business_name: string
+          business_type: string
+          created_at: string
+          id: string
+          national_id: string
+          notes: string | null
+          phone: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          business_name: string
+          business_type: string
+          created_at?: string
+          id?: string
+          national_id: string
+          notes?: string | null
+          phone: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          business_name?: string
+          business_type?: string
+          created_at?: string
+          id?: string
+          national_id?: string
+          notes?: string | null
+          phone?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      merchant_transactions: {
+        Row: {
+          amount: number
+          commission_amount: number | null
+          created_at: string
+          customer_phone: string | null
+          customer_user_id: string | null
+          id: string
+          merchant_id: string
+          notes: string | null
+          status: string
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          commission_amount?: number | null
+          created_at?: string
+          customer_phone?: string | null
+          customer_user_id?: string | null
+          id?: string
+          merchant_id: string
+          notes?: string | null
+          status?: string
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          commission_amount?: number | null
+          created_at?: string
+          customer_phone?: string | null
+          customer_user_id?: string | null
+          id?: string
+          merchant_id?: string
+          notes?: string | null
+          status?: string
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_transactions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchants: {
+        Row: {
+          address: string
+          balance: number
+          business_name: string
+          business_type: string
+          commission_rate: number
+          created_at: string
+          id: string
+          is_active: boolean
+          merchant_code: string
+          merchant_tier: string
+          phone: string
+          total_earnings: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          balance?: number
+          business_name: string
+          business_type: string
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          merchant_code: string
+          merchant_tier?: string
+          phone: string
+          total_earnings?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          balance?: number
+          business_name?: string
+          business_type?: string
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          merchant_code?: string
+          merchant_tier?: string
+          phone?: string
+          total_earnings?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -724,6 +890,14 @@ export type Database = {
             Args: { _admin_id: string; _deposit_id: string; _notes?: string }
             Returns: undefined
           }
+      approve_merchant_request: {
+        Args: {
+          _admin_id: string
+          _commission_rate?: number
+          _request_id: string
+        }
+        Returns: Json
+      }
       approve_verification_request: {
         Args: { _admin_id: string; _request_id: string }
         Returns: undefined
@@ -737,6 +911,7 @@ export type Database = {
         Returns: Json
       }
       cleanup_expired_verification_codes: { Args: never; Returns: undefined }
+      generate_merchant_code: { Args: never; Returns: string }
       get_user_gift_card_redemptions: {
         Args: never
         Returns: {
@@ -752,6 +927,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      merchant_recharge_customer: {
+        Args: { _amount: number; _customer_phone: string }
+        Returns: Json
       }
       process_betting_deposit: {
         Args: { _amount: number; _platform_id: string; _player_id: string }
@@ -783,6 +962,10 @@ export type Database = {
       redeem_gift_card: { Args: { _card_code: string }; Returns: Json }
       reject_betting_deposit: {
         Args: { _admin_notes?: string; _transaction_id: string }
+        Returns: Json
+      }
+      reject_merchant_request: {
+        Args: { _admin_id: string; _reason: string; _request_id: string }
         Returns: Json
       }
       reject_verification_request: {

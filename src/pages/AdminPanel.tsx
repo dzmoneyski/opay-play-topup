@@ -15,6 +15,7 @@ import TransfersPage from '@/pages/admin/Transfers';
 import CardsPage from '@/pages/admin/Cards';
 import GameManagement from '@/pages/admin/GameManagement';
 import BettingManagement from '@/pages/admin/BettingManagement';
+import MerchantManagement from '@/pages/admin/MerchantManagement';
 import SettingsPage from '@/pages/admin/Settings';
 
 const AdminPanel = () => {
@@ -80,6 +81,7 @@ const AdminPanel = () => {
               <Route path="cards" element={<CardsPage />} />
               <Route path="games" element={<GameManagement />} />
               <Route path="betting" element={<BettingManagement />} />
+              <Route path="merchants" element={<MerchantManagement />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Routes>

@@ -32,6 +32,7 @@ const mainItems = [
   { title: "لوحة التحكم", url: "/admin", icon: LayoutDashboard, exact: true },
   { title: "طلبات التحقق", url: "/admin/identity-verification", icon: Shield },
   { title: "المستخدمين", url: "/admin/users", icon: Users },
+  { title: "إدارة التجار", url: "/admin/merchants", icon: Users },
 ];
 
 const transactionItems = [

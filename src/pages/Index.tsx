@@ -37,7 +37,8 @@ import {
   Bell,
   ArrowLeft,
   Repeat2,
-  Gamepad2
+  Gamepad2,
+  Users
 } from "lucide-react";
 
 const Index = () => {
@@ -85,6 +86,11 @@ const Index = () => {
       return;
     }
 
+    if (service.action === 'become-partner') {
+      navigate('/become-partner');
+      return;
+    }
+
     // السماح بالدخول إلى صفحة الخدمة بغض النظر عن حالة التفعيل
     // التحقق من التفعيل سيتم عند محاولة تنفيذ العملية الفعلية
     console.log(`Navigating to service: ${service.title}`);
@@ -100,6 +106,13 @@ const Index = () => {
       subtitle: "أضف أموال عبر Baridimob وCCP",
       gradient: "bg-gradient-primary",
       action: "deposits"
+    },
+    {
+      icon: <Users className="h-6 w-6" />,
+      title: "كن شريكاً",
+      subtitle: "انضم لشبكة تجارنا واربح عمولات",
+      gradient: "bg-gradient-gold",
+      action: "become-partner"
     },
     {
       icon: <Send className="h-6 w-6" />,
