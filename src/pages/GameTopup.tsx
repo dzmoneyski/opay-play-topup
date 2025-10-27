@@ -122,7 +122,7 @@ const GameTopup = () => {
                       <span className="text-sm">جاري التحميل...</span>
                     </div>
                   ) : (
-                    <p className="text-2xl font-bold">{balance?.balance?.toLocaleString('ar-DZ') || 0} دج</p>
+                    <p className="text-2xl font-bold">{Math.floor(balance?.balance || 0)} دج</p>
                   )}
                 </div>
               </div>
