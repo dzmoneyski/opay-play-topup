@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Gamepad2, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Gamepad2, AlertCircle, Loader2, Wallet } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useGamePlatforms, useGamePackages, useCreateGameTopupOrder } from "@/hooks/useGamePlatforms";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BettingForm } from "@/components/BettingForm";
+import { useBalance } from "@/hooks/useBalance";
 
 const GameTopup = () => {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ const GameTopup = () => {
   const { data: platforms, isLoading: platformsLoading } = useGamePlatforms();
   const { data: packages, isLoading: packagesLoading } = useGamePackages(selectedPlatform);
   const createOrder = useCreateGameTopupOrder();
+  const { balance, loading: balanceLoading } = useBalance();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,6 +106,38 @@ const GameTopup = () => {
 
       {/* Content */}
       <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Balance Card */}
+        <Card className="mb-6 bg-gradient-card border-0 shadow-card">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-gradient-primary">
+                  <Wallet className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">الرصيد المتاح</p>
+                  {balanceLoading ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm">جاري التحميل...</span>
+                    </div>
+                  ) : (
+                    <p className="text-2xl font-bold">{balance?.balance?.toLocaleString('ar-DZ') || 0} دج</p>
+                  )}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/deposits")}
+                className="hover:bg-primary/10"
+              >
+                شحن الرصيد
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <Alert className="mb-6 bg-primary/10 border-primary/20">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
