@@ -24,7 +24,7 @@ const GameTopup = () => {
   const { data: platforms, isLoading: platformsLoading } = useGamePlatforms();
   const { data: packages, isLoading: packagesLoading } = useGamePackages(selectedPlatform);
   const createOrder = useCreateGameTopupOrder();
-  const { balance, loading: balanceLoading } = useBalance();
+  const { balance, loading: balanceLoading, fetchBalance } = useBalance();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -229,6 +229,7 @@ const GameTopup = () => {
                   key={selectedPlatform}
                   platformId={selectedPlatform}
                   platformName={selectedPlatformData.name_ar}
+                  onBalanceUpdate={fetchBalance}
                 />
               </div>
             ) : (

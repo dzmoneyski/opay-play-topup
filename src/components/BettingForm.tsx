@@ -20,9 +20,10 @@ import { useAuth } from "@/hooks/useAuth";
 interface BettingFormProps {
   platformId: string;
   platformName: string;
+  onBalanceUpdate?: () => void;
 }
 
-export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformName }) => {
+export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformName, onBalanceUpdate }) => {
   const [step, setStep] = useState<'verify' | 'actions'>('verify');
   const [playerId, setPlayerId] = useState("");
   const [promoCode, setPromoCode] = useState("dz21");
@@ -89,6 +90,7 @@ export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformNa
         setDepositAmount('');
         fetchTransactions();
         fetchBalance();
+        onBalanceUpdate?.();
       }
     });
   };
@@ -106,6 +108,7 @@ export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformNa
         setWithdrawalAmount('');
         fetchTransactions();
         fetchBalance();
+        onBalanceUpdate?.();
       }
     });
   };
