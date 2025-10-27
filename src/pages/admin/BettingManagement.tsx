@@ -119,7 +119,7 @@ const BettingManagement = () => {
       if (result?.success) {
         toast({
           title: "تمت الموافقة على الإيداع",
-          description: `تم خصم ${result.total_deducted} دج من رصيد المستخدم`,
+          description: "تم تأكيد إيداع المبلغ في حساب اللاعب بنجاح",
         });
         refetchTransactions();
         setSelectedDeposit(null);
@@ -607,7 +607,7 @@ const BettingManagement = () => {
           <DialogHeader>
             <DialogTitle>مراجعة طلب الإيداع</DialogTitle>
             <DialogDescription>
-              راجع طلب الإيداع قبل الموافقة. سيتم خصم المبلغ + العمولة من رصيد المستخدم.
+              راجع طلب الإيداع. المبلغ + العمولة مخصومان مسبقاً من رصيد المستخدم.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -639,14 +639,14 @@ const BettingManagement = () => {
                 placeholder="أضف ملاحظات..."
               />
             </div>
-            <div className="bg-amber-500/10 p-4 rounded-lg border border-amber-500/20">
-              <p className="text-sm text-amber-600 dark:text-amber-400">
-                <strong>تحذير:</strong> عند الموافقة سيتم:
+            <div className="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
+              <p className="text-sm text-blue-600 dark:text-blue-400 mb-2">
+                <strong>ملاحظة:</strong>
               </p>
-              <ul className="text-sm text-amber-600 dark:text-amber-400 pr-4 mt-2 space-y-1">
-                <li>• خصم المبلغ + العمولة من رصيد المستخدم</li>
-                <li>• إيداع المبلغ في حساب اللاعب على المنصة</li>
-                <li>• لن يمكن التراجع عن العملية</li>
+              <ul className="text-sm text-blue-600 dark:text-blue-400 pr-4 space-y-1">
+                <li>✓ المبلغ + العمولة مخصومان مسبقاً من رصيد المستخدم</li>
+                <li>• <strong>الموافقة:</strong> تأكيد نجاح الإيداع على المنصة</li>
+                <li>• <strong>الرفض:</strong> إرجاع المبلغ الكامل + العمولة للمستخدم</li>
               </ul>
             </div>
           </div>
@@ -656,14 +656,14 @@ const BettingManagement = () => {
               onClick={handleRejectDeposit}
             >
               <XCircle className="h-4 w-4 ml-1" />
-              رفض
+              رفض وإرجاع المبلغ
             </Button>
             <Button
               onClick={handleApproveDeposit}
               className="bg-green-500 hover:bg-green-600"
             >
               <CheckCircle className="h-4 w-4 ml-1" />
-              موافقة وخصم الرصيد
+              موافقة وتأكيد الإيداع
             </Button>
           </DialogFooter>
         </DialogContent>
