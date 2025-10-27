@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, CheckCircle, AlertCircle, ArrowUpCircle, ArrowDownCircle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useBalance } from "@/hooks/useBalance";
+import { useBalance, UserBalance } from "@/hooks/useBalance";
 import {
   useVerifyBettingAccount,
   useCreateBettingDeposit,
@@ -20,10 +20,11 @@ import { useAuth } from "@/hooks/useAuth";
 interface BettingFormProps {
   platformId: string;
   platformName: string;
-  onBalanceUpdate?: () => void;
+  balance: UserBalance | null;
+  onBalanceUpdate: () => void;
 }
 
-export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformName, onBalanceUpdate }) => {
+export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformName, balance: parentBalance, onBalanceUpdate }) => {
   const [step, setStep] = useState<'verify' | 'actions'>('verify');
   const [playerId, setPlayerId] = useState("");
   const [promoCode, setPromoCode] = useState("dz21");
@@ -33,7 +34,6 @@ export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformNa
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
 
-  const { balance, fetchBalance } = useBalance();
   const { user } = useAuth();
   const verifyAccount = useVerifyBettingAccount();
   const createDeposit = useCreateBettingDeposit();
@@ -89,8 +89,7 @@ export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformNa
       onSuccess: () => {
         setDepositAmount('');
         fetchTransactions();
-        fetchBalance();
-        onBalanceUpdate?.();
+        onBalanceUpdate();
       }
     });
   };
@@ -107,8 +106,7 @@ export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformNa
         setWithdrawalCode('');
         setWithdrawalAmount('');
         fetchTransactions();
-        fetchBalance();
-        onBalanceUpdate?.();
+        onBalanceUpdate();
       }
     });
   };
@@ -251,7 +249,7 @@ export const BettingForm: React.FC<BettingFormProps> = ({ platformId, platformNa
               </div>
               <div className="flex items-center justify-between mt-2">
                 <span className="text-sm text-muted-foreground">رصيدك الحالي:</span>
-                <span className="font-bold text-lg">{Math.floor(balance?.balance || 0)} دج</span>
+                <span className="font-bold text-lg">{Math.floor(parentBalance?.balance || 0)} دج</span>
               </div>
             </div>
 

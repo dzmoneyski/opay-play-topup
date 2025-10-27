@@ -229,6 +229,7 @@ const GameTopup = () => {
                   key={selectedPlatform}
                   platformId={selectedPlatform}
                   platformName={selectedPlatformData.name_ar}
+                  balance={balance}
                   onBalanceUpdate={fetchBalance}
                 />
               </div>
