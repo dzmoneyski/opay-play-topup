@@ -137,7 +137,7 @@ const Index = () => {
       action: "disabled"
     },
     {
-      icon: <Gamepad2 className="h-6 w-6" />,
+      icon: <img src={platformsCollage} alt="Gaming Platforms" className="h-12 w-12 object-cover rounded-lg" />,
       title: "شحن الألعاب",
       subtitle: "PUBG، Free Fire، وأكثر",
       gradient: "bg-gradient-primary",
@@ -541,12 +541,8 @@ const Index = () => {
             <CardContent className="p-6 relative z-10">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-4">
-                  <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm animate-float overflow-hidden">
-                    <img 
-                      src={platformsCollage} 
-                      alt="Gaming Platforms" 
-                      className="h-16 w-16 object-cover rounded-lg"
-                    />
+                  <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm animate-float">
+                    <Gift className="h-8 w-8 text-white" />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white mb-1">بطاقات OpaY الجزائر</h3>
