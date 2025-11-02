@@ -78,9 +78,9 @@ const Install = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 p-4">
       <div className="max-w-2xl mx-auto py-8">
-        <Card className="mb-6">
+        <Card className="mb-6 shadow-elevated">
           <CardHeader className="text-center">
-            <div className="w-28 h-28 mx-auto mb-4 bg-gradient-primary rounded-full shadow-elevated p-2 flex items-center justify-center">
+            <div className="w-28 h-28 mx-auto mb-4 bg-gradient-primary rounded-full shadow-elevated p-2 flex items-center justify-center animate-float">
               <img src={opayLogo} alt="OpaY Logo" className="w-full h-full object-cover rounded-full" />
             </div>
             <CardTitle className="text-3xl mb-2">ثبت تطبيق OpaY</CardTitle>
@@ -89,64 +89,93 @@ const Install = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {isInstallable ? (
-              <Button 
-                onClick={handleInstallClick} 
-                size="lg" 
-                className="w-full text-lg"
-              >
-                <Download className="ml-2" />
-                تثبيت التطبيق الآن
-              </Button>
-            ) : (
-              <div className="text-center space-y-4">
-                <div className="bg-muted p-4 rounded-lg">
-                  <Smartphone className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    لتثبيت التطبيق على هاتفك:
-                  </p>
-                </div>
+            {/* زر التثبيت الرئيسي - دائماً ظاهر */}
+            <div className="bg-gradient-primary p-6 rounded-2xl shadow-glow">
+              <div className="text-center text-white space-y-4">
+                <Download className="w-16 h-16 mx-auto animate-float" />
+                <h3 className="text-2xl font-bold">ثبت التطبيق الآن!</h3>
+                <p className="text-white/90 text-sm">
+                  اضغط على الزر لتثبيت التطبيق على جهازك
+                </p>
+                <Button 
+                  onClick={handleInstallClick} 
+                  size="lg" 
+                  className="w-full bg-white text-primary hover:bg-white/95 font-bold text-lg py-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                >
+                  {isInstallable ? (
+                    <>
+                      <Download className="ml-2 h-6 w-6" />
+                      تثبيت التطبيق تلقائياً
+                    </>
+                  ) : (
+                    <>
+                      <Smartphone className="ml-2 h-6 w-6" />
+                      عرض طريقة التثبيت
+                    </>
+                  )}
+                </Button>
               </div>
-            )}
+            </div>
 
             <div className="space-y-4 pt-4 border-t">
-              <h3 className="font-semibold text-lg">خطوات التثبيت اليدوي:</h3>
+              <h3 className="font-semibold text-lg text-center">أو اتبع الخطوات التالية:</h3>
               
               <div className="space-y-3">
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">📱 على iPhone/iPad:</h4>
-                  <ol className="text-sm space-y-1 list-decimal list-inside text-muted-foreground">
-                    <li>اضغط على زر "مشاركة" <span className="inline-block">⬆️</span></li>
-                    <li>اختر "إضافة إلى الشاشة الرئيسية"</li>
-                    <li>اضغط "إضافة"</li>
+                <div className="bg-gradient-to-br from-primary/5 to-primary/10 p-4 rounded-xl border border-primary/20">
+                  <h4 className="font-bold mb-2 flex items-center gap-2">
+                    <span className="text-2xl">📱</span>
+                    على iPhone/iPad:
+                  </h4>
+                  <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
+                    <li className="font-medium">اضغط على زر المشاركة <span className="inline-block text-xl">⬆️</span> في الأسفل</li>
+                    <li className="font-medium">اختر "إضافة إلى الشاشة الرئيسية"</li>
+                    <li className="font-medium">اضغط "إضافة" في الأعلى</li>
                   </ol>
                 </div>
 
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">📱 على Android:</h4>
-                  <ol className="text-sm space-y-1 list-decimal list-inside text-muted-foreground">
-                    <li>اضغط على قائمة المتصفح (⋮)</li>
-                    <li>اختر "إضافة إلى الشاشة الرئيسية"</li>
-                    <li>اضغط "تثبيت"</li>
+                <div className="bg-gradient-to-br from-success/5 to-success/10 p-4 rounded-xl border border-success/20">
+                  <h4 className="font-bold mb-2 flex items-center gap-2">
+                    <span className="text-2xl">📱</span>
+                    على Android:
+                  </h4>
+                  <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
+                    <li className="font-medium">اضغط على قائمة المتصفح <span className="inline-block text-xl">⋮</span></li>
+                    <li className="font-medium">اختر "إضافة إلى الشاشة الرئيسية"</li>
+                    <li className="font-medium">اضغط "تثبيت" أو "إضافة"</li>
                   </ol>
                 </div>
               </div>
             </div>
 
-            <div className="bg-primary/5 p-4 rounded-lg space-y-2">
-              <h4 className="font-medium">✨ مميزات التطبيق:</h4>
-              <ul className="text-sm space-y-1 text-muted-foreground">
-                <li>• الوصول السريع من شاشتك الرئيسية</li>
-                <li>• يعمل بدون إنترنت</li>
-                <li>• تحميل أسرع</li>
-                <li>• تجربة أفضل مثل التطبيقات الأصلية</li>
-              </ul>
+            <div className="bg-gradient-gold/10 p-6 rounded-xl border-2 border-accent/30 space-y-3">
+              <h4 className="font-bold text-lg flex items-center gap-2">
+                <span className="text-2xl">✨</span>
+                مميزات التطبيق المثبت:
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                  <span className="text-sm font-medium">وصول سريع من الشاشة الرئيسية</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                  <span className="text-sm font-medium">يعمل بدون إنترنت</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                  <span className="text-sm font-medium">تحميل فائق السرعة</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                  <span className="text-sm font-medium">تجربة كالتطبيقات الأصلية</span>
+                </div>
+              </div>
             </div>
 
             <Button 
               variant="outline" 
               onClick={() => navigate('/')} 
-              className="w-full"
+              className="w-full text-base py-5"
             >
               العودة للصفحة الرئيسية
             </Button>
