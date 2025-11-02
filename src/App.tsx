@@ -20,6 +20,7 @@ import GameTopup from "./pages/GameTopup";
 import P2P from "./pages/P2P";
 import BecomePartner from "./pages/BecomePartner";
 import MerchantDashboard from "./pages/MerchantDashboard";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -110,6 +111,7 @@ const App = () => {
                   <MerchantDashboard />
                 </ProtectedRoute>
               } />
+              <Route path="/install" element={<Install />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
