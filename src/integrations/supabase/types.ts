@@ -668,6 +668,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          count: number
+          operation: string
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          operation: string
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          count?: number
+          operation?: string
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       transfers: {
         Row: {
           amount: number
@@ -909,6 +930,15 @@ export type Database = {
       calculate_fee: {
         Args: { _amount: number; _fee_config: Json }
         Returns: Json
+      }
+      check_rate_limit: {
+        Args: {
+          _max_count: number
+          _operation: string
+          _user_id: string
+          _window_minutes: number
+        }
+        Returns: boolean
       }
       cleanup_expired_verification_codes: { Args: never; Returns: undefined }
       generate_merchant_code: { Args: never; Returns: string }
