@@ -1,5 +1,5 @@
 import opayLogo from '@/assets/opay-final-logo.png';
-import platformsCollage from '@/assets/platforms-collage-rounded.png';
+import platformsCollage from '@/assets/platforms-collage-final.png';
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
