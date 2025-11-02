@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, X } from "lucide-react";
+import { Download, X, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export const InstallBanner = () => {
@@ -9,13 +9,11 @@ export const InstallBanner = () => {
   const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
-    // Check if already installed or dismissed
     const dismissed = localStorage.getItem('install-banner-dismissed');
     const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
     
     if (!isInstalled && !dismissed) {
-      // Show banner after a short delay
-      setTimeout(() => setIsVisible(true), 2000);
+      setTimeout(() => setIsVisible(true), 1500);
     }
   }, []);
 
@@ -33,33 +31,55 @@ export const InstallBanner = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up">
-      <div className="bg-gradient-primary text-white shadow-elevated backdrop-blur-xl border-t border-white/10">
-        <div className="container mx-auto px-4 py-3">
+      {/* Backdrop with blur */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent backdrop-blur-sm pointer-events-none" />
+      
+      <div className="relative bg-gradient-primary shadow-elevated border-t border-white/20">
+        {/* Glow effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-glow/20 via-transparent to-primary-glow/20 animate-shimmer pointer-events-none" />
+        
+        <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 flex-1">
-              <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
-                <Download className="h-6 w-6" />
+            {/* Left side - Icon & Text */}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              {/* Icon with animation */}
+              <div className="relative flex-shrink-0">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-lg">
+                  <Download className="h-7 w-7 text-white animate-float" />
+                </div>
+                {/* Sparkle indicator */}
+                <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-accent flex items-center justify-center animate-glow-pulse">
+                  <Sparkles className="h-3 w-3 text-accent-foreground" />
+                </div>
               </div>
+              
+              {/* Text content */}
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm">حمّل تطبيق OpaY</p>
-                <p className="text-xs text-white/80">تجربة أفضل وأسرع مع التطبيق</p>
+                <p className="font-bold text-base text-white mb-0.5 tracking-tight">
+                  حمّل تطبيق OpaY
+                </p>
+                <p className="text-sm text-white/90 font-medium">
+                  تجربة أسرع • إشعارات فورية • وصول مباشر
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+
+            {/* Right side - Action buttons */}
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Button
                 size="sm"
                 onClick={handleInstall}
-                className="bg-white text-primary hover:bg-white/90 font-semibold"
+                className="bg-white text-primary hover:bg-white/95 font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 px-6"
               >
-                تثبيت
+                تثبيت الآن
               </Button>
               <Button
-                size="sm"
+                size="icon"
                 variant="ghost"
                 onClick={handleDismiss}
-                className="text-white hover:bg-white/20 w-8 h-8 p-0"
+                className="text-white/80 hover:text-white hover:bg-white/20 w-9 h-9 rounded-lg transition-all duration-300"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </Button>
             </div>
           </div>
