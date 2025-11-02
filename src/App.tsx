@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PublicRoute from "@/components/PublicRoute";
+import { SplashScreen } from "@/components/SplashScreen";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AccountActivation from "./pages/AccountActivation";
@@ -33,10 +34,26 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    // Check if splash has been shown in this session
+    const splashShown = sessionStorage.getItem('splash-shown');
+    if (splashShown) {
+      setShowSplash(false);
+    }
+  }, []);
+
+  const handleSplashFinish = () => {
+    sessionStorage.setItem('splash-shown', 'true');
+    setShowSplash(false);
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
+          {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
           <Toaster />
           <Sonner />
           <BrowserRouter>
