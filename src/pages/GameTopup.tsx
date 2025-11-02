@@ -162,7 +162,7 @@ const GameTopup = () => {
                 {gamePlatforms.map((platform) => (
                   <Card
                     key={platform.id}
-                    className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 ${
+                    className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 rounded-3xl ${
                       selectedPlatform === platform.id
                         ? 'ring-2 ring-primary shadow-lg scale-105'
                         : ''
@@ -170,12 +170,12 @@ const GameTopup = () => {
                     onClick={() => handlePlatformSelect(platform.id, 'game')}
                   >
                     <CardContent className="p-4 text-center">
-                      <div className="aspect-square mb-3 rounded-xl bg-gradient-primary/10 flex items-center justify-center p-2">
+                      <div className="aspect-square mb-3 rounded-2xl bg-gradient-primary/10 flex items-center justify-center p-2 overflow-hidden">
                         {getPlatformLogo(platform.slug, platform.logo_url) ? (
                           <img
                             src={getPlatformLogo(platform.slug, platform.logo_url)!}
                             alt={platform.name_ar}
-                            className="w-full h-full object-contain"
+                            className="w-full h-full object-contain rounded-2xl"
                           />
                         ) : (
                           <Gamepad2 className="h-12 w-12 text-primary" />
@@ -193,7 +193,7 @@ const GameTopup = () => {
                 {bettingPlatforms.map((platform) => (
                   <Card
                     key={platform.id}
-                    className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 ${
+                    className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 rounded-3xl ${
                       selectedPlatform === platform.id
                         ? 'ring-2 ring-primary shadow-lg scale-105'
                         : ''
@@ -201,12 +201,12 @@ const GameTopup = () => {
                     onClick={() => handlePlatformSelect(platform.id, 'betting')}
                   >
                     <CardContent className="p-4 text-center">
-                      <div className="aspect-square mb-3 rounded-xl bg-gradient-gold/10 flex items-center justify-center p-2">
+                      <div className="aspect-square mb-3 rounded-2xl bg-gradient-gold/10 flex items-center justify-center p-2 overflow-hidden">
                         {getPlatformLogo(platform.slug, platform.logo_url) ? (
                           <img
                             src={getPlatformLogo(platform.slug, platform.logo_url)!}
                             alt={platform.name_ar}
-                            className="w-full h-full object-contain"
+                            className="w-full h-full object-contain rounded-2xl"
                           />
                         ) : (
                           <Gamepad2 className="h-12 w-12 text-primary" />
