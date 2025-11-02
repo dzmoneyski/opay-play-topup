@@ -80,8 +80,8 @@ const Install = () => {
       <div className="max-w-2xl mx-auto py-8">
         <Card className="mb-6">
           <CardHeader className="text-center">
-            <div className="w-24 h-24 mx-auto mb-4 bg-gradient-primary rounded-2xl shadow-elevated p-3 flex items-center justify-center">
-              <img src={opayLogo} alt="OpaY Logo" className="w-full h-full object-contain" />
+            <div className="w-24 h-24 mx-auto mb-4 bg-gradient-primary rounded-full shadow-elevated p-4 flex items-center justify-center">
+              <img src={opayLogo} alt="OpaY Logo" className="w-full h-full object-contain rounded-full" />
             </div>
             <CardTitle className="text-3xl mb-2">ثبت تطبيق OpaY</CardTitle>
             <CardDescription className="text-base">
