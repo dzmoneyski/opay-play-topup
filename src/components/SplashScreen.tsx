@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import opayIcon from "@/assets/opay-icon-original.png";
+import opayLogo from "@/assets/opay-splash-logo.png";
 
 interface SplashScreenProps {
   onFinish: () => void;
@@ -20,11 +20,11 @@ export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
 
   if (!isVisible) {
     return (
-      <div className="fixed inset-0 bg-gradient-hero z-[9999] flex items-center justify-center animate-fade-out pointer-events-none">
+      <div className="fixed inset-0 bg-[#1a1a2e] z-[9999] flex items-center justify-center animate-fade-out pointer-events-none">
         <div className="text-center animate-scale-out">
-          <div className="w-32 h-32 mx-auto mb-6 animate-float">
+          <div className="w-80 mx-auto mb-6">
             <img 
-              src={opayIcon} 
+              src={opayLogo} 
               alt="OpaY" 
               className="w-full h-full object-contain drop-shadow-2xl"
             />
@@ -35,17 +35,17 @@ export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-gradient-hero z-[9999] flex items-center justify-center">
+    <div className="fixed inset-0 bg-[#1a1a2e] z-[9999] flex items-center justify-center">
       <div className="text-center">
         {/* Animated Logo */}
-        <div className="relative w-32 h-32 mx-auto mb-8">
+        <div className="relative w-80 mx-auto mb-8">
           {/* Glow effect */}
-          <div className="absolute inset-0 bg-primary/30 rounded-full blur-3xl animate-glow-pulse" />
+          <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-glow-pulse" />
           
           {/* Logo */}
-          <div className="relative w-full h-full animate-scale-in">
+          <div className="relative w-full animate-scale-in">
             <img 
-              src={opayIcon} 
+              src={opayLogo} 
               alt="OpaY" 
               className="w-full h-full object-contain drop-shadow-2xl animate-float"
             />
