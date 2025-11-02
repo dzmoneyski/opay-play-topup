@@ -1,4 +1,5 @@
 import opayLogo from '@/assets/opay-final-logo.png';
+import platformsCollage from '@/assets/platforms-collage.png';
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -540,8 +541,12 @@ const Index = () => {
             <CardContent className="p-6 relative z-10">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-4">
-                  <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm animate-float">
-                    <Gift className="h-8 w-8 text-white" />
+                  <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm animate-float overflow-hidden">
+                    <img 
+                      src={platformsCollage} 
+                      alt="Gaming Platforms" 
+                      className="h-16 w-16 object-cover rounded-lg"
+                    />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white mb-1">بطاقات OpaY الجزائر</h3>
