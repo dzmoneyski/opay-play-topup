@@ -137,7 +137,7 @@ const Index = () => {
       action: "disabled"
     },
     {
-      icon: <img src={platformsCollage} alt="Gaming Platforms" className="w-full h-full object-cover" />,
+      icon: <img src={platformsCollage} alt="Gaming Platforms" className="w-full h-full object-cover rounded-2xl" />,
       title: "شحن الألعاب",
       subtitle: "PUBG، Free Fire، وأكثر",
       gradient: "bg-gradient-primary",
