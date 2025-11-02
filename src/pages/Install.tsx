@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, Smartphone, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import opayLogo from '@/assets/opay-final-logo.png';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -79,8 +80,8 @@ const Install = () => {
       <div className="max-w-2xl mx-auto py-8">
         <Card className="mb-6">
           <CardHeader className="text-center">
-            <div className="w-20 h-20 mx-auto mb-4">
-              <img src="/icon-512x512.png" alt="OpaY Logo" className="w-full h-full rounded-2xl shadow-lg" />
+            <div className="w-24 h-24 mx-auto mb-4 bg-gradient-primary rounded-2xl shadow-elevated p-3 flex items-center justify-center">
+              <img src={opayLogo} alt="OpaY Logo" className="w-full h-full object-contain" />
             </div>
             <CardTitle className="text-3xl mb-2">ثبت تطبيق OpaY</CardTitle>
             <CardDescription className="text-base">
