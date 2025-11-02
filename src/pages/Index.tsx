@@ -12,6 +12,7 @@ import { useBalance } from "@/hooks/useBalance";
 import { useToast } from "@/hooks/use-toast";
 import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import { QRScanner } from "@/components/QRScanner";
+import { InstallBanner } from "@/components/InstallBanner";
 import {
   Wallet, 
   CreditCard, 
@@ -565,6 +566,9 @@ const Index = () => {
         open={showQRScanner}
         onOpenChange={setShowQRScanner}
       />
+
+      {/* Install Banner */}
+      <InstallBanner />
     </div>
   );
 };
