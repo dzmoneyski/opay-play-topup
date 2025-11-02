@@ -137,7 +137,7 @@ const Index = () => {
       action: "disabled"
     },
     {
-      icon: <img src={platformsCollage} alt="Gaming Platforms" className="h-12 w-12 object-cover rounded-lg" />,
+      icon: <img src={platformsCollage} alt="Gaming Platforms" className="w-full h-full object-cover" />,
       title: "شحن الألعاب",
       subtitle: "PUBG، Free Fire، وأكثر",
       gradient: "bg-gradient-primary",
@@ -423,9 +423,10 @@ const Index = () => {
                 <div className={`absolute inset-0 ${service.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}></div>
                 <CardContent className="p-6 text-center relative z-10">
                   <div className={`
-                    inline-flex p-4 rounded-2xl mb-4 transition-all duration-500 group-hover:scale-110
-                    ${service.gradient} text-white shadow-soft
+                    inline-flex items-center justify-center rounded-2xl mb-4 transition-all duration-500 group-hover:scale-110
+                    ${service.gradient} text-white shadow-soft overflow-hidden
                     ${service.action === 'disabled' ? 'relative' : ''}
+                    ${service.action === 'game-topup' ? 'w-20 h-20 p-0' : 'w-20 h-20 p-4'}
                   `}>
                     {service.icon}
                     {service.action === 'disabled' && (
