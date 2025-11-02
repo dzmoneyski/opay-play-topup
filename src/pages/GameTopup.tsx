@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BettingForm } from "@/components/BettingForm";
 import { useBalance } from "@/hooks/useBalance";
+import { getPlatformLogo } from "@/lib/gamePlatformLogos";
 
 const GameTopup = () => {
   const navigate = useNavigate();
@@ -169,12 +170,12 @@ const GameTopup = () => {
                     onClick={() => handlePlatformSelect(platform.id, 'game')}
                   >
                     <CardContent className="p-4 text-center">
-                      <div className="aspect-square mb-3 rounded-xl bg-gradient-primary/10 flex items-center justify-center">
-                        {platform.logo_url ? (
+                      <div className="aspect-square mb-3 rounded-xl bg-gradient-primary/10 flex items-center justify-center p-2">
+                        {getPlatformLogo(platform.slug, platform.logo_url) ? (
                           <img
-                            src={platform.logo_url}
+                            src={getPlatformLogo(platform.slug, platform.logo_url)!}
                             alt={platform.name_ar}
-                            className="w-full h-full object-contain rounded-xl"
+                            className="w-full h-full object-contain"
                           />
                         ) : (
                           <Gamepad2 className="h-12 w-12 text-primary" />
@@ -200,12 +201,12 @@ const GameTopup = () => {
                     onClick={() => handlePlatformSelect(platform.id, 'betting')}
                   >
                     <CardContent className="p-4 text-center">
-                      <div className="aspect-square mb-3 rounded-xl bg-gradient-gold/10 flex items-center justify-center">
-                        {platform.logo_url ? (
+                      <div className="aspect-square mb-3 rounded-xl bg-gradient-gold/10 flex items-center justify-center p-2">
+                        {getPlatformLogo(platform.slug, platform.logo_url) ? (
                           <img
-                            src={platform.logo_url}
+                            src={getPlatformLogo(platform.slug, platform.logo_url)!}
                             alt={platform.name_ar}
-                            className="w-full h-full object-contain rounded-xl"
+                            className="w-full h-full object-contain"
                           />
                         ) : (
                           <Gamepad2 className="h-12 w-12 text-primary" />
