@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => ({
         name: 'OpaY الجزائر - محفظتك الرقمية',
         short_name: 'OpaY',
         description: 'محفظة إلكترونية آمنة وسهلة بالدينار الجزائري',
-        theme_color: '#FF6B00',
+        theme_color: '#1a2866',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
