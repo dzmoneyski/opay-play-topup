@@ -1,0 +1,77 @@
+import React from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface NotificationCounts {
+  pendingVerifications: number;
+  pendingDeposits: number;
+  pendingWithdrawals: number;
+  total: number;
+}
+
+export const useAdminNotifications = () => {
+  const [counts, setCounts] = React.useState<NotificationCounts>({
+    pendingVerifications: 0,
+    pendingDeposits: 0,
+    pendingWithdrawals: 0,
+    total: 0
+  });
+  const [loading, setLoading] = React.useState(true);
+
+  const fetchCounts = async () => {
+    try {
+      const [verifications, deposits, withdrawals] = await Promise.all([
+        supabase
+          .from('verification_requests')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending'),
+        supabase
+          .from('deposits')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending'),
+        supabase
+          .from('withdrawals')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending')
+      ]);
+
+      const newCounts = {
+        pendingVerifications: verifications.count || 0,
+        pendingDeposits: deposits.count || 0,
+        pendingWithdrawals: withdrawals.count || 0,
+        total: (verifications.count || 0) + (deposits.count || 0) + (withdrawals.count || 0)
+      };
+
+      setCounts(newCounts);
+    } catch (error) {
+      console.error('Error fetching notification counts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchCounts();
+
+    // Subscribe to real-time updates
+    const channels = [
+      supabase
+        .channel('verification-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'verification_requests' }, fetchCounts)
+        .subscribe(),
+      supabase
+        .channel('deposits-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'deposits' }, fetchCounts)
+        .subscribe(),
+      supabase
+        .channel('withdrawals-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'withdrawals' }, fetchCounts)
+        .subscribe()
+    ];
+
+    return () => {
+      channels.forEach(channel => supabase.removeChannel(channel));
+    };
+  }, []);
+
+  return { counts, loading, refetch: fetchCounts };
+};

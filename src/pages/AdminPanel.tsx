@@ -2,10 +2,7 @@ import React from 'react';
 import { useNavigate, Routes, Route, Navigate } from 'react-router-dom';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { AdminSidebar } from '@/components/AdminSidebar';
+import { AdminNavbar } from '@/components/AdminNavbar';
 import AdminDashboard from '@/pages/admin/Dashboard';
 import IdentityVerificationPage from '@/pages/admin/IdentityVerification';
 import UsersPage from '@/pages/admin/Users';
@@ -50,45 +47,26 @@ const AdminPanel = () => {
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AdminSidebar />
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <div className="bg-card shadow-sm border-b p-4">
-            <div className="flex items-center justify-between">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/dashboard')}
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>العودة للوحة التحكم</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <main className="flex-1 p-6">
-            <Routes>
-              <Route index element={<AdminDashboard />} />
-              <Route path="identity-verification" element={<IdentityVerificationPage />} />
-              <Route path="users" element={<UsersPage />} />
-              <Route path="deposits" element={<DepositsPage />} />
-              <Route path="withdrawals" element={<WithdrawalsPage />} />
-              <Route path="transfers" element={<TransfersPage />} />
-              <Route path="cards" element={<CardsPage />} />
-              <Route path="games" element={<GameManagement />} />
-              <Route path="betting" element={<BettingManagement />} />
-              <Route path="merchants" element={<MerchantManagement />} />
-              <Route path="settings" element={<SettingsPage />} />
-              <Route path="*" element={<Navigate to="/admin" replace />} />
-            </Routes>
-          </main>
-        </div>
-      </div>
-    </SidebarProvider>
+    <div className="min-h-screen bg-background">
+      <AdminNavbar />
+      
+      <main className="container mx-auto px-4 py-6">
+        <Routes>
+          <Route index element={<AdminDashboard />} />
+          <Route path="identity-verification" element={<IdentityVerificationPage />} />
+          <Route path="users" element={<UsersPage />} />
+          <Route path="deposits" element={<DepositsPage />} />
+          <Route path="withdrawals" element={<WithdrawalsPage />} />
+          <Route path="transfers" element={<TransfersPage />} />
+          <Route path="cards" element={<CardsPage />} />
+          <Route path="games" element={<GameManagement />} />
+          <Route path="betting" element={<BettingManagement />} />
+          <Route path="merchants" element={<MerchantManagement />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="*" element={<Navigate to="/admin" replace />} />
+        </Routes>
+      </main>
+    </div>
   );
 };
 
