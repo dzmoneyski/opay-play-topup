@@ -46,7 +46,7 @@ export const InstallBanner = () => {
               {/* Icon with animation */}
               <div className="relative flex-shrink-0">
                 <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-lg p-2">
-                  <img src={opayLogo} alt="OpaY" className="w-full h-full object-contain animate-float" />
+                  <img src={opayLogo} alt="OpaY" className="w-full h-full object-contain animate-float rounded-full" />
                 </div>
                 {/* Sparkle indicator */}
                 <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-accent flex items-center justify-center animate-glow-pulse">
