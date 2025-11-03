@@ -25,7 +25,12 @@ export default function AdminDashboard() {
     totalTransfers: 0,
     totalCards: 0,
     pendingDeposits: 0,
-    pendingWithdrawals: 0
+    pendingWithdrawals: 0,
+    platformRevenue: 0,
+    totalBettingDeposits: 0,
+    totalGameTopups: 0,
+    totalMerchants: 0,
+    activeMerchants: 0
   });
   
   const pendingRequests = requests.filter(req => req.status === 'pending').length;
@@ -47,11 +52,24 @@ export default function AdminDashboard() {
         }
 
         // Fetch financial data
-        const [depositsRes, withdrawalsRes, transfersRes, cardsRes] = await Promise.all([
+        const [
+          depositsRes, 
+          withdrawalsRes, 
+          transfersRes, 
+          cardsRes,
+          revenueRes,
+          bettingRes,
+          gameTopupsRes,
+          merchantsRes
+        ] = await Promise.all([
           supabase.from('deposits').select('amount, status'),
           supabase.from('withdrawals').select('amount, status'), 
           supabase.from('transfers').select('amount, status'),
-          supabase.from('gift_cards').select('amount, is_used')
+          supabase.from('gift_cards').select('amount, is_used'),
+          supabase.from('platform_ledger').select('fee_amount'),
+          supabase.from('betting_transactions').select('amount, status'),
+          supabase.from('game_topup_orders').select('amount, status'),
+          supabase.from('merchants').select('is_active')
         ]);
 
         const totalDeposits = depositsRes.data?.filter(d => d.status === 'approved')
@@ -68,13 +86,29 @@ export default function AdminDashboard() {
         const pendingDeposits = depositsRes.data?.filter(d => d.status === 'pending').length || 0;
         const pendingWithdrawals = withdrawalsRes.data?.filter(w => w.status === 'pending').length || 0;
 
+        const platformRevenue = revenueRes.data?.reduce((sum, r) => sum + Number(r.fee_amount), 0) || 0;
+        
+        const totalBettingDeposits = bettingRes.data?.filter(b => b.status === 'completed')
+          .reduce((sum, b) => sum + Number(b.amount), 0) || 0;
+        
+        const totalGameTopups = gameTopupsRes.data?.filter(g => g.status === 'completed')
+          .reduce((sum, g) => sum + Number(g.amount), 0) || 0;
+
+        const totalMerchants = merchantsRes.data?.length || 0;
+        const activeMerchants = merchantsRes.data?.filter(m => m.is_active).length || 0;
+
         setFinancialStats({
           totalDeposits,
           totalWithdrawals,
           totalTransfers,
           totalCards,
           pendingDeposits,
-          pendingWithdrawals
+          pendingWithdrawals,
+          platformRevenue,
+          totalBettingDeposits,
+          totalGameTopups,
+          totalMerchants,
+          activeMerchants
         });
 
       } catch (error) {
@@ -227,9 +261,50 @@ export default function AdminDashboard() {
         />
         
         <StatsCard
-          title="الحسابات المفعلة"
-          value={approvedRequests}
-          description="تم تفعيلها"
+          title="إيرادات المنصة"
+          value={financialStats.platformRevenue >= 1000000 
+            ? `${(financialStats.platformRevenue / 1000000).toFixed(1)}M دج`
+            : `${(financialStats.platformRevenue / 1000).toFixed(0)}K دج`}
+          description="من العمولات"
+          icon={TrendingUp}
+          color="success"
+        />
+      </div>
+
+      {/* Additional Statistics */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatsCard
+          title="عمليات الرهان"
+          value={financialStats.totalBettingDeposits >= 1000000 
+            ? `${(financialStats.totalBettingDeposits / 1000000).toFixed(1)}M دج`
+            : `${(financialStats.totalBettingDeposits / 1000).toFixed(0)}K دج`}
+          description="إجمالي المعاملات"
+          icon={ArrowDownToLine}
+          color="primary"
+        />
+        
+        <StatsCard
+          title="شحن الألعاب"
+          value={financialStats.totalGameTopups >= 1000000 
+            ? `${(financialStats.totalGameTopups / 1000000).toFixed(1)}M دج`
+            : `${(financialStats.totalGameTopups / 1000).toFixed(0)}K دج`}
+          description="إجمالي الشحنات"
+          icon={CreditCard}
+          color="primary"
+        />
+
+        <StatsCard
+          title="التجار المسجلين"
+          value={financialStats.totalMerchants}
+          description="إجمالي التجار"
+          icon={Users}
+          color="primary"
+        />
+
+        <StatsCard
+          title="التجار النشطين"
+          value={financialStats.activeMerchants}
+          description="يعملون حالياً"
           icon={CheckCircle}
           color="success"
         />
@@ -280,16 +355,24 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-blue-800">الإيرادات</span>
-                <span className="text-sm font-medium text-green-600">+18%</span>
+                <span className="text-sm text-blue-800">إيرادات العمولات</span>
+                <span className="text-sm font-medium text-green-600">
+                  {financialStats.platformRevenue >= 1000 
+                    ? `${(financialStats.platformRevenue / 1000).toFixed(1)}K دج`
+                    : `${financialStats.platformRevenue.toFixed(0)} دج`}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-blue-800">العمولات</span>
-                <span className="text-sm font-medium text-green-600">+12%</span>
+                <span className="text-sm text-blue-800">الإيداعات المعلقة</span>
+                <span className="text-sm font-medium text-yellow-600">
+                  {financialStats.pendingDeposits} طلب
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-blue-800">المصروفات</span>
-                <span className="text-sm font-medium text-red-600">+5%</span>
+                <span className="text-sm text-blue-800">السحوبات المعلقة</span>
+                <span className="text-sm font-medium text-yellow-600">
+                  {financialStats.pendingWithdrawals} طلب
+                </span>
               </div>
             </div>
           </CardContent>
