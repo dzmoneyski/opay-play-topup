@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, X, Sparkles } from "lucide-react";
+import { X, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import opayLogo from "@/assets/opay-icon-original.png";
 
 export const InstallBanner = () => {
   const navigate = useNavigate();
@@ -44,8 +45,8 @@ export const InstallBanner = () => {
             <div className="flex items-center gap-3 flex-1 min-w-0">
               {/* Icon with animation */}
               <div className="relative flex-shrink-0">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-lg">
-                  <Download className="h-7 w-7 text-white animate-float" />
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-lg p-2">
+                  <img src={opayLogo} alt="OpaY" className="w-full h-full object-contain animate-float" />
                 </div>
                 {/* Sparkle indicator */}
                 <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-accent flex items-center justify-center animate-glow-pulse">
