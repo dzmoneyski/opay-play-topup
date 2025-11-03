@@ -14,7 +14,15 @@ import {
   CheckCircle,
   Clock,
   DollarSign,
-  Wallet
+  Wallet,
+  Activity,
+  BarChart3,
+  FileText,
+  UserCheck,
+  UserX,
+  Percent,
+  Calendar,
+  Package
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -28,17 +36,28 @@ export default function AdminDashboard() {
     totalCards: 0,
     pendingDeposits: 0,
     pendingWithdrawals: 0,
+    approvedDeposits: 0,
+    rejectedDeposits: 0,
+    approvedWithdrawals: 0,
+    rejectedWithdrawals: 0,
     platformRevenue: 0,
     totalBettingDeposits: 0,
     totalGameTopups: 0,
     totalMerchants: 0,
     activeMerchants: 0,
+    usedCards: 0,
+    unusedCards: 0,
     revenueBreakdown: {
       depositFees: 0,
       withdrawalFees: 0,
       transferFees: 0,
       bettingFees: 0,
       gameFees: 0
+    },
+    operationsStats: {
+      totalTransactions: 0,
+      successRate: 0,
+      avgProcessingTime: 0
     }
   });
   
@@ -91,9 +110,16 @@ export default function AdminDashboard() {
           .reduce((sum, t) => sum + Number(t.amount), 0) || 0;
         
         const totalCards = cardsRes.data?.reduce((sum, c) => sum + Number(c.amount), 0) || 0;
+        const usedCards = cardsRes.data?.filter(c => c.is_used).length || 0;
+        const unusedCards = cardsRes.data?.filter(c => !c.is_used).length || 0;
         
         const pendingDeposits = depositsRes.data?.filter(d => d.status === 'pending').length || 0;
+        const approvedDeposits = depositsRes.data?.filter(d => d.status === 'approved').length || 0;
+        const rejectedDeposits = depositsRes.data?.filter(d => d.status === 'rejected').length || 0;
+        
         const pendingWithdrawals = withdrawalsRes.data?.filter(w => w.status === 'pending').length || 0;
+        const approvedWithdrawals = withdrawalsRes.data?.filter(w => w.status === 'completed').length || 0;
+        const rejectedWithdrawals = withdrawalsRes.data?.filter(w => w.status === 'rejected').length || 0;
 
         const platformRevenue = revenueRes.data?.reduce((sum, r) => sum + Number(r.fee_amount), 0) || 0;
         
@@ -118,6 +144,13 @@ export default function AdminDashboard() {
         const totalMerchants = merchantsRes.data?.length || 0;
         const activeMerchants = merchantsRes.data?.filter(m => m.is_active).length || 0;
 
+        // Calculate operations stats
+        const totalTransactions = (depositsRes.data?.length || 0) + 
+                                  (withdrawalsRes.data?.length || 0) + 
+                                  (transfersRes.data?.length || 0);
+        const successfulTransactions = approvedDeposits + approvedWithdrawals + (transfersRes.data?.length || 0);
+        const successRate = totalTransactions > 0 ? (successfulTransactions / totalTransactions) * 100 : 0;
+
         setFinancialStats({
           totalDeposits,
           totalWithdrawals,
@@ -125,17 +158,28 @@ export default function AdminDashboard() {
           totalCards,
           pendingDeposits,
           pendingWithdrawals,
+          approvedDeposits,
+          rejectedDeposits,
+          approvedWithdrawals,
+          rejectedWithdrawals,
           platformRevenue,
           totalBettingDeposits,
           totalGameTopups,
           totalMerchants,
           activeMerchants,
+          usedCards,
+          unusedCards,
           revenueBreakdown: {
             depositFees,
             withdrawalFees,
             transferFees,
             bettingFees,
             gameFees
+          },
+          operationsStats: {
+            totalTransactions,
+            successRate,
+            avgProcessingTime: 0 // يمكن حسابه لاحقاً
           }
         });
 
@@ -452,6 +496,153 @@ export default function AdminDashboard() {
                     {((financialStats.platformRevenue / (financialStats.totalDeposits + financialStats.totalWithdrawals + financialStats.totalTransfers)) * 100 || 0).toFixed(2)}%
                   </p>
                 </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Operations Performance */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              أداء العمليات
+            </CardTitle>
+            <CardDescription>إحصائيات العمليات المالية</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">إجمالي العمليات</span>
+                <span className="text-lg font-bold">{financialStats.operationsStats.totalTransactions}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">معدل النجاح</span>
+                <span className="text-lg font-bold text-green-600">
+                  {financialStats.operationsStats.successRate.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm">إيداعات مقبولة</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-green-600">{financialStats.approvedDeposits}</span>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    {((financialStats.approvedDeposits / (financialStats.approvedDeposits + financialStats.rejectedDeposits + financialStats.pendingDeposits)) * 100 || 0).toFixed(0)}%
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-yellow-600" />
+                  <span className="text-sm">إيداعات معلقة</span>
+                </div>
+                <span className="font-bold text-yellow-600">{financialStats.pendingDeposits}</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <span className="text-sm">إيداعات مرفوضة</span>
+                </div>
+                <span className="font-bold text-red-600">{financialStats.rejectedDeposits}</span>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm">سحوبات مكتملة</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-blue-600">{financialStats.approvedWithdrawals}</span>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    {((financialStats.approvedWithdrawals / (financialStats.approvedWithdrawals + financialStats.rejectedWithdrawals + financialStats.pendingWithdrawals)) * 100 || 0).toFixed(0)}%
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-yellow-600" />
+                  <span className="text-sm">سحوبات معلقة</span>
+                </div>
+                <span className="font-bold text-yellow-600">{financialStats.pendingWithdrawals}</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <span className="text-sm">سحوبات مرفوضة</span>
+                </div>
+                <span className="font-bold text-red-600">{financialStats.rejectedWithdrawals}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-primary" />
+              بطاقات الهدايا والخدمات الإضافية
+            </CardTitle>
+            <CardDescription>إحصائيات الخدمات</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2 p-4 rounded-lg bg-green-50 border border-green-200">
+                <p className="text-xs text-muted-foreground">بطاقات مستخدمة</p>
+                <p className="text-2xl font-bold text-green-600">{financialStats.usedCards}</p>
+              </div>
+              <div className="space-y-2 p-4 rounded-lg bg-blue-50 border border-blue-200">
+                <p className="text-xs text-muted-foreground">بطاقات متاحة</p>
+                <p className="text-2xl font-bold text-blue-600">{financialStats.unusedCards}</p>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-orange-50 border border-orange-200">
+                <div>
+                  <p className="text-sm font-medium text-orange-900">معاملات الرهان</p>
+                  <p className="text-xs text-orange-700">إجمالي القيمة</p>
+                </div>
+                <p className="text-xl font-bold text-orange-600">
+                  {financialStats.totalBettingDeposits >= 1000000 
+                    ? `${(financialStats.totalBettingDeposits / 1000000).toFixed(1)}M`
+                    : `${(financialStats.totalBettingDeposits / 1000).toFixed(0)}K`} دج
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-lg bg-purple-50 border border-purple-200">
+                <div>
+                  <p className="text-sm font-medium text-purple-900">شحن الألعاب</p>
+                  <p className="text-xs text-purple-700">إجمالي القيمة</p>
+                </div>
+                <p className="text-xl font-bold text-purple-600">
+                  {financialStats.totalGameTopups >= 1000000 
+                    ? `${(financialStats.totalGameTopups / 1000000).toFixed(1)}M`
+                    : `${(financialStats.totalGameTopups / 1000).toFixed(0)}K`} دج
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-lg bg-indigo-50 border border-indigo-200">
+                <div>
+                  <p className="text-sm font-medium text-indigo-900">التجار</p>
+                  <p className="text-xs text-indigo-700">نشط / إجمالي</p>
+                </div>
+                <p className="text-xl font-bold text-indigo-600">
+                  {financialStats.activeMerchants} / {financialStats.totalMerchants}
+                </p>
               </div>
             </div>
           </CardContent>
