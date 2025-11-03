@@ -3,6 +3,7 @@ import { useNavigate, Routes, Route, Navigate } from 'react-router-dom';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useToast } from '@/hooks/use-toast';
 import { AdminNavbar } from '@/components/AdminNavbar';
+import { AdminAlertBanner } from '@/components/AdminAlertBanner';
 import AdminDashboard from '@/pages/admin/Dashboard';
 import IdentityVerificationPage from '@/pages/admin/IdentityVerification';
 import UsersPage from '@/pages/admin/Users';
@@ -51,6 +52,8 @@ const AdminPanel = () => {
       <AdminNavbar />
       
       <main className="container mx-auto px-4 py-6">
+        <AdminAlertBanner />
+        
         <Routes>
           <Route index element={<AdminDashboard />} />
           <Route path="identity-verification" element={<IdentityVerificationPage />} />
