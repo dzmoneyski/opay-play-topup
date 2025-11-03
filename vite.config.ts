@@ -69,8 +69,8 @@ export default defineConfig(({ mode }) => ({
       },
       injectRegister: 'auto',
       strategies: 'injectManifest',
-      srcDir: 'public',
-      filename: 'sw.js',
+      srcDir: 'src',
+      filename: 'sw.ts',
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg}']
       }
