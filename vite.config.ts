@@ -58,7 +58,15 @@ export default defineConfig(({ mode }) => ({
             }
           }
         ]
-      }
+      },
+      devOptions: {
+        enabled: true,
+        type: 'module',
+      },
+      injectRegister: 'auto',
+      strategies: 'injectManifest',
+      srcDir: 'public',
+      filename: 'sw.js'
     })
   ].filter(Boolean),
   resolve: {

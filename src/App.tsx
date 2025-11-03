@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PublicRoute from "@/components/PublicRoute";
+import { PWAPermissionsPrompt } from "@/components/PWAPermissionsPrompt";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AccountActivation from "./pages/AccountActivation";
@@ -39,6 +40,7 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <PWAPermissionsPrompt />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={
