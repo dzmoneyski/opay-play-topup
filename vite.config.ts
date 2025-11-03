@@ -57,16 +57,23 @@ export default defineConfig(({ mode }) => ({
               }
             }
           }
-        ]
+        ],
+        // Enable push notifications
+        navigateFallback: null,
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true
       },
       devOptions: {
         enabled: true,
-        type: 'module',
       },
       injectRegister: 'auto',
       strategies: 'injectManifest',
       srcDir: 'public',
-      filename: 'sw.js'
+      filename: 'sw.js',
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg}']
+      }
     })
   ].filter(Boolean),
   resolve: {

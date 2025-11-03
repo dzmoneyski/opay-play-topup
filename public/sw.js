@@ -1,4 +1,15 @@
-// Service Worker for Push Notifications
+// Service Worker with Workbox manifest injection
+importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox-sw.js');
+
+// This will be replaced by the build process
+self.__WB_MANIFEST;
+
+// Configure Workbox
+workbox.setConfig({
+  debug: false
+});
+
+// Push notification handler
 self.addEventListener('push', function(event) {
   console.log('Push notification received:', event);
 
@@ -38,21 +49,19 @@ self.addEventListener('push', function(event) {
   }
 });
 
-// Handle notification clicks
+// Notification click handler
 self.addEventListener('notificationclick', function(event) {
   console.log('Notification clicked:', event);
   event.notification.close();
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
-      // If a window is already open, focus it
       for (let i = 0; i < clientList.length; i++) {
         const client = clientList[i];
         if (client.url === '/' && 'focus' in client) {
           return client.focus();
         }
       }
-      // Otherwise, open a new window
       if (clients.openWindow) {
         return clients.openWindow('/');
       }
@@ -60,7 +69,7 @@ self.addEventListener('notificationclick', function(event) {
   );
 });
 
-// Background sync for offline actions
+// Background sync handler
 self.addEventListener('sync', function(event) {
   console.log('Background sync:', event);
   if (event.tag === 'sync-transactions') {
@@ -69,6 +78,5 @@ self.addEventListener('sync', function(event) {
 });
 
 async function syncTransactions() {
-  // This would sync any pending transactions when back online
   console.log('Syncing transactions...');
 }
