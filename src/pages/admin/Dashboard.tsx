@@ -12,7 +12,9 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle,
-  Clock
+  Clock,
+  DollarSign,
+  Wallet
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -30,7 +32,14 @@ export default function AdminDashboard() {
     totalBettingDeposits: 0,
     totalGameTopups: 0,
     totalMerchants: 0,
-    activeMerchants: 0
+    activeMerchants: 0,
+    revenueBreakdown: {
+      depositFees: 0,
+      withdrawalFees: 0,
+      transferFees: 0,
+      bettingFees: 0,
+      gameFees: 0
+    }
   });
   
   const pendingRequests = requests.filter(req => req.status === 'pending').length;
@@ -66,7 +75,7 @@ export default function AdminDashboard() {
           supabase.from('withdrawals').select('amount, status'), 
           supabase.from('transfers').select('amount, status'),
           supabase.from('gift_cards').select('amount, is_used'),
-          supabase.from('platform_ledger').select('fee_amount'),
+          supabase.from('platform_ledger').select('fee_amount, transaction_type'),
           supabase.from('betting_transactions').select('amount, status'),
           supabase.from('game_topup_orders').select('amount, status'),
           supabase.from('merchants').select('is_active')
@@ -88,6 +97,18 @@ export default function AdminDashboard() {
 
         const platformRevenue = revenueRes.data?.reduce((sum, r) => sum + Number(r.fee_amount), 0) || 0;
         
+        // Calculate revenue breakdown by type
+        const depositFees = revenueRes.data?.filter(r => r.transaction_type === 'deposit_fee')
+          .reduce((sum, r) => sum + Number(r.fee_amount), 0) || 0;
+        const withdrawalFees = revenueRes.data?.filter(r => r.transaction_type === 'withdrawal_fee')
+          .reduce((sum, r) => sum + Number(r.fee_amount), 0) || 0;
+        const transferFees = revenueRes.data?.filter(r => r.transaction_type === 'transfer_fee')
+          .reduce((sum, r) => sum + Number(r.fee_amount), 0) || 0;
+        const bettingFees = revenueRes.data?.filter(r => r.transaction_type === 'betting_deposit_fee')
+          .reduce((sum, r) => sum + Number(r.fee_amount), 0) || 0;
+        const gameFees = revenueRes.data?.filter(r => r.transaction_type === 'game_topup_fee')
+          .reduce((sum, r) => sum + Number(r.fee_amount), 0) || 0;
+        
         const totalBettingDeposits = bettingRes.data?.filter(b => b.status === 'completed')
           .reduce((sum, b) => sum + Number(b.amount), 0) || 0;
         
@@ -108,7 +129,14 @@ export default function AdminDashboard() {
           totalBettingDeposits,
           totalGameTopups,
           totalMerchants,
-          activeMerchants
+          activeMerchants,
+          revenueBreakdown: {
+            depositFees,
+            withdrawalFees,
+            transferFees,
+            bettingFees,
+            gameFees
+          }
         });
 
       } catch (error) {
@@ -308,6 +336,126 @@ export default function AdminDashboard() {
           icon={CheckCircle}
           color="success"
         />
+      </div>
+
+      {/* Platform Revenue Breakdown */}
+      <div className="grid gap-4 md:grid-cols-1">
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-6 w-6 text-primary" />
+              أرباح المنصة - التفاصيل المالية
+            </CardTitle>
+            <CardDescription>
+              تفصيل الإيرادات حسب نوع الخدمة
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+              <div className="space-y-2 p-4 rounded-lg bg-background/50 border">
+                <div className="flex items-center gap-2">
+                  <ArrowDownToLine className="h-4 w-4 text-green-600" />
+                  <p className="text-sm font-medium text-muted-foreground">رسوم الإيداع</p>
+                </div>
+                <p className="text-2xl font-bold text-green-600">
+                  {financialStats.revenueBreakdown.depositFees >= 1000 
+                    ? `${(financialStats.revenueBreakdown.depositFees / 1000).toFixed(1)}K`
+                    : financialStats.revenueBreakdown.depositFees.toFixed(0)} دج
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {((financialStats.revenueBreakdown.depositFees / financialStats.platformRevenue) * 100 || 0).toFixed(1)}% من الإيرادات
+                </p>
+              </div>
+
+              <div className="space-y-2 p-4 rounded-lg bg-background/50 border">
+                <div className="flex items-center gap-2">
+                  <ArrowUpFromLine className="h-4 w-4 text-blue-600" />
+                  <p className="text-sm font-medium text-muted-foreground">رسوم السحب</p>
+                </div>
+                <p className="text-2xl font-bold text-blue-600">
+                  {financialStats.revenueBreakdown.withdrawalFees >= 1000 
+                    ? `${(financialStats.revenueBreakdown.withdrawalFees / 1000).toFixed(1)}K`
+                    : financialStats.revenueBreakdown.withdrawalFees.toFixed(0)} دج
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {((financialStats.revenueBreakdown.withdrawalFees / financialStats.platformRevenue) * 100 || 0).toFixed(1)}% من الإيرادات
+                </p>
+              </div>
+
+              <div className="space-y-2 p-4 rounded-lg bg-background/50 border">
+                <div className="flex items-center gap-2">
+                  <Wallet className="h-4 w-4 text-purple-600" />
+                  <p className="text-sm font-medium text-muted-foreground">رسوم التحويل</p>
+                </div>
+                <p className="text-2xl font-bold text-purple-600">
+                  {financialStats.revenueBreakdown.transferFees >= 1000 
+                    ? `${(financialStats.revenueBreakdown.transferFees / 1000).toFixed(1)}K`
+                    : financialStats.revenueBreakdown.transferFees.toFixed(0)} دج
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {((financialStats.revenueBreakdown.transferFees / financialStats.platformRevenue) * 100 || 0).toFixed(1)}% من الإيرادات
+                </p>
+              </div>
+
+              <div className="space-y-2 p-4 rounded-lg bg-background/50 border">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-orange-600" />
+                  <p className="text-sm font-medium text-muted-foreground">رسوم الرهان</p>
+                </div>
+                <p className="text-2xl font-bold text-orange-600">
+                  {financialStats.revenueBreakdown.bettingFees >= 1000 
+                    ? `${(financialStats.revenueBreakdown.bettingFees / 1000).toFixed(1)}K`
+                    : financialStats.revenueBreakdown.bettingFees.toFixed(0)} دج
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {((financialStats.revenueBreakdown.bettingFees / financialStats.platformRevenue) * 100 || 0).toFixed(1)}% من الإيرادات
+                </p>
+              </div>
+
+              <div className="space-y-2 p-4 rounded-lg bg-background/50 border">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-pink-600" />
+                  <p className="text-sm font-medium text-muted-foreground">رسوم الألعاب</p>
+                </div>
+                <p className="text-2xl font-bold text-pink-600">
+                  {financialStats.revenueBreakdown.gameFees >= 1000 
+                    ? `${(financialStats.revenueBreakdown.gameFees / 1000).toFixed(1)}K`
+                    : financialStats.revenueBreakdown.gameFees.toFixed(0)} دج
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {((financialStats.revenueBreakdown.gameFees / financialStats.platformRevenue) * 100 || 0).toFixed(1)}% من الإيرادات
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-6 border-t">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">إجمالي الإيرادات</p>
+                  <p className="text-3xl font-bold text-primary">
+                    {financialStats.platformRevenue >= 1000000 
+                      ? `${(financialStats.platformRevenue / 1000000).toFixed(2)}M`
+                      : `${(financialStats.platformRevenue / 1000).toFixed(1)}K`} دج
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">حجم المعاملات</p>
+                  <p className="text-3xl font-bold text-primary">
+                    {((financialStats.totalDeposits + financialStats.totalWithdrawals + financialStats.totalTransfers) >= 1000000 
+                      ? `${((financialStats.totalDeposits + financialStats.totalWithdrawals + financialStats.totalTransfers) / 1000000).toFixed(2)}M`
+                      : `${((financialStats.totalDeposits + financialStats.totalWithdrawals + financialStats.totalTransfers) / 1000).toFixed(1)}K`)} دج
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">متوسط العمولة</p>
+                  <p className="text-3xl font-bold text-primary">
+                    {((financialStats.platformRevenue / (financialStats.totalDeposits + financialStats.totalWithdrawals + financialStats.totalTransfers)) * 100 || 0).toFixed(2)}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Quick Actions */}
