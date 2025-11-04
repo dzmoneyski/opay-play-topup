@@ -144,6 +144,39 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
     }
   };
 
+  const handleRoleChange = async (newRole: 'admin' | 'user') => {
+    if (!confirm(`هل أنت متأكد من تغيير الصلاحية إلى "${newRole === 'admin' ? 'مشرف' : 'مستخدم'}"؟`)) {
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      // حذف الصلاحية الحالية
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', user.user_id);
+
+      // إضافة الصلاحية الجديدة
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: user.user_id,
+          role: newRole
+        });
+
+      if (error) throw error;
+
+      alert(`تم تغيير الصلاحية بنجاح إلى "${newRole === 'admin' ? 'مشرف' : 'مستخدم'}"`);
+      onUpdate();
+    } catch (error: any) {
+      console.error('Error changing role:', error);
+      alert(`خطأ في تغيير الصلاحية: ${error.message}`);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const getImageUrl = (imagePath: string | null) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
@@ -607,17 +640,37 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
 
             <Card>
               <CardHeader>
-                <CardTitle>معلومات إضافية</CardTitle>
+                <CardTitle>تغيير الصلاحيات</CardTitle>
+                <CardDescription>
+                  الصلاحية الحالية: <Badge variant="outline">{user.user_roles?.[0]?.role === 'admin' ? 'مشرف' : 'مستخدم'}</Badge>
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-sm space-y-2">
+              <CardContent className="space-y-3">
+                <div className="text-sm text-muted-foreground mb-4">
+                  اختر الصلاحية الجديدة للمستخدم
+                </div>
+                <Button
+                  onClick={() => handleRoleChange('user')}
+                  disabled={processing || user.user_roles?.[0]?.role === 'user'}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <User className="w-4 h-4 ml-2" />
+                  تعيين كمستخدم عادي
+                </Button>
+                <Button
+                  onClick={() => handleRoleChange('admin')}
+                  disabled={processing || user.user_roles?.[0]?.role === 'admin'}
+                  className="w-full bg-primary"
+                >
+                  <Shield className="w-4 h-4 ml-2" />
+                  تعيين كمشرف
+                </Button>
+                
+                <div className="pt-4 border-t text-sm space-y-2">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">آخر نشاط:</span>
                     <span className="font-medium">{formatDate(user.updated_at || user.created_at)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">الصلاحية:</span>
-                    <span className="font-medium">{user.user_roles?.[0]?.role || 'مستخدم'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">حالة التحقق:</span>
