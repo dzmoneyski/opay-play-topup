@@ -63,11 +63,17 @@ const Auth = () => {
     const { error } = await signIn(signInData.email, signInData.password);
 
     if (error) {
+      let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى";
+      
+      if (error.message === 'Invalid login credentials') {
+        errorMessage = "البريد الإلكتروني أو كلمة المرور غير صحيحة";
+      } else if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
+        errorMessage = "يرجى تأكيد بريدك الإلكتروني أولاً. تفقد صندوق الوارد الخاص بك";
+      }
+      
       toast({
         title: "خطأ في تسجيل الدخول",
-        description: error.message === 'Invalid login credentials' 
-          ? "البريد الإلكتروني أو كلمة المرور غير صحيحة"
-          : "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى",
+        description: errorMessage,
         variant: "destructive"
       });
     } else {
