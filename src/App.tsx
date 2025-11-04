@@ -22,6 +22,7 @@ import P2P from "./pages/P2P";
 import BecomePartner from "./pages/BecomePartner";
 import MerchantDashboard from "./pages/MerchantDashboard";
 import Install from "./pages/Install";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -114,6 +115,11 @@ const App = () => {
                 </ProtectedRoute>
               } />
               <Route path="/install" element={<Install />} />
+              <Route path="/settings" element={
+                <ProtectedRoute requireActivation={false}>
+                  <Settings />
+                </ProtectedRoute>
+              } />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

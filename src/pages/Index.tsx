@@ -40,7 +40,8 @@ import {
   ArrowLeft,
   Repeat2,
   Gamepad2,
-  Users
+  Users,
+  Settings
 } from "lucide-react";
 
 const Index = () => {
@@ -251,6 +252,21 @@ const Index = () => {
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
+                {/* Settings Icon */}
+                <div className="relative group">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => navigate('/settings')}
+                    className="w-10 h-10 p-0 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-white/20 transition-all"
+                  >
+                    <Settings className="h-5 w-5 text-white" />
+                  </Button>
+                  <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    الإعدادات
+                  </div>
+                </div>
+
                 {/* Admin Panel Access */}
                 {isAdmin && (
                   <div className="relative group">
