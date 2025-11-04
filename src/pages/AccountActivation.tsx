@@ -16,7 +16,8 @@ import {
   AlertCircle,
   ArrowRight,
   Shield,
-  ArrowLeft
+  ArrowLeft,
+  Copy
 } from 'lucide-react';
 import { IdentityVerification } from '@/components/IdentityVerification';
 
@@ -32,6 +33,7 @@ const AccountActivation = () => {
   const [phoneNumber, setPhoneNumber] = React.useState('');
   const [verificationCode, setVerificationCode] = React.useState('');
   const [showCodeInput, setShowCodeInput] = React.useState(false);
+  const [sentCode, setSentCode] = React.useState('');
 
   React.useEffect(() => {
     console.log('Profile data:', profile);
@@ -80,17 +82,11 @@ const AccountActivation = () => {
       });
     } else {
       setShowCodeInput(true);
+      setSentCode(code || '');
       toast({
         title: "تم إرسال الرمز",
         description: `تم إرسال رمز التفعيل إلى ${phoneNumber}`,
       });
-      // For demo purposes, show the code in toast (remove in production)
-      setTimeout(() => {
-        toast({
-          title: "رمز التفعيل (للتجربة)",
-          description: `الرمز: ${code}`,
-        });
-      }, 2000);
     }
     setIsLoading(false);
   };
@@ -267,6 +263,35 @@ const AccountActivation = () => {
                 </form>
               ) : (
                 <form onSubmit={handleCodeVerification} className="space-y-4">
+                  {sentCode && (
+                    <div className="bg-gradient-primary/20 border border-primary/30 rounded-xl p-4 space-y-3">
+                      <p className="text-white/90 text-sm text-center">رمز التفعيل الخاص بك:</p>
+                      <div className="flex items-center justify-center gap-2 bg-white/10 rounded-lg p-4">
+                        <code className="text-3xl font-bold text-white tracking-widest">
+                          {sentCode}
+                        </code>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(sentCode);
+                            toast({
+                              title: "تم النسخ",
+                              description: "تم نسخ الرمز بنجاح",
+                            });
+                          }}
+                          className="text-white/80 hover:text-white hover:bg-white/10"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <p className="text-white/70 text-xs text-center">
+                        انسخ هذا الرمز وأدخله في الحقل أدناه
+                      </p>
+                    </div>
+                  )}
+                  
                   <div className="space-y-2">
                     <Label htmlFor="code" className="text-white/90">رمز التفعيل</Label>
                     <Input
@@ -275,7 +300,7 @@ const AccountActivation = () => {
                       placeholder="xxxxxx"
                       value={verificationCode}
                       onChange={(e) => setVerificationCode(e.target.value)}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-primary focus:bg-white/20"
+                      className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-primary focus:bg-white/20 text-center text-xl tracking-widest"
                       disabled={isLoading}
                       maxLength={6}
                     />
