@@ -98,13 +98,18 @@ export function AdminNavbar() {
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   )}
                 >
-                  <item.icon className="h-4 w-4" />
+                  <div className="relative">
+                    <item.icon className="h-4 w-4" />
+                    {notifCount > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center text-[10px] font-bold rounded-full"
+                      >
+                        {notifCount}
+                      </Badge>
+                    )}
+                  </div>
                   <span>{item.title}</span>
-                  {notifCount > 0 && (
-                    <Badge variant="destructive" className="h-5 min-w-5 px-1 text-xs">
-                      {notifCount}
-                    </Badge>
-                  )}
                 </Link>
               );
             })}
@@ -113,13 +118,18 @@ export function AdminNavbar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="gap-2 relative">
-                  <ArrowDownToLine className="h-4 w-4" />
+                  <div className="relative">
+                    <ArrowDownToLine className="h-4 w-4" />
+                    {(counts.pendingDeposits + counts.pendingWithdrawals) > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center text-[10px] font-bold rounded-full"
+                      >
+                        {counts.pendingDeposits + counts.pendingWithdrawals}
+                      </Badge>
+                    )}
+                  </div>
                   <span>العمليات المالية</span>
-                  {(counts.pendingDeposits + counts.pendingWithdrawals) > 0 && (
-                    <Badge variant="destructive" className="h-5 min-w-5 px-1 text-xs">
-                      {counts.pendingDeposits + counts.pendingWithdrawals}
-                    </Badge>
-                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -130,13 +140,18 @@ export function AdminNavbar() {
                   return (
                     <DropdownMenuItem key={item.url} asChild>
                       <Link to={item.url} className="flex items-center gap-2 cursor-pointer">
-                        <item.icon className="h-4 w-4" />
+                        <div className="relative">
+                          <item.icon className="h-4 w-4" />
+                          {notifCount > 0 && (
+                            <Badge 
+                              variant="destructive" 
+                              className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 p-0 flex items-center justify-center text-[9px] font-bold rounded-full"
+                            >
+                              {notifCount}
+                            </Badge>
+                          )}
+                        </div>
                         <span className="flex-1">{item.title}</span>
-                        {notifCount > 0 && (
-                          <Badge variant="destructive" className="h-5 min-w-5 px-1 text-xs">
-                            {notifCount}
-                          </Badge>
-                        )}
                       </Link>
                     </DropdownMenuItem>
                   );
@@ -177,7 +192,7 @@ export function AdminNavbar() {
                   {counts.total > 0 && (
                     <Badge 
                       variant="destructive" 
-                      className="absolute -top-1 -right-1 h-5 min-w-5 px-1 text-xs"
+                      className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] font-bold rounded-full"
                     >
                       {counts.total}
                     </Badge>
@@ -296,13 +311,18 @@ export function AdminNavbar() {
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     )}
                   >
-                    <item.icon className="h-4 w-4" />
+                    <div className="relative">
+                      <item.icon className="h-4 w-4" />
+                      {notifCount > 0 && (
+                        <Badge 
+                          variant="destructive" 
+                          className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center text-[10px] font-bold rounded-full"
+                        >
+                          {notifCount}
+                        </Badge>
+                      )}
+                    </div>
                     <span className="flex-1">{item.title}</span>
-                    {notifCount > 0 && (
-                      <Badge variant="destructive" className="h-5 min-w-5 px-1 text-xs">
-                        {notifCount}
-                      </Badge>
-                    )}
                   </Link>
                 );
               })}
