@@ -12,9 +12,11 @@ export const InstallBanner = () => {
   useEffect(() => {
     const dismissed = localStorage.getItem('install-banner-dismissed');
     const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
+    const permissionsPrompted = localStorage.getItem('pwa-permissions-prompted');
     
-    if (!isInstalled && !dismissed) {
-      setTimeout(() => setIsVisible(true), 1500);
+    // Don't show install banner until permissions prompt is done
+    if (!isInstalled && !dismissed && permissionsPrompted) {
+      setTimeout(() => setIsVisible(true), 2000);
     }
   }, []);
 
