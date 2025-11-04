@@ -29,7 +29,8 @@ import {
   Copy,
   Check,
   Phone,
-  AlertCircle
+  AlertCircle,
+  MessageCircle
 } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import baridimobLogo from '@/assets/baridimob-logo.png';
@@ -882,8 +883,8 @@ export default function Deposits() {
                         </div>
                       </div>
 
-                      {/* Call Button */}
-                      <div className="mt-10">
+                      {/* Call & WhatsApp Buttons */}
+                      <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
                         <a 
                           href="tel:0553980661"
                           className="relative inline-block"
@@ -895,6 +896,22 @@ export default function Deposits() {
                           >
                             <Phone className="h-6 w-6 ml-2" />
                             اتصل الآن
+                          </Button>
+                        </a>
+                        
+                        <a 
+                          href="https://wa.me/213553980661?text=مرحباً، أريد الاستفسار عن الإيداع النقدي"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="relative inline-block"
+                        >
+                          <div className="absolute -inset-1 bg-green-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
+                          <Button
+                            size="lg"
+                            className="relative bg-green-500 hover:bg-green-600 text-white font-bold py-6 px-12 text-xl transition-all hover:scale-[1.02] hover:shadow-elevated rounded-2xl"
+                          >
+                            <MessageCircle className="h-6 w-6 ml-2" />
+                            واتساب
                           </Button>
                         </a>
                       </div>
