@@ -4,6 +4,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Users, 
@@ -17,7 +28,8 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  User
+  User,
+  Trash2
 } from 'lucide-react';
 
 // User Details Modal Component
@@ -535,6 +547,61 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
                 >
                   حظر الحساب
                 </Button>
+                
+                <div className="pt-4 border-t">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        disabled={processing}
+                        variant="destructive"
+                        className="w-full bg-red-600 hover:bg-red-700"
+                      >
+                        <Trash2 className="w-4 h-4 ml-2" />
+                        حذف الحساب نهائياً
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-right">
+                          تأكيد حذف الحساب
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-right">
+                          هل أنت متأكد من حذف هذا الحساب نهائياً؟ 
+                          <br />
+                          <span className="text-red-600 font-semibold">سيتم حذف جميع البيانات المرتبطة بهذا المستخدم (الرصيد، المعاملات، الطلبات). هذا الإجراء لا يمكن التراجع عنه!</span>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="flex-row-reverse gap-2">
+                        <AlertDialogCancel className="mt-0">إلغاء</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={async () => {
+                            setProcessing(true);
+                            try {
+                              // حذف البيانات من profiles (سيتم حذف البيانات المرتبطة تلقائياً بسبب CASCADE)
+                              const { error } = await supabase
+                                .from('profiles')
+                                .delete()
+                                .eq('user_id', user.user_id);
+
+                              if (error) throw error;
+
+                              alert('تم حذف الحساب بنجاح');
+                              onUpdate();
+                            } catch (error: any) {
+                              console.error('Error deleting account:', error);
+                              alert(`خطأ في حذف الحساب: ${error.message}`);
+                            } finally {
+                              setProcessing(false);
+                            }
+                          }}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          تأكيد الحذف
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </CardContent>
             </Card>
 
