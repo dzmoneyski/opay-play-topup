@@ -89,31 +89,40 @@ const Install = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* زر التثبيت الرئيسي - دائماً ظاهر */}
+            {/* خانات التحميل للأندرويد والآيفون */}
             <div className="bg-gradient-primary p-6 rounded-2xl shadow-glow">
-              <div className="text-center text-white space-y-4">
+              <div className="text-center text-white space-y-5">
                 <Download className="w-16 h-16 mx-auto animate-float" />
-                <h3 className="text-2xl font-bold">ثبت التطبيق الآن!</h3>
+                <h3 className="text-2xl font-bold">حمل التطبيق الآن!</h3>
                 <p className="text-white/90 text-sm">
-                  اضغط على الزر لتثبيت التطبيق على جهازك
+                  اختر نظام التشغيل الخاص بجهازك
                 </p>
-                <Button 
-                  onClick={handleInstallClick} 
-                  size="lg" 
-                  className="w-full bg-white text-primary hover:bg-white/95 font-bold text-lg py-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
-                >
-                  {isInstallable ? (
-                    <>
-                      <Download className="ml-2 h-6 w-6" />
-                      تثبيت التطبيق تلقائياً
-                    </>
-                  ) : (
-                    <>
-                      <Smartphone className="ml-2 h-6 w-6" />
-                      عرض طريقة التثبيت
-                    </>
-                  )}
-                </Button>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  {/* زر الأندرويد */}
+                  <Button 
+                    onClick={handleInstallClick} 
+                    size="lg" 
+                    className="w-full bg-white text-primary hover:bg-white/95 font-bold text-lg py-7 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <Smartphone className="h-8 w-8 group-hover:scale-110 transition-transform" />
+                      <span>Android</span>
+                    </div>
+                  </Button>
+
+                  {/* زر الآيفون */}
+                  <Button 
+                    onClick={handleInstallClick} 
+                    size="lg" 
+                    className="w-full bg-white text-primary hover:bg-white/95 font-bold text-lg py-7 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <Smartphone className="h-8 w-8 group-hover:scale-110 transition-transform" />
+                      <span>iPhone</span>
+                    </div>
+                  </Button>
+                </div>
               </div>
             </div>
 
