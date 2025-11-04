@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, CheckCircle, Clock, Eye, Shield, XCircle, Phone, Calendar, FileText, Search, ZoomIn } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { AdminAlertBanner } from '@/components/AdminAlertBanner';
 
 export default function IdentityVerificationPage() {
   const navigate = useNavigate();
@@ -205,6 +206,9 @@ export default function IdentityVerificationPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
+      {/* Alert Banner */}
+      <AdminAlertBanner />
+      
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
