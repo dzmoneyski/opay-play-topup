@@ -865,40 +865,11 @@ export default function Deposits() {
                       
                       <h3 className="text-3xl font-bold text-foreground mb-4">للإيداع النقدي</h3>
                       <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
-                        اتصل بنا الآن وسنرشدك إلى أقرب نقطة إيداع نقدي لشحن حسابك بسهولة
+                        تواصل معنا عبر الواتساب وسنرشدك إلى أقرب نقطة إيداع نقدي لشحن حسابك بسهولة
                       </p>
-                      
-                      {/* Phone Number Display */}
-                      <div className="relative inline-block">
-                        <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-md opacity-30"></div>
-                        <div className="relative bg-white dark:bg-card rounded-2xl p-6 shadow-lg border-2 border-primary/20">
-                          <p className="text-sm text-muted-foreground mb-2 font-medium">رقم الاتصال</p>
-                          <a 
-                            href="tel:0553980661"
-                            className="text-4xl lg:text-5xl font-bold text-primary hover:text-primary/80 transition-colors font-mono tracking-wide block"
-                            dir="ltr"
-                          >
-                            0553 980 661
-                          </a>
-                        </div>
-                      </div>
 
-                      {/* Call & WhatsApp Buttons */}
-                      <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-                        <a 
-                          href="tel:0553980661"
-                          className="relative inline-block"
-                        >
-                          <div className="absolute -inset-1 bg-gradient-gold rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
-                          <Button
-                            size="lg"
-                            className="relative bg-gradient-gold hover:opacity-90 text-white font-bold py-6 px-12 text-xl transition-all hover:scale-[1.02] hover:shadow-elevated rounded-2xl"
-                          >
-                            <Phone className="h-6 w-6 ml-2" />
-                            اتصل الآن
-                          </Button>
-                        </a>
-                        
+                      {/* WhatsApp Button */}
+                      <div className="mt-10 flex justify-center">
                         <a 
                           href="https://wa.me/213553980661?text=مرحباً، أريد الاستفسار عن الإيداع النقدي"
                           target="_blank"
@@ -911,7 +882,7 @@ export default function Deposits() {
                             className="relative bg-green-500 hover:bg-green-600 text-white font-bold py-6 px-12 text-xl transition-all hover:scale-[1.02] hover:shadow-elevated rounded-2xl"
                           >
                             <MessageCircle className="h-6 w-6 ml-2" />
-                            واتساب
+                            تواصل عبر الواتساب
                           </Button>
                         </a>
                       </div>
