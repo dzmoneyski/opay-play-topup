@@ -87,9 +87,9 @@ const Settings = () => {
       </header>
 
       <div className="container mx-auto px-4 py-8 space-y-6 -mt-8 relative z-10">
-        {/* Quick Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
-          <Card className="bg-gradient-card border-white/10 shadow-card hover:shadow-elevated transition-all duration-300 hover:scale-105">
+        {/* Quick Stats Cards with Stagger Animation */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-gradient-card border-white/10 shadow-card hover-lift hover-glow stagger-item">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -98,9 +98,9 @@ const Settings = () => {
                     {profile?.is_account_activated ? 'مفعل' : 'غير مفعل'}
                   </p>
                 </div>
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${
                   profile?.is_account_activated 
-                    ? 'bg-green-500/20' 
+                    ? 'bg-green-500/20 pulse-glow' 
                     : 'bg-yellow-500/20'
                 }`}>
                   {profile?.is_account_activated ? (
@@ -113,7 +113,7 @@ const Settings = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-card border-white/10 shadow-card hover:shadow-elevated transition-all duration-300 hover:scale-105">
+          <Card className="bg-gradient-card border-white/10 shadow-card hover-lift hover-glow stagger-item shimmer">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -129,14 +129,14 @@ const Settings = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-card border-white/10 shadow-card hover:shadow-elevated transition-all duration-300 hover:scale-105">
+          <Card className="bg-gradient-card border-white/10 shadow-card hover-lift hover-glow stagger-item">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">البريد الإلكتروني</p>
                   <p className="text-lg font-bold text-green-500">موثق</p>
                 </div>
-                <div className="w-12 h-12 rounded-2xl bg-green-500/20 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-green-500/20 flex items-center justify-center pulse-glow">
                   <Mail className="h-6 w-6 text-green-500" />
                 </div>
               </div>
@@ -145,11 +145,11 @@ const Settings = () => {
         </div>
 
         {/* Account Information */}
-        <Card className="bg-gradient-card border-white/10 shadow-card animate-slide-up">
+        <Card className="bg-gradient-card border-white/10 shadow-card stagger-item hover-lift">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center bounce-hover">
                   <User className="h-5 w-5 text-white" />
                 </div>
                 <div>
@@ -224,7 +224,7 @@ const Settings = () => {
             <Button 
               onClick={handleUpdateProfile} 
               disabled={loading}
-              className="w-full bg-gradient-primary hover:opacity-90 transition-all duration-300 hover:scale-105 shadow-soft"
+              className="w-full bg-gradient-primary hover:opacity-90 transition-all duration-300 hover:scale-105 shadow-soft bounce-hover"
             >
               {loading ? (
                 <>
@@ -242,10 +242,10 @@ const Settings = () => {
         </Card>
 
         {/* Account Status with Better Design */}
-        <Card className="bg-gradient-card border-white/10 shadow-card animate-slide-up" style={{ animationDelay: '0.1s' }}>
+        <Card className="bg-gradient-card border-white/10 shadow-card stagger-item hover-lift">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-secondary flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-secondary flex items-center justify-center bounce-hover">
                 <Shield className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -255,9 +255,9 @@ const Settings = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-center justify-between p-4 bg-gradient-glass backdrop-blur-sm rounded-xl border border-white/10 transition-all duration-300 hover:border-white/20 hover:shadow-soft">
+            <div className="flex items-center justify-between p-4 bg-gradient-glass backdrop-blur-sm rounded-xl border border-white/10 transition-all duration-500 hover:border-primary/40 hover:shadow-soft hover:scale-[1.02]">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 bounce-hover ${
                   profile?.is_phone_verified 
                     ? 'bg-green-500/20' 
                     : 'bg-yellow-500/20'
@@ -285,9 +285,9 @@ const Settings = () => {
               </Badge>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-gradient-glass backdrop-blur-sm rounded-xl border border-white/10 transition-all duration-300 hover:border-white/20 hover:shadow-soft">
+            <div className="flex items-center justify-between p-4 bg-gradient-glass backdrop-blur-sm rounded-xl border border-white/10 transition-all duration-500 hover:border-primary/40 hover:shadow-soft hover:scale-[1.02]">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 bounce-hover ${
                   profile?.is_identity_verified 
                     ? 'bg-green-500/20' 
                     : 'bg-yellow-500/20'
@@ -315,9 +315,9 @@ const Settings = () => {
               </Badge>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-gradient-glass backdrop-blur-sm rounded-xl border border-white/10 transition-all duration-300 hover:border-white/20 hover:shadow-soft">
+            <div className="flex items-center justify-between p-4 bg-gradient-glass backdrop-blur-sm rounded-xl border border-white/10 transition-all duration-500 hover:border-primary/40 hover:shadow-soft hover:scale-[1.02]">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 bounce-hover ${
                   profile?.is_account_activated 
                     ? 'bg-green-500/20' 
                     : 'bg-red-500/20'
@@ -348,7 +348,7 @@ const Settings = () => {
             {!profile?.is_account_activated && (
               <Button 
                 variant="outline" 
-                className="w-full bg-gradient-gold hover:opacity-90 transition-all duration-300 hover:scale-105 border-0 text-white"
+                className="w-full bg-gradient-gold hover:opacity-90 transition-all duration-500 hover:scale-105 border-0 text-white bounce-hover shimmer"
                 onClick={() => navigate('/activate')}
               >
                 <Shield className="h-4 w-4 ml-2" />
@@ -359,10 +359,10 @@ const Settings = () => {
         </Card>
 
         {/* Notifications */}
-        <Card className="bg-gradient-card border-white/10 shadow-card animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <Card className="bg-gradient-card border-white/10 shadow-card stagger-item hover-lift">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center bounce-hover">
                 <Bell className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -372,9 +372,9 @@ const Settings = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gradient-glass backdrop-blur-sm rounded-xl border border-white/10 transition-all duration-300 hover:border-white/20">
+            <div className="flex items-center justify-between p-4 bg-gradient-glass backdrop-blur-sm rounded-xl border border-white/10 transition-all duration-500 hover:border-primary/40 hover:shadow-soft">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center bounce-hover">
                   <Bell className="h-5 w-5 text-primary" />
                 </div>
                 <div className="space-y-0.5">
@@ -394,10 +394,10 @@ const Settings = () => {
         </Card>
 
         {/* Security Actions */}
-        <Card className="bg-gradient-card border-white/10 shadow-card animate-slide-up" style={{ animationDelay: '0.3s' }}>
+        <Card className="bg-gradient-card border-white/10 shadow-card stagger-item hover-lift">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-gold flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-gold flex items-center justify-center bounce-hover">
                 <Lock className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -426,7 +426,7 @@ const Settings = () => {
 
             <Button 
               variant="outline" 
-              className="w-full justify-between bg-gradient-glass backdrop-blur-sm border-white/10 hover:border-white/20 hover:bg-white/5 transition-all duration-300 group"
+              className="w-full justify-between bg-gradient-glass backdrop-blur-sm border-white/10 hover:border-white/20 hover:bg-white/5 transition-all duration-500 group hover-lift"
               onClick={() => {
                 toast({
                   title: "قريباً",
@@ -438,12 +438,12 @@ const Settings = () => {
                 <FileText className="h-4 w-4 text-primary" />
                 سياسة الخصوصية
               </div>
-              <ChevronLeft className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              <ChevronLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
             </Button>
 
             <Button 
               variant="outline" 
-              className="w-full justify-between bg-gradient-glass backdrop-blur-sm border-white/10 hover:border-white/20 hover:bg-white/5 transition-all duration-300 group"
+              className="w-full justify-between bg-gradient-glass backdrop-blur-sm border-white/10 hover:border-white/20 hover:bg-white/5 transition-all duration-500 group hover-lift"
               onClick={() => {
                 toast({
                   title: "قريباً",
@@ -455,16 +455,16 @@ const Settings = () => {
                 <HelpCircle className="h-4 w-4 text-primary" />
                 المساعدة والدعم
               </div>
-              <ChevronLeft className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              <ChevronLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
             </Button>
           </CardContent>
         </Card>
 
         {/* Danger Zone */}
-        <Card className="bg-red-500/5 border-red-500/20 shadow-card animate-slide-up" style={{ animationDelay: '0.4s' }}>
+        <Card className="bg-red-500/5 border-red-500/20 shadow-card stagger-item hover-lift">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center bounce-hover pulse-glow">
                 <AlertCircle className="h-5 w-5 text-red-500" />
               </div>
               <div>
@@ -476,7 +476,7 @@ const Settings = () => {
           <CardContent>
             <Button 
               variant="outline" 
-              className="w-full justify-between bg-red-500/10 border-red-500/30 hover:bg-red-500/20 text-red-500 hover:text-red-600 transition-all duration-300 group"
+              className="w-full justify-between bg-red-500/10 border-red-500/30 hover:bg-red-500/20 text-red-500 hover:text-red-600 transition-all duration-500 group hover-lift"
               onClick={() => {
                 toast({
                   title: "قريباً",
@@ -489,7 +489,7 @@ const Settings = () => {
                 <LogOut className="h-4 w-4" />
                 حذف الحساب نهائياً
               </div>
-              <ChevronLeft className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              <ChevronLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
             </Button>
           </CardContent>
         </Card>
