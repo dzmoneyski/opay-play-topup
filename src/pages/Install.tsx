@@ -106,7 +106,14 @@ const Install = () => {
                     className="w-full bg-white text-primary hover:bg-white/95 font-bold text-lg py-7 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
                   >
                     <div className="flex flex-col items-center gap-2">
-                      <Smartphone className="h-8 w-8 group-hover:scale-110 transition-transform" />
+                      <svg 
+                        className="h-8 w-8 group-hover:scale-110 transition-transform" 
+                        viewBox="0 0 24 24" 
+                        fill="currentColor"
+                      >
+                        <path d="M17.523 15.341c-.1-.223-.223-.446-.346-.67l-.223-.446c-.1-.223-.223-.446-.346-.67-.223-.446-.446-.893-.67-1.339-.223-.446-.446-.893-.67-1.339-.223-.446-.446-.893-.67-1.339l-.669-1.339c-.1-.223-.223-.446-.346-.67l-.223-.446c-.1-.223-.223-.446-.346-.67-.223-.446-.446-.893-.67-1.339-.223-.446-.446-.893-.67-1.339l-.223-.446c-.1-.223-.223-.446-.346-.67l-.223-.446c-.1-.223-.223-.446-.346-.67C9.5 1.339 9.277.893 9.054.446L8.831 0l-.223.446C8.385.893 8.162 1.339 7.939 1.786c-.1.223-.223.446-.346.67l-.223.446c-.1.223-.223.446-.346.67l-.223.446c-.223.446-.446.893-.67 1.339-.223.446-.446.893-.67 1.339-.1.223-.223.446-.346.67l-.223.446c-.1.223-.223.446-.346.67l-.223.446c-.223.446-.446.893-.67 1.339-.223.446-.446.893-.67 1.339-.223.446-.446.893-.67 1.339-.1.223-.223.446-.346.67l-.223.446c-.1.223-.223.446-.346.67h16.677c-.1-.223-.223-.446-.346-.67z"/>
+                        <path d="M2.093 16.286h19.814v3.571H2.093zM6.43 20.893h11.14v2.143c0 .527-.446.964-.964.964h-9.212c-.527 0-.964-.437-.964-.964v-2.143z"/>
+                      </svg>
                       <span>Android</span>
                     </div>
                   </Button>
@@ -118,7 +125,13 @@ const Install = () => {
                     className="w-full bg-white text-primary hover:bg-white/95 font-bold text-lg py-7 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
                   >
                     <div className="flex flex-col items-center gap-2">
-                      <Smartphone className="h-8 w-8 group-hover:scale-110 transition-transform" />
+                      <svg 
+                        className="h-8 w-8 group-hover:scale-110 transition-transform" 
+                        viewBox="0 0 24 24" 
+                        fill="currentColor"
+                      >
+                        <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                      </svg>
                       <span>iPhone</span>
                     </div>
                   </Button>
