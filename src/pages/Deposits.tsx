@@ -867,9 +867,20 @@ export default function Deposits() {
                       <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
                         تواصل معنا عبر الواتساب وسنرشدك إلى أقرب نقطة إيداع نقدي لشحن حسابك بسهولة
                       </p>
+                      
+                      {/* Phone Number with Country Code */}
+                      <div className="relative inline-block mb-8">
+                        <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-md opacity-30"></div>
+                        <div className="relative bg-white dark:bg-card rounded-2xl p-6 shadow-lg border-2 border-primary/20">
+                          <p className="text-sm text-muted-foreground mb-2 font-medium">رقم الواتساب</p>
+                          <div className="text-4xl lg:text-5xl font-bold text-primary font-mono tracking-wide" dir="ltr">
+                            +213 553 980 661
+                          </div>
+                        </div>
+                      </div>
 
                       {/* WhatsApp Button */}
-                      <div className="mt-10 flex justify-center">
+                      <div className="mt-6 flex justify-center">
                         <a 
                           href="https://wa.me/213553980661?text=مرحباً، أريد الاستفسار عن الإيداع النقدي"
                           target="_blank"
@@ -882,7 +893,7 @@ export default function Deposits() {
                             className="relative bg-green-500 hover:bg-green-600 text-white font-bold py-6 px-12 text-xl transition-all hover:scale-[1.02] hover:shadow-elevated rounded-2xl"
                           >
                             <MessageCircle className="h-6 w-6 ml-2" />
-                            تواصل عبر الواتساب
+                            اضفني على واتساب
                           </Button>
                         </a>
                       </div>
