@@ -15,6 +15,11 @@ const Install = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [showInstructions, setShowInstructions] = useState<'ios' | 'android' | null>(null);
+
+  // Detect device type
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/.test(navigator.userAgent);
 
   useEffect(() => {
     // Check if already installed
@@ -35,18 +40,32 @@ const Install = () => {
     };
   }, []);
 
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      setIsInstalled(true);
+  const handleInstallClick = async (platform: 'ios' | 'android') => {
+    // إذا كان المتصفح يدعم التثبيت التلقائي (Android Chrome عادةً)
+    if (deferredPrompt && platform === 'android') {
+      try {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+          setIsInstalled(true);
+        }
+        
+        setDeferredPrompt(null);
+        setIsInstallable(false);
+      } catch (error) {
+        console.error('Error installing:', error);
+        // إظهار التعليمات اليدوية في حالة الفشل
+        setShowInstructions(platform);
+      }
+    } else {
+      // إظهار التعليمات اليدوية للأجهزة التي لا تدعم التثبيت التلقائي
+      setShowInstructions(platform);
+      // Scroll to instructions
+      setTimeout(() => {
+        document.getElementById('manual-instructions')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     }
-    
-    setDeferredPrompt(null);
-    setIsInstallable(false);
   };
 
   if (isInstalled) {
@@ -101,7 +120,7 @@ const Install = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                   {/* زر الأندرويد */}
                   <Button 
-                    onClick={handleInstallClick} 
+                    onClick={() => handleInstallClick('android')} 
                     size="lg" 
                     className="w-full bg-white text-primary hover:bg-white/95 font-bold text-lg py-7 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
                   >
@@ -120,7 +139,7 @@ const Install = () => {
 
                   {/* زر الآيفون */}
                   <Button 
-                    onClick={handleInstallClick} 
+                    onClick={() => handleInstallClick('ios')} 
                     size="lg" 
                     className="w-full bg-white text-primary hover:bg-white/95 font-bold text-lg py-7 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
                   >
@@ -136,14 +155,30 @@ const Install = () => {
                     </div>
                   </Button>
                 </div>
+                
+                {/* رسالة توضيحية بعد الضغط */}
+                {showInstructions && (
+                  <div className="mt-4 p-4 bg-white/20 backdrop-blur-sm rounded-lg border-2 border-white/40 animate-in fade-in slide-in-from-top-2">
+                    <p className="text-white text-center font-semibold text-sm">
+                      {showInstructions === 'ios' 
+                        ? '📱 اتبع التعليمات أدناه لتثبيت التطبيق على iPhone'
+                        : '📱 اتبع التعليمات أدناه لتثبيت التطبيق على Android'
+                      }
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="space-y-4 pt-4 border-t">
-              <h3 className="font-semibold text-lg text-center">أو اتبع الخطوات التالية:</h3>
+            <div id="manual-instructions" className="space-y-4 pt-4 border-t">
+              <h3 className="font-semibold text-lg text-center">
+                {showInstructions ? 'اتبع الخطوات التالية:' : 'أو اتبع الخطوات التالية:'}
+              </h3>
               
               <div className="space-y-3">
-                <div className="bg-gradient-to-br from-primary/5 to-primary/10 p-4 rounded-xl border border-primary/20">
+                <div className={`bg-gradient-to-br from-primary/5 to-primary/10 p-4 rounded-xl border ${
+                  showInstructions === 'ios' ? 'border-primary border-2 ring-2 ring-primary/30' : 'border-primary/20'
+                }`}>
                   <h4 className="font-bold mb-2 flex items-center gap-2">
                     <span className="text-2xl">📱</span>
                     على iPhone/iPad:
@@ -155,7 +190,9 @@ const Install = () => {
                   </ol>
                 </div>
 
-                <div className="bg-gradient-to-br from-success/5 to-success/10 p-4 rounded-xl border border-success/20">
+                <div className={`bg-gradient-to-br from-success/5 to-success/10 p-4 rounded-xl border ${
+                  showInstructions === 'android' ? 'border-success border-2 ring-2 ring-success/30' : 'border-success/20'
+                }`}>
                   <h4 className="font-bold mb-2 flex items-center gap-2">
                     <span className="text-2xl">📱</span>
                     على Android:
