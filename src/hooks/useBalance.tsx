@@ -15,15 +15,17 @@ export const useBalance = () => {
   const [loading, setLoading] = React.useState(false);
   const { user } = useAuth();
 
-  const fetchBalance = React.useCallback(async () => {
+  const fetchBalance = React.useCallback(async (skipRecalc = false) => {
     if (!user) return;
     
     setLoading(true);
     try {
-      // First, recalculate balance based on approved deposits
-      await supabase.rpc('recalculate_user_balance', { _user_id: user.id });
+      // Only recalculate on initial fetch, not on realtime updates
+      if (!skipRecalc) {
+        await supabase.rpc('recalculate_user_balance', { _user_id: user.id });
+      }
       
-      // Then fetch the updated balance
+      // Fetch the updated balance
       const { data, error } = await supabase
         .from('user_balances')
         .select('*')
@@ -32,8 +34,6 @@ export const useBalance = () => {
 
       if (error) throw error;
 
-      // If no balance exists yet (e.g., before any transactions), just keep it null
-      // It will appear automatically after first deposit/transfer or after next recalc when authenticated
       setBalance(data ?? null);
     } catch (error) {
       console.error('Error fetching balance:', error);
@@ -60,8 +60,11 @@ export const useBalance = () => {
           table: 'user_balances',
           filter: `user_id=eq.${user.id}`
         },
-        () => {
-          fetchBalance();
+        (payload) => {
+          // Update balance directly from realtime payload without refetching
+          if (payload.new) {
+            setBalance(payload.new as UserBalance);
+          }
         }
       )
       .subscribe();
@@ -69,7 +72,7 @@ export const useBalance = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchBalance]);
+  }, [user]);
 
   return {
     balance,
