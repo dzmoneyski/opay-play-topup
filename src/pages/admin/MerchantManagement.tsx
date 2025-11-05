@@ -37,22 +37,53 @@ const MerchantManagement = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Fetch merchant requests and merchants
       const [requestsRes, merchantsRes] = await Promise.all([
         supabase
           .from('merchant_requests')
-          .select('*, profiles(full_name)')
+          .select('*')
           .order('created_at', { ascending: false }),
         supabase
           .from('merchants')
-          .select('*, profiles(full_name)')
+          .select('*')
           .order('created_at', { ascending: false })
       ]);
 
       if (requestsRes.error) throw requestsRes.error;
       if (merchantsRes.error) throw merchantsRes.error;
 
-      setRequests(requestsRes.data || []);
-      setMerchants(merchantsRes.data || []);
+      // Get unique user IDs
+      const allUserIds = new Set([
+        ...(requestsRes.data || []).map(r => r.user_id),
+        ...(merchantsRes.data || []).map(m => m.user_id)
+      ]);
+
+      // Fetch profiles for these users
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', Array.from(allUserIds));
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of user_id to profile
+      const profilesMap = new Map(
+        (profilesData || []).map(p => [p.user_id, p])
+      );
+
+      // Merge profiles with requests and merchants
+      const requestsWithProfiles = (requestsRes.data || []).map(r => ({
+        ...r,
+        profiles: profilesMap.get(r.user_id)
+      }));
+
+      const merchantsWithProfiles = (merchantsRes.data || []).map(m => ({
+        ...m,
+        profiles: profilesMap.get(m.user_id)
+      }));
+
+      setRequests(requestsWithProfiles);
+      setMerchants(merchantsWithProfiles);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('فشل تحميل البيانات');
