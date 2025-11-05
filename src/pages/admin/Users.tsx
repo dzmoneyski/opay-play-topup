@@ -599,9 +599,17 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
                           تأكيد حذف الحساب
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-right">
-                          هل أنت متأكد من حذف هذا الحساب نهائياً؟ 
+                          هل أنت متأكد من حذف هذا المستخدم نهائياً من النظام؟ 
                           <br />
-                          <span className="text-red-600 font-semibold">سيتم حذف جميع البيانات المرتبطة بهذا المستخدم (الرصيد، المعاملات، الطلبات). هذا الإجراء لا يمكن التراجع عنه!</span>
+                          <span className="text-red-600 font-semibold">
+                            سيتم حذف المستخدم من قاعدة بيانات المصادقة وجميع البيانات المرتبطة به 
+                            (الملف الشخصي، الرصيد، المعاملات، الطلبات، إلخ). 
+                            هذا الإجراء نهائي ولا يمكن التراجع عنه أبداً!
+                          </span>
+                          <br /><br />
+                          <span className="text-amber-600">
+                            💡 نصيحة: إذا كنت تريد إيقاف المستخدم مؤقتاً، استخدم خيار "تعليق الحساب" بدلاً من الحذف.
+                          </span>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter className="flex-row-reverse gap-2">
@@ -610,19 +618,23 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
                           onClick={async () => {
                             setProcessing(true);
                             try {
-                              // حذف البيانات من profiles (سيتم حذف البيانات المرتبطة تلقائياً بسبب CASCADE)
-                              const { error } = await supabase
-                                .from('profiles')
-                                .delete()
-                                .eq('user_id', user.user_id);
+                              const { data: currentUser } = await supabase.auth.getUser();
+                              if (!currentUser.user) throw new Error('غير مصرح');
+
+                              // استخدام الـ function الجديدة للحذف النهائي من auth.users
+                              const { data, error } = await supabase.rpc('admin_delete_user', {
+                                _target_user_id: user.user_id,
+                                _admin_id: currentUser.user.id
+                              });
 
                               if (error) throw error;
 
-                              alert('تم حذف الحساب بنجاح');
+                              const result = data as { success: boolean; message: string };
+                              alert(result.message);
                               onUpdate();
                             } catch (error: any) {
-                              console.error('Error deleting account:', error);
-                              alert(`خطأ في حذف الحساب: ${error.message}`);
+                              console.error('Error deleting user:', error);
+                              alert(`خطأ في حذف المستخدم: ${error.message}`);
                             } finally {
                               setProcessing(false);
                             }

@@ -896,6 +896,10 @@ export type Database = {
         Args: { _amount: number; _note?: string; _target_user: string }
         Returns: Json
       }
+      admin_delete_user: {
+        Args: { _admin_id: string; _target_user_id: string }
+        Returns: Json
+      }
       approve_betting_deposit: {
         Args: { _admin_notes?: string; _transaction_id: string }
         Returns: Json
