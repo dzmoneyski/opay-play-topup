@@ -301,7 +301,7 @@ export default function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="إجمالي الإيداعات"
-          value={`${financialStats.totalDeposits.toFixed(2)} دج`}
+          value={`${Math.round(financialStats.totalDeposits)} دج`}
           description="المقبولة"
           icon={ArrowDownToLine}
           color="success"
@@ -309,7 +309,7 @@ export default function AdminDashboard() {
         
         <StatsCard
           title="إجمالي السحوبات"
-          value={`${financialStats.totalWithdrawals.toFixed(2)} دج`}
+          value={`${Math.round(financialStats.totalWithdrawals)} دج`}
           description="المكتملة"
           icon={ArrowUpFromLine}
           color="primary"
@@ -317,7 +317,7 @@ export default function AdminDashboard() {
         
         <StatsCard
           title="قيمة البطاقات"
-          value={`${financialStats.totalCards.toFixed(2)} دج`}
+          value={`${Math.round(financialStats.totalCards)} دج`}
           description="إجمالي القيمة"
           icon={CreditCard}
           color="success"
@@ -325,7 +325,7 @@ export default function AdminDashboard() {
         
         <StatsCard
           title="إيرادات المنصة"
-          value={`${financialStats.platformRevenue.toFixed(2)} دج`}
+          value={`${Math.round(financialStats.platformRevenue)} دج`}
           description="من العمولات"
           icon={TrendingUp}
           color="success"
@@ -336,7 +336,7 @@ export default function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="عمليات الرهان"
-          value={`${financialStats.totalBettingDeposits.toFixed(2)} دج`}
+          value={`${Math.round(financialStats.totalBettingDeposits)} دج`}
           description="إجمالي المعاملات"
           icon={ArrowDownToLine}
           color="primary"
@@ -344,7 +344,7 @@ export default function AdminDashboard() {
         
         <StatsCard
           title="شحن الألعاب"
-          value={`${financialStats.totalGameTopups.toFixed(2)} دج`}
+          value={`${Math.round(financialStats.totalGameTopups)} دج`}
           description="إجمالي الشحنات"
           icon={CreditCard}
           color="primary"
@@ -387,7 +387,7 @@ export default function AdminDashboard() {
                   <p className="text-sm font-medium text-muted-foreground">رسوم الإيداع</p>
                 </div>
                 <p className="text-2xl font-bold text-green-600">
-                  {financialStats.revenueBreakdown.depositFees.toFixed(2)} دج
+                  {Math.round(financialStats.revenueBreakdown.depositFees)} دج
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {((financialStats.revenueBreakdown.depositFees / financialStats.platformRevenue) * 100 || 0).toFixed(1)}% من الإيرادات
@@ -400,7 +400,7 @@ export default function AdminDashboard() {
                   <p className="text-sm font-medium text-muted-foreground">رسوم السحب</p>
                 </div>
                 <p className="text-2xl font-bold text-blue-600">
-                  {financialStats.revenueBreakdown.withdrawalFees.toFixed(2)} دج
+                  {Math.round(financialStats.revenueBreakdown.withdrawalFees)} دج
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {((financialStats.revenueBreakdown.withdrawalFees / financialStats.platformRevenue) * 100 || 0).toFixed(1)}% من الإيرادات
@@ -413,7 +413,7 @@ export default function AdminDashboard() {
                   <p className="text-sm font-medium text-muted-foreground">رسوم التحويل</p>
                 </div>
                 <p className="text-2xl font-bold text-purple-600">
-                  {financialStats.revenueBreakdown.transferFees.toFixed(2)} دج
+                  {Math.round(financialStats.revenueBreakdown.transferFees)} دج
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {((financialStats.revenueBreakdown.transferFees / financialStats.platformRevenue) * 100 || 0).toFixed(1)}% من الإيرادات
@@ -426,7 +426,7 @@ export default function AdminDashboard() {
                   <p className="text-sm font-medium text-muted-foreground">رسوم الرهان</p>
                 </div>
                 <p className="text-2xl font-bold text-orange-600">
-                  {financialStats.revenueBreakdown.bettingFees.toFixed(2)} دج
+                  {Math.round(financialStats.revenueBreakdown.bettingFees)} دج
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {((financialStats.revenueBreakdown.bettingFees / financialStats.platformRevenue) * 100 || 0).toFixed(1)}% من الإيرادات
@@ -439,7 +439,7 @@ export default function AdminDashboard() {
                   <p className="text-sm font-medium text-muted-foreground">رسوم الألعاب</p>
                 </div>
                 <p className="text-2xl font-bold text-pink-600">
-                  {financialStats.revenueBreakdown.gameFees.toFixed(2)} دج
+                  {Math.round(financialStats.revenueBreakdown.gameFees)} دج
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {((financialStats.revenueBreakdown.gameFees / financialStats.platformRevenue) * 100 || 0).toFixed(1)}% من الإيرادات
@@ -452,13 +452,13 @@ export default function AdminDashboard() {
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-muted-foreground">إجمالي الإيرادات</p>
                   <p className="text-3xl font-bold text-primary">
-                    {financialStats.platformRevenue.toFixed(2)} دج
+                    {Math.round(financialStats.platformRevenue)} دج
                   </p>
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-muted-foreground">حجم المعاملات</p>
                   <p className="text-3xl font-bold text-primary">
-                    {(financialStats.totalDeposits + financialStats.totalWithdrawals + financialStats.totalTransfers).toFixed(2)} دج
+                    {Math.round(financialStats.totalDeposits + financialStats.totalWithdrawals + financialStats.totalTransfers)} دج
                   </p>
                 </div>
                 <div className="space-y-2">
