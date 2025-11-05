@@ -764,11 +764,16 @@ export default function UsersPage() {
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.phone?.includes(searchTerm)
-  );
+  const filteredUsers = users.filter(user => {
+    const searchLower = searchTerm.toLowerCase();
+    const fullName = user.full_name || '';
+    const email = user.email || '';
+    const phone = user.phone || '';
+    
+    return fullName.toLowerCase().includes(searchLower) ||
+           email.toLowerCase().includes(searchLower) ||
+           phone.includes(searchTerm);
+  });
 
   const totalUsers = users.length;
   const activeUsers = users.filter(u => u.is_account_activated).length;
@@ -936,18 +941,18 @@ export default function UsersPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-4 mb-2">
                       <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center text-white font-bold">
-                        {user.full_name.charAt(0)}
+                        {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'م'}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground">{user.full_name}</h3>
+                        <h3 className="font-semibold text-foreground">{user.full_name || 'غير محدد'}</h3>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Mail className="h-3 w-3" />
-                            {user.email}
+                            {user.email || 'غير محدد'}
                           </span>
                           <span className="flex items-center gap-1">
                             <Phone className="h-3 w-3" />
-                            {user.phone}
+                            {user.phone || 'غير محدد'}
                           </span>
                            <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
