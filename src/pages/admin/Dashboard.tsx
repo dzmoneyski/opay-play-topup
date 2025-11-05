@@ -588,9 +588,7 @@ export default function AdminDashboard() {
                   <p className="text-xs text-orange-700">إجمالي القيمة</p>
                 </div>
                 <p className="text-xl font-bold text-orange-600">
-                  {financialStats.totalBettingDeposits >= 1000000 
-                    ? `${(financialStats.totalBettingDeposits / 1000000).toFixed(1)}M`
-                    : `${(financialStats.totalBettingDeposits / 1000).toFixed(0)}K`} دج
+                  {Math.round(financialStats.totalBettingDeposits)} دج
                 </p>
               </div>
 
@@ -600,9 +598,7 @@ export default function AdminDashboard() {
                   <p className="text-xs text-purple-700">إجمالي القيمة</p>
                 </div>
                 <p className="text-xl font-bold text-purple-600">
-                  {financialStats.totalGameTopups >= 1000000 
-                    ? `${(financialStats.totalGameTopups / 1000000).toFixed(1)}M`
-                    : `${(financialStats.totalGameTopups / 1000).toFixed(0)}K`} دج
+                  {Math.round(financialStats.totalGameTopups)} دج
                 </p>
               </div>
 
@@ -667,9 +663,7 @@ export default function AdminDashboard() {
               <div className="flex justify-between">
                 <span className="text-sm text-blue-800">إيرادات العمولات</span>
                 <span className="text-sm font-medium text-green-600">
-                  {financialStats.platformRevenue >= 1000 
-                    ? `${(financialStats.platformRevenue / 1000).toFixed(1)}K دج`
-                    : `${financialStats.platformRevenue.toFixed(0)} دج`}
+                  {Math.round(financialStats.platformRevenue)} دج
                 </span>
               </div>
               <div className="flex justify-between">
