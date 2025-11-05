@@ -221,10 +221,7 @@ export default function AdminDashboard() {
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold text-foreground">
-          {typeof value === 'number' && value > 1000 
-            ? `${(value / 1000).toFixed(1)}K`
-            : value
-          }
+          {value}
         </div>
         <div className="flex items-center justify-between mt-2">
           <p className="text-xs text-muted-foreground">{description}</p>
@@ -304,9 +301,7 @@ export default function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="إجمالي الإيداعات"
-          value={financialStats.totalDeposits >= 1000000 
-            ? `${(financialStats.totalDeposits / 1000000).toFixed(1)}M دج`
-            : `${(financialStats.totalDeposits / 1000).toFixed(0)}K دج`}
+          value={`${financialStats.totalDeposits.toFixed(2)} دج`}
           description="المقبولة"
           icon={ArrowDownToLine}
           color="success"
@@ -314,9 +309,7 @@ export default function AdminDashboard() {
         
         <StatsCard
           title="إجمالي السحوبات"
-          value={financialStats.totalWithdrawals >= 1000000 
-            ? `${(financialStats.totalWithdrawals / 1000000).toFixed(1)}M دج`
-            : `${(financialStats.totalWithdrawals / 1000).toFixed(0)}K دج`}
+          value={`${financialStats.totalWithdrawals.toFixed(2)} دج`}
           description="المكتملة"
           icon={ArrowUpFromLine}
           color="primary"
@@ -324,9 +317,7 @@ export default function AdminDashboard() {
         
         <StatsCard
           title="قيمة البطاقات"
-          value={financialStats.totalCards >= 1000000 
-            ? `${(financialStats.totalCards / 1000000).toFixed(1)}M دج`
-            : `${(financialStats.totalCards / 1000).toFixed(0)}K دج`}
+          value={`${financialStats.totalCards.toFixed(2)} دج`}
           description="إجمالي القيمة"
           icon={CreditCard}
           color="success"
@@ -334,9 +325,7 @@ export default function AdminDashboard() {
         
         <StatsCard
           title="إيرادات المنصة"
-          value={financialStats.platformRevenue >= 1000000 
-            ? `${(financialStats.platformRevenue / 1000000).toFixed(1)}M دج`
-            : `${(financialStats.platformRevenue / 1000).toFixed(0)}K دج`}
+          value={`${financialStats.platformRevenue.toFixed(2)} دج`}
           description="من العمولات"
           icon={TrendingUp}
           color="success"
@@ -347,9 +336,7 @@ export default function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="عمليات الرهان"
-          value={financialStats.totalBettingDeposits >= 1000000 
-            ? `${(financialStats.totalBettingDeposits / 1000000).toFixed(1)}M دج`
-            : `${(financialStats.totalBettingDeposits / 1000).toFixed(0)}K دج`}
+          value={`${financialStats.totalBettingDeposits.toFixed(2)} دج`}
           description="إجمالي المعاملات"
           icon={ArrowDownToLine}
           color="primary"
@@ -357,9 +344,7 @@ export default function AdminDashboard() {
         
         <StatsCard
           title="شحن الألعاب"
-          value={financialStats.totalGameTopups >= 1000000 
-            ? `${(financialStats.totalGameTopups / 1000000).toFixed(1)}M دج`
-            : `${(financialStats.totalGameTopups / 1000).toFixed(0)}K دج`}
+          value={`${financialStats.totalGameTopups.toFixed(2)} دج`}
           description="إجمالي الشحنات"
           icon={CreditCard}
           color="primary"
@@ -402,9 +387,7 @@ export default function AdminDashboard() {
                   <p className="text-sm font-medium text-muted-foreground">رسوم الإيداع</p>
                 </div>
                 <p className="text-2xl font-bold text-green-600">
-                  {financialStats.revenueBreakdown.depositFees >= 1000 
-                    ? `${(financialStats.revenueBreakdown.depositFees / 1000).toFixed(1)}K`
-                    : financialStats.revenueBreakdown.depositFees.toFixed(0)} دج
+                  {financialStats.revenueBreakdown.depositFees.toFixed(2)} دج
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {((financialStats.revenueBreakdown.depositFees / financialStats.platformRevenue) * 100 || 0).toFixed(1)}% من الإيرادات
@@ -417,9 +400,7 @@ export default function AdminDashboard() {
                   <p className="text-sm font-medium text-muted-foreground">رسوم السحب</p>
                 </div>
                 <p className="text-2xl font-bold text-blue-600">
-                  {financialStats.revenueBreakdown.withdrawalFees >= 1000 
-                    ? `${(financialStats.revenueBreakdown.withdrawalFees / 1000).toFixed(1)}K`
-                    : financialStats.revenueBreakdown.withdrawalFees.toFixed(0)} دج
+                  {financialStats.revenueBreakdown.withdrawalFees.toFixed(2)} دج
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {((financialStats.revenueBreakdown.withdrawalFees / financialStats.platformRevenue) * 100 || 0).toFixed(1)}% من الإيرادات
@@ -432,9 +413,7 @@ export default function AdminDashboard() {
                   <p className="text-sm font-medium text-muted-foreground">رسوم التحويل</p>
                 </div>
                 <p className="text-2xl font-bold text-purple-600">
-                  {financialStats.revenueBreakdown.transferFees >= 1000 
-                    ? `${(financialStats.revenueBreakdown.transferFees / 1000).toFixed(1)}K`
-                    : financialStats.revenueBreakdown.transferFees.toFixed(0)} دج
+                  {financialStats.revenueBreakdown.transferFees.toFixed(2)} دج
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {((financialStats.revenueBreakdown.transferFees / financialStats.platformRevenue) * 100 || 0).toFixed(1)}% من الإيرادات
@@ -447,9 +426,7 @@ export default function AdminDashboard() {
                   <p className="text-sm font-medium text-muted-foreground">رسوم الرهان</p>
                 </div>
                 <p className="text-2xl font-bold text-orange-600">
-                  {financialStats.revenueBreakdown.bettingFees >= 1000 
-                    ? `${(financialStats.revenueBreakdown.bettingFees / 1000).toFixed(1)}K`
-                    : financialStats.revenueBreakdown.bettingFees.toFixed(0)} دج
+                  {financialStats.revenueBreakdown.bettingFees.toFixed(2)} دج
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {((financialStats.revenueBreakdown.bettingFees / financialStats.platformRevenue) * 100 || 0).toFixed(1)}% من الإيرادات
@@ -462,9 +439,7 @@ export default function AdminDashboard() {
                   <p className="text-sm font-medium text-muted-foreground">رسوم الألعاب</p>
                 </div>
                 <p className="text-2xl font-bold text-pink-600">
-                  {financialStats.revenueBreakdown.gameFees >= 1000 
-                    ? `${(financialStats.revenueBreakdown.gameFees / 1000).toFixed(1)}K`
-                    : financialStats.revenueBreakdown.gameFees.toFixed(0)} دج
+                  {financialStats.revenueBreakdown.gameFees.toFixed(2)} دج
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {((financialStats.revenueBreakdown.gameFees / financialStats.platformRevenue) * 100 || 0).toFixed(1)}% من الإيرادات
@@ -477,17 +452,13 @@ export default function AdminDashboard() {
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-muted-foreground">إجمالي الإيرادات</p>
                   <p className="text-3xl font-bold text-primary">
-                    {financialStats.platformRevenue >= 1000000 
-                      ? `${(financialStats.platformRevenue / 1000000).toFixed(2)}M`
-                      : `${(financialStats.platformRevenue / 1000).toFixed(1)}K`} دج
+                    {financialStats.platformRevenue.toFixed(2)} دج
                   </p>
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-muted-foreground">حجم المعاملات</p>
                   <p className="text-3xl font-bold text-primary">
-                    {((financialStats.totalDeposits + financialStats.totalWithdrawals + financialStats.totalTransfers) >= 1000000 
-                      ? `${((financialStats.totalDeposits + financialStats.totalWithdrawals + financialStats.totalTransfers) / 1000000).toFixed(2)}M`
-                      : `${((financialStats.totalDeposits + financialStats.totalWithdrawals + financialStats.totalTransfers) / 1000).toFixed(1)}K`)} دج
+                    {(financialStats.totalDeposits + financialStats.totalWithdrawals + financialStats.totalTransfers).toFixed(2)} دج
                   </p>
                 </div>
                 <div className="space-y-2">
