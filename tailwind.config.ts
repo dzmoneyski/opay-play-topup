@@ -145,7 +145,9 @@ export default {
 				'shimmer': 'shimmer 2s linear infinite',
 				'fade-out': 'fade-out 0.5s ease-out forwards',
 				'scale-in': 'scale-in 0.8s ease-out',
-				'scale-out': 'scale-out 0.5s ease-out forwards'
+				'scale-out': 'scale-out 0.5s ease-out forwards',
+				'fade-in': 'slide-up 0.4s ease-out',
+				'bounce-soft': 'float 2s ease-in-out infinite'
 			}
 		}
 	},

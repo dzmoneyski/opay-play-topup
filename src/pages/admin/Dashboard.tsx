@@ -211,16 +211,16 @@ export default function AdminDashboard() {
     trend?: string;
     color?: string;
   }) => (
-    <Card className="relative overflow-hidden">
+    <Card className="relative overflow-hidden touch-manipulation active:scale-[0.98] transition-transform">
       <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-${color}/10 rounded-bl-full`} />
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+        <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <Icon className={`h-4 w-4 text-${color === 'primary' ? 'primary' : color === 'success' ? 'green-600' : color === 'warning' ? 'yellow-600' : 'red-600'}`} />
+        <Icon className={`h-4 w-4 md:h-5 md:w-5 text-${color === 'primary' ? 'primary' : color === 'success' ? 'green-600' : color === 'warning' ? 'yellow-600' : 'red-600'}`} />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold text-foreground">
+        <div className="text-xl md:text-2xl font-bold text-foreground">
           {value}
         </div>
         <div className="flex items-center justify-between mt-2">
@@ -251,17 +251,17 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 md:p-6 space-y-4 md:space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">لوحة التحكم</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">لوحة التحكم</h1>
+        <p className="text-sm md:text-base text-muted-foreground mt-1 md:mt-2">
           نظرة عامة على نشاط المنصة والإحصائيات الرئيسية
         </p>
       </div>
 
       {/* Main Statistics Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="إجمالي المستخدمين"
           value={totalUsers}
@@ -298,7 +298,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Financial Statistics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="إجمالي الإيداعات"
           value={`${Math.round(financialStats.totalDeposits)} دج`}
@@ -333,7 +333,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Additional Statistics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="عمليات الرهان"
           value={`${Math.round(financialStats.totalBettingDeposits)} دج`}

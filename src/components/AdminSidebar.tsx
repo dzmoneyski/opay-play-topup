@@ -93,9 +93,9 @@ export function AdminSidebar() {
                   end={item.exact}
                   className={getNavCls(isActive(item.url, item.exact))}
                 >
-                  <div className="flex items-center px-3 py-2 rounded-lg w-full">
-                    <item.icon className={`h-4 w-4 ${state === 'collapsed' ? 'mx-auto' : 'ml-2'}`} />
-                    {state !== 'collapsed' && <span className="mr-3 text-sm font-medium">{item.title}</span>}
+                  <div className="flex items-center px-2 md:px-3 py-2.5 md:py-2 rounded-lg w-full touch-manipulation active:scale-95 transition-transform">
+                    <item.icon className={`h-5 w-5 md:h-4 md:w-4 ${state === 'collapsed' ? 'mx-auto' : 'ml-2'}`} />
+                    {state !== 'collapsed' && <span className="mr-3 text-sm md:text-sm font-medium">{item.title}</span>}
                   </div>
                 </NavLink>
               </SidebarMenuButton>
@@ -108,28 +108,28 @@ export function AdminSidebar() {
 
   return (
     <Sidebar
-      className={`border-l border-border/50 ${state === 'collapsed' ? "w-16" : "w-64"} transition-all duration-300`}
+      className={`border-l border-border/50 ${state === 'collapsed' ? "w-16" : "w-64 md:w-64"} transition-all duration-300`}
       collapsible="icon"
     >
       {/* Header */}
-      <div className="p-4 border-b border-border/50">
+      <div className="p-3 md:p-4 border-b border-border/50">
         <div className="flex items-center justify-between">
           {state !== 'collapsed' && (
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-gradient-primary">
-                <Wallet className="h-5 w-5 text-white" />
+              <div className="p-1.5 md:p-2 rounded-lg bg-gradient-primary">
+                <Wallet className="h-4 w-4 md:h-5 md:w-5 text-white" />
               </div>
-              <div>
-                <h2 className="text-sm font-bold text-foreground">لوحة الإدارة</h2>
-                <p className="text-xs text-muted-foreground">OpaY الجزائر</p>
+              <div className="hidden md:block">
+                <h2 className="text-xs md:text-sm font-bold text-foreground">لوحة الإدارة</h2>
+                <p className="text-[10px] md:text-xs text-muted-foreground">OpaY الجزائر</p>
               </div>
             </div>
           )}
-          <SidebarTrigger className="h-8 w-8 p-0" />
+          <SidebarTrigger className="h-9 w-9 md:h-8 md:w-8 p-0 touch-manipulation active:scale-95 transition-transform" />
         </div>
       </div>
 
-      <SidebarContent className="px-2 py-4 space-y-6">
+      <SidebarContent className="px-2 py-3 md:py-4 space-y-4 md:space-y-6 overflow-y-auto">
         <SidebarSection items={mainItems} label="القسم الرئيسي" />
         <SidebarSection items={transactionItems} label="العمليات المالية" />
         <SidebarSection items={serviceItems} label="الخدمات والتقارير" />
