@@ -14,7 +14,8 @@ import {
   ArrowRight,
   CheckCircle,
   AlertCircle,
-  ArrowLeft
+  ArrowLeft,
+  Phone
 } from 'lucide-react';
 import opayGatewayLogo from '@/assets/opay-final-logo.png';
 
@@ -34,6 +35,7 @@ const Auth = () => {
 
   const [signUpData, setSignUpData] = React.useState({
     fullName: '',
+    phone: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -91,10 +93,22 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!signUpData.fullName || !signUpData.email || !signUpData.password || !signUpData.confirmPassword) {
+    if (!signUpData.fullName || !signUpData.phone || !signUpData.email || !signUpData.password || !signUpData.confirmPassword) {
       toast({
         title: "خطأ في البيانات",
         description: "يرجى ملأ جميع الحقول المطلوبة",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // التحقق من صحة رقم الهاتف الجزائري
+    const phoneRegex = /^(05|06|07)[0-9]{8}$/;
+    if (!phoneRegex.test(signUpData.phone)) {
+      toast({
+        title: "رقم الهاتف غير صحيح",
+        description: "يرجى إدخال رقم هاتف جزائري صحيح يبدأ بـ 05 أو 06 أو 07",
         variant: "destructive"
       });
       setIsLoading(false);
@@ -121,7 +135,7 @@ const Auth = () => {
       return;
     }
 
-    const { error } = await signUp(signUpData.email, signUpData.password, signUpData.fullName);
+    const { error } = await signUp(signUpData.email, signUpData.password, signUpData.fullName, signUpData.phone);
 
     if (error) {
       if (error.message.includes('User already registered')) {
@@ -263,6 +277,30 @@ const Auth = () => {
                         disabled={isLoading}
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-phone" className="text-white/90">رقم الهاتف</Label>
+                    <div className="relative">
+                      <Phone className="absolute right-3 top-3 h-4 w-4 text-white/60" />
+                      <Input
+                        id="signup-phone"
+                        type="tel"
+                        placeholder="0555123456"
+                        value={signUpData.phone}
+                        onChange={(e) => {
+                          // السماح فقط بالأرقام
+                          const value = e.target.value.replace(/[^0-9]/g, '');
+                          if (value.length <= 10) {
+                            setSignUpData(prev => ({...prev, phone: value}));
+                          }
+                        }}
+                        className="pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-primary focus:bg-white/20"
+                        disabled={isLoading}
+                        maxLength={10}
+                      />
+                    </div>
+                    <p className="text-xs text-white/60">مثال: 0555123456 (يجب أن يبدأ بـ 05 أو 06 أو 07)</p>
                   </div>
 
                   <div className="space-y-2">
