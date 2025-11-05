@@ -698,21 +698,6 @@ export default function UsersPage() {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        
-        // First, get all auth users to fetch their emails
-        const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
-        if (authError) throw authError;
-
-        // Create a map of user_id to email
-        const emailMap = new Map<string, string>();
-        if (authData?.users) {
-          authData.users.forEach((u: any) => {
-            if (u.id && u.email) {
-              emailMap.set(u.id, u.email);
-            }
-          });
-        }
-
         const { data: profiles, error } = await supabase
           .from('profiles')
           .select(`
@@ -734,7 +719,6 @@ export default function UsersPage() {
 
             return {
               ...profile,
-              email: emailMap.get(profile.user_id) || 'غير محدد',
               balance: Number(balanceRes.data?.balance) || 0,
               user_roles: roleRes.data ? [roleRes.data] : [],
               total_transactions: (depositsRes.data?.length || 0) + 
@@ -756,9 +740,9 @@ export default function UsersPage() {
   }, []);
 
   const filteredUsers = users.filter(user =>
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.phone.includes(searchTerm)
+    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.phone?.includes(searchTerm)
   );
 
   const totalUsers = users.length;
