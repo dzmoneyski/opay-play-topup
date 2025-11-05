@@ -1009,6 +1009,7 @@ export type Database = {
         Args: { _admin_id: string; _reason: string; _withdrawal_id: string }
         Returns: undefined
       }
+      sync_existing_users_data: { Args: never; Returns: Json }
       validate_luhn_check_digit: {
         Args: { _card_code: string }
         Returns: boolean

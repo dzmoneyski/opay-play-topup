@@ -692,6 +692,7 @@ export default function UsersPage() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [users, setUsers] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [syncing, setSyncing] = React.useState(false);
 
   // Fetch real user data
   React.useEffect(() => {
@@ -738,6 +739,30 @@ export default function UsersPage() {
 
     fetchUsers();
   }, []);
+
+  const handleSyncUsersData = async () => {
+    if (!confirm('هل تريد تحديث بيانات جميع المستخدمين القدامى؟ سيتم جلب البريد الإلكتروني ورقم الهاتف من بيانات التسجيل.')) {
+      return;
+    }
+
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.rpc('sync_existing_users_data');
+      
+      if (error) throw error;
+
+      const result = data as { success: boolean; updated_count: number; message: string };
+      alert(result.message);
+      
+      // Refresh users list
+      window.location.reload();
+    } catch (error: any) {
+      console.error('Error syncing users:', error);
+      alert(`خطأ في تحديث البيانات: ${error.message}`);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const filteredUsers = users.filter(user =>
     user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -884,8 +909,12 @@ export default function UsersPage() {
                 className="pr-10"
               />
             </div>
-            <Button variant="outline">
-              تصفية متقدمة
+            <Button 
+              variant="outline"
+              onClick={handleSyncUsersData}
+              disabled={syncing}
+            >
+              {syncing ? 'جاري التحديث...' : 'تحديث بيانات المستخدمين القدامى'}
             </Button>
           </div>
         </CardContent>
