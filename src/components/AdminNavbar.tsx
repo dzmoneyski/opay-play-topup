@@ -45,7 +45,7 @@ const transactionItems = [
 const serviceItems = [
   { title: "البطاقات الرقمية", url: "/admin/cards", icon: Gift },
   { title: "إدارة الألعاب", url: "/admin/games", icon: Gamepad2, notificationKey: 'pendingGames' },
-  { title: "إدارة المراهنات", url: "/admin/betting", icon: Gamepad2, notificationKey: 'pendingBetting' },
+  { title: "إدارة المراهنات", url: "/admin/betting", icon: Gamepad2, notificationKey: 'pendingBettingVerifications' },
 ];
 
 export function AdminNavbar() {
@@ -165,12 +165,12 @@ export function AdminNavbar() {
                 <Button variant="ghost" className="gap-2 relative">
                   <div className="relative">
                     <Gift className="h-4 w-4" />
-                    {(counts.pendingBetting + counts.pendingGames) > 0 && (
+                    {(counts.pendingBetting + counts.pendingBettingVerifications + counts.pendingGames) > 0 && (
                       <Badge 
                         variant="destructive" 
                         className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center text-[10px] font-bold rounded-full animate-pulse"
                       >
-                        {counts.pendingBetting + counts.pendingGames}
+                        {counts.pendingBetting + counts.pendingBettingVerifications + counts.pendingGames}
                       </Badge>
                     )}
                   </div>
@@ -236,6 +236,22 @@ export function AdminNavbar() {
                         <p className="text-sm font-medium">طلبات تحقق جديدة</p>
                         <p className="text-xs text-muted-foreground">
                           {counts.pendingVerifications} طلب بانتظار المراجعة
+                        </p>
+                      </div>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+
+                {counts.pendingBettingVerifications > 0 && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin/betting" className="flex items-center gap-3 cursor-pointer">
+                      <div className="p-2 rounded-full bg-warning/10">
+                        <Gamepad2 className="h-4 w-4 text-warning" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">طلبات تحقق حسابات مراهنات</p>
+                        <p className="text-xs text-muted-foreground">
+                          {counts.pendingBettingVerifications} حساب بانتظار الموافقة
                         </p>
                       </div>
                     </Link>
