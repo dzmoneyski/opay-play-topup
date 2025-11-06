@@ -44,8 +44,8 @@ const transactionItems = [
 
 const serviceItems = [
   { title: "البطاقات الرقمية", url: "/admin/cards", icon: Gift },
-  { title: "إدارة الألعاب", url: "/admin/games", icon: Gamepad2 },
-  { title: "إدارة المراهنات", url: "/admin/betting", icon: Gamepad2 },
+  { title: "إدارة الألعاب", url: "/admin/games", icon: Gamepad2, notificationKey: 'pendingGames' },
+  { title: "إدارة المراهنات", url: "/admin/betting", icon: Gamepad2, notificationKey: 'pendingBetting' },
 ];
 
 export function AdminNavbar() {
@@ -162,22 +162,45 @@ export function AdminNavbar() {
             {/* Services Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="gap-2">
-                  <Gift className="h-4 w-4" />
+                <Button variant="ghost" className="gap-2 relative">
+                  <div className="relative">
+                    <Gift className="h-4 w-4" />
+                    {(counts.pendingBetting + counts.pendingGames) > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center text-[10px] font-bold rounded-full animate-pulse"
+                      >
+                        {counts.pendingBetting + counts.pendingGames}
+                      </Badge>
+                    )}
+                  </div>
                   <span>الخدمات</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>الخدمات والتقارير</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {serviceItems.map((item) => (
-                  <DropdownMenuItem key={item.url} asChild>
-                    <Link to={item.url} className="flex items-center gap-2 cursor-pointer">
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
+                {serviceItems.map((item) => {
+                  const notifCount = getNotificationCount((item as any).notificationKey);
+                  return (
+                    <DropdownMenuItem key={item.url} asChild>
+                      <Link to={item.url} className="flex items-center gap-2 cursor-pointer">
+                        <div className="relative">
+                          <item.icon className="h-4 w-4" />
+                          {notifCount > 0 && (
+                            <Badge 
+                              variant="destructive" 
+                              className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 p-0 flex items-center justify-center text-[9px] font-bold rounded-full animate-pulse"
+                            >
+                              {notifCount}
+                            </Badge>
+                          )}
+                        </div>
+                        <span className="flex-1">{item.title}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

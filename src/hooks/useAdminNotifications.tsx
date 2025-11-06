@@ -5,6 +5,8 @@ interface NotificationCounts {
   pendingVerifications: number;
   pendingDeposits: number;
   pendingWithdrawals: number;
+  pendingBetting: number;
+  pendingGames: number;
   total: number;
 }
 
@@ -13,13 +15,15 @@ export const useAdminNotifications = () => {
     pendingVerifications: 0,
     pendingDeposits: 0,
     pendingWithdrawals: 0,
+    pendingBetting: 0,
+    pendingGames: 0,
     total: 0
   });
   const [loading, setLoading] = React.useState(true);
 
   const fetchCounts = async () => {
     try {
-      const [verifications, deposits, withdrawals] = await Promise.all([
+      const [verifications, deposits, withdrawals, betting, games] = await Promise.all([
         supabase
           .from('verification_requests')
           .select('id', { count: 'exact', head: true })
@@ -31,6 +35,14 @@ export const useAdminNotifications = () => {
         supabase
           .from('withdrawals')
           .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending'),
+        supabase
+          .from('betting_transactions')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending'),
+        supabase
+          .from('game_topup_orders')
+          .select('id', { count: 'exact', head: true })
           .eq('status', 'pending')
       ]);
 
@@ -38,7 +50,9 @@ export const useAdminNotifications = () => {
         pendingVerifications: verifications.count || 0,
         pendingDeposits: deposits.count || 0,
         pendingWithdrawals: withdrawals.count || 0,
-        total: (verifications.count || 0) + (deposits.count || 0) + (withdrawals.count || 0)
+        pendingBetting: betting.count || 0,
+        pendingGames: games.count || 0,
+        total: (verifications.count || 0) + (deposits.count || 0) + (withdrawals.count || 0) + (betting.count || 0) + (games.count || 0)
       };
 
       setCounts(newCounts);
@@ -65,6 +79,14 @@ export const useAdminNotifications = () => {
       supabase
         .channel('withdrawals-changes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'withdrawals' }, fetchCounts)
+        .subscribe(),
+      supabase
+        .channel('betting-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'betting_transactions' }, fetchCounts)
+        .subscribe(),
+      supabase
+        .channel('games-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'game_topup_orders' }, fetchCounts)
         .subscribe()
     ];
 
