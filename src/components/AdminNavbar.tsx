@@ -31,21 +31,21 @@ import { cn } from '@/lib/utils';
 
 const mainItems = [
   { title: "لوحة التحكم", url: "/admin", icon: LayoutDashboard, exact: true },
-  { title: "طلبات التحقق", url: "/admin/identity-verification", icon: Shield, notificationKey: 'pendingVerifications' },
+  { title: "طلبات التحقق", url: "/admin/identity-verification", icon: Shield, notificationKey: 'pendingVerifications', showBadge: true },
   { title: "المستخدمين", url: "/admin/users", icon: Users },
   { title: "إدارة التجار", url: "/admin/merchants", icon: Users },
 ];
 
 const transactionItems = [
-  { title: "عمليات الإيداع", url: "/admin/deposits", icon: ArrowDownToLine, notificationKey: 'pendingDeposits' },
-  { title: "عمليات السحب", url: "/admin/withdrawals", icon: ArrowUpFromLine, notificationKey: 'pendingWithdrawals' },
+  { title: "عمليات الإيداع", url: "/admin/deposits", icon: ArrowDownToLine, notificationKey: 'pendingDeposits', showBadge: true },
+  { title: "عمليات السحب", url: "/admin/withdrawals", icon: ArrowUpFromLine, notificationKey: 'pendingWithdrawals', showBadge: true },
   { title: "التحويلات", url: "/admin/transfers", icon: Send },
 ];
 
 const serviceItems = [
   { title: "البطاقات الرقمية", url: "/admin/cards", icon: Gift },
-  { title: "إدارة الألعاب", url: "/admin/games", icon: Gamepad2, notificationKey: 'pendingGames' },
-  { title: "إدارة المراهنات", url: "/admin/betting", icon: Gamepad2, notificationKey: 'pendingBettingVerifications' },
+  { title: "إدارة الألعاب", url: "/admin/games", icon: Gamepad2, notificationKey: 'pendingGames', showBadge: true },
+  { title: "إدارة المراهنات", url: "/admin/betting", icon: Gamepad2, notificationKey: 'pendingBettingVerifications', showBadge: true },
 ];
 
 export function AdminNavbar() {
@@ -86,6 +86,7 @@ export function AdminNavbar() {
             {mainItems.map((item) => {
               const active = isActive(item.url, item.exact);
               const notifCount = getNotificationCount(item.notificationKey);
+              const showNotification = (item as any).showBadge && notifCount > 0;
               
               return (
                 <Link
@@ -100,10 +101,10 @@ export function AdminNavbar() {
                 >
                   <div className="relative">
                     <item.icon className="h-4 w-4" />
-                    {notifCount > 0 && (
+                    {showNotification && (
                       <Badge 
                         variant="destructive" 
-                        className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center text-[10px] font-bold rounded-full"
+                        className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center text-[10px] font-bold rounded-full animate-pulse"
                       >
                         {notifCount}
                       </Badge>
@@ -123,7 +124,7 @@ export function AdminNavbar() {
                     {(counts.pendingDeposits + counts.pendingWithdrawals) > 0 && (
                       <Badge 
                         variant="destructive" 
-                        className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center text-[10px] font-bold rounded-full"
+                        className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center text-[10px] font-bold rounded-full animate-pulse"
                       >
                         {counts.pendingDeposits + counts.pendingWithdrawals}
                       </Badge>
@@ -137,15 +138,16 @@ export function AdminNavbar() {
                 <DropdownMenuSeparator />
                 {transactionItems.map((item) => {
                   const notifCount = getNotificationCount(item.notificationKey);
+                  const showNotification = (item as any).showBadge && notifCount > 0;
                   return (
                     <DropdownMenuItem key={item.url} asChild>
                       <Link to={item.url} className="flex items-center gap-2 cursor-pointer">
                         <div className="relative">
                           <item.icon className="h-4 w-4" />
-                          {notifCount > 0 && (
+                          {showNotification && (
                             <Badge 
                               variant="destructive" 
-                              className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 p-0 flex items-center justify-center text-[9px] font-bold rounded-full"
+                              className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 p-0 flex items-center justify-center text-[9px] font-bold rounded-full animate-pulse"
                             >
                               {notifCount}
                             </Badge>
@@ -182,12 +184,13 @@ export function AdminNavbar() {
                 <DropdownMenuSeparator />
                 {serviceItems.map((item) => {
                   const notifCount = getNotificationCount((item as any).notificationKey);
+                  const showNotification = (item as any).showBadge && notifCount > 0;
                   return (
                     <DropdownMenuItem key={item.url} asChild>
                       <Link to={item.url} className="flex items-center gap-2 cursor-pointer">
                         <div className="relative">
                           <item.icon className="h-4 w-4" />
-                          {notifCount > 0 && (
+                          {showNotification && (
                             <Badge 
                               variant="destructive" 
                               className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 p-0 flex items-center justify-center text-[9px] font-bold rounded-full animate-pulse"
@@ -337,6 +340,7 @@ export function AdminNavbar() {
               {allItems.map((item) => {
                 const active = isActive(item.url, (item as any).exact || false);
                 const notifCount = getNotificationCount((item as any).notificationKey);
+                const showNotification = (item as any).showBadge && notifCount > 0;
                 
                 return (
                   <Link
@@ -352,10 +356,10 @@ export function AdminNavbar() {
                   >
                     <div className="relative">
                       <item.icon className="h-4 w-4" />
-                      {notifCount > 0 && (
+                      {showNotification && (
                         <Badge 
                           variant="destructive" 
-                          className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center text-[10px] font-bold rounded-full"
+                          className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center text-[10px] font-bold rounded-full animate-pulse"
                         >
                           {notifCount}
                         </Badge>
