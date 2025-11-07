@@ -49,6 +49,49 @@ export default function IdentityVerificationPage() {
     return data.publicUrl;
   };
 
+  const getSignedImageUrl = async (imagePath: string | null): Promise<string | null> => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith('http')) {
+      // Extract path from full URL
+      const pos = imagePath.indexOf('identity-documents/');
+      if (pos !== -1) {
+        imagePath = imagePath.substring(pos + 'identity-documents/'.length);
+      } else {
+        return imagePath;
+      }
+    }
+    
+    try {
+      const { data, error } = await supabase.storage
+        .from('identity-documents')
+        .createSignedUrl(imagePath, 3600);
+      
+      if (error || !data?.signedUrl) {
+        console.error('Error creating signed URL:', error);
+        return null;
+      }
+      
+      return `${supabase.storage.from('identity-documents').getPublicUrl('').data.publicUrl}${data.signedUrl}`;
+    } catch (err) {
+      console.error('Exception creating signed URL:', err);
+      return null;
+    }
+  };
+
+  const handleImagePreview = async (imagePath: string | null) => {
+    if (!imagePath) return;
+    setImageLoading(true);
+    setImageError(false);
+    
+    const signedUrl = await getSignedImageUrl(imagePath);
+    if (signedUrl) {
+      setImagePreview(signedUrl);
+    } else {
+      setImageError(true);
+      setImageLoading(false);
+    }
+  };
+
   const handleImageError = async (
     e: React.SyntheticEvent<HTMLImageElement, Event>,
     imagePath: string | null
@@ -382,7 +425,7 @@ export default function IdentityVerificationPage() {
                                 src={getImageUrl(request.national_id_front_image) || ''} 
                                 alt="الوجه الأمامي"
                                 className="w-full h-32 object-cover rounded-lg border bg-muted cursor-pointer transition-transform group-hover:scale-[1.02]"
-                                onClick={() => setImagePreview(getImageUrl(request.national_id_front_image) || '')}
+                                onClick={() => handleImagePreview(request.national_id_front_image)}
                                 onError={(e) => handleImageError(e, request.national_id_front_image)}
                               />
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
@@ -400,7 +443,7 @@ export default function IdentityVerificationPage() {
                                 src={getImageUrl(request.national_id_back_image) || ''} 
                                 alt="الوجه الخلفي"
                                 className="w-full h-32 object-cover rounded-lg border bg-muted cursor-pointer transition-transform group-hover:scale-[1.02]"
-                                onClick={() => setImagePreview(getImageUrl(request.national_id_back_image) || '')}
+                                onClick={() => handleImagePreview(request.national_id_back_image)}
                                 onError={(e) => handleImageError(e, request.national_id_back_image)}
                               />
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
@@ -602,7 +645,7 @@ export default function IdentityVerificationPage() {
                         <p className="text-sm font-medium text-muted-foreground">الوجه الأمامي</p>
                         <div 
                           className="relative group cursor-pointer"
-                          onClick={() => setImagePreview(getImageUrl(requestToReview.national_id_front_image) || '')}
+                          onClick={() => handleImagePreview(requestToReview.national_id_front_image)}
                         >
                           <img 
                             src={getImageUrl(requestToReview.national_id_front_image) || ''} 
@@ -622,7 +665,7 @@ export default function IdentityVerificationPage() {
                         <p className="text-sm font-medium text-muted-foreground">الوجه الخلفي</p>
                         <div 
                           className="relative group cursor-pointer"
-                          onClick={() => setImagePreview(getImageUrl(requestToReview.national_id_back_image) || '')}
+                          onClick={() => handleImagePreview(requestToReview.national_id_back_image)}
                         >
                           <img 
                             src={getImageUrl(requestToReview.national_id_back_image) || ''} 
