@@ -28,6 +28,30 @@ export interface GamePackage {
   updated_at: string;
 }
 
+export interface GameTopupOrder {
+  id: string;
+  user_id: string;
+  platform_id: string;
+  package_id: string;
+  player_id: string;
+  amount: number;
+  status: string;
+  notes: string | null;
+  admin_notes: string | null;
+  processed_at: string | null;
+  processed_by: string | null;
+  created_at: string;
+  updated_at: string;
+  platform?: GamePlatform;
+  package?: GamePackage;
+  user?: {
+    user_id: string;
+    full_name: string | null;
+    phone: string | null;
+    email: string | null;
+  };
+}
+
 export const useGamePlatforms = () => {
   return useQuery({
     queryKey: ["game-platforms"],
@@ -123,6 +147,115 @@ export const useGameTopupOrders = () => {
 
       if (error) throw error;
       return data;
+    },
+  });
+};
+
+export const useAdminGameTopupOrders = () => {
+  return useQuery<GameTopupOrder[]>({
+    queryKey: ["admin-game-topup-orders"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("game_topup_orders")
+        .select(`
+          *,
+          platform:game_platforms(*),
+          package:game_packages(*)
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      
+      // Fetch user profiles separately
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map(order => order.user_id))];
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, phone, email")
+          .in("user_id", userIds);
+        
+        // Map profiles to orders
+        return data.map(order => ({
+          ...order,
+          user: profiles?.find(p => p.user_id === order.user_id)
+        })) as GameTopupOrder[];
+      }
+      
+      return data as GameTopupOrder[];
+    },
+  });
+};
+
+export const useApproveGameTopupOrder = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ orderId, adminNotes }: { orderId: string; adminNotes?: string }) => {
+      const { data, error } = await supabase
+        .from("game_topup_orders")
+        .update({
+          status: "completed",
+          admin_notes: adminNotes,
+          processed_at: new Date().toISOString(),
+        })
+        .eq("id", orderId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "تم الموافقة على الطلب",
+        description: "تم تحديث حالة الطلب إلى مكتمل",
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin-game-topup-orders"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ",
+        description: error.message || "حدث خطأ أثناء الموافقة",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useRejectGameTopupOrder = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ orderId, adminNotes }: { orderId: string; adminNotes: string }) => {
+      const { data, error } = await supabase
+        .from("game_topup_orders")
+        .update({
+          status: "rejected",
+          admin_notes: adminNotes,
+          processed_at: new Date().toISOString(),
+        })
+        .eq("id", orderId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "تم رفض الطلب",
+        description: "تم تحديث حالة الطلب إلى مرفوض",
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin-game-topup-orders"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ",
+        description: error.message || "حدث خطأ أثناء الرفض",
+        variant: "destructive",
+      });
     },
   });
 };

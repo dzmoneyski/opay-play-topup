@@ -10,7 +10,13 @@ import {
   Trash2, 
   Upload,
   Gamepad2,
-  Package
+  Package,
+  ShoppingCart,
+  CheckCircle,
+  XCircle,
+  Eye,
+  Loader2,
+  Search
 } from "lucide-react";
 import {
   Dialog,
@@ -29,9 +35,24 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { GamePlatform, GamePackage } from "@/hooks/useGamePlatforms";
+import { 
+  useAdminGameTopupOrders,
+  useApproveGameTopupOrder,
+  useRejectGameTopupOrder
+} from "@/hooks/useGamePlatforms";
 
 const GameManagement = () => {
   const { toast } = useToast();
@@ -40,6 +61,10 @@ const GameManagement = () => {
   const [packageDialogOpen, setPackageDialogOpen] = useState(false);
   const [editingPlatform, setEditingPlatform] = useState<GamePlatform | null>(null);
   const [editingPackage, setEditingPackage] = useState<GamePackage | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [adminNotes, setAdminNotes] = useState("");
+  const [orderFilter, setOrderFilter] = useState<"all" | "pending" | "completed" | "rejected">("pending");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch all platforms (including inactive)
   const { data: platforms } = useQuery({
@@ -66,6 +91,23 @@ const GameManagement = () => {
       return data;
     },
   });
+
+  // Fetch all orders
+  const { data: orders, isLoading: ordersLoading } = useAdminGameTopupOrders();
+  const approveOrder = useApproveGameTopupOrder();
+  const rejectOrder = useRejectGameTopupOrder();
+
+  // Filter orders
+  const filteredOrders = orders?.filter(order => {
+    const matchesStatus = orderFilter === "all" || order.status === orderFilter;
+    const matchesSearch = !searchQuery || 
+      order.player_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.user?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.user?.phone?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesStatus && matchesSearch;
+  }) || [];
+
+  const pendingOrdersCount = orders?.filter(o => o.status === "pending").length || 0;
 
   const handlePlatformSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -227,8 +269,17 @@ const GameManagement = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="platforms" className="space-y-6">
+      <Tabs defaultValue="orders" className="space-y-6">
         <TabsList>
+          <TabsTrigger value="orders">
+            <ShoppingCart className="ml-2 h-4 w-4" />
+            طلبات الشحن
+            {pendingOrdersCount > 0 && (
+              <Badge variant="destructive" className="mr-2">
+                {pendingOrdersCount}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="platforms">
             <Gamepad2 className="ml-2 h-4 w-4" />
             المنصات والألعاب
@@ -238,6 +289,141 @@ const GameManagement = () => {
             الباقات
           </TabsTrigger>
         </TabsList>
+
+        {/* Orders Tab */}
+        <TabsContent value="orders">
+          <Card>
+            <CardHeader>
+              <CardTitle>طلبات شحن الألعاب</CardTitle>
+              <CardDescription>
+                إدارة ومراجعة طلبات شحن حسابات الألعاب
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Filters */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="بحث برقم اللاعب، الاسم أو الهاتف..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pr-10"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant={orderFilter === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setOrderFilter("all")}
+                  >
+                    الكل
+                  </Button>
+                  <Button
+                    variant={orderFilter === "pending" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setOrderFilter("pending")}
+                  >
+                    معلق ({pendingOrdersCount})
+                  </Button>
+                  <Button
+                    variant={orderFilter === "completed" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setOrderFilter("completed")}
+                  >
+                    مكتمل
+                  </Button>
+                  <Button
+                    variant={orderFilter === "rejected" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setOrderFilter("rejected")}
+                  >
+                    مرفوض
+                  </Button>
+                </div>
+              </div>
+
+              {/* Orders Table */}
+              {ordersLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : filteredOrders.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {searchQuery ? "لا توجد نتائج للبحث" : "لا توجد طلبات"}
+                </div>
+              ) : (
+                <div className="rounded-md border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>المستخدم</TableHead>
+                        <TableHead>رقم الهاتف</TableHead>
+                        <TableHead>اللعبة</TableHead>
+                        <TableHead>الباقة</TableHead>
+                        <TableHead>معرف اللاعب</TableHead>
+                        <TableHead>المبلغ</TableHead>
+                        <TableHead>الحالة</TableHead>
+                        <TableHead>التاريخ</TableHead>
+                        <TableHead>الإجراءات</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredOrders.map((order: any) => (
+                        <TableRow key={order.id}>
+                          <TableCell className="font-medium">
+                            {order.user?.full_name || "غير محدد"}
+                          </TableCell>
+                          <TableCell className="font-mono">
+                            {order.user?.phone || "غير محدد"}
+                          </TableCell>
+                          <TableCell>{order.platform?.name_ar || "غير محدد"}</TableCell>
+                          <TableCell>{order.package?.name_ar || "غير محدد"}</TableCell>
+                          <TableCell className="font-mono font-bold">
+                            {order.player_id}
+                          </TableCell>
+                          <TableCell className="font-bold text-primary">
+                            {order.amount} دج
+                          </TableCell>
+                          <TableCell>
+                            {order.status === "pending" && (
+                              <Badge variant="secondary">قيد الانتظار</Badge>
+                            )}
+                            {order.status === "completed" && (
+                              <Badge className="bg-green-500 text-white">مكتمل</Badge>
+                            )}
+                            {order.status === "rejected" && (
+                              <Badge variant="destructive">مرفوض</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {new Date(order.created_at).toLocaleDateString("ar-DZ", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedOrder(order)}
+                            >
+                              <Eye className="h-4 w-4 ml-1" />
+                              عرض
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="platforms" className="space-y-4">
           <Dialog open={platformDialogOpen} onOpenChange={setPlatformDialogOpen}>
@@ -584,6 +770,154 @@ const GameManagement = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Order Review Dialog */}
+      <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+        <DialogContent className="max-w-2xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>مراجعة طلب الشحن</DialogTitle>
+            <DialogDescription>
+              تحقق من تفاصيل الطلب قبل الموافقة أو الرفض
+            </DialogDescription>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+                <div>
+                  <Label className="text-xs text-muted-foreground">المستخدم</Label>
+                  <p className="font-medium">{selectedOrder.user?.full_name || "غير محدد"}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">رقم الهاتف</Label>
+                  <p className="font-mono">{selectedOrder.user?.phone || "غير محدد"}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">اللعبة</Label>
+                  <p className="font-medium">{selectedOrder.platform?.name_ar}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">الباقة</Label>
+                  <p className="font-medium">{selectedOrder.package?.name_ar}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">معرف اللاعب</Label>
+                  <p className="font-mono font-bold text-primary">{selectedOrder.player_id}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">المبلغ</Label>
+                  <p className="font-bold text-lg text-primary">{selectedOrder.amount} دج</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs text-muted-foreground">تاريخ الطلب</Label>
+                  <p>
+                    {new Date(selectedOrder.created_at).toLocaleString("ar-DZ", {
+                      dateStyle: "full",
+                      timeStyle: "short"
+                    })}
+                  </p>
+                </div>
+                {selectedOrder.notes && (
+                  <div className="col-span-2">
+                    <Label className="text-xs text-muted-foreground">ملاحظات المستخدم</Label>
+                    <p className="text-sm">{selectedOrder.notes}</p>
+                  </div>
+                )}
+                {selectedOrder.admin_notes && (
+                  <div className="col-span-2">
+                    <Label className="text-xs text-muted-foreground">ملاحظات الإدارة</Label>
+                    <p className="text-sm">{selectedOrder.admin_notes}</p>
+                  </div>
+                )}
+              </div>
+
+              {selectedOrder.status === "pending" && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="admin_notes">ملاحظات الإدارة (اختياري)</Label>
+                    <Textarea
+                      id="admin_notes"
+                      placeholder="أضف ملاحظات للمستخدم..."
+                      value={adminNotes}
+                      onChange={(e) => setAdminNotes(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedOrder(null);
+                        setAdminNotes("");
+                      }}
+                    >
+                      إلغاء
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        if (!adminNotes.trim()) {
+                          toast({
+                            title: "خطأ",
+                            description: "يجب إدخال سبب الرفض",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        rejectOrder.mutate(
+                          { orderId: selectedOrder.id, adminNotes },
+                          {
+                            onSuccess: () => {
+                              setSelectedOrder(null);
+                              setAdminNotes("");
+                            },
+                          }
+                        );
+                      }}
+                      disabled={rejectOrder.isPending}
+                    >
+                      {rejectOrder.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                      ) : (
+                        <XCircle className="h-4 w-4 ml-2" />
+                      )}
+                      رفض الطلب
+                    </Button>
+                    <Button
+                      className="bg-green-500 hover:bg-green-600"
+                      onClick={() => {
+                        approveOrder.mutate(
+                          { orderId: selectedOrder.id, adminNotes: adminNotes || undefined },
+                          {
+                            onSuccess: () => {
+                              setSelectedOrder(null);
+                              setAdminNotes("");
+                            },
+                          }
+                        );
+                      }}
+                      disabled={approveOrder.isPending}
+                    >
+                      {approveOrder.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                      ) : (
+                        <CheckCircle className="h-4 w-4 ml-2" />
+                      )}
+                      الموافقة وشحن الحساب
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {selectedOrder.status !== "pending" && (
+                <div className="flex justify-end">
+                  <Button onClick={() => setSelectedOrder(null)}>إغلاق</Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
