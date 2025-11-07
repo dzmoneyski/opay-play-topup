@@ -264,7 +264,7 @@ const Index = () => {
               >
                 <div className="relative">
                   <div className="absolute inset-0 bg-white/30 rounded-full blur-md group-hover:blur-lg transition-all duration-300"></div>
-                  <div className="relative flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/20 hover:border-white/40 transition-all duration-300 hover:scale-105">
+                  <div className="relative flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/20 hover:border-white/40 transition-all duration-300 hover:scale-105 mr-2">
                     <MessageCircle className="h-4 w-4 text-white animate-pulse" />
                     <span className="text-white text-sm font-medium">اسأل عنا</span>
                     <ExternalLink className="h-3 w-3 text-white/70 group-hover:text-white transition-colors" />
