@@ -1,5 +1,6 @@
 import opayLogo from '@/assets/opay-final-logo.png';
 import platformsCollage from '@/assets/platforms-collage-final.png';
+import telegramLogo from '@/assets/telegram-logo.png';
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -360,8 +361,8 @@ const Index = () => {
                 <CardContent className="p-6 relative z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 group-hover:scale-110 transition-transform duration-300">
-                        <Send className="h-8 w-8 text-white -rotate-45" />
+                      <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 group-hover:scale-110 transition-transform duration-300">
+                        <img src={telegramLogo} alt="Telegram" className="h-10 w-10 object-contain" />
                       </div>
                       <div>
                         <h3 className="text-white font-bold text-lg mb-1 flex items-center gap-2">
