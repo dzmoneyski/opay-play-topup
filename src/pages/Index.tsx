@@ -321,11 +321,11 @@ const Index = () => {
                   <Link to="/activate">
                     <div className="relative group">
                       {/* النص والسهم فوق الأيقونة */}
-                      <div className="absolute -top-14 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5 z-50 pointer-events-none">
-                        <div className="bg-gradient-to-br from-warning to-warning/80 text-warning-foreground px-3 py-1 rounded-full shadow-lg animate-pulse-glow font-bold text-xs whitespace-nowrap border-2 border-white/50">
+                      <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 z-50 pointer-events-none animate-bounce">
+                        <div className="bg-gradient-to-br from-warning to-warning/80 text-warning-foreground px-4 py-2 rounded-full shadow-[0_0_20px_hsl(var(--warning)/0.8)] font-bold text-sm whitespace-nowrap border-2 border-white/60">
                           أكد حسابك
                         </div>
-                        <ArrowDownToLine className="h-5 w-5 text-warning drop-shadow-[0_0_10px_hsl(var(--warning)/0.8)]" strokeWidth={3} />
+                        <ArrowDownToLine className="h-7 w-7 text-warning drop-shadow-[0_0_15px_hsl(var(--warning))]" strokeWidth={3.5} />
                       </div>
                       
                       <div className="flex items-center justify-center w-10 h-10 bg-gradient-gold/20 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-gradient-gold/30 transition-all animate-pulse">
