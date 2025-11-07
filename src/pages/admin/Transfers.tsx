@@ -30,7 +30,8 @@ export default function TransfersPage() {
         const { data, error } = await supabase
           .from('transfers')
           .select(`
-            *
+            *,
+            transaction_number
           `)
           .order('created_at', { ascending: false });
 
@@ -59,7 +60,7 @@ export default function TransfersPage() {
           receiver_name: transfer.recipient?.full_name || 'مستخدم غير محدد',
           receiver_phone: transfer.recipient_phone,
           amount: Number(transfer.amount),
-          reference: `TR-${transfer.id.slice(0, 8)}`,
+          reference: transfer.transaction_number || `TR-${transfer.id.slice(0, 8)}`,
           status: transfer.status,
           created_at: transfer.created_at,
           completed_at: transfer.updated_at,

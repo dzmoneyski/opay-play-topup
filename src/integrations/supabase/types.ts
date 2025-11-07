@@ -703,6 +703,7 @@ export type Database = {
           sender_id: string
           sender_phone: string
           status: string
+          transaction_number: string | null
           updated_at: string
         }
         Insert: {
@@ -715,6 +716,7 @@ export type Database = {
           sender_id: string
           sender_phone: string
           status?: string
+          transaction_number?: string | null
           updated_at?: string
         }
         Update: {
@@ -727,6 +729,7 @@ export type Database = {
           sender_id?: string
           sender_phone?: string
           status?: string
+          transaction_number?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -953,6 +956,7 @@ export type Database = {
       }
       cleanup_expired_verification_codes: { Args: never; Returns: undefined }
       generate_merchant_code: { Args: never; Returns: string }
+      generate_transfer_transaction_number: { Args: never; Returns: string }
       get_user_gift_card_redemptions: {
         Args: never
         Returns: {

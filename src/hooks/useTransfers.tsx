@@ -13,6 +13,7 @@ interface TransferResult {
   error?: string;
   transfer_id?: string;
   recipient_id?: string;
+  transaction_number?: string;
 }
 
 export const useTransfers = () => {
@@ -74,9 +75,10 @@ export const useTransfers = () => {
         return { success: false, error: errorMessage };
       }
 
+      const transactionNumber = result.transaction_number || result.transfer_id?.slice(0, 8);
       toast({
         title: "تم التحويل بنجاح",
-        description: `تم تحويل ${transferData.amount} دج إلى ${transferData.recipient_phone}`,
+        description: `تم تحويل ${transferData.amount} دج إلى ${transferData.recipient_phone}${transactionNumber ? ` - رقم المعاملة: ${transactionNumber}` : ''}`,
       });
 
       return result;
@@ -99,6 +101,7 @@ export const useTransfers = () => {
         .from('transfers')
         .select(`
           *,
+          transaction_number,
           sender:profiles!transfers_sender_id_fkey(full_name, phone),
           recipient:profiles!transfers_recipient_id_fkey(full_name, phone)
         `)
