@@ -28,6 +28,8 @@ export default function IdentityVerificationPage() {
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [reviewDialogOpen, setReviewDialogOpen] = React.useState(false);
   const [requestToReview, setRequestToReview] = React.useState<any>(null);
+  const [imageLoading, setImageLoading] = React.useState(false);
+  const [imageError, setImageError] = React.useState(false);
 
   React.useEffect(() => {
     if (!rolesLoading && !isAdmin) {
@@ -704,18 +706,45 @@ export default function IdentityVerificationPage() {
       </Dialog>
 
       {/* Image Preview Dialog */}
-      <Dialog open={!!imagePreview} onOpenChange={() => setImagePreview(null)}>
+      <Dialog open={!!imagePreview} onOpenChange={() => {
+        setImagePreview(null);
+        setImageLoading(false);
+        setImageError(false);
+      }}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>معاينة الصورة</DialogTitle>
           </DialogHeader>
-          {imagePreview && (
-            <img 
-              src={imagePreview} 
-              alt="معاينة" 
-              className="w-full h-auto max-h-[70vh] object-contain"
-            />
-          )}
+          <div className="relative min-h-[200px] flex items-center justify-center">
+            {imagePreview && !imageError && (
+              <>
+                {imageLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                )}
+                <img 
+                  src={imagePreview} 
+                  alt="معاينة" 
+                  className="w-full h-auto max-h-[70vh] object-contain"
+                  onLoad={() => setImageLoading(false)}
+                  onLoadStart={() => setImageLoading(true)}
+                  onError={() => {
+                    setImageLoading(false);
+                    setImageError(true);
+                  }}
+                  style={{ display: imageLoading ? 'none' : 'block' }}
+                />
+              </>
+            )}
+            {imageError && (
+              <div className="text-center py-12">
+                <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                <p className="text-lg font-medium text-foreground mb-2">فشل تحميل الصورة</p>
+                <p className="text-sm text-muted-foreground">يرجى المحاولة مرة أخرى</p>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
