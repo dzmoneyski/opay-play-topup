@@ -250,12 +250,27 @@ const Index = () => {
         <div className="absolute inset-0 bg-gradient-glass"></div>
         <div className="container mx-auto px-4 py-8 relative z-10">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center">
+            <div className="flex items-center gap-3">
               <img 
                 src={opayLogo} 
                 alt="OpaY Logo" 
                 className="w-16 h-16 rounded-full object-cover transition-all duration-300 hover:shadow-[0_0_30px_rgba(99,102,241,0.6)] hover:scale-110 cursor-pointer" 
               />
+              <a 
+                href="https://t.me/+TRFfgKdTvkI2ZDhk" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="group"
+              >
+                <div className="relative">
+                  <div className="absolute inset-0 bg-white/30 rounded-full blur-md group-hover:blur-lg transition-all duration-300"></div>
+                  <div className="relative flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/20 hover:border-white/40 transition-all duration-300 hover:scale-105">
+                    <MessageCircle className="h-4 w-4 text-white animate-pulse" />
+                    <span className="text-white text-sm font-medium">اسأل عنا</span>
+                    <ExternalLink className="h-3 w-3 text-white/70 group-hover:text-white transition-colors" />
+                  </div>
+                </div>
+              </a>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
