@@ -715,7 +715,8 @@ export default function UsersPage() {
           .from('profiles')
           .select(`
             *
-          `);
+          `)
+          .order('created_at', { ascending: false });
         
         if (error) throw error;
 
