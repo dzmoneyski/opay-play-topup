@@ -320,6 +320,14 @@ const Index = () => {
                 ) : (
                   <Link to="/activate">
                     <div className="relative group">
+                      {/* النص والسهم فوق الأيقونة */}
+                      <div className="absolute -top-14 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5 z-50 pointer-events-none">
+                        <div className="bg-gradient-to-br from-warning to-warning/80 text-warning-foreground px-3 py-1 rounded-full shadow-lg animate-pulse-glow font-bold text-xs whitespace-nowrap border-2 border-white/50">
+                          أكد حسابك
+                        </div>
+                        <ArrowDownToLine className="h-5 w-5 text-warning drop-shadow-[0_0_10px_hsl(var(--warning)/0.8)]" strokeWidth={3} />
+                      </div>
+                      
                       <div className="flex items-center justify-center w-10 h-10 bg-gradient-gold/20 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-gradient-gold/30 transition-all animate-pulse">
                         <Bell className="h-5 w-5 text-white" />
                       </div>
@@ -449,17 +457,7 @@ const Index = () => {
         {/* Simplified Account Status Banner - Only for Non-Activated Users */}
         {!profile?.is_account_activated && (
           <div className="container mx-auto px-4 pt-4 -mt-4 relative z-20">
-            {/* Animated Arrow Indicator */}
-            <div className="relative mb-3">
-              <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce-arrow z-30">
-                <div className="bg-gradient-to-br from-warning to-warning/80 text-warning-foreground px-4 py-2 rounded-full shadow-lg animate-pulse-glow font-bold text-sm whitespace-nowrap border-2 border-white/50">
-                  أكد حسابك
-                </div>
-                <ArrowDownToLine className="h-8 w-8 text-warning drop-shadow-[0_0_10px_hsl(var(--warning)/0.8)]" strokeWidth={3} />
-              </div>
-            </div>
-            
-            <Card className="bg-gradient-gold/10 border-white/10 shadow-soft animate-slide-up backdrop-blur-sm mt-16">
+            <Card className="bg-gradient-gold/10 border-white/10 shadow-soft animate-slide-up backdrop-blur-sm">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
