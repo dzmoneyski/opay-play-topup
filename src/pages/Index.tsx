@@ -358,32 +358,33 @@ const Index = () => {
             >
               <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-[#0088cc] to-[#229ED9] shadow-elevated hover:shadow-glow transition-all duration-500 hover:scale-[1.02]">
                 <div className="absolute inset-0 bg-gradient-glass"></div>
-                <CardContent className="p-6 relative z-10">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="relative rounded-full bg-transparent backdrop-blur-sm group-hover:scale-110 transition-transform duration-300 animate-pulse-glow">
+                <CardContent className="p-4 sm:p-5 relative z-10">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="relative flex-shrink-0">
+                      <div className="absolute inset-0 bg-white/30 rounded-full blur-md animate-pulse-glow"></div>
+                      <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                         <img 
                           src={telegramLogo} 
                           alt="Telegram" 
-                          className="h-16 w-16 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]" 
-                          style={{ mixBlendMode: 'screen' }}
+                          className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
                         />
                       </div>
-                      <div>
-                        <h3 className="text-white font-bold text-lg mb-1 flex items-center gap-2">
-                          انضم لمجتمع OpaY على تلغرام
-                          <ExternalLink className="h-4 w-4 opacity-70 group-hover:opacity-100 transition-opacity" />
-                        </h3>
-                        <p className="text-white/90 text-sm leading-relaxed">
-                          تحقق من صحة التطبيق • شاهد تجارب المستخدمين • احصل على الدعم الفوري
-                        </p>
-                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-white font-bold text-sm sm:text-base mb-0.5 flex items-center gap-1.5">
+                        انضم لمجتمع OpaY على تلغرام
+                        <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5 opacity-70 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                      </h3>
+                      <p className="text-white/90 text-xs leading-relaxed">
+                        تحقق من صحة التطبيق • شاهد تجارب المستخدمين • احصل على الدعم الفوري
+                      </p>
                     </div>
                     <Button 
                       variant="ghost" 
-                      className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm group-hover:translate-x-2 transition-transform"
+                      size="sm"
+                      className="hidden sm:flex bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm group-hover:translate-x-2 transition-transform flex-shrink-0"
                     >
-                      <ArrowLeft className="h-5 w-5" />
+                      <ArrowLeft className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardContent>
