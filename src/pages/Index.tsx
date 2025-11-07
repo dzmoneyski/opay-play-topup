@@ -264,12 +264,10 @@ const Index = () => {
               >
                 <div className="relative">
                   <div className="absolute inset-0 bg-white/30 rounded-full blur-md group-hover:blur-lg transition-all duration-300"></div>
-                  <div className="relative flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/20 hover:border-white/40 transition-all duration-300 hover:scale-105 ml-4">
-                    <div className="bg-white/20 rounded-full p-1.5">
-                      <Send className="h-3 w-3 text-white" />
-                    </div>
-                    <span className="text-white text-sm font-medium">اسأل عنا</span>
-                    <ExternalLink className="h-3 w-3 text-white/70 group-hover:text-white transition-colors" />
+                  <div className="relative flex items-center gap-2 bg-gradient-to-br from-[#0088cc] to-[#229ED9] backdrop-blur-md rounded-full px-5 py-2.5 border border-white/30 hover:border-white/50 transition-all duration-300 hover:scale-105 ml-4 shadow-[0_4px_20px_rgba(0,136,204,0.4)]">
+                    <Send className="h-4 w-4 text-white -rotate-45" />
+                    <span className="text-white text-sm font-semibold">اسأل عنا</span>
+                    <ExternalLink className="h-3 w-3 text-white/90 group-hover:text-white transition-colors" />
                   </div>
                 </div>
               </a>
