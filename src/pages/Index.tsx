@@ -322,7 +322,7 @@ const Index = () => {
                     <div className="relative group">
                       {/* شارة التنبيه الملتصقة */}
                       <div className="absolute -top-1 -right-1 z-50 pointer-events-none animate-pulse">
-                        <div className="bg-gradient-to-br from-warning to-warning/90 text-warning-foreground px-2 py-0.5 rounded-full shadow-[0_0_15px_hsl(var(--warning)/0.8)] font-bold text-[10px] whitespace-nowrap border-2 border-white">
+                        <div className="bg-gradient-to-br from-[#0088cc] to-[#229ED9] text-white px-2 py-0.5 rounded-full shadow-[0_0_15px_rgba(0,136,204,0.8)] font-bold text-[10px] whitespace-nowrap border-2 border-white">
                           أكد حسابك
                         </div>
                       </div>
