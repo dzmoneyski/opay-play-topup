@@ -361,7 +361,7 @@ const Index = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 group-hover:scale-110 transition-transform duration-300">
-                        <MessageCircle className="h-8 w-8 text-white" />
+                        <Send className="h-8 w-8 text-white -rotate-45" />
                       </div>
                       <div>
                         <h3 className="text-white font-bold text-lg mb-1 flex items-center gap-2">
