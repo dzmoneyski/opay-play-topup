@@ -320,14 +320,14 @@ const Index = () => {
                 ) : (
                   <Link to="/activate">
                     <div className="relative group">
-                      <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5 z-50 pointer-events-none sm:-top-10 top-12 animate-fade-in">
-                        <div className="bg-gradient-to-br from-warning to-warning/80 text-warning-foreground px-2 py-0.5 rounded-full shadow-[0_0_12px_hsl(var(--warning)/0.7)] font-bold text-[11px] sm:text-xs whitespace-nowrap border border-white/60">
+                      {/* شارة التنبيه الملتصقة */}
+                      <div className="absolute -top-1 -right-1 z-50 pointer-events-none animate-pulse">
+                        <div className="bg-gradient-to-br from-warning to-warning/90 text-warning-foreground px-2 py-0.5 rounded-full shadow-[0_0_15px_hsl(var(--warning)/0.8)] font-bold text-[10px] whitespace-nowrap border-2 border-white">
                           أكد حسابك
                         </div>
-                        <ArrowDownToLine className="h-4 w-4 sm:h-5 sm:w-5 text-warning drop-shadow-[0_0_8px_hsl(var(--warning)/0.9)] sm:rotate-0 rotate-180 -mt-0.5 sm:mt-0" strokeWidth={3} />
                       </div>
                       
-                      <div className="flex items-center justify-center w-10 h-10 bg-gradient-gold/20 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-gradient-gold/30 transition-all animate-pulse">
+                      <div className="flex items-center justify-center w-10 h-10 bg-gradient-gold/20 backdrop-blur-sm rounded-xl border border-white/10 hover:bg-gradient-gold/30 transition-all">
                         <Bell className="h-5 w-5 text-white" />
                       </div>
                       <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
