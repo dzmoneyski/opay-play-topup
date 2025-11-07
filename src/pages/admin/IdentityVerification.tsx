@@ -26,6 +26,8 @@ export default function IdentityVerificationPage() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
+  const [reviewDialogOpen, setReviewDialogOpen] = React.useState(false);
+  const [requestToReview, setRequestToReview] = React.useState<any>(null);
 
   React.useEffect(() => {
     if (!rolesLoading && !isAdmin) {
@@ -420,6 +422,19 @@ export default function IdentityVerificationPage() {
                   {request.status === 'pending' && (
                     <div className="flex flex-col sm:flex-row gap-2">
                       <Button
+                        onClick={() => {
+                          setRequestToReview(request);
+                          setReviewDialogOpen(true);
+                        }}
+                        variant="outline"
+                        className="flex-1"
+                        size="sm"
+                      >
+                        <Eye className="w-4 h-4 ml-2" />
+                        معاينة الطلب
+                      </Button>
+                      
+                      <Button
                         onClick={() => handleApprove(request.id)}
                         disabled={processing}
                         className="flex-1 bg-green-600 hover:bg-green-700 text-white"
@@ -483,6 +498,211 @@ export default function IdentityVerificationPage() {
         </TabsContent>
       </Tabs>
       
+      {/* Review Request Dialog */}
+      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex items-center gap-2">
+              <Shield className="h-6 w-6" />
+              معاينة طلب التحقق
+            </DialogTitle>
+            <DialogDescription>
+              مراجعة تفاصيل الطلب قبل اتخاذ القرار
+            </DialogDescription>
+          </DialogHeader>
+          
+          {requestToReview && (
+            <div className="space-y-6">
+              {/* User Information */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg border-b pb-2">معلومات المستخدم</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">الاسم الكامل</p>
+                    <p className="font-medium">{requestToReview.profiles?.full_name || 'غير محدد'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">رقم الهاتف</p>
+                    <p className="font-medium">{requestToReview.profiles?.phone || 'غير محدد'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">البريد الإلكتروني</p>
+                    <p className="font-medium">{requestToReview.profiles?.email || 'غير محدد'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">تاريخ تقديم الطلب</p>
+                    <p className="font-medium">{formatDate(requestToReview.submitted_at)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ID Information */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg border-b pb-2">معلومات الهوية الوطنية</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">رقم الهوية الوطنية</p>
+                    <p className="font-medium text-lg">{requestToReview.national_id}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">الاسم الكامل على البطاقة</p>
+                    <p className={`font-medium ${
+                      requestToReview.full_name_on_id === requestToReview.profiles?.full_name 
+                        ? 'text-green-600' 
+                        : 'text-red-600'
+                    }`}>
+                      {requestToReview.full_name_on_id || 'غير محدد'}
+                    </p>
+                  </div>
+                  {requestToReview.date_of_birth && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">تاريخ الميلاد</p>
+                      <p className="font-medium">{new Date(requestToReview.date_of_birth).toLocaleDateString('ar-DZ')}</p>
+                    </div>
+                  )}
+                  {requestToReview.place_of_birth && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">مكان الميلاد</p>
+                      <p className="font-medium">{requestToReview.place_of_birth}</p>
+                    </div>
+                  )}
+                  {requestToReview.address && (
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-muted-foreground">العنوان</p>
+                      <p className="font-medium">{requestToReview.address}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Name Comparison Alert */}
+              {requestToReview.full_name_on_id && requestToReview.full_name_on_id !== requestToReview.profiles?.full_name && (
+                <div className="p-4 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-900">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-yellow-900 dark:text-yellow-300">تنبيه: عدم تطابق الاسم</p>
+                      <p className="text-sm text-yellow-800 dark:text-yellow-400 mt-1">
+                        الاسم في الحساب ({requestToReview.profiles?.full_name}) لا يطابق الاسم على البطاقة ({requestToReview.full_name_on_id})
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ID Images */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg border-b pb-2">صور الهوية الوطنية</h3>
+                {(requestToReview.national_id_front_image || requestToReview.national_id_back_image) ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {requestToReview.national_id_front_image && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">الوجه الأمامي</p>
+                        <div 
+                          className="relative group cursor-pointer"
+                          onClick={() => setImagePreview(getImageUrl(requestToReview.national_id_front_image) || '')}
+                        >
+                          <img 
+                            src={getImageUrl(requestToReview.national_id_front_image) || ''} 
+                            alt="الوجه الأمامي"
+                            className="w-full h-48 object-cover rounded-lg border bg-muted transition-transform group-hover:scale-[1.02]"
+                            onError={(e) => handleImageError(e, requestToReview.national_id_front_image)}
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
+                            <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {requestToReview.national_id_back_image && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">الوجه الخلفي</p>
+                        <div 
+                          className="relative group cursor-pointer"
+                          onClick={() => setImagePreview(getImageUrl(requestToReview.national_id_back_image) || '')}
+                        >
+                          <img 
+                            src={getImageUrl(requestToReview.national_id_back_image) || ''} 
+                            alt="الوجه الخلفي"
+                            className="w-full h-48 object-cover rounded-lg border bg-muted transition-transform group-hover:scale-[1.02]"
+                            onError={(e) => handleImageError(e, requestToReview.national_id_back_image)}
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
+                            <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 bg-muted/30 rounded-lg border border-dashed">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">لم يتم رفع صور للهوية</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <Separator />
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  onClick={() => {
+                    handleApprove(requestToReview.id);
+                    setReviewDialogOpen(false);
+                  }}
+                  disabled={processing}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <CheckCircle className="w-4 h-4 ml-2" />
+                  الموافقة على الطلب
+                </Button>
+                
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      onClick={() => setSelectedRequest(requestToReview)}
+                      className="flex-1"
+                    >
+                      <XCircle className="w-4 h-4 ml-2" />
+                      رفض الطلب
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>رفض طلب التحقق</DialogTitle>
+                      <DialogDescription>
+                        يرجى إدخال سبب رفض طلب التحقق من الهوية لـ {requestToReview.profiles?.full_name}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <Textarea
+                      placeholder="سبب الرفض (مثال: صورة الهوية غير واضحة، بيانات غير مطابقة، إلخ)"
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      className="mt-4"
+                      rows={3}
+                    />
+                    <DialogFooter>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          handleReject(requestToReview.id, rejectionReason);
+                          setReviewDialogOpen(false);
+                        }}
+                        disabled={processing || !rejectionReason.trim()}
+                      >
+                        رفض الطلب
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Image Preview Dialog */}
       <Dialog open={!!imagePreview} onOpenChange={() => setImagePreview(null)}>
         <DialogContent className="max-w-4xl">
