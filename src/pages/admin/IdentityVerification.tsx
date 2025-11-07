@@ -71,7 +71,7 @@ export default function IdentityVerificationPage() {
         return null;
       }
       
-      return `${supabase.storage.from('identity-documents').getPublicUrl('').data.publicUrl}${data.signedUrl}`;
+      return data.signedUrl;
     } catch (err) {
       console.error('Exception creating signed URL:', err);
       return null;
