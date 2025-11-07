@@ -250,11 +250,11 @@ const Index = () => {
         <div className="absolute inset-0 bg-gradient-glass"></div>
         <div className="container mx-auto px-4 py-8 relative z-10">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <img 
                 src={opayLogo} 
                 alt="OpaY Logo" 
-                className="w-16 h-16 rounded-full object-cover transition-all duration-300 hover:shadow-[0_0_30px_rgba(99,102,241,0.6)] hover:scale-110 cursor-pointer" 
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover transition-all duration-300 hover:shadow-[0_0_30px_rgba(99,102,241,0.6)] hover:scale-110 cursor-pointer" 
               />
               <a 
                 href="https://t.me/+TRFfgKdTvkI2ZDhk" 
@@ -263,11 +263,11 @@ const Index = () => {
                 className="group"
               >
                 <div className="relative">
-                  <div className="absolute inset-0 bg-white/30 rounded-full blur-md group-hover:blur-lg transition-all duration-300"></div>
-                  <div className="relative flex items-center gap-2.5 bg-gradient-to-br from-[#0088cc] to-[#229ED9] backdrop-blur-md rounded-full px-5 py-2.5 border border-white/30 hover:border-white/50 transition-all duration-300 hover:scale-105 ml-4 shadow-[0_4px_20px_rgba(0,136,204,0.4)]">
-                    <Send className="h-5 w-5 text-white -rotate-45 drop-shadow-lg" />
-                    <span className="text-white text-sm font-semibold">اسأل عنا</span>
-                    <ExternalLink className="h-3.5 w-3.5 text-white/90 group-hover:text-white transition-colors" />
+                  <div className="absolute inset-0 bg-[#0088cc]/40 rounded-full blur-lg group-hover:blur-xl transition-all duration-300"></div>
+                  <div className="relative flex items-center gap-1.5 sm:gap-2.5 bg-gradient-to-br from-[#0088cc] to-[#229ED9] backdrop-blur-md rounded-full px-3 py-2 sm:px-5 sm:py-2.5 border-2 border-white/40 hover:border-white/60 transition-all duration-300 hover:scale-105 shadow-[0_4px_20px_rgba(0,136,204,0.5)]">
+                    <Send className="h-4 w-4 sm:h-5 sm:w-5 text-white -rotate-45 drop-shadow-lg flex-shrink-0" />
+                    <span className="text-white text-xs sm:text-sm font-bold whitespace-nowrap">اسأل عنا</span>
+                    <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white group-hover:text-white/90 transition-colors flex-shrink-0" />
                   </div>
                 </div>
               </a>
