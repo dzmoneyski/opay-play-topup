@@ -196,7 +196,14 @@ export function AdminNavbar() {
                             </Badge>
                           )}
                         </div>
-                        <span className="flex-1">{item.title}</span>
+                        <div className="flex-1 flex flex-col">
+                          <span>{item.title}</span>
+                          {notifCount > 0 && (
+                            <span className="text-[10px] text-muted-foreground">
+                              {notifCount} طلب معلق
+                            </span>
+                          )}
+                        </div>
                       </Link>
                     </DropdownMenuItem>
                   );
