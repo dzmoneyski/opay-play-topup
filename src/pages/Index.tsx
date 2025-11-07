@@ -41,7 +41,9 @@ import {
   Repeat2,
   Gamepad2,
   Users,
-  Settings
+  Settings,
+  MessageCircle,
+  ExternalLink
 } from "lucide-react";
 
 const Index = () => {
@@ -470,6 +472,44 @@ const Index = () => {
               </Card>
             ))}
           </div>
+        </div>
+
+        {/* Telegram Community Banner */}
+        <div className="animate-slide-up" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
+          <a 
+            href="https://t.me/+TRFfgKdTvkI2ZDhk" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="block group"
+          >
+            <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-[#0088cc] to-[#229ED9] shadow-elevated hover:shadow-glow transition-all duration-500 hover:scale-[1.02]">
+              <div className="absolute inset-0 bg-gradient-glass"></div>
+              <CardContent className="p-6 relative z-10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 group-hover:scale-110 transition-transform duration-300">
+                      <MessageCircle className="h-8 w-8 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-bold text-lg mb-1 flex items-center gap-2">
+                        انضم لمجتمع OpaY على تلغرام
+                        <ExternalLink className="h-4 w-4 opacity-70 group-hover:opacity-100 transition-opacity" />
+                      </h3>
+                      <p className="text-white/90 text-sm leading-relaxed">
+                        تحقق من صحة التطبيق • شاهد تجارب المستخدمين • احصل على الدعم الفوري
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm group-hover:translate-x-2 transition-transform"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </a>
         </div>
 
         {/* Recent Transactions */}
