@@ -918,6 +918,10 @@ export type Database = {
             Args: { _admin_id: string; _deposit_id: string; _notes?: string }
             Returns: undefined
           }
+      approve_game_topup_order: {
+        Args: { _admin_notes?: string; _order_id: string }
+        Returns: Json
+      }
       approve_merchant_request: {
         Args: {
           _admin_id: string
@@ -973,6 +977,16 @@ export type Database = {
         Args: { _amount: number; _platform_id: string; _player_id: string }
         Returns: Json
       }
+      process_game_topup_order: {
+        Args: {
+          _amount: number
+          _notes?: string
+          _package_id: string
+          _platform_id: string
+          _player_id: string
+        }
+        Returns: Json
+      }
       process_transfer: {
         Args: {
           amount_param: number
@@ -999,6 +1013,10 @@ export type Database = {
       redeem_gift_card: { Args: { _card_code: string }; Returns: Json }
       reject_betting_deposit: {
         Args: { _admin_notes?: string; _transaction_id: string }
+        Returns: Json
+      }
+      reject_game_topup_order: {
+        Args: { _admin_notes?: string; _order_id: string }
         Returns: Json
       }
       reject_merchant_request: {

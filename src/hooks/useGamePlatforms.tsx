@@ -100,27 +100,26 @@ export const useCreateGameTopupOrder = () => {
       amount: number;
       notes?: string;
     }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      const { data, error } = await supabase
-        .from("game_topup_orders")
-        .insert({
-          ...orderData,
-          user_id: user.id,
-        })
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('process_game_topup_order', {
+        _platform_id: orderData.platform_id,
+        _package_id: orderData.package_id,
+        _player_id: orderData.player_id,
+        _amount: orderData.amount,
+        _notes: orderData.notes || null
+      });
 
       if (error) throw error;
-      return data;
+      const result = data as any;
+      if (!result.success) throw new Error(result.error);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       toast({
-        title: "تم إرسال الطلب",
-        description: "سيتم شحن حسابك خلال دقائق",
+        title: "تم خصم المبلغ وإرسال الطلب",
+        description: data.message || "سيتم مراجعة طلبك من قبل المشرف",
       });
       queryClient.invalidateQueries({ queryKey: ["game-topup-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["balance"] });
     },
     onError: (error: any) => {
       toast({
@@ -192,24 +191,20 @@ export const useApproveGameTopupOrder = () => {
 
   return useMutation({
     mutationFn: async ({ orderId, adminNotes }: { orderId: string; adminNotes?: string }) => {
-      const { data, error } = await supabase
-        .from("game_topup_orders")
-        .update({
-          status: "completed",
-          admin_notes: adminNotes,
-          processed_at: new Date().toISOString(),
-        })
-        .eq("id", orderId)
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('approve_game_topup_order', {
+        _order_id: orderId,
+        _admin_notes: adminNotes || null
+      });
 
       if (error) throw error;
-      return data;
+      const result = data as any;
+      if (!result.success) throw new Error(result.error);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       toast({
         title: "تم الموافقة على الطلب",
-        description: "تم تحديث حالة الطلب إلى مكتمل",
+        description: data.message || "تم شحن حساب اللاعب بنجاح",
       });
       queryClient.invalidateQueries({ queryKey: ["admin-game-topup-orders"] });
     },
@@ -229,24 +224,20 @@ export const useRejectGameTopupOrder = () => {
 
   return useMutation({
     mutationFn: async ({ orderId, adminNotes }: { orderId: string; adminNotes: string }) => {
-      const { data, error } = await supabase
-        .from("game_topup_orders")
-        .update({
-          status: "rejected",
-          admin_notes: adminNotes,
-          processed_at: new Date().toISOString(),
-        })
-        .eq("id", orderId)
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('reject_game_topup_order', {
+        _order_id: orderId,
+        _admin_notes: adminNotes || null
+      });
 
       if (error) throw error;
-      return data;
+      const result = data as any;
+      if (!result.success) throw new Error(result.error);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       toast({
         title: "تم رفض الطلب",
-        description: "تم تحديث حالة الطلب إلى مرفوض",
+        description: data.message || "تم إرجاع المبلغ للمستخدم",
       });
       queryClient.invalidateQueries({ queryKey: ["admin-game-topup-orders"] });
     },
