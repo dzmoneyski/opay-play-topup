@@ -362,11 +362,11 @@ const Index = () => {
                   <div className="flex items-center gap-3 sm:gap-4">
                     <div className="relative flex-shrink-0">
                       <div className="absolute inset-0 bg-white/30 rounded-full blur-md animate-pulse-glow"></div>
-                      <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden">
                         <img 
                           src={telegramLogo} 
                           alt="Telegram" 
-                          className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.5)] p-2" 
+                          className="w-full h-full object-cover drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
                         />
                       </div>
                     </div>
