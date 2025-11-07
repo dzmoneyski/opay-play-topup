@@ -366,7 +366,7 @@ const Index = () => {
                         <img 
                           src={telegramLogo} 
                           alt="Telegram" 
-                          className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
+                          className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.5)] p-2" 
                         />
                       </div>
                     </div>
