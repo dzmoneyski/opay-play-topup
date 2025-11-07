@@ -184,13 +184,18 @@ const Index = () => {
       icon: <MapPin className="h-5 w-5" />, 
       title: "المتاجر", 
       desc: "أقرب كشك",
-      action: "disabled"
+      action: "stores"
     }
   ];
 
   const handleQuickAction = (action: string) => {
     if (action === 'qr_scan') {
       setShowQRScanner(true);
+      return;
+    }
+    
+    if (action === 'stores') {
+      navigate('/stores');
       return;
     }
     
