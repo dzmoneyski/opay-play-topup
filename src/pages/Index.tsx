@@ -604,6 +604,11 @@ const Index = () => {
                       <div>
                         <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
                           {transaction.description}
+                          {transaction.transaction_number && (
+                            <span className="text-xs text-muted-foreground mr-2 font-normal">
+                              #{transaction.transaction_number}
+                            </span>
+                          )}
                         </p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <span>{getStatusText(transaction.status)}</span>

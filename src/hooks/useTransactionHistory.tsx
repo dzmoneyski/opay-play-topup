@@ -10,6 +10,7 @@ export interface TransactionHistoryItem {
   status: string;
   created_at: string;
   icon_type: string;
+  transaction_number?: string; // For transfers
 }
 
 export const useTransactionHistory = (limit?: number) => {
@@ -32,7 +33,7 @@ export const useTransactionHistory = (limit?: number) => {
       // Fetch transfers (sent and received)
       const { data: transfers } = await supabase
         .from('transfers')
-        .select('*')
+        .select('*, transaction_number')
         .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
@@ -88,7 +89,8 @@ export const useTransactionHistory = (limit?: number) => {
           amount: isSender ? -Number(transfer.amount) : Number(transfer.amount),
           status: transfer.status,
           created_at: transfer.created_at,
-          icon_type: isSender ? 'send' : 'receive'
+          icon_type: isSender ? 'send' : 'receive',
+          transaction_number: transfer.transaction_number
         });
       });
 

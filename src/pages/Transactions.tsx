@@ -202,6 +202,11 @@ const Transactions = () => {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-foreground group-hover:text-primary transition-colors truncate">
                             {transaction.description}
+                            {transaction.transaction_number && (
+                              <span className="text-xs text-muted-foreground mr-2">
+                                #{transaction.transaction_number}
+                              </span>
+                            )}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
                             <p className="text-sm text-muted-foreground">
@@ -231,8 +236,17 @@ const Transactions = () => {
                       <Separator />
                       
                       <div className="grid grid-cols-2 gap-4 text-sm">
+                        {transaction.transaction_number && (
+                          <div className="col-span-2">
+                            <p className="text-muted-foreground mb-1">رقم المعاملة</p>
+                            <p className="font-mono font-bold text-primary text-lg">
+                              #{transaction.transaction_number}
+                            </p>
+                          </div>
+                        )}
+                        
                         <div>
-                          <p className="text-muted-foreground mb-1">رقم المعاملة</p>
+                          <p className="text-muted-foreground mb-1">معرف المعاملة</p>
                           <p className="font-mono font-medium text-foreground">
                             {transaction.id.slice(0, 8).toUpperCase()}
                           </p>
