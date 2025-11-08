@@ -151,6 +151,7 @@ export const useReferrals = () => {
         .from('referral_rewards')
         .select('user_id, active_referrals_count, total_earned')
         .order('active_referrals_count', { ascending: false })
+        .order('total_earned', { ascending: false })
         .limit(10);
 
       if (error) throw error;
@@ -158,10 +159,14 @@ export const useReferrals = () => {
       // Fetch user details separately
       if (rewardsData && rewardsData.length > 0) {
         const userIds = rewardsData.map(r => r.user_id);
-        const { data: profiles } = await supabase
+        const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('user_id, full_name, phone')
           .in('user_id', userIds);
+
+        if (profilesError) {
+          console.error('Error fetching profiles for leaderboard:', profilesError);
+        }
 
         return rewardsData.map(reward => ({
           ...reward,

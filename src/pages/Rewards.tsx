@@ -409,36 +409,44 @@ const Rewards = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {leaderboard?.slice(0, 10).map((user, index) => (
-                <div
-                  key={user.user_id}
-                  className={`rounded-xl p-4 flex items-center justify-between ${
-                    index < 3 ? 'bg-gradient-gold/10 border border-gold/20' : 'bg-muted/50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                      index === 0 ? 'bg-[#FFD700] text-white' :
-                      index === 1 ? 'bg-[#C0C0C0] text-white' :
-                      index === 2 ? 'bg-[#CD7F32] text-white' :
-                      'bg-muted text-foreground'
-                    }`}>
-                      {index + 1}
+            {!leaderboard || leaderboard.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>لا توجد بيانات حالياً</p>
+                <p className="text-sm mt-2">كن أول من يظهر في لوحة المتصدرين!</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {leaderboard.slice(0, 10).map((user, index) => (
+                  <div
+                    key={user.user_id}
+                    className={`rounded-xl p-4 flex items-center justify-between ${
+                      index < 3 ? 'bg-gradient-gold/10 border border-gold/20' : 'bg-muted/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                        index === 0 ? 'bg-[#FFD700] text-white' :
+                        index === 1 ? 'bg-[#C0C0C0] text-white' :
+                        index === 2 ? 'bg-[#CD7F32] text-white' :
+                        'bg-muted text-foreground'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {user.profile?.full_name || user.profile?.phone || 'مستخدم مجهول'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {user.active_referrals_count} إحالة • {user.total_earned.toFixed(0)} دج
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-foreground">
-                        {user.profile?.full_name || user.profile?.phone || 'مستخدم'}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {user.active_referrals_count} إحالة • {user.total_earned.toFixed(0)} دج
-                      </p>
-                    </div>
+                    {index < 3 && <Crown className="h-5 w-5 text-gold" />}
                   </div>
-                  {index < 3 && <Crown className="h-5 w-5 text-gold" />}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
