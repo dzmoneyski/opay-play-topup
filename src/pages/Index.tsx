@@ -97,6 +97,11 @@ const Index = () => {
       return;
     }
 
+    if (service.action === 'rewards') {
+      navigate('/rewards');
+      return;
+    }
+
     // السماح بالدخول إلى صفحة الخدمة بغض النظر عن حالة التفعيل
     // التحقق من التفعيل سيتم عند محاولة تنفيذ العملية الفعلية
     console.log(`Navigating to service: ${service.title}`);
@@ -147,6 +152,13 @@ const Index = () => {
       subtitle: "PUBG، Free Fire، وأكثر",
       gradient: "bg-gradient-primary",
       action: "game-topup"
+    },
+    {
+      icon: <Gift className="h-6 w-6" />,
+      title: "المكافآت",
+      subtitle: "الإحالات والجوائز",
+      gradient: "bg-gradient-gold",
+      action: "rewards"
     },
     {
       icon: <ShoppingBag className="h-6 w-6" />,
