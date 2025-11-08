@@ -127,89 +127,93 @@ const Rewards = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4" dir="rtl">
-      <BackButton />
+    <div className="min-h-screen bg-background pb-20" dir="rtl">
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/40 px-4 py-3">
+        <BackButton />
+      </div>
       
-      <div className="container mx-auto max-w-4xl mt-8 space-y-6">
+      <div className="container mx-auto max-w-4xl px-4 mt-4 space-y-4">
         {/* Header */}
-        <div className="text-center space-y-2 animate-slide-up">
+        <div className="text-center space-y-1 animate-slide-up py-2">
           <div className="flex items-center justify-center gap-2">
-            <Gift className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">برنامج الإحالة والمكافآت</h1>
+            <Gift className="h-6 w-6 text-primary" />
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">برنامج الإحالة</h1>
           </div>
-          <p className="text-muted-foreground">شارك كود الإحالة واربح مكافآت مذهلة!</p>
+          <p className="text-sm text-muted-foreground">شارك واربح مكافآت!</p>
         </div>
 
         {/* Referral Code Card */}
         <Card className="bg-gradient-primary shadow-glow border-0 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-          <CardContent className="p-6">
-            <div className="text-center space-y-4">
+          <CardContent className="p-4 sm:p-6">
+            <div className="text-center space-y-3">
               <div className="flex items-center justify-center gap-2">
-                <Sparkles className="h-5 w-5 text-white" />
-                <p className="text-white font-medium">كود الإحالة الخاص بك</p>
+                <Sparkles className="h-4 w-4 text-white" />
+                <p className="text-white font-medium text-sm">كود الإحالة الخاص بك</p>
               </div>
               
-              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 space-y-3">
-                <p className="text-4xl font-bold text-white tracking-wider font-mono">
-                  {referralCode || '--------'}
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 sm:p-4 space-y-3">
+                <p className="text-2xl sm:text-4xl font-bold text-white tracking-wider font-mono break-all">
+                  {referralCode || 'جاري التحميل...'}
                 </p>
                 
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     onClick={handleCopyCode}
-                    className="flex-1 bg-white/20 hover:bg-white/30 text-white border-0"
+                    disabled={!referralCode}
+                    className="flex-1 bg-white/20 hover:bg-white/30 text-white border-0 text-sm h-10"
                   >
-                    {copied ? <CheckCircle className="h-4 w-4 ml-2" /> : <Copy className="h-4 w-4 ml-2" />}
-                    {copied ? 'تم النسخ' : 'نسخ الكود'}
+                    {copied ? <CheckCircle className="h-4 w-4 ml-1" /> : <Copy className="h-4 w-4 ml-1" />}
+                    {copied ? 'تم النسخ!' : 'نسخ'}
                   </Button>
                   <Button
                     onClick={handleShare}
-                    className="flex-1 bg-white/20 hover:bg-white/30 text-white border-0"
+                    disabled={!referralCode}
+                    className="flex-1 bg-white/20 hover:bg-white/30 text-white border-0 text-sm h-10"
                   >
-                    <Share2 className="h-4 w-4 ml-2" />
+                    <Share2 className="h-4 w-4 ml-1" />
                     مشاركة
                   </Button>
                 </div>
               </div>
 
-              <p className="text-white/90 text-sm">
-                احصل على <span className="font-bold text-lg">100 دج</span> مقابل كل صديق يسجل ويفعل حسابه!
+              <p className="text-white/90 text-xs sm:text-sm px-2">
+                احصل على <span className="font-bold text-base sm:text-lg">100 دج</span> لكل صديق!
               </p>
             </div>
           </CardContent>
         </Card>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <div className="grid grid-cols-2 gap-3 animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <Card className="bg-gradient-card shadow-card border-0">
-            <CardContent className="p-4 text-center">
-              <Gift className="h-8 w-8 mx-auto mb-2 text-primary" />
-              <p className="text-2xl font-bold text-foreground">{rewards?.rewards_balance.toFixed(2) || '0.00'} دج</p>
-              <p className="text-sm text-muted-foreground">رصيد المكافآت</p>
+            <CardContent className="p-3 text-center">
+              <Gift className="h-6 w-6 mx-auto mb-1 text-primary" />
+              <p className="text-lg sm:text-xl font-bold text-foreground">{rewards?.rewards_balance.toFixed(0) || '0'} دج</p>
+              <p className="text-xs text-muted-foreground">رصيد المكافآت</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-card shadow-card border-0">
-            <CardContent className="p-4 text-center">
-              <Users className="h-8 w-8 mx-auto mb-2 text-success" />
-              <p className="text-2xl font-bold text-foreground">{rewards?.active_referrals_count || 0}</p>
-              <p className="text-sm text-muted-foreground">إحالات نشطة</p>
+            <CardContent className="p-3 text-center">
+              <Users className="h-6 w-6 mx-auto mb-1 text-success" />
+              <p className="text-lg sm:text-xl font-bold text-foreground">{rewards?.active_referrals_count || 0}</p>
+              <p className="text-xs text-muted-foreground">إحالات</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-card shadow-card border-0">
-            <CardContent className="p-4 text-center">
-              <TrendingUp className="h-8 w-8 mx-auto mb-2 text-gold" />
-              <p className="text-2xl font-bold text-foreground">{rewards?.total_earned.toFixed(2) || '0.00'} دج</p>
-              <p className="text-sm text-muted-foreground">إجمالي الأرباح</p>
+            <CardContent className="p-3 text-center">
+              <TrendingUp className="h-6 w-6 mx-auto mb-1 text-gold" />
+              <p className="text-lg sm:text-xl font-bold text-foreground">{rewards?.total_earned.toFixed(0) || '0'} دج</p>
+              <p className="text-xs text-muted-foreground">إجمالي</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-card shadow-card border-0">
-            <CardContent className="p-4 text-center">
-              <Trophy className="h-8 w-8 mx-auto mb-2 text-secondary" />
-              <p className="text-2xl font-bold text-foreground">{achievements?.length || 0}</p>
-              <p className="text-sm text-muted-foreground">الأوسمة</p>
+            <CardContent className="p-3 text-center">
+              <Trophy className="h-6 w-6 mx-auto mb-1 text-secondary" />
+              <p className="text-lg sm:text-xl font-bold text-foreground">{achievements?.length || 0}</p>
+              <p className="text-xs text-muted-foreground">أوسمة</p>
             </CardContent>
           </Card>
         </div>
