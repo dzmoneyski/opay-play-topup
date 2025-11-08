@@ -44,14 +44,27 @@ export const useReferrals = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // First try to get existing code
       const { data, error } = await supabase
         .from('referral_codes')
         .select('referral_code')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      return data?.referral_code;
+      
+      // If code exists, return it
+      if (data?.referral_code) {
+        return data.referral_code;
+      }
+      
+      // If no code exists, create one using RPC
+      const { data: newCode, error: rpcError } = await supabase.rpc('ensure_referral_code', {
+        _user_id: user.id
+      });
+      
+      if (rpcError) throw rpcError;
+      return newCode as string;
     },
   });
 
@@ -66,9 +79,10 @@ export const useReferrals = () => {
         .from('referral_rewards')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
+      
       return data || {
         rewards_balance: 0,
         total_earned: 0,
