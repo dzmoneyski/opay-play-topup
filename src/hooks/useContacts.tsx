@@ -20,15 +20,19 @@ export const useContacts = () => {
         return;
       }
 
+      // Get current user's profile to get their phone
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('phone')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const currentUserPhone = currentProfile?.phone;
+
       // Get all transfers where user is sender or recipient
       const { data: transfers, error: transferError } = await supabase
         .from('transfers')
-        .select(`
-          sender_id,
-          recipient_id,
-          sender:profiles!transfers_sender_id_fkey(full_name, phone),
-          recipient:profiles!transfers_recipient_id_fkey(full_name, phone)
-        `)
+        .select('sender_id, recipient_id, sender_phone, recipient_phone, created_at')
         .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
@@ -38,37 +42,50 @@ export const useContacts = () => {
         return;
       }
 
-      // Extract unique contacts (exclude current user)
-      const contactsMap = new Map<string, Contact>();
+      // Extract unique phone numbers (exclude current user)
+      const contactPhones = new Set<string>();
       
       transfers?.forEach(transfer => {
-        // If current user is sender, add recipient as contact
-        if (transfer.sender_id === user.id && transfer.recipient) {
-          const recipient = transfer.recipient as any;
-          if (recipient.phone && !contactsMap.has(recipient.phone)) {
-            contactsMap.set(recipient.phone, {
-              name: recipient.full_name || 'مستخدم',
-              phone: recipient.phone,
-              avatar: recipient.full_name ? recipient.full_name.charAt(0).toUpperCase() : 'M'
-            });
+        // If current user is sender, add recipient phone
+        if (transfer.sender_id === user.id && transfer.recipient_phone) {
+          if (transfer.recipient_phone !== currentUserPhone) {
+            contactPhones.add(transfer.recipient_phone);
           }
         }
         
-        // If current user is recipient, add sender as contact
-        if (transfer.recipient_id === user.id && transfer.sender) {
-          const sender = transfer.sender as any;
-          if (sender.phone && !contactsMap.has(sender.phone)) {
-            contactsMap.set(sender.phone, {
-              name: sender.full_name || 'مستخدم',
-              phone: sender.phone,
-              avatar: sender.full_name ? sender.full_name.charAt(0).toUpperCase() : 'M'
-            });
+        // If current user is recipient, add sender phone
+        if (transfer.recipient_id === user.id && transfer.sender_phone) {
+          if (transfer.sender_phone !== currentUserPhone) {
+            contactPhones.add(transfer.sender_phone);
           }
         }
       });
 
-      // Convert map to array and limit to 4 most recent unique contacts
-      const formattedContacts = Array.from(contactsMap.values()).slice(0, 4);
+      // Get profiles for these phone numbers
+      if (contactPhones.size === 0) {
+        setContacts([]);
+        setLoading(false);
+        return;
+      }
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('full_name, phone')
+        .in('phone', Array.from(contactPhones))
+        .limit(4);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        setLoading(false);
+        return;
+      }
+
+      const formattedContacts: Contact[] = (profiles || []).map(profile => ({
+        name: profile.full_name || 'مستخدم',
+        phone: profile.phone || '',
+        avatar: profile.full_name ? profile.full_name.charAt(0).toUpperCase() : 'M'
+      }));
+
       setContacts(formattedContacts);
     } catch (error) {
       console.error('Unexpected error fetching contacts:', error);
