@@ -146,18 +146,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // If signup successful and has referral code, create referral record
     if (!error && data.user && referralCode) {
-      const { data: referrerData } = await supabase
+      console.log('Creating referral for code:', referralCode);
+      
+      const { data: referrerData, error: codeError } = await supabase
         .from('referral_codes')
         .select('user_id')
         .eq('referral_code', referralCode)
-        .single();
+        .maybeSingle();
+
+      console.log('Referrer data:', referrerData, 'Error:', codeError);
 
       if (referrerData) {
-        await supabase.from('referrals').insert({
+        const { error: insertError } = await supabase.from('referrals').insert({
           referrer_id: referrerData.user_id,
           referred_user_id: data.user.id,
           status: 'pending'
         });
+        
+        console.log('Referral insert result - Error:', insertError);
+      } else {
+        console.log('No referrer found for code:', referralCode);
       }
     }
 
