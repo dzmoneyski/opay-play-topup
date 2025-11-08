@@ -4,7 +4,7 @@ import { useAuth } from './useAuth';
 
 export interface TransactionHistoryItem {
   id: string;
-  type: 'deposit' | 'withdrawal' | 'transfer_sent' | 'transfer_received' | 'gift_card';
+  type: 'deposit' | 'withdrawal' | 'transfer_sent' | 'transfer_received' | 'gift_card' | 'betting' | 'game_topup';
   description: string;
   amount: number;
   status: string;
@@ -12,7 +12,7 @@ export interface TransactionHistoryItem {
   icon_type: string;
 }
 
-export const useTransactionHistory = () => {
+export const useTransactionHistory = (limit?: number) => {
   const [transactions, setTransactions] = useState<TransactionHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -50,7 +50,14 @@ export const useTransactionHistory = () => {
       // Fetch betting transactions
       const { data: bettingTransactions } = await supabase
         .from('betting_transactions')
-        .select('*, game_platforms(name, name_ar)')
+        .select('*, platform:game_platforms(name, name_ar)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      // Fetch game topup orders
+      const { data: gameTopups } = await supabase
+        .from('game_topup_orders')
+        .select('*, platform:game_platforms(name, name_ar)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -115,11 +122,11 @@ export const useTransactionHistory = () => {
 
       // Process betting transactions
       bettingTransactions?.forEach(transaction => {
-        const platformName = (transaction as any).game_platforms?.name_ar || 'منصة مراهنات';
+        const platformName = (transaction as any).platform?.name_ar || 'منصة مراهنات';
         const typeText = transaction.transaction_type === 'deposit' ? 'إيداع' : 'سحب';
         allTransactions.push({
           id: transaction.id,
-          type: transaction.transaction_type === 'deposit' ? 'deposit' : 'withdrawal',
+          type: 'betting',
           description: `${typeText} على ${platformName}`,
           amount: transaction.transaction_type === 'deposit' ? -Number(transaction.amount) : Number(transaction.amount),
           status: transaction.status,
@@ -128,12 +135,28 @@ export const useTransactionHistory = () => {
         });
       });
 
+      // Process game topup orders
+      gameTopups?.forEach(order => {
+        const platformName = (order as any).platform?.name_ar || 'لعبة';
+        allTransactions.push({
+          id: order.id,
+          type: 'game_topup',
+          description: `شحن ${platformName}`,
+          amount: -Number(order.amount),
+          status: order.status,
+          created_at: order.created_at,
+          icon_type: 'game'
+        });
+      });
+
       // Sort by date (newest first)
       allTransactions.sort((a, b) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
-      setTransactions(allTransactions.slice(0, 10)); // Show last 10 transactions
+      // Apply limit if provided, otherwise show all
+      const limitedTransactions = limit ? allTransactions.slice(0, limit) : allTransactions;
+      setTransactions(limitedTransactions);
     } catch (error) {
       console.error('Error fetching transaction history:', error);
     } finally {

@@ -52,7 +52,7 @@ const Index = () => {
   const { profile } = useProfile();
   const { isAdmin } = useUserRoles();
   const { balance, loading: balanceLoading } = useBalance();
-  const { transactions, loading: transactionsLoading } = useTransactionHistory();
+  const { transactions, loading: transactionsLoading } = useTransactionHistory(10); // Limit to 10 for dashboard
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showBalance, setShowBalance] = React.useState(true);

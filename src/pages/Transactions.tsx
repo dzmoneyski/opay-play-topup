@@ -24,7 +24,7 @@ import { useProfile } from '@/hooks/useProfile';
 
 const Transactions = () => {
   const navigate = useNavigate();
-  const { transactions, loading } = useTransactionHistory();
+  const { transactions, loading } = useTransactionHistory(); // No limit = show all
   const { profile } = useProfile();
   const [expandedTransaction, setExpandedTransaction] = useState<string | null>(null);
 
