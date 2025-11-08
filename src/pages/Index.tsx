@@ -545,11 +545,22 @@ const Index = () => {
         <div className="animate-slide-up" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
           <Card className="shadow-card border-0 bg-gradient-card backdrop-blur-sm">
             <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-3 text-foreground">
-                <div className="p-2 rounded-xl bg-gradient-primary">
-                  <TrendingUp className="h-5 w-5 text-white" />
+              <CardTitle className="flex items-center justify-between text-foreground">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-gradient-primary">
+                    <TrendingUp className="h-5 w-5 text-white" />
+                  </div>
+                  المعاملات الأخيرة
                 </div>
-                المعاملات الأخيرة
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/transactions')}
+                  className="text-primary hover:text-primary hover:bg-primary/10"
+                >
+                  عرض الكل
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">

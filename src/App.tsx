@@ -24,6 +24,7 @@ import MerchantDashboard from "./pages/MerchantDashboard";
 import Install from "./pages/Install";
 import Settings from "./pages/Settings";
 import Stores from "./pages/Stores";
+import Transactions from "./pages/Transactions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -124,6 +125,11 @@ const App = () => {
               <Route path="/stores" element={
                 <ProtectedRoute requireActivation={false}>
                   <Stores />
+                </ProtectedRoute>
+              } />
+              <Route path="/transactions" element={
+                <ProtectedRoute requireActivation={false}>
+                  <Transactions />
                 </ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />
