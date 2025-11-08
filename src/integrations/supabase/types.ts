@@ -1198,6 +1198,7 @@ export type Database = {
         Returns: undefined
       }
       sync_existing_users_data: { Args: never; Returns: Json }
+      sync_referred_by_code_from_auth: { Args: never; Returns: Json }
       validate_luhn_check_digit: {
         Args: { _card_code: string }
         Returns: boolean

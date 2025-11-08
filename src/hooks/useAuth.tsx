@@ -144,29 +144,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     });
 
-    // If signup successful and has referral code, create referral record
+    // If signup successful and has referral code, persist it for later linking
     if (!error && data.user && referralCode) {
-      console.log('Creating referral for code:', referralCode);
-      
-      const { data: referrerData, error: codeError } = await supabase
-        .from('referral_codes')
-        .select('user_id')
-        .eq('referral_code', referralCode)
-        .maybeSingle();
-
-      console.log('Referrer data:', referrerData, 'Error:', codeError);
-
-      if (referrerData) {
-        const { error: insertError } = await supabase.from('referrals').insert({
-          referrer_id: referrerData.user_id,
-          referred_user_id: data.user.id,
-          status: 'pending'
-        });
-        
-        console.log('Referral insert result - Error:', insertError);
-      } else {
-        console.log('No referrer found for code:', referralCode);
-      }
+      try {
+        // Store locally to use after first successful sign-in (ensures we have a session)
+        localStorage.setItem('pending_referral_code', referralCode);
+      } catch {}
     }
 
     return { error };
@@ -178,13 +161,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       password
     });
 
-    if (!error) {
-      // Ensure referral linkage for the logged-in user (if they signed up with a referral code)
+    if (!error && signInData?.user) {
       try {
+        // 1) Read referral code from auth metadata or local storage
+        const meta = (signInData.user.user_metadata || {}) as Record<string, any>;
+        const metaCode = (meta && (meta as any).referred_by_code) as string | undefined;
+        const storedCode = typeof window !== 'undefined' ? localStorage.getItem('pending_referral_code') || undefined : undefined;
+        const referralCode = metaCode || storedCode;
+
+        // 2) If profile has no code yet, persist it
+        if (referralCode) {
+          await supabase
+            .from('profiles')
+            .update({ referred_by_code: referralCode })
+            .is('referred_by_code', null)
+            .eq('user_id', signInData.user.id);
+        }
+
+        // 3) Ensure referral record exists and reward credited if eligible
         const { data: ensureData, error: ensureError } = await supabase.rpc('ensure_referral_for_current_user');
         console.log('ensure_referral_for_current_user:', ensureData, ensureError);
+
+        // 4) Cleanup local cache if we used it
+        if (storedCode) {
+          try { localStorage.removeItem('pending_referral_code'); } catch {}
+        }
       } catch (e) {
-        console.warn('ensure_referral_for_current_user failed:', e);
+        console.warn('Referral ensure on sign-in failed:', e);
       }
     }
 
