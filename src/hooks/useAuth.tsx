@@ -173,10 +173,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const signIn = React.useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
+
+    if (!error) {
+      // Ensure referral linkage for the logged-in user (if they signed up with a referral code)
+      try {
+        const { data: ensureData, error: ensureError } = await supabase.rpc('ensure_referral_for_current_user');
+        console.log('ensure_referral_for_current_user:', ensureData, ensureError);
+      } catch (e) {
+        console.warn('ensure_referral_for_current_user failed:', e);
+      }
+    }
+
     return { error };
   }, []);
 

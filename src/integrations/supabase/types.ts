@@ -1114,6 +1114,8 @@ export type Database = {
       }
       cleanup_expired_verification_codes: { Args: never; Returns: undefined }
       ensure_referral_code: { Args: { _user_id: string }; Returns: string }
+      ensure_referral_for_current_user: { Args: never; Returns: Json }
+      ensure_user_referral: { Args: { _user_id: string }; Returns: Json }
       generate_merchant_code: { Args: never; Returns: string }
       generate_transfer_transaction_number: { Args: never; Returns: string }
       generate_unique_referral_code: { Args: never; Returns: string }
