@@ -38,13 +38,22 @@ const Auth = () => {
     phone: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    referralCode: ''
   });
 
   // Redirect if already authenticated
   React.useEffect(() => {
     if (user) {
       navigate('/dashboard');
+    }
+
+    // Check for referral code in URL
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get('ref');
+    if (refCode) {
+      setSignUpData(prev => ({ ...prev, referralCode: refCode }));
+      setActiveTab('signup'); // Switch to signup mode
     }
   }, [user, navigate]);
 
@@ -135,7 +144,7 @@ const Auth = () => {
       return;
     }
 
-    const { error } = await signUp(signUpData.email, signUpData.password, signUpData.fullName, signUpData.phone);
+    const { error } = await signUp(signUpData.email, signUpData.password, signUpData.fullName, signUpData.phone, signUpData.referralCode);
 
     if (error) {
       if (error.message.includes('User already registered')) {
@@ -349,6 +358,19 @@ const Auth = () => {
                         disabled={isLoading}
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-referral" className="text-white/90">كود الإحالة (اختياري)</Label>
+                    <Input
+                      id="signup-referral"
+                      type="text"
+                      placeholder="REF12345"
+                      value={signUpData.referralCode}
+                      onChange={(e) => setSignUpData(prev => ({...prev, referralCode: e.target.value.toUpperCase()}))}
+                      className="text-center font-mono bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-primary focus:bg-white/20"
+                      disabled={isLoading}
+                    />
                   </div>
 
                   <Button 

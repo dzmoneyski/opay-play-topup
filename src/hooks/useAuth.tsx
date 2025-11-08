@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName?: string, phone?: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName?: string, phone?: string, referralCode?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
 }
@@ -128,20 +128,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []);
 
-  const signUp = React.useCallback(async (email: string, password: string, fullName?: string, phone?: string) => {
+  const signUp = React.useCallback(async (email: string, password: string, fullName?: string, phone?: string, referralCode?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
+    const { error, data } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
         data: {
           full_name: fullName,
-          phone: phone
+          phone: phone,
+          referred_by_code: referralCode
         }
       }
     });
+
+    // If signup successful and has referral code, create referral record
+    if (!error && data.user && referralCode) {
+      const { data: referrerData } = await supabase
+        .from('referral_codes')
+        .select('user_id')
+        .eq('referral_code', referralCode)
+        .single();
+
+      if (referrerData) {
+        await supabase.from('referrals').insert({
+          referrer_id: referrerData.user_id,
+          referred_user_id: data.user.id,
+          status: 'pending'
+        });
+      }
+    }
+
     return { error };
   }, []);
 

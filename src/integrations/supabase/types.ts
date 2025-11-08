@@ -632,6 +632,7 @@ export type Database = {
           national_id: string | null
           phone: string | null
           redeem_locked_until: string | null
+          referred_by_code: string | null
           updated_at: string
           user_id: string
         }
@@ -649,6 +650,7 @@ export type Database = {
           national_id?: string | null
           phone?: string | null
           redeem_locked_until?: string | null
+          referred_by_code?: string | null
           updated_at?: string
           user_id: string
         }
@@ -666,6 +668,7 @@ export type Database = {
           national_id?: string | null
           phone?: string | null
           redeem_locked_until?: string | null
+          referred_by_code?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -689,6 +692,126 @@ export type Database = {
           operation?: string
           user_id?: string
           window_start?: string
+        }
+        Relationships: []
+      }
+      referral_codes: {
+        Row: {
+          created_at: string
+          id: string
+          referral_code: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referral_code: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referral_code?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referral_rewards: {
+        Row: {
+          active_referrals_count: number
+          created_at: string
+          id: string
+          rewards_balance: number
+          total_earned: number
+          total_withdrawn: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_referrals_count?: number
+          created_at?: string
+          id?: string
+          rewards_balance?: number
+          total_earned?: number
+          total_withdrawn?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_referrals_count?: number
+          created_at?: string
+          id?: string
+          rewards_balance?: number
+          total_earned?: number
+          total_withdrawn?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referral_withdrawals: {
+        Row: {
+          active_referrals_count: number
+          amount: number
+          created_at: string
+          fee_amount: number
+          fee_percentage: number
+          id: string
+          net_amount: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          active_referrals_count: number
+          amount: number
+          created_at?: string
+          fee_amount: number
+          fee_percentage: number
+          id?: string
+          net_amount: number
+          status?: string
+          user_id: string
+        }
+        Update: {
+          active_referrals_count?: number
+          amount?: number
+          created_at?: string
+          fee_amount?: number
+          fee_percentage?: number
+          id?: string
+          net_amount?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          activated_at: string | null
+          created_at: string
+          id: string
+          referred_user_id: string
+          referrer_id: string
+          reward_amount: number
+          status: string
+        }
+        Insert: {
+          activated_at?: string | null
+          created_at?: string
+          id?: string
+          referred_user_id: string
+          referrer_id: string
+          reward_amount?: number
+          status?: string
+        }
+        Update: {
+          activated_at?: string | null
+          created_at?: string
+          id?: string
+          referred_user_id?: string
+          referrer_id?: string
+          reward_amount?: number
+          status?: string
         }
         Relationships: []
       }
@@ -731,6 +854,33 @@ export type Database = {
           status?: string
           transaction_number?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          achievement_name: string
+          achievement_type: string
+          id: string
+          reward_amount: number
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_name: string
+          achievement_type: string
+          id?: string
+          reward_amount?: number
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_name?: string
+          achievement_type?: string
+          id?: string
+          reward_amount?: number
+          unlocked_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -945,6 +1095,14 @@ export type Database = {
         Args: { _amount: number; _fee_config: Json }
         Returns: Json
       }
+      calculate_withdrawal_fee_percentage: {
+        Args: { _active_referrals: number }
+        Returns: number
+      }
+      check_and_award_achievements: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
       check_rate_limit: {
         Args: {
           _max_count: number
@@ -957,6 +1115,7 @@ export type Database = {
       cleanup_expired_verification_codes: { Args: never; Returns: undefined }
       generate_merchant_code: { Args: never; Returns: string }
       generate_transfer_transaction_number: { Args: never; Returns: string }
+      generate_unique_referral_code: { Args: never; Returns: string }
       get_user_gift_card_redemptions: {
         Args: never
         Returns: {
@@ -1044,6 +1203,7 @@ export type Database = {
         Args: { _platform_id: string; _player_id: string; _promo_code: string }
         Returns: Json
       }
+      withdraw_referral_rewards: { Args: { _amount: number }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user"

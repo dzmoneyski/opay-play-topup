@@ -179,9 +179,9 @@ const Index = () => {
     },
     { 
       icon: <Gift className="h-5 w-5" />, 
-      title: "الهدايا", 
-      desc: "بطاقات هدايا",
-      action: "disabled"
+      title: "المكافآت", 
+      desc: "الإحالات والجوائز",
+      action: "rewards"
     },
     { 
       icon: <MapPin className="h-5 w-5" />, 
@@ -199,6 +199,11 @@ const Index = () => {
     
     if (action === 'stores') {
       navigate('/stores');
+      return;
+    }
+    
+    if (action === 'rewards') {
+      navigate('/rewards');
       return;
     }
     
