@@ -5,6 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
@@ -23,6 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAdminDigitalCards } from '@/hooks/useAdminDigitalCards';
+import { useDigitalCardSettings } from '@/hooks/useDigitalCardSettings';
 import {
   CheckCircle,
   XCircle,
@@ -35,18 +39,30 @@ import {
   DollarSign,
   Loader2,
   Eye,
-  AlertCircle
+  AlertCircle,
+  Settings
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const DigitalCards = () => {
-  const { orders, cardTypes, loading, processing, approveOrder, rejectOrder } = useAdminDigitalCards();
+  const { orders, cardTypes, loading, processing, approveOrder, rejectOrder, refetch } = useAdminDigitalCards();
+  const { updating, updateCardType, updateFeeSettings } = useDigitalCardSettings();
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
   const [receiptImage, setReceiptImage] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string>('');
   const [transactionRef, setTransactionRef] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
+  
+  // Settings states
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [exchangeRate, setExchangeRate] = useState<number>(200);
+  const [minAmount, setMinAmount] = useState<number>(5);
+  const [maxAmount, setMaxAmount] = useState<number>(500);
+  const [feeType, setFeeType] = useState<'percentage' | 'fixed'>('percentage');
+  const [feeValue, setFeeValue] = useState<number>(3);
+  const [minFee, setMinFee] = useState<number>(0);
+  const [maxFee, setMaxFee] = useState<number | undefined>(undefined);
   const [uploading, setUploading] = useState(false);
 
   const getStatusBadge = (status: string) => {
@@ -155,6 +171,51 @@ const DigitalCards = () => {
     }
   };
 
+  const handleSaveCardSettings = async () => {
+    if (!editingCardId) return;
+    
+    const success = await updateCardType(editingCardId, {
+      exchange_rate: exchangeRate,
+      min_amount: minAmount,
+      max_amount: maxAmount,
+    });
+    
+    if (success) {
+      setEditingCardId(null);
+      refetch();
+    }
+  };
+
+  const handleToggleCardActive = async (cardId: string, currentStatus: boolean) => {
+    const success = await updateCardType(cardId, {
+      is_active: !currentStatus,
+    });
+    
+    if (success) {
+      refetch();
+    }
+  };
+
+  const handleSaveFeeSettings = async () => {
+    const success = await updateFeeSettings({
+      fee_type: feeType,
+      fee_value: feeValue,
+      min_fee: minFee,
+      max_fee: maxFee,
+    });
+    
+    if (success) {
+      // Settings saved
+    }
+  };
+
+  const startEditingCard = (card: any) => {
+    setEditingCardId(card.id);
+    setExchangeRate(card.exchange_rate);
+    setMinAmount(card.min_amount);
+    setMaxAmount(card.max_amount);
+  };
+
   const pendingOrders = orders.filter(o => o.status === 'pending');
   const completedOrders = orders.filter(o => o.status === 'completed');
   const rejectedOrders = orders.filter(o => o.status === 'rejected');
@@ -166,6 +227,17 @@ const DigitalCards = () => {
         <h1 className="text-3xl font-bold">إدارة البطاقات الرقمية</h1>
         <p className="text-muted-foreground">إدارة طلبات البطاقات الرقمية والموافقة عليها</p>
       </div>
+
+      <Tabs defaultValue="orders" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="orders">الطلبات</TabsTrigger>
+          <TabsTrigger value="settings">
+            <Settings className="w-4 h-4 ml-2" />
+            الإعدادات
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="orders" className="space-y-6 mt-6">
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -357,7 +429,184 @@ const DigitalCards = () => {
             </div>
           )}
         </CardContent>
-      </Card>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="settings" className="space-y-6 mt-6">
+        {/* Card Types Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle>إعدادات أنواع البطاقات</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {cardTypes.map((card) => (
+              <div key={card.id} className="border rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    {card.logo_url && (
+                      <img src={card.logo_url} alt={card.name_ar} className="w-12 h-12 object-contain" />
+                    )}
+                    <div>
+                      <h3 className="font-semibold">{card.name_ar}</h3>
+                      <p className="text-sm text-muted-foreground">{card.name}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor={`active-${card.id}`}>نشط</Label>
+                      <Switch
+                        id={`active-${card.id}`}
+                        checked={card.is_active}
+                        onCheckedChange={() => handleToggleCardActive(card.id, card.is_active)}
+                        disabled={updating}
+                      />
+                    </div>
+                    {editingCardId === card.id ? (
+                      <>
+                        <Button 
+                          onClick={handleSaveCardSettings} 
+                          disabled={updating}
+                          size="sm"
+                        >
+                          حفظ
+                        </Button>
+                        <Button 
+                          onClick={() => setEditingCardId(null)} 
+                          variant="outline"
+                          size="sm"
+                        >
+                          إلغاء
+                        </Button>
+                      </>
+                    ) : (
+                      <Button 
+                        onClick={() => startEditingCard(card)} 
+                        variant="outline"
+                        size="sm"
+                      >
+                        تعديل
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {editingCardId === card.id ? (
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor={`exchange-${card.id}`}>سعر الصرف (دج/$)</Label>
+                      <Input
+                        id={`exchange-${card.id}`}
+                        type="number"
+                        value={exchangeRate}
+                        onChange={(e) => setExchangeRate(Number(e.target.value))}
+                        step="0.01"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`min-${card.id}`}>الحد الأدنى ($)</Label>
+                      <Input
+                        id={`min-${card.id}`}
+                        type="number"
+                        value={minAmount}
+                        onChange={(e) => setMinAmount(Number(e.target.value))}
+                        step="1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`max-${card.id}`}>الحد الأقصى ($)</Label>
+                      <Input
+                        id={`max-${card.id}`}
+                        type="number"
+                        value={maxAmount}
+                        onChange={(e) => setMaxAmount(Number(e.target.value))}
+                        step="1"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">سعر الصرف:</span>
+                      <span className="font-semibold mr-2">{card.exchange_rate} دج/$</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">الحد الأدنى:</span>
+                      <span className="font-semibold mr-2">${card.min_amount}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">الحد الأقصى:</span>
+                      <span className="font-semibold mr-2">${card.max_amount}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Fee Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle>إعدادات العمولة</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label>نوع العمولة</Label>
+              <RadioGroup value={feeType} onValueChange={(value: any) => setFeeType(value)} className="flex gap-4 mt-2">
+                <div className="flex items-center space-x-2 space-x-reverse">
+                  <RadioGroupItem value="percentage" id="percentage" />
+                  <Label htmlFor="percentage">نسبة مئوية (%)</Label>
+                </div>
+                <div className="flex items-center space-x-2 space-x-reverse">
+                  <RadioGroupItem value="fixed" id="fixed" />
+                  <Label htmlFor="fixed">مبلغ ثابت (دج)</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="fee-value">
+                  {feeType === 'percentage' ? 'النسبة المئوية (%)' : 'المبلغ الثابت (دج)'}
+                </Label>
+                <Input
+                  id="fee-value"
+                  type="number"
+                  value={feeValue}
+                  onChange={(e) => setFeeValue(Number(e.target.value))}
+                  step={feeType === 'percentage' ? '0.1' : '1'}
+                />
+              </div>
+              <div>
+                <Label htmlFor="min-fee">الحد الأدنى للعمولة (دج)</Label>
+                <Input
+                  id="min-fee"
+                  type="number"
+                  value={minFee}
+                  onChange={(e) => setMinFee(Number(e.target.value))}
+                  step="1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="max-fee">الحد الأقصى للعمولة (دج)</Label>
+                <Input
+                  id="max-fee"
+                  type="number"
+                  value={maxFee || ''}
+                  onChange={(e) => setMaxFee(e.target.value ? Number(e.target.value) : undefined)}
+                  step="1"
+                  placeholder="اختياري"
+                />
+              </div>
+            </div>
+
+            <Button onClick={handleSaveFeeSettings} disabled={updating} className="w-full">
+              حفظ إعدادات العمولة
+            </Button>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
 
       {/* Action Dialog */}
       <Dialog 
