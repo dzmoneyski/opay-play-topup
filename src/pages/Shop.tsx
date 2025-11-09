@@ -211,92 +211,75 @@ const Shop = () => {
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {cardTypes.map((cardType) => (
-                  <div 
-                    key={cardType.id} 
-                    className="group cursor-pointer transition-all duration-300 hover:scale-105"
-                    onClick={() => handleCardClick(cardType)}
-                  >
-                    {/* Realistic Plastic Card Design */}
-                    <div className={`relative w-full aspect-[1.586/1] bg-gradient-to-br ${getProviderGradient(cardType.provider)} rounded-2xl shadow-xl p-6 flex flex-col justify-between overflow-hidden border border-white/10`}>
-                      {/* Glossy Effect Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/20 pointer-events-none"></div>
-                      
-                      {/* Top Section - Chip and Logo */}
-                      <div className="relative z-10 flex justify-between items-start">
-                        {/* EMV Chip */}
-                        <div className="w-12 h-10 bg-gradient-to-br from-yellow-200 to-yellow-400 rounded-md shadow-lg relative overflow-hidden">
-                          <div className="absolute inset-0.5 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-sm"></div>
-                          <div className="absolute inset-1 grid grid-cols-3 grid-rows-3 gap-0.5">
-                            {[...Array(9)].map((_, i) => (
-                              <div key={i} className="bg-yellow-600/30 rounded-sm"></div>
-                            ))}
-                          </div>
-                        </div>
-                        
-                        {/* Provider Logo */}
-                        {getProviderLogo(cardType.provider) ? (
-                          <div className="bg-white/95 backdrop-blur-sm p-2 rounded-lg border border-white/20 h-10 w-16 flex items-center justify-center">
-                            <img 
-                              src={getProviderLogo(cardType.provider)} 
-                              alt={cardType.name}
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
+                {cardTypes.map((cardType) => {
+                  const providerLogo = getProviderLogo(cardType.provider);
+                  
+                  return (
+                    <div 
+                      key={cardType.id} 
+                      className="group cursor-pointer transition-all duration-300 hover:scale-105"
+                      onClick={() => handleCardClick(cardType)}
+                    >
+                      {/* Realistic Card with Real Image Background */}
+                      <div className="relative w-full aspect-[1.586/1] rounded-2xl shadow-xl overflow-hidden border border-white/10">
+                        {/* Background Image */}
+                        {providerLogo ? (
+                          <img 
+                            src={providerLogo} 
+                            alt={cardType.name}
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
                         ) : (
-                          <div className="bg-white/10 backdrop-blur-sm p-2 rounded-lg border border-white/20">
-                            <CreditCard className="h-6 w-6 text-white" />
-                          </div>
+                          <div className={`absolute inset-0 bg-gradient-to-br ${getProviderGradient(cardType.provider)}`}></div>
                         )}
-                      </div>
-                      
-                      {/* Middle Section - Card Details */}
-                      <div className="relative z-10 space-y-3">
-                        {/* Card Name */}
-                        <div className="space-y-1">
-                          <h3 className="text-2xl font-bold text-white drop-shadow-lg tracking-wide">{cardType.name}</h3>
-                          <p className="text-white/90 text-sm font-medium">{cardType.name_ar}</p>
+                        
+                        {/* Dark Overlay for Better Text Readability */}
+                        <div className="absolute inset-0 bg-black/20"></div>
+                        
+                        {/* Content Overlay */}
+                        <div className="relative z-10 h-full p-6 flex flex-col justify-between">
+                          {/* Card Info at Bottom */}
+                          <div className="mt-auto space-y-3">
+                            {/* Card Name */}
+                            <div className="space-y-1">
+                              <h3 className="text-xl font-bold text-white drop-shadow-lg">{cardType.name_ar}</h3>
+                            </div>
+                            
+                            {/* Card Info Grid */}
+                            <div className="grid grid-cols-3 gap-1.5 bg-black/40 backdrop-blur-md rounded-lg p-2 border border-white/20">
+                              <div className="space-y-0.5">
+                                <p className="text-white/80 text-[9px]">سعر الصرف:</p>
+                                <p className="text-white font-bold text-[11px]">{cardType.exchange_rate} دج/$</p>
+                              </div>
+                              <div className="space-y-0.5">
+                                <p className="text-white/80 text-[9px]">الحد الأدنى:</p>
+                                <p className="text-white font-bold text-[11px]">${cardType.min_amount}</p>
+                              </div>
+                              <div className="space-y-0.5">
+                                <p className="text-white/80 text-[9px]">الحد الأقصى:</p>
+                                <p className="text-white font-bold text-[11px]">${cardType.max_amount}</p>
+                              </div>
+                            </div>
+                            
+                            {/* Action Button */}
+                            <Button 
+                              className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white border border-white/30 font-bold gap-2 shadow-lg transition-all group-hover:bg-white/40"
+                              size="lg"
+                            >
+                              <ShoppingCart className="h-5 w-5" />
+                              شراء الآن
+                            </Button>
+                          </div>
                         </div>
                         
-                        {/* Card Info Grid */}
-                        <div className="grid grid-cols-3 gap-1.5 bg-black/20 backdrop-blur-sm rounded-lg p-2 border border-white/10">
-                          <div className="space-y-0.5">
-                            <p className="text-white/60 text-[9px]">سعر الصرف:</p>
-                            <p className="text-white font-bold text-[11px]">{cardType.exchange_rate} دج/$</p>
-                          </div>
-                          <div className="space-y-0.5">
-                            <p className="text-white/60 text-[9px]">الحد الأدنى:</p>
-                            <p className="text-white font-bold text-[11px]">${cardType.min_amount}</p>
-                          </div>
-                          <div className="space-y-0.5">
-                            <p className="text-white/60 text-[9px]">الحد الأقصى:</p>
-                            <p className="text-white font-bold text-[11px]">${cardType.max_amount}</p>
-                          </div>
+                        {/* Holographic Effect on Hover */}
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+                          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent"></div>
                         </div>
-                      </div>
-                      
-                      {/* Bottom Section - Action Button */}
-                      <div className="relative z-10">
-                        <Button 
-                          className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white border border-white/30 font-bold gap-2 shadow-lg transition-all group-hover:bg-white/40"
-                          size="lg"
-                        >
-                          <ShoppingCart className="h-5 w-5" />
-                          شراء الآن
-                        </Button>
-                      </div>
-                      
-                      {/* Decorative Elements */}
-                      <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
-                      <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full blur-3xl -ml-24 -mb-24 pointer-events-none"></div>
-                      
-                      {/* Holographic Effect */}
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent animate-shimmer"></div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </TabsContent>
