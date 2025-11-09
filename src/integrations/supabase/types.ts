@@ -220,8 +220,10 @@ export type Database = {
           price_paid: number
           processed_at: string | null
           processed_by: string | null
+          receipt_image: string | null
           status: string
           total_dzd: number
+          transaction_reference: string | null
           updated_at: string
           user_id: string
         }
@@ -241,8 +243,10 @@ export type Database = {
           price_paid: number
           processed_at?: string | null
           processed_by?: string | null
+          receipt_image?: string | null
           status?: string
           total_dzd?: number
+          transaction_reference?: string | null
           updated_at?: string
           user_id: string
         }
@@ -262,8 +266,10 @@ export type Database = {
           price_paid?: number
           processed_at?: string | null
           processed_by?: string | null
+          receipt_image?: string | null
           status?: string
           total_dzd?: number
+          transaction_reference?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1237,16 +1243,16 @@ export type Database = {
             Returns: undefined
           }
       approve_digital_card_order:
+        | { Args: { _admin_notes?: string; _order_id: string }; Returns: Json }
         | {
             Args: {
               _admin_notes?: string
-              _card_code: string
-              _card_pin?: string
               _order_id: string
+              _receipt_image: string
+              _transaction_reference: string
             }
             Returns: Json
           }
-        | { Args: { _admin_notes?: string; _order_id: string }; Returns: Json }
       approve_game_topup_order: {
         Args: { _admin_notes?: string; _order_id: string }
         Returns: Json

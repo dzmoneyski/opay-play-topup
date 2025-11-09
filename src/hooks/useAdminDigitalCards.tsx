@@ -61,13 +61,13 @@ export const useAdminDigitalCards = () => {
     }
   };
 
-  const approveOrder = async (orderId: string, cardCode: string, cardPin: string = '', adminNotes: string = '') => {
+  const approveOrder = async (orderId: string, receiptImage: string, transactionRef: string, adminNotes: string = '') => {
     setProcessing(true);
     try {
       const { data, error } = await supabase.rpc('approve_digital_card_order', {
         _order_id: orderId,
-        _card_code: cardCode,
-        _card_pin: cardPin || null,
+        _receipt_image: receiptImage,
+        _transaction_reference: transactionRef,
         _admin_notes: adminNotes || null
       });
 

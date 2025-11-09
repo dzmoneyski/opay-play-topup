@@ -42,6 +42,8 @@ export interface DigitalCardOrder {
   card_code?: string;
   card_pin?: string;
   card_details?: any;
+  receipt_image?: string;
+  transaction_reference?: string;
   created_at: string;
   updated_at: string;
   processed_at?: string;

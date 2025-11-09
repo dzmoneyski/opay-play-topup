@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -42,9 +43,11 @@ const DigitalCards = () => {
   const { orders, cardTypes, loading, processing, approveOrder, rejectOrder } = useAdminDigitalCards();
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
-  const [cardCode, setCardCode] = useState('');
-  const [cardPin, setCardPin] = useState('');
+  const [receiptImage, setReceiptImage] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string>('');
+  const [transactionRef, setTransactionRef] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -82,9 +85,22 @@ const DigitalCards = () => {
   const handleApprove = (order: any) => {
     setSelectedOrder(order);
     setActionType('approve');
-    setCardCode('');
-    setCardPin('');
+    setReceiptImage(null);
+    setReceiptPreview('');
+    setTransactionRef('');
     setAdminNotes('');
+  };
+
+  const handleReceiptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setReceiptImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReceiptPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleReject = (order: any) => {
@@ -98,10 +114,33 @@ const DigitalCards = () => {
 
     let success = false;
     if (actionType === 'approve') {
-      if (!cardCode) {
+      if (!receiptImage || !transactionRef) {
         return;
       }
-      success = (await approveOrder(selectedOrder.id, cardCode, cardPin, adminNotes)).success;
+
+      setUploading(true);
+      try {
+        // رفع الصورة إلى Supabase Storage
+        const fileExt = receiptImage.name.split('.').pop();
+        const fileName = `${selectedOrder.id}_${Date.now()}.${fileExt}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('digital-card-receipts')
+          .upload(fileName, receiptImage);
+
+        if (uploadError) throw uploadError;
+
+        // الحصول على الرابط العام للصورة
+        const { data: { publicUrl } } = supabase.storage
+          .from('digital-card-receipts')
+          .getPublicUrl(fileName);
+
+        success = (await approveOrder(selectedOrder.id, publicUrl, transactionRef, adminNotes)).success;
+      } catch (error) {
+        console.error('Error uploading receipt:', error);
+        success = false;
+      } finally {
+        setUploading(false);
+      }
     } else if (actionType === 'reject') {
       success = (await rejectOrder(selectedOrder.id, adminNotes)).success;
     }
@@ -109,8 +148,9 @@ const DigitalCards = () => {
     if (success) {
       setSelectedOrder(null);
       setActionType(null);
-      setCardCode('');
-      setCardPin('');
+      setReceiptImage(null);
+      setReceiptPreview('');
+      setTransactionRef('');
       setAdminNotes('');
     }
   };
@@ -325,8 +365,9 @@ const DigitalCards = () => {
         onOpenChange={() => {
           setSelectedOrder(null);
           setActionType(null);
-          setCardCode('');
-          setCardPin('');
+          setReceiptImage(null);
+          setReceiptPreview('');
+          setTransactionRef('');
           setAdminNotes('');
         }}
       >
@@ -352,24 +393,42 @@ const DigitalCards = () => {
             {actionType === 'approve' && (
               <>
                 <div>
-                  <Label htmlFor="cardCode">كود البطاقة *</Label>
+                  <Label htmlFor="receiptImage">صورة الوصل *</Label>
                   <Input
-                    id="cardCode"
-                    placeholder="أدخل كود البطاقة"
-                    value={cardCode}
-                    onChange={(e) => setCardCode(e.target.value)}
+                    id="receiptImage"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleReceiptChange}
+                    className="mt-1"
+                  />
+                  {receiptPreview && (
+                    <div className="mt-2">
+                      <img 
+                        src={receiptPreview} 
+                        alt="معاينة الوصل" 
+                        className="max-h-40 rounded-lg border"
+                      />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="transactionRef">معرف المعاملة *</Label>
+                  <Input
+                    id="transactionRef"
+                    placeholder="أدخل معرف المعاملة"
+                    value={transactionRef}
+                    onChange={(e) => setTransactionRef(e.target.value)}
                     className="mt-1"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="cardPin">رمز PIN (اختياري)</Label>
-                  <Input
-                    id="cardPin"
-                    placeholder="أدخل رمز PIN إذا كان متوفراً"
-                    value={cardPin}
-                    onChange={(e) => setCardPin(e.target.value)}
-                    className="mt-1"
-                  />
+                <div className="p-3 bg-muted/50 rounded-lg border">
+                  <p className="text-sm font-semibold mb-1">رسالة الشكر الافتراضية:</p>
+                  <p className="text-sm text-muted-foreground">
+                    "شكراً لك لثقتك بنا، شارك تجربتك مع الأعضاء في تلغرام الخاص بنا"
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    سيتم إضافة ملاحظاتك أدناه إلى هذه الرسالة
+                  </p>
                 </div>
               </>
             )}
@@ -404,10 +463,23 @@ const DigitalCards = () => {
                     </>
                   )}
                   
-                  {selectedOrder.card_pin && (
+                  {selectedOrder.receipt_image && (
                     <>
-                      <div className="text-muted-foreground">PIN:</div>
-                      <div className="font-mono">{selectedOrder.card_pin}</div>
+                      <div className="text-muted-foreground col-span-2">صورة الوصل:</div>
+                      <div className="col-span-2">
+                        <img 
+                          src={selectedOrder.receipt_image} 
+                          alt="وصل الدفع" 
+                          className="max-h-60 rounded-lg border"
+                        />
+                      </div>
+                    </>
+                  )}
+                  
+                  {selectedOrder.transaction_reference && (
+                    <>
+                      <div className="text-muted-foreground">معرف المعاملة:</div>
+                      <div className="font-mono">{selectedOrder.transaction_reference}</div>
                     </>
                   )}
                   
@@ -435,11 +507,11 @@ const DigitalCards = () => {
             {actionType && (
               <Button
                 onClick={handleConfirmAction}
-                disabled={processing || (actionType === 'approve' && !cardCode)}
+                disabled={processing || uploading || (actionType === 'approve' && (!receiptImage || !transactionRef))}
                 variant={actionType === 'reject' ? 'destructive' : 'default'}
               >
-                {processing && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
-                {actionType === 'approve' && 'تأكيد الموافقة'}
+                {(processing || uploading) && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
+                {actionType === 'approve' && (uploading ? 'جاري رفع الصورة...' : 'تأكيد الموافقة')}
                 {actionType === 'reject' && 'تأكيد الرفض'}
               </Button>
             )}

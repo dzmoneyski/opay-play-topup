@@ -338,10 +338,30 @@ const Shop = () => {
                       </div>
                       
                       {order.status === 'completed' && (
-                        <div className="mt-3 p-3 bg-success/10 rounded-lg border border-success/20">
-                          <p className="text-sm font-semibold text-success mb-1">✓ تم إرسال المبلغ إلى حسابك</p>
-                          {order.admin_notes && (
-                            <p className="text-xs text-muted-foreground">{order.admin_notes}</p>
+                        <div className="mt-3 space-y-3">
+                          <div className="p-3 bg-success/10 rounded-lg border border-success/20">
+                            <p className="text-sm font-semibold text-success mb-2">✓ تم إرسال المبلغ إلى حسابك</p>
+                            {order.admin_notes && (
+                              <p className="text-xs text-muted-foreground whitespace-pre-line">{order.admin_notes}</p>
+                            )}
+                          </div>
+                          
+                          {order.transaction_reference && (
+                            <div className="p-3 bg-muted/50 rounded-lg border">
+                              <p className="text-xs font-semibold text-muted-foreground mb-1">معرف المعاملة:</p>
+                              <code className="text-sm font-mono">{order.transaction_reference}</code>
+                            </div>
+                          )}
+                          
+                          {order.receipt_image && (
+                            <div className="p-3 bg-muted/50 rounded-lg border">
+                              <p className="text-xs font-semibold text-muted-foreground mb-2">وصل الدفع:</p>
+                              <img 
+                                src={order.receipt_image} 
+                                alt="وصل الدفع" 
+                                className="w-full max-h-60 object-contain rounded-lg border"
+                              />
+                            </div>
                           )}
                         </div>
                       )}
