@@ -124,6 +124,17 @@ const Shop = () => {
     return gradients[provider] || 'from-primary via-primary to-primary';
   };
 
+  const getProviderGlow = (provider: string) => {
+    const glows: { [key: string]: string } = {
+      redotpay: 'shadow-[0_0_15px_rgba(239,68,68,0.6)]',
+      payeer: 'shadow-[0_0_15px_rgba(59,130,246,0.6)]',
+      webmoney: 'shadow-[0_0_15px_rgba(168,85,247,0.6)]',
+      perfectmoney: 'shadow-[0_0_15px_rgba(234,179,8,0.6)]',
+      skrill: 'shadow-[0_0_15px_rgba(139,92,246,0.6)]',
+    };
+    return glows[provider] || 'shadow-[0_0_15px_rgba(99,102,241,0.6)]';
+  };
+
   const getProviderLogo = (provider: string) => {
     const logos: { [key: string]: string } = {
       redotpay: redotpayCard,
@@ -211,7 +222,7 @@ const Shop = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {cardTypes.map((cardType) => {
                   const providerLogo = getProviderLogo(cardType.provider);
                   
@@ -253,24 +264,26 @@ const Shop = () => {
                           
                           {/* Card Info at Bottom */}
                           <div className="mt-auto space-y-3">
-                            {/* Card Name */}
-                            <div className="space-y-1">
-                              <h3 className="text-xl font-bold text-white drop-shadow-lg">{cardType.name}</h3>
+                            {/* Card Name with Glow Effect */}
+                            <div className="inline-block">
+                              <div className={`bg-black/80 backdrop-blur-md px-4 py-2 rounded-lg border-2 border-black ${getProviderGlow(cardType.provider)}`}>
+                                <h3 className="text-lg md:text-xl font-bold text-white">{cardType.name}</h3>
+                              </div>
                             </div>
                             
                             {/* Card Info Grid */}
-                            <div className="grid grid-cols-3 gap-1.5 bg-black/40 backdrop-blur-md rounded-lg p-2 border border-white/20">
-                              <div className="space-y-0.5">
-                                <p className="text-white/80 text-[9px]">سعر الصرف:</p>
-                                <p className="text-white font-bold text-[11px]">{cardType.exchange_rate} دج/$</p>
+                            <div className={`grid grid-cols-3 gap-2 bg-black/80 backdrop-blur-md rounded-lg p-3 border-2 border-black ${getProviderGlow(cardType.provider)}`}>
+                              <div className="space-y-1">
+                                <p className="text-white/90 text-[10px] md:text-xs">سعر الصرف:</p>
+                                <p className="text-white font-bold text-xs md:text-sm">{cardType.exchange_rate} دج/$</p>
                               </div>
-                              <div className="space-y-0.5">
-                                <p className="text-white/80 text-[9px]">الحد الأدنى:</p>
-                                <p className="text-white font-bold text-[11px]">${cardType.min_amount}</p>
+                              <div className="space-y-1">
+                                <p className="text-white/90 text-[10px] md:text-xs">الحد الأدنى:</p>
+                                <p className="text-white font-bold text-xs md:text-sm">${cardType.min_amount}</p>
                               </div>
-                              <div className="space-y-0.5">
-                                <p className="text-white/80 text-[9px]">الحد الأقصى:</p>
-                                <p className="text-white font-bold text-[11px]">${cardType.max_amount}</p>
+                              <div className="space-y-1">
+                                <p className="text-white/90 text-[10px] md:text-xs">الحد الأقصى:</p>
+                                <p className="text-white font-bold text-xs md:text-sm">${cardType.max_amount}</p>
                               </div>
                             </div>
                             
