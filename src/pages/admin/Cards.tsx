@@ -5,9 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useDigitalCards } from '@/hooks/useDigitalCards';
+import { useBalance } from '@/hooks/useBalance';
 import QRCode from 'qrcode';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -27,8 +30,18 @@ import {
   EyeOff,
   Trash2,
   Edit,
-  FileText
+  FileText,
+  ShoppingCart,
+  Package,
+  Info,
+  XCircle
 } from 'lucide-react';
+import redotpayCard from '@/assets/redotpay-card.png';
+import payeerCard from '@/assets/payeer-card.png';
+import payeerLogo from '@/assets/payeer-logo.png';
+import webmoneyCard from '@/assets/webmoney-card.png';
+import skrillCard from '@/assets/skrill-card.png';
+import perfectmoneyCard from '@/assets/perfectmoney-card.png';
 
 interface GiftCard {
   id: string;
@@ -42,6 +55,7 @@ interface GiftCard {
 }
 
 export default function CardsPage() {
+  // Gift Cards State
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,6 +73,14 @@ export default function CardsPage() {
   const [quantity, setQuantity] = useState<number>(10);
   const [generating, setGenerating] = useState(false);
   const [exportingPDF, setExportingPDF] = useState(false);
+
+  // Digital Cards State (from Shop)
+  const { balance } = useBalance();
+  const { cardTypes, feeSettings: digitalFeeSettings, orders, loading: digitalLoading, purchasing, purchaseCard } = useDigitalCards();
+  const [selectedDigitalCard, setSelectedDigitalCard] = useState<any>(null);
+  const [accountId, setAccountId] = useState('');
+  const [amountUsd, setAmountUsd] = useState<string>('');
+  const [showBalance, setShowBalance] = useState(true);
 
   const { toast } = useToast();
 
@@ -813,14 +835,100 @@ export default function CardsPage() {
     }
   };
 
+  // Digital Cards Helper Functions
+  const calculateTotal = (amount: number, exchangeRate: number) => {
+    const amountDzd = amount * exchangeRate;
+    let feeAmount = 0;
+    
+    if (digitalFeeSettings) {
+      if (digitalFeeSettings.fee_type === 'percentage') {
+        feeAmount = (amountDzd * digitalFeeSettings.fee_value) / 100;
+      } else {
+        feeAmount = digitalFeeSettings.fee_value;
+      }
+      
+      if (digitalFeeSettings.min_fee) {
+        feeAmount = Math.max(feeAmount, digitalFeeSettings.min_fee);
+      }
+      if (digitalFeeSettings.max_fee) {
+        feeAmount = Math.min(feeAmount, digitalFeeSettings.max_fee);
+      }
+    }
+    
+    return {
+      amountDzd,
+      feeAmount,
+      totalDzd: amountDzd + feeAmount
+    };
+  };
+
+  const handleDigitalCardClick = (cardType: any) => {
+    setSelectedDigitalCard(cardType);
+    setAccountId('');
+    setAmountUsd('');
+  };
+
+  const handleConfirmPurchase = async () => {
+    if (!selectedDigitalCard || !accountId || !amountUsd) return;
+
+    const amount = parseFloat(amountUsd);
+    const result = await purchaseCard(selectedDigitalCard.id, accountId, amount);
+    
+    if (result.success) {
+      setSelectedDigitalCard(null);
+      setAccountId('');
+      setAmountUsd('');
+    }
+  };
+
+  const getDigitalStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <Badge className="bg-success/10 text-success border-success/20"><CheckCircle className="h-3 w-3 ml-1" />مكتمل</Badge>;
+      case 'pending':
+        return <Badge variant="secondary"><Clock className="h-3 w-3 ml-1" />قيد المعالجة</Badge>;
+      case 'processing':
+        return <Badge variant="secondary"><Clock className="h-3 w-3 ml-1" />جاري المعالجة</Badge>;
+      case 'failed':
+        return <Badge variant="destructive"><XCircle className="h-3 w-3 ml-1" />فشل</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
+
+  const getProviderGradient = (provider: string) => {
+    const gradients: { [key: string]: string } = {
+      redotpay: 'from-red-500 via-red-600 to-red-700',
+      payeer: 'from-blue-500 via-blue-600 to-blue-700',
+      webmoney: 'from-purple-500 via-purple-600 to-purple-700',
+      perfectmoney: 'from-yellow-500 via-yellow-600 to-yellow-700',
+      skrill: 'from-violet-500 via-violet-600 to-violet-700',
+    };
+    return gradients[provider] || 'from-primary via-primary to-primary';
+  };
+
+  const getProviderLogo = (provider: string) => {
+    const logos: { [key: string]: string } = {
+      redotpay: redotpayCard,
+      payeer: payeerCard,
+      webmoney: webmoneyCard,
+      perfectmoney: perfectmoneyCard,
+      skrill: skrillCard,
+    };
+    return logos[provider];
+  };
+
+  const digitalAmount = parseFloat(amountUsd) || 0;
+  const digitalTotals = selectedDigitalCard && digitalAmount > 0 ? calculateTotal(digitalAmount, selectedDigitalCard.exchange_rate) : null;
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">إدارة البطاقات</h1>
+          <h1 className="text-3xl font-bold text-foreground">بطاقات USD</h1>
           <p className="text-muted-foreground mt-2">
-            إنشاء وإدارة بطاقات الشحن
+            إدارة بطاقات الهدايا والبطاقات الرقمية
           </p>
         </div>
         <div className="flex gap-2">
@@ -840,7 +948,7 @@ export default function CardsPage() {
             <DialogTrigger asChild>
               <Button className="bg-gradient-primary">
                 <Plus className="w-4 h-4 mr-2" />
-                إنشاء بطاقات
+                إنشاء بطاقات هدايا
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -885,7 +993,21 @@ export default function CardsPage() {
         </div>
       </div>
 
-      {/* Statistics Cards */}
+      {/* Tabs for different card types */}
+      <Tabs defaultValue="gift-cards" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="gift-cards" className="gap-2">
+            <Gift className="h-4 w-4" />
+            بطاقات الهدايا
+          </TabsTrigger>
+          <TabsTrigger value="digital-cards" className="gap-2">
+            <ShoppingCart className="h-4 w-4" />
+            البطاقات الرقمية USD
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Gift Cards Tab */}
+        <TabsContent value="gift-cards" className="space-y-6">
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -1188,6 +1310,288 @@ export default function CardsPage() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        {/* Digital Cards Tab */}
+        <TabsContent value="digital-cards" className="space-y-6">
+          {/* Digital Cards Content */}
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">أنواع البطاقات</CardTitle>
+                <CreditCard className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{cardTypes.length}</div>
+                <p className="text-xs text-muted-foreground">بطاقة متاحة</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">إجمالي الطلبات</CardTitle>
+                <Package className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{orders.length}</div>
+                <p className="text-xs text-muted-foreground">طلب</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">الطلبات المعلقة</CardTitle>
+                <Clock className="h-4 w-4 text-warning" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-warning">
+                  {orders.filter(o => o.status === 'pending' || o.status === 'processing').length}
+                </div>
+                <p className="text-xs text-muted-foreground">بانتظار المعالجة</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Shop and Orders Tabs */}
+          <Tabs defaultValue="shop" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="shop" className="gap-2">
+                <ShoppingCart className="h-4 w-4" />
+                المتجر
+              </TabsTrigger>
+              <TabsTrigger value="orders" className="gap-2">
+                <Package className="h-4 w-4" />
+                الطلبات ({orders.length})
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Shop Sub-Tab */}
+            <TabsContent value="shop" className="space-y-6">
+              {digitalLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <Card key={i} className="animate-pulse h-64">
+                      <div className="h-full bg-muted/20" />
+                    </Card>
+                  ))}
+                </div>
+              ) : cardTypes.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <ShoppingBag className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">لا توجد بطاقات متاحة حالياً</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {cardTypes.map((cardType) => {
+                    const providerLogo = getProviderLogo(cardType.provider);
+                    
+                    return (
+                      <div 
+                        key={cardType.id} 
+                        className="group cursor-pointer transition-all duration-300 hover:scale-105"
+                        onClick={() => handleDigitalCardClick(cardType)}
+                      >
+                        <div className="relative w-full aspect-[1.586/1] rounded-xl shadow-xl overflow-hidden border border-white/10">
+                          {providerLogo ? (
+                            <img 
+                              src={providerLogo} 
+                              alt={cardType.name}
+                              className="absolute inset-0 w-full h-full object-cover brightness-105"
+                            />
+                          ) : (
+                            <div className={`absolute inset-0 bg-gradient-to-br ${getProviderGradient(cardType.provider)}`}></div>
+                          )}
+                          
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                          
+                          <div className="relative z-10 h-full p-4 flex flex-col justify-between">
+                            {cardType.provider === 'payeer' && (
+                              <div className="flex justify-start">
+                                <img 
+                                  src={payeerLogo} 
+                                  alt="Payeer"
+                                  className="w-12 h-12 object-contain drop-shadow-lg rounded-full"
+                                  style={{ mixBlendMode: 'multiply' }}
+                                />
+                              </div>
+                            )}
+                            
+                            <div className="mt-auto space-y-3">
+                              <div className="space-y-1">
+                                <h3 className="text-2xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] [text-shadow:_2px_2px_4px_rgb(0_0_0_/_80%)]">
+                                  {cardType.name}
+                                </h3>
+                              </div>
+                              
+                              <div className="grid grid-cols-3 gap-2 bg-black/70 backdrop-blur-md rounded-xl p-3 border-2 border-white/30 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+                                <div className="space-y-1">
+                                  <p className="text-white/90 text-xs font-medium">سعر الصرف:</p>
+                                  <p className="text-white font-bold text-sm drop-shadow-md">{cardType.exchange_rate} دج/$</p>
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-white/90 text-xs font-medium">الحد الأدنى:</p>
+                                  <p className="text-white font-bold text-sm drop-shadow-md">${cardType.min_amount}</p>
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-white/90 text-xs font-medium">الحد الأقصى:</p>
+                                  <p className="text-white font-bold text-sm drop-shadow-md">${cardType.max_amount}</p>
+                                </div>
+                              </div>
+                              
+                              <Button 
+                                className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white border border-white/30 font-bold gap-2 shadow-lg transition-all group-hover:bg-white/40"
+                              >
+                                <Eye className="h-5 w-5" />
+                                عرض التفاصيل
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+                            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent"></div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Orders Sub-Tab */}
+            <TabsContent value="orders" className="space-y-4">
+              {orders.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">لا توجد طلبات</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                orders.map((order) => {
+                  const cardType = cardTypes.find(c => c.id === order.card_type_id);
+                  
+                  return (
+                    <Card key={order.id} className="border-0 shadow-card">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-start gap-3">
+                            <div className={`p-2 rounded-lg bg-gradient-to-br ${cardType ? getProviderGradient(cardType.provider) : 'from-primary to-primary'}`}>
+                              <CreditCard className="h-5 w-5 text-white" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-foreground">
+                                {cardType?.name_ar || 'بطاقة'}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                ${order.amount_usd} - {order.total_dzd} دج
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                الحساب: {order.account_id}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {new Date(order.created_at).toLocaleString('ar-DZ')}
+                              </p>
+                            </div>
+                          </div>
+                          {getDigitalStatusBadge(order.status)}
+                        </div>
+                        
+                        {order.status === 'completed' && (
+                          <div className="mt-3 p-3 bg-success/10 rounded-lg border border-success/20">
+                            <p className="text-sm font-semibold text-success mb-1">✓ تم إرسال المبلغ إلى حسابك</p>
+                            {order.admin_notes && (
+                              <p className="text-xs text-muted-foreground">{order.admin_notes}</p>
+                            )}
+                          </div>
+                        )}
+                        
+                        {order.status === 'failed' && order.admin_notes && (
+                          <div className="mt-3 p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                            <p className="text-xs text-muted-foreground">{order.admin_notes}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </TabsContent>
+          </Tabs>
+        </TabsContent>
+      </Tabs>
+
+      {/* Digital Card Purchase Dialog */}
+      <Dialog open={!!selectedDigitalCard} onOpenChange={() => setSelectedDigitalCard(null)}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              {selectedDigitalCard?.name_ar}
+            </DialogTitle>
+            <DialogDescription>
+              أدخل معلومات حسابك والمبلغ المطلوب
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="accountId">معرف الحساب ({selectedDigitalCard?.provider})</Label>
+              <Input
+                id="accountId"
+                placeholder={`أدخل معرف حسابك في ${selectedDigitalCard?.name_ar}`}
+                value={accountId}
+                onChange={(e) => setAccountId(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="amountUsd">المبلغ بالدولار ($)</Label>
+              <div className="relative mt-1">
+                <DollarSign className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="amountUsd"
+                  type="number"
+                  placeholder={`من ${selectedDigitalCard?.min_amount} إلى ${selectedDigitalCard?.max_amount}`}
+                  value={amountUsd}
+                  onChange={(e) => setAmountUsd(e.target.value)}
+                  className="pr-10"
+                />
+              </div>
+            </div>
+
+            {digitalTotals && (
+              <div className="p-4 bg-muted/30 rounded-lg space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">المبلغ:</span>
+                  <span className="font-semibold">{digitalTotals.amountDzd.toFixed(2)} دج</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">الرسوم:</span>
+                  <span className="font-semibold">{digitalTotals.feeAmount.toFixed(2)} دج</span>
+                </div>
+                <div className="flex justify-between text-base font-bold pt-2 border-t">
+                  <span>الإجمالي:</span>
+                  <span className="text-primary">{digitalTotals.totalDzd.toFixed(2)} دج</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button 
+              onClick={handleConfirmPurchase} 
+              disabled={purchasing || !accountId || !amountUsd}
+              className="w-full"
+            >
+              {purchasing ? 'جاري المعالجة...' : 'تأكيد الطلب'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
