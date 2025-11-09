@@ -14,23 +14,29 @@ export interface DigitalCardType {
   currency: string;
   is_active: boolean;
   display_order: number;
+  exchange_rate: number;
+  min_amount: number;
+  max_amount: number;
 }
 
-export interface DigitalCardDenomination {
+export interface DigitalCardFeeSettings {
   id: string;
-  card_type_id: string;
-  amount: number;
-  price_dzd: number;
-  stock_quantity: number;
-  is_available: boolean;
+  fee_type: 'percentage' | 'fixed';
+  fee_value: number;
+  min_fee: number;
+  max_fee?: number;
 }
 
 export interface DigitalCardOrder {
   id: string;
   user_id: string;
   card_type_id: string;
-  denomination_id: string;
+  account_id: string;
   amount: number;
+  amount_usd: number;
+  exchange_rate_used: number;
+  fee_amount: number;
+  total_dzd: number;
   price_paid: number;
   status: string;
   card_code?: string;
@@ -38,11 +44,14 @@ export interface DigitalCardOrder {
   card_details?: any;
   created_at: string;
   updated_at: string;
+  processed_at?: string;
+  processed_by?: string;
+  admin_notes?: string;
 }
 
 export const useDigitalCards = () => {
   const [cardTypes, setCardTypes] = useState<DigitalCardType[]>([]);
-  const [denominations, setDenominations] = useState<DigitalCardDenomination[]>([]);
+  const [feeSettings, setFeeSettings] = useState<DigitalCardFeeSettings | null>(null);
   const [orders, setOrders] = useState<DigitalCardOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
@@ -72,18 +81,19 @@ export const useDigitalCards = () => {
     }
   };
 
-  const fetchDenominations = async () => {
+  const fetchFeeSettings = async () => {
     try {
       const { data, error } = await supabase
-        .from('digital_card_denominations')
+        .from('digital_card_fee_settings')
         .select('*')
-        .eq('is_available', true)
-        .order('amount', { ascending: true });
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (error) throw error;
-      setDenominations(data || []);
+      setFeeSettings(data as DigitalCardFeeSettings | null);
     } catch (error) {
-      console.error('Error fetching denominations:', error);
+      console.error('Error fetching fee settings:', error);
     }
   };
 
@@ -104,84 +114,63 @@ export const useDigitalCards = () => {
     }
   };
 
-  const purchaseCard = async (denominationId: string, cardTypeId: string) => {
+  const purchaseCard = async (cardTypeId: string, accountId: string, amountUsd: number) => {
     if (!user) {
       toast({
         title: "خطأ",
         description: "يجب تسجيل الدخول أولاً",
         variant: "destructive",
       });
-      return false;
+      return { success: false };
     }
 
     setPurchasing(true);
     try {
-      // Find the denomination details
-      const denomination = denominations.find(d => d.id === denominationId);
-      if (!denomination) {
-        throw new Error('Denomination not found');
-      }
-
-      // Check user balance
-      const { data: balanceData, error: balanceError } = await supabase
-        .from('user_balances')
-        .select('balance')
-        .eq('user_id', user.id)
-        .single();
-
-      if (balanceError) throw balanceError;
-
-      if (!balanceData || balanceData.balance < denomination.price_dzd) {
-        toast({
-          title: "رصيد غير كافٍ",
-          description: `رصيدك الحالي غير كافٍ لشراء هذه البطاقة. السعر: ${denomination.price_dzd} دج`,
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      // Create order
-      const { data: orderData, error: orderError } = await supabase
-        .from('digital_card_orders')
-        .insert({
-          user_id: user.id,
-          card_type_id: cardTypeId,
-          denomination_id: denominationId,
-          amount: denomination.amount,
-          price_paid: denomination.price_dzd,
-          status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Deduct balance
-      const { error: updateError } = await supabase
-        .from('user_balances')
-        .update({ 
-          balance: balanceData.balance - denomination.price_dzd,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id);
-
-      if (updateError) throw updateError;
-
-      toast({
-        title: "تم الطلب بنجاح",
-        description: "سيتم معالجة طلبك وإرسال البطاقة قريباً",
+      const { data, error } = await supabase.rpc('process_digital_card_order', {
+        _card_type_id: cardTypeId,
+        _account_id: accountId,
+        _amount_usd: amountUsd
       });
 
-      await fetchUserOrders();
-      return true;
+      if (error) throw error;
+
+      const result = data as { 
+        success: boolean; 
+        error?: string; 
+        message?: string;
+        order_id?: string;
+        amount_usd?: number;
+        amount_dzd?: number;
+        fee_amount?: number;
+        total_dzd?: number;
+      };
+
+      if (result.success) {
+        toast({
+          title: "نجح الطلب",
+          description: result.message || "تم إرسال طلبك بنجاح",
+        });
+        await fetchUserOrders();
+        return { 
+          success: true, 
+          data: result 
+        };
+      } else {
+        toast({
+          title: "خطأ",
+          description: result.error,
+          variant: "destructive",
+        });
+        return { success: false, error: result.error };
+      }
     } catch (error) {
       console.error('Error purchasing card:', error);
       toast({
         title: "خطأ",
-        description: "حدث خطأ أثناء شراء البطاقة",
+        description: "حدث خطأ أثناء معالجة الطلب",
         variant: "destructive",
       });
-      return false;
+      return { success: false };
     } finally {
       setPurchasing(false);
     }
@@ -189,7 +178,7 @@ export const useDigitalCards = () => {
 
   useEffect(() => {
     fetchCardTypes();
-    fetchDenominations();
+    fetchFeeSettings();
   }, []);
 
   useEffect(() => {
@@ -200,14 +189,14 @@ export const useDigitalCards = () => {
 
   return {
     cardTypes,
-    denominations,
+    feeSettings,
     orders,
     loading,
     purchasing,
     purchaseCard,
     refetch: () => {
       fetchCardTypes();
-      fetchDenominations();
+      fetchFeeSettings();
       fetchUserOrders();
     }
   };

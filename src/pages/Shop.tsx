@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import BackButton from '@/components/BackButton';
 import { useDigitalCards } from '@/hooks/useDigitalCards';
 import { useBalance } from '@/hooks/useBalance';
 import { useAuth } from '@/hooks/useAuth';
 import {
   ShoppingBag,
-  Wallet,
   CreditCard,
   CheckCircle,
   Clock,
@@ -17,26 +18,28 @@ import {
   Eye,
   EyeOff,
   Package,
-  ShoppingCart
+  ShoppingCart,
+  DollarSign,
+  Info
 } from 'lucide-react';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Shop = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { balance } = useBalance();
-  const { cardTypes, denominations, orders, loading, purchasing, purchaseCard } = useDigitalCards();
-  const [selectedCard, setSelectedCard] = useState<{ denominationId: string; cardTypeId: string; price: number } | null>(null);
+  const { cardTypes, feeSettings, orders, loading, purchasing, purchaseCard } = useDigitalCards();
+  const [selectedCard, setSelectedCard] = useState<any>(null);
+  const [accountId, setAccountId] = useState('');
+  const [amountUsd, setAmountUsd] = useState<string>('');
   const [showBalance, setShowBalance] = useState(true);
 
   if (!user) {
@@ -44,16 +47,48 @@ const Shop = () => {
     return null;
   }
 
-  const handlePurchaseClick = (denominationId: string, cardTypeId: string, price: number) => {
-    setSelectedCard({ denominationId, cardTypeId, price });
+  const calculateTotal = (amount: number, exchangeRate: number) => {
+    const amountDzd = amount * exchangeRate;
+    let feeAmount = 0;
+    
+    if (feeSettings) {
+      if (feeSettings.fee_type === 'percentage') {
+        feeAmount = (amountDzd * feeSettings.fee_value) / 100;
+      } else {
+        feeAmount = feeSettings.fee_value;
+      }
+      
+      if (feeSettings.min_fee) {
+        feeAmount = Math.max(feeAmount, feeSettings.min_fee);
+      }
+      if (feeSettings.max_fee) {
+        feeAmount = Math.min(feeAmount, feeSettings.max_fee);
+      }
+    }
+    
+    return {
+      amountDzd,
+      feeAmount,
+      totalDzd: amountDzd + feeAmount
+    };
+  };
+
+  const handleCardClick = (cardType: any) => {
+    setSelectedCard(cardType);
+    setAccountId('');
+    setAmountUsd('');
   };
 
   const handleConfirmPurchase = async () => {
-    if (!selectedCard) return;
+    if (!selectedCard || !accountId || !amountUsd) return;
 
-    const success = await purchaseCard(selectedCard.denominationId, selectedCard.cardTypeId);
-    if (success) {
+    const amount = parseFloat(amountUsd);
+    const result = await purchaseCard(selectedCard.id, accountId, amount);
+    
+    if (result.success) {
       setSelectedCard(null);
+      setAccountId('');
+      setAmountUsd('');
     }
   };
 
@@ -72,20 +107,19 @@ const Shop = () => {
     }
   };
 
-  const getDenominationsForCard = (cardTypeId: string) => {
-    return denominations.filter(d => d.card_type_id === cardTypeId);
+  const getProviderGradient = (provider: string) => {
+    const gradients: { [key: string]: string } = {
+      redotpay: 'from-red-500 via-red-600 to-red-700',
+      payeer: 'from-blue-500 via-blue-600 to-blue-700',
+      webmoney: 'from-purple-500 via-purple-600 to-purple-700',
+      perfectmoney: 'from-yellow-500 via-yellow-600 to-yellow-700',
+      skrill: 'from-violet-500 via-violet-600 to-violet-700',
+    };
+    return gradients[provider] || 'from-primary via-primary to-primary';
   };
 
-  const getProviderColor = (provider: string) => {
-    const colors: { [key: string]: string } = {
-      redotpay: 'bg-gradient-to-br from-red-500 to-red-600',
-      payeer: 'bg-gradient-to-br from-blue-500 to-blue-600',
-      webmoney: 'bg-gradient-to-br from-purple-500 to-purple-600',
-      perfectmoney: 'bg-gradient-to-br from-yellow-500 to-yellow-600',
-      skrill: 'bg-gradient-to-br from-violet-500 to-violet-600',
-    };
-    return colors[provider] || 'bg-gradient-primary';
-  };
+  const amount = parseFloat(amountUsd) || 0;
+  const totals = selectedCard && amount > 0 ? calculateTotal(amount, selectedCard.exchange_rate) : null;
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -145,19 +179,10 @@ const Shop = () => {
           {/* Shop Tab */}
           <TabsContent value="shop" className="space-y-6">
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardHeader>
-                      <div className="h-6 bg-muted rounded w-3/4 mb-2" />
-                      <div className="h-4 bg-muted rounded w-1/2" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="h-10 bg-muted rounded" />
-                        <div className="h-10 bg-muted rounded" />
-                      </div>
-                    </CardContent>
+                  <Card key={i} className="animate-pulse h-64">
+                    <div className="h-full bg-muted/20" />
                   </Card>
                 ))}
               </div>
@@ -170,59 +195,53 @@ const Shop = () => {
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {cardTypes.map((cardType) => {
-                  const cardDenominations = getDenominationsForCard(cardType.id);
-                  
-                  return (
-                    <Card key={cardType.id} className="border-0 shadow-card hover:shadow-elevated transition-all">
-                      <CardHeader className={`${getProviderColor(cardType.provider)} text-white rounded-t-lg`}>
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                            <CreditCard className="h-6 w-6" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-white">{cardType.name_ar}</CardTitle>
-                            <CardDescription className="text-white/80 text-sm">
-                              {cardType.description_ar || cardType.name}
-                            </CardDescription>
-                          </div>
+                {cardTypes.map((cardType) => (
+                  <Card 
+                    key={cardType.id} 
+                    className="group cursor-pointer border-0 shadow-card hover:shadow-elevated transition-all duration-300 hover:scale-105 overflow-hidden"
+                    onClick={() => handleCardClick(cardType)}
+                  >
+                    {/* Card Visual - Plastic Card Design */}
+                    <div className={`relative h-48 bg-gradient-to-br ${getProviderGradient(cardType.provider)} p-6 flex flex-col justify-between`}>
+                      {/* Card Chip Effect */}
+                      <div className="flex justify-between items-start">
+                        <div className="w-12 h-10 bg-yellow-400/30 rounded-md border-2 border-yellow-300/50 backdrop-blur-sm"></div>
+                        <CreditCard className="h-8 w-8 text-white/80" />
+                      </div>
+                      
+                      {/* Card Logo */}
+                      <div>
+                        <h3 className="text-2xl font-bold text-white mb-1">{cardType.name}</h3>
+                        <p className="text-white/80 text-sm">{cardType.name_ar}</p>
+                      </div>
+                      
+                      {/* Decorative Pattern */}
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16"></div>
+                      <div className="absolute bottom-0 left-0 w-40 h-40 bg-black/10 rounded-full -ml-20 -mb-20"></div>
+                    </div>
+                    
+                    <CardContent className="p-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">سعر الصرف:</span>
+                          <span className="font-bold text-foreground">{cardType.exchange_rate} دج/$</span>
                         </div>
-                      </CardHeader>
-                      <CardContent className="p-4 space-y-3">
-                        {cardDenominations.length === 0 ? (
-                          <p className="text-center text-muted-foreground py-4 text-sm">
-                            لا توجد فئات متاحة
-                          </p>
-                        ) : (
-                          cardDenominations.map((denomination) => (
-                            <div
-                              key={denomination.id}
-                              className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                            >
-                              <div>
-                                <p className="font-semibold text-foreground">
-                                  ${denomination.amount} {cardType.currency}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {denomination.price_dzd.toFixed(2)} دج
-                                </p>
-                              </div>
-                              <Button
-                                size="sm"
-                                onClick={() => handlePurchaseClick(denomination.id, cardType.id, denomination.price_dzd)}
-                                disabled={purchasing || denomination.stock_quantity === 0}
-                                className="gap-2"
-                              >
-                                <ShoppingCart className="h-4 w-4" />
-                                {denomination.stock_quantity === 0 ? 'نفذت الكمية' : 'شراء'}
-                              </Button>
-                            </div>
-                          ))
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">الحد الأدنى:</span>
+                          <span className="font-semibold">${cardType.min_amount}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">الحد الأقصى:</span>
+                          <span className="font-semibold">${cardType.max_amount}</span>
+                        </div>
+                      </div>
+                      <Button className="w-full mt-4 gap-2" size="lg">
+                        <ShoppingCart className="h-4 w-4" />
+                        شراء الآن
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             )}
           </TabsContent>
@@ -245,7 +264,7 @@ const Shop = () => {
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-start gap-3">
-                          <div className={`p-2 rounded-lg ${cardType ? getProviderColor(cardType.provider) : 'bg-gradient-primary'}`}>
+                          <div className={`p-2 rounded-lg bg-gradient-to-br ${cardType ? getProviderGradient(cardType.provider) : 'from-primary to-primary'}`}>
                             <CreditCard className="h-5 w-5 text-white" />
                           </div>
                           <div>
@@ -253,7 +272,10 @@ const Shop = () => {
                               {cardType?.name_ar || 'بطاقة'}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              ${order.amount} - {order.price_paid} دج
+                              ${order.amount_usd} - {order.total_dzd} دج
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              الحساب: {order.account_id}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
                               {new Date(order.created_at).toLocaleString('ar-DZ')}
@@ -263,16 +285,18 @@ const Shop = () => {
                         {getStatusBadge(order.status)}
                       </div>
                       
-                      {order.status === 'completed' && order.card_code && (
+                      {order.status === 'completed' && (
                         <div className="mt-3 p-3 bg-success/10 rounded-lg border border-success/20">
-                          <p className="text-xs text-muted-foreground mb-1">رمز البطاقة:</p>
-                          <p className="font-mono font-bold text-success">{order.card_code}</p>
-                          {order.card_pin && (
-                            <>
-                              <p className="text-xs text-muted-foreground mb-1 mt-2">رقم PIN:</p>
-                              <p className="font-mono font-bold text-success">{order.card_pin}</p>
-                            </>
+                          <p className="text-sm font-semibold text-success mb-1">✓ تم إرسال المبلغ إلى حسابك</p>
+                          {order.admin_notes && (
+                            <p className="text-xs text-muted-foreground">{order.admin_notes}</p>
                           )}
+                        </div>
+                      )}
+                      
+                      {order.status === 'failed' && order.admin_notes && (
+                        <div className="mt-3 p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                          <p className="text-xs text-muted-foreground">{order.admin_notes}</p>
                         </div>
                       )}
                     </CardContent>
@@ -284,39 +308,98 @@ const Shop = () => {
         </Tabs>
       </div>
 
-      {/* Purchase Confirmation Dialog */}
-      <AlertDialog open={!!selectedCard} onOpenChange={() => setSelectedCard(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>تأكيد الشراء</AlertDialogTitle>
-            <AlertDialogDescription>
-              هل أنت متأكد من شراء هذه البطاقة؟
-              <div className="mt-4 p-4 bg-muted rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">السعر:</span>
-                  <span className="font-bold">{selectedCard?.price.toFixed(2)} دج</span>
+      {/* Purchase Dialog */}
+      <Dialog open={!!selectedCard} onOpenChange={() => setSelectedCard(null)}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              شراء {selectedCard?.name_ar}
+            </DialogTitle>
+            <DialogDescription>
+              أدخل معلومات حسابك والمبلغ المطلوب
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="accountId">معرف الحساب ({selectedCard?.provider})</Label>
+              <Input
+                id="accountId"
+                placeholder={`أدخل معرف حسابك في ${selectedCard?.name_ar}`}
+                value={accountId}
+                onChange={(e) => setAccountId(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="amount">المبلغ بالدولار ($)</Label>
+              <div className="relative mt-1">
+                <DollarSign className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="amount"
+                  type="number"
+                  placeholder={`من ${selectedCard?.min_amount} إلى ${selectedCard?.max_amount}`}
+                  value={amountUsd}
+                  onChange={(e) => setAmountUsd(e.target.value)}
+                  className="pr-10"
+                  min={selectedCard?.min_amount}
+                  max={selectedCard?.max_amount}
+                  step="0.01"
+                />
+              </div>
+            </div>
+
+            {totals && (
+              <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">المبلغ:</span>
+                  <span className="font-semibold">${amount.toFixed(2)}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">رصيدك الحالي:</span>
-                  <span className="font-bold">{(balance?.balance ?? 0).toFixed(2)} دج</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">سعر الصرف:</span>
+                  <span className="font-semibold">{selectedCard.exchange_rate} دج/$</span>
                 </div>
-                <div className="flex items-center justify-between mt-2 pt-2 border-t">
-                  <span className="text-sm text-muted-foreground">الرصيد بعد الشراء:</span>
-                  <span className="font-bold">
-                    {((balance?.balance ?? 0) - (selectedCard?.price ?? 0)).toFixed(2)} دج
-                  </span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">المبلغ بالدينار:</span>
+                  <span className="font-semibold">{totals.amountDzd.toFixed(2)} دج</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">العمولة:</span>
+                  <span className="font-semibold">{totals.feeAmount.toFixed(2)} دج</span>
+                </div>
+                <div className="border-t pt-2 mt-2">
+                  <div className="flex justify-between font-bold">
+                    <span>الإجمالي:</span>
+                    <span className="text-primary">{totals.totalDzd.toFixed(2)} دج</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-2 mt-3 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-2 rounded">
+                  <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <p>سيتم خصم المبلغ من رصيدك وسيقوم المشرف بمعالجة الطلب وإرسال المبلغ إلى حسابك</p>
                 </div>
               </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmPurchase} disabled={purchasing}>
-              {purchasing ? 'جاري الشراء...' : 'تأكيد الشراء'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setSelectedCard(null)}
+            >
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleConfirmPurchase}
+              disabled={purchasing || !accountId || !amountUsd || amount < (selectedCard?.min_amount || 0) || amount > (selectedCard?.max_amount || 0)}
+            >
+              {purchasing ? 'جاري المعالجة...' : 'تأكيد الطلب'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

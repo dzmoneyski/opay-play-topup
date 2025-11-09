@@ -173,96 +173,97 @@ export type Database = {
         }
         Relationships: []
       }
-      digital_card_denominations: {
+      digital_card_fee_settings: {
         Row: {
-          amount: number
-          card_type_id: string
           created_at: string
+          fee_type: string
+          fee_value: number
           id: string
-          is_available: boolean
-          price_dzd: number
-          stock_quantity: number
+          max_fee: number | null
+          min_fee: number
           updated_at: string
         }
         Insert: {
-          amount: number
-          card_type_id: string
           created_at?: string
+          fee_type?: string
+          fee_value?: number
           id?: string
-          is_available?: boolean
-          price_dzd: number
-          stock_quantity?: number
+          max_fee?: number | null
+          min_fee?: number
           updated_at?: string
         }
         Update: {
-          amount?: number
-          card_type_id?: string
           created_at?: string
+          fee_type?: string
+          fee_value?: number
           id?: string
-          is_available?: boolean
-          price_dzd?: number
-          stock_quantity?: number
+          max_fee?: number | null
+          min_fee?: number
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "digital_card_denominations_card_type_id_fkey"
-            columns: ["card_type_id"]
-            isOneToOne: false
-            referencedRelation: "digital_card_types"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       digital_card_orders: {
         Row: {
+          account_id: string
           admin_notes: string | null
           amount: number
+          amount_usd: number
           card_code: string | null
           card_details: Json | null
           card_pin: string | null
           card_type_id: string
           created_at: string
-          denomination_id: string
+          exchange_rate_used: number
+          fee_amount: number
           id: string
           price_paid: number
           processed_at: string | null
           processed_by: string | null
           status: string
+          total_dzd: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          account_id?: string
           admin_notes?: string | null
           amount: number
+          amount_usd?: number
           card_code?: string | null
           card_details?: Json | null
           card_pin?: string | null
           card_type_id: string
           created_at?: string
-          denomination_id: string
+          exchange_rate_used?: number
+          fee_amount?: number
           id?: string
           price_paid: number
           processed_at?: string | null
           processed_by?: string | null
           status?: string
+          total_dzd?: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          account_id?: string
           admin_notes?: string | null
           amount?: number
+          amount_usd?: number
           card_code?: string | null
           card_details?: Json | null
           card_pin?: string | null
           card_type_id?: string
           created_at?: string
-          denomination_id?: string
+          exchange_rate_used?: number
+          fee_amount?: number
           id?: string
           price_paid?: number
           processed_at?: string | null
           processed_by?: string | null
           status?: string
+          total_dzd?: number
           updated_at?: string
           user_id?: string
         }
@@ -274,13 +275,6 @@ export type Database = {
             referencedRelation: "digital_card_types"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "digital_card_orders_denomination_id_fkey"
-            columns: ["denomination_id"]
-            isOneToOne: false
-            referencedRelation: "digital_card_denominations"
-            referencedColumns: ["id"]
-          },
         ]
       }
       digital_card_types: {
@@ -290,9 +284,12 @@ export type Database = {
           description: string | null
           description_ar: string | null
           display_order: number
+          exchange_rate: number
           id: string
           is_active: boolean
           logo_url: string | null
+          max_amount: number
+          min_amount: number
           name: string
           name_ar: string
           provider: string
@@ -304,9 +301,12 @@ export type Database = {
           description?: string | null
           description_ar?: string | null
           display_order?: number
+          exchange_rate?: number
           id?: string
           is_active?: boolean
           logo_url?: string | null
+          max_amount?: number
+          min_amount?: number
           name: string
           name_ar: string
           provider: string
@@ -318,9 +318,12 @@ export type Database = {
           description?: string | null
           description_ar?: string | null
           display_order?: number
+          exchange_rate?: number
           id?: string
           is_active?: boolean
           logo_url?: string | null
+          max_amount?: number
+          min_amount?: number
           name?: string
           name_ar?: string
           provider?: string
@@ -1226,6 +1229,10 @@ export type Database = {
             Args: { _admin_id: string; _deposit_id: string; _notes?: string }
             Returns: undefined
           }
+      approve_digital_card_order: {
+        Args: { _admin_notes?: string; _order_id: string }
+        Returns: Json
+      }
       approve_game_topup_order: {
         Args: { _admin_notes?: string; _order_id: string }
         Returns: Json
@@ -1298,6 +1305,14 @@ export type Database = {
         Args: { _amount: number; _platform_id: string; _player_id: string }
         Returns: Json
       }
+      process_digital_card_order: {
+        Args: {
+          _account_id: string
+          _amount_usd: number
+          _card_type_id: string
+        }
+        Returns: Json
+      }
       process_game_topup_order: {
         Args: {
           _amount: number
@@ -1334,6 +1349,10 @@ export type Database = {
       redeem_gift_card: { Args: { _card_code: string }; Returns: Json }
       reject_betting_deposit: {
         Args: { _admin_notes?: string; _transaction_id: string }
+        Returns: Json
+      }
+      reject_digital_card_order: {
+        Args: { _admin_notes?: string; _order_id: string }
         Returns: Json
       }
       reject_game_topup_order: {
