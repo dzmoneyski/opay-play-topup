@@ -247,8 +247,8 @@ const Shop = () => {
                         {/* Lock Icon for Inactive Cards */}
                         {!cardType.is_active && (
                           <div className="absolute inset-0 z-30 flex items-center justify-center">
-                            <div className="bg-black/80 backdrop-blur-sm rounded-full p-6 md:p-8 border-2 border-white/30 shadow-2xl">
-                              <Lock className="h-12 w-12 md:h-16 md:w-16 text-white drop-shadow-2xl" strokeWidth={2.5} />
+                            <div className="bg-black/70 backdrop-blur-sm rounded-full p-6 md:p-8 border-2 border-white/30 shadow-lg">
+                              <Lock className="h-12 w-12 md:h-16 md:w-16 text-white drop-shadow-lg" strokeWidth={2.5} />
                             </div>
                           </div>
                         )}
