@@ -47,6 +47,7 @@ const Shop = () => {
   const [accountId, setAccountId] = useState('');
   const [amountUsd, setAmountUsd] = useState<string>('');
   const [showBalance, setShowBalance] = useState(true);
+  const [viewReceiptImage, setViewReceiptImage] = useState<string | null>(null);
 
   if (!user) {
     navigate('/auth');
@@ -355,11 +356,12 @@ const Shop = () => {
                           
                           {order.receipt_image && (
                             <div className="p-3 bg-muted/50 rounded-lg border">
-                              <p className="text-xs font-semibold text-muted-foreground mb-2">وصل الدفع:</p>
+                              <p className="text-xs font-semibold text-muted-foreground mb-2">وصل الدفع (اضغط للعرض):</p>
                               <img 
                                 src={order.receipt_image} 
                                 alt="وصل الدفع" 
-                                className="w-full max-h-60 object-contain rounded-lg border"
+                                className="w-full max-h-60 object-contain rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => setViewReceiptImage(order.receipt_image!)}
                               />
                             </div>
                           )}
@@ -468,6 +470,42 @@ const Shop = () => {
               disabled={purchasing || !accountId || !amountUsd || amount < (selectedCard?.min_amount || 0) || amount > (selectedCard?.max_amount || 0)}
             >
               {purchasing ? 'جاري المعالجة...' : 'تأكيد الطلب'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Receipt Viewer Dialog */}
+      <Dialog open={!!viewReceiptImage} onOpenChange={() => setViewReceiptImage(null)}>
+        <DialogContent className="sm:max-w-4xl p-2" dir="rtl">
+          <DialogHeader className="px-4 pt-4">
+            <DialogTitle>وصل الدفع</DialogTitle>
+            <DialogDescription>
+              يمكنك تحميل الصورة أو مشاركتها
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-4">
+            <img 
+              src={viewReceiptImage || ''} 
+              alt="وصل الدفع" 
+              className="w-full h-auto rounded-lg"
+            />
+          </div>
+          <DialogFooter className="px-4 pb-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (viewReceiptImage) {
+                  window.open(viewReceiptImage, '_blank');
+                }
+              }}
+            >
+              فتح في علامة تبويب جديدة
+            </Button>
+            <Button
+              onClick={() => setViewReceiptImage(null)}
+            >
+              إغلاق
             </Button>
           </DialogFooter>
         </DialogContent>
