@@ -245,7 +245,8 @@ const Shop = () => {
                               <img 
                                 src={payeerLogo} 
                                 alt="Payeer"
-                                className="w-12 h-12 object-contain drop-shadow-lg"
+                                className="w-12 h-12 object-contain drop-shadow-lg rounded-full"
+                                style={{ mixBlendMode: 'multiply' }}
                               />
                             </div>
                           )}
