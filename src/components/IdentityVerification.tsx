@@ -184,38 +184,11 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
     );
   }
 
-  if (profile?.identity_verification_status === 'rejected' && verificationRequest?.rejection_reason) {
-    return (
-      <Card className="border-red-200 bg-red-50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-red-800">
-            <XCircle className="h-5 w-5" />
-            تم رفض طلب التحقق
-          </CardTitle>
-          <CardDescription className="text-red-700">
-            تم رفض طلب تحقق الهوية الخاص بك
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="p-4 bg-red-100 border border-red-300 rounded-lg">
-            <p className="text-sm font-semibold text-red-800 mb-2">سبب الرفض:</p>
-            <p className="text-sm text-red-700">{verificationRequest.rejection_reason}</p>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            يمكنك تقديم طلب جديد بعد تصحيح المعلومات المطلوبة
-          </p>
-          <Button
-            onClick={() => {
-              // إعادة تعيين حالة التحقق لتمكين المستخدم من إعادة المحاولة
-              window.location.reload();
-            }}
-            className="w-full"
-          >
-            تقديم طلب جديد
-          </Button>
-        </CardContent>
-      </Card>
-    );
+  // Show rejection message but allow resubmission
+  const showRejectionMessage = profile?.identity_verification_status === 'rejected' && verificationRequest?.rejection_reason;
+  
+  if (showRejectionMessage) {
+    // Don't return here - let the form show below but with rejection message
   }
 
   return (
@@ -230,6 +203,21 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {showRejectionMessage && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg space-y-3">
+            <div className="flex items-center gap-2 text-red-800">
+              <XCircle className="h-5 w-5" />
+              <p className="font-semibold">تم رفض طلبك السابق</p>
+            </div>
+            <div className="p-3 bg-red-100 border border-red-300 rounded">
+              <p className="text-sm font-semibold text-red-800 mb-1">سبب الرفض:</p>
+              <p className="text-sm text-red-700">{verificationRequest?.rejection_reason}</p>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              يمكنك تقديم طلب جديد أدناه بعد تصحيح المعلومات
+            </p>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Personal Information Section */}
           <div className="space-y-4">

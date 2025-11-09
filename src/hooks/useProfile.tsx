@@ -299,6 +299,9 @@ export const useProfile = () => {
         identity_verification_status: 'pending'
       });
 
+      // Refetch verification request to get the latest one
+      await fetchVerificationRequest();
+
       return { data, error: null };
     } catch (error) {
       return { error: error instanceof Error ? error.message : 'خطأ غير معروف' };
