@@ -102,6 +102,11 @@ const Index = () => {
       return;
     }
 
+    if (service.action === 'buy-cards') {
+      navigate('/shop');
+      return;
+    }
+
     // السماح بالدخول إلى صفحة الخدمة بغض النظر عن حالة التفعيل
     // التحقق من التفعيل سيتم عند محاولة تنفيذ العملية الفعلية
     console.log(`Navigating to service: ${service.title}`);
@@ -165,7 +170,7 @@ const Index = () => {
       title: "شراء بطاقات",
       subtitle: "Google Play، Steam، Netflix",
       gradient: "bg-gradient-gold",
-      action: "disabled"
+      action: "buy-cards"
     },
     {
       icon: <CreditCard className="h-6 w-6" />,
