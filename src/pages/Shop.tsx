@@ -255,22 +255,24 @@ const Shop = () => {
                           <div className="mt-auto space-y-3">
                             {/* Card Name */}
                             <div className="space-y-1">
-                              <h3 className="text-xl font-bold text-white drop-shadow-lg">{cardType.name}</h3>
+                              <h3 className="text-xl md:text-2xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] [text-shadow:_2px_2px_4px_rgb(0_0_0_/_80%)]">
+                                {cardType.name}
+                              </h3>
                             </div>
                             
                             {/* Card Info Grid */}
-                            <div className="grid grid-cols-3 gap-1.5 bg-black/40 backdrop-blur-md rounded-lg p-2 border border-white/20">
-                              <div className="space-y-0.5">
-                                <p className="text-white/80 text-[9px]">سعر الصرف:</p>
-                                <p className="text-white font-bold text-[11px]">{cardType.exchange_rate} دج/$</p>
+                            <div className="grid grid-cols-3 gap-2 bg-black/70 backdrop-blur-md rounded-xl p-3 border-2 border-white/30 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+                              <div className="space-y-1">
+                                <p className="text-white/90 text-[10px] md:text-xs font-medium">سعر الصرف:</p>
+                                <p className="text-white font-bold text-xs md:text-sm drop-shadow-md">{cardType.exchange_rate} دج/$</p>
                               </div>
-                              <div className="space-y-0.5">
-                                <p className="text-white/80 text-[9px]">الحد الأدنى:</p>
-                                <p className="text-white font-bold text-[11px]">${cardType.min_amount}</p>
+                              <div className="space-y-1">
+                                <p className="text-white/90 text-[10px] md:text-xs font-medium">الحد الأدنى:</p>
+                                <p className="text-white font-bold text-xs md:text-sm drop-shadow-md">${cardType.min_amount}</p>
                               </div>
-                              <div className="space-y-0.5">
-                                <p className="text-white/80 text-[9px]">الحد الأقصى:</p>
-                                <p className="text-white font-bold text-[11px]">${cardType.max_amount}</p>
+                              <div className="space-y-1">
+                                <p className="text-white/90 text-[10px] md:text-xs font-medium">الحد الأقصى:</p>
+                                <p className="text-white font-bold text-xs md:text-sm drop-shadow-md">${cardType.max_amount}</p>
                               </div>
                             </div>
                             
