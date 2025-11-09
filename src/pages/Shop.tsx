@@ -20,7 +20,8 @@ import {
   Package,
   ShoppingCart,
   DollarSign,
-  Info
+  Info,
+  Lock
 } from 'lucide-react';
 import redotpayCard from '@/assets/redotpay-card.png';
 import payeerCard from '@/assets/payeer-card.png';
@@ -81,6 +82,9 @@ const Shop = () => {
   };
 
   const handleCardClick = (cardType: any) => {
+    if (!cardType.is_active) {
+      return; // Don't open dialog for inactive cards
+    }
     setSelectedCard(cardType);
     setAccountId('');
     setAmountUsd('');
@@ -219,7 +223,7 @@ const Shop = () => {
                   return (
                     <div 
                       key={cardType.id} 
-                      className="group cursor-pointer transition-all duration-300 hover:scale-105"
+                      className={`group transition-all duration-300 ${cardType.is_active ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed'}`}
                       onClick={() => handleCardClick(cardType)}
                     >
                       {/* Realistic Card with Real Image Background */}
@@ -229,10 +233,24 @@ const Shop = () => {
                           <img 
                             src={providerLogo} 
                             alt={cardType.name}
-                            className="absolute inset-0 w-full h-full object-cover brightness-105"
+                            className={`absolute inset-0 w-full h-full object-cover ${cardType.is_active ? 'brightness-105' : 'brightness-50 grayscale'}`}
                           />
                         ) : (
-                          <div className={`absolute inset-0 bg-gradient-to-br ${getProviderGradient(cardType.provider)}`}></div>
+                          <div className={`absolute inset-0 bg-gradient-to-br ${getProviderGradient(cardType.provider)} ${!cardType.is_active && 'opacity-50 grayscale'}`}></div>
+                        )}
+                        
+                        {/* Inactive Overlay */}
+                        {!cardType.is_active && (
+                          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] z-20"></div>
+                        )}
+                        
+                        {/* Lock Icon for Inactive Cards */}
+                        {!cardType.is_active && (
+                          <div className="absolute inset-0 z-30 flex items-center justify-center">
+                            <div className="bg-black/80 backdrop-blur-sm rounded-full p-6 md:p-8 border-2 border-white/30 shadow-2xl">
+                              <Lock className="h-12 w-12 md:h-16 md:w-16 text-white drop-shadow-2xl" strokeWidth={2.5} />
+                            </div>
+                          </div>
                         )}
                         
                         {/* Subtle Dark Overlay for Better Text Readability */}
@@ -279,10 +297,24 @@ const Shop = () => {
                             
                             {/* Action Button */}
                             <Button 
-                              className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white border border-white/30 font-bold gap-1.5 md:gap-2 shadow-lg transition-all group-hover:bg-white/40 text-sm md:text-base h-10 md:h-11"
+                              className={`w-full backdrop-blur-sm text-white border font-bold gap-1.5 md:gap-2 shadow-lg transition-all text-sm md:text-base h-10 md:h-11 ${
+                                cardType.is_active 
+                                  ? 'bg-white/20 hover:bg-white/30 border-white/30 group-hover:bg-white/40' 
+                                  : 'bg-black/40 border-white/20 cursor-not-allowed opacity-60'
+                              }`}
+                              disabled={!cardType.is_active}
                             >
-                              <ShoppingCart className="h-4 w-4 md:h-5 md:w-5" />
-                              شراء الآن
+                              {cardType.is_active ? (
+                                <>
+                                  <ShoppingCart className="h-4 w-4 md:h-5 md:w-5" />
+                                  شراء الآن
+                                </>
+                              ) : (
+                                <>
+                                  <Lock className="h-4 w-4 md:h-5 md:w-5" />
+                                  غير متاح حالياً
+                                </>
+                              )}
                             </Button>
                           </div>
                         </div>

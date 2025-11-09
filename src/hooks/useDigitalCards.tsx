@@ -66,7 +66,6 @@ export const useDigitalCards = () => {
       const { data, error } = await supabase
         .from('digital_card_types')
         .select('*')
-        .eq('is_active', true)
         .order('display_order', { ascending: true });
 
       if (error) throw error;
