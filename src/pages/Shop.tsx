@@ -233,18 +233,18 @@ const Shop = () => {
                         </div>
                         
                         {/* Card Info Grid */}
-                        <div className="grid grid-cols-2 gap-3 bg-black/20 backdrop-blur-sm rounded-lg p-3 border border-white/10">
-                          <div className="space-y-1">
-                            <p className="text-white/70 text-xs">سعر الصرف:</p>
-                            <p className="text-white font-bold text-sm">{cardType.exchange_rate} دج/$</p>
+                        <div className="grid grid-cols-3 gap-2 bg-black/20 backdrop-blur-sm rounded-lg p-2.5 border border-white/10">
+                          <div className="space-y-0.5">
+                            <p className="text-white/60 text-[10px]">سعر الصرف:</p>
+                            <p className="text-white font-bold text-xs">{cardType.exchange_rate} دج/$</p>
                           </div>
-                          <div className="space-y-1">
-                            <p className="text-white/70 text-xs">الحد الأدنى:</p>
-                            <p className="text-white font-bold text-sm">${cardType.min_amount}</p>
+                          <div className="space-y-0.5">
+                            <p className="text-white/60 text-[10px]">الحد الأدنى:</p>
+                            <p className="text-white font-bold text-xs">${cardType.min_amount}</p>
                           </div>
-                          <div className="space-y-1 col-span-2">
-                            <p className="text-white/70 text-xs">الحد الأقصى:</p>
-                            <p className="text-white font-bold text-sm">${cardType.max_amount}</p>
+                          <div className="space-y-0.5">
+                            <p className="text-white/60 text-[10px]">الحد الأقصى:</p>
+                            <p className="text-white font-bold text-xs">${cardType.max_amount}</p>
                           </div>
                         </div>
                       </div>
