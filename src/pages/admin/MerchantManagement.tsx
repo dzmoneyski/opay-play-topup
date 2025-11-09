@@ -61,7 +61,7 @@ const MerchantManagement = () => {
       // Fetch profiles for these users
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, full_name')
+        .select('user_id, full_name, phone, email')
         .in('user_id', Array.from(allUserIds));
 
       if (profilesError) throw profilesError;
@@ -346,36 +346,122 @@ const MerchantManagement = () => {
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle>{merchant.business_name}</CardTitle>
-                        <CardDescription>
-                          {merchant.profiles?.full_name || 'غير محدد'} • {merchant.merchant_code}
+                        <CardTitle className="text-xl">{merchant.business_name}</CardTitle>
+                        <CardDescription className="text-base mt-1">
+                          {merchant.profiles?.full_name || 'غير محدد'} • كود التاجر: <span className="font-mono font-semibold">{merchant.merchant_code}</span>
                         </CardDescription>
                       </div>
-                      <Badge variant={merchant.is_active ? 'default' : 'secondary'}>
+                      <Badge variant={merchant.is_active ? 'default' : 'secondary'} className="text-sm">
                         {merchant.is_active ? 'نشط' : 'معطل'}
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid md:grid-cols-4 gap-4">
+                  <CardContent className="space-y-6">
+                    {/* Financial Stats */}
+                    <div className="grid md:grid-cols-4 gap-4 pb-4 border-b">
                       <div>
-                        <p className="text-sm text-muted-foreground">الرصيد</p>
+                        <p className="text-sm text-muted-foreground mb-1">الرصيد الحالي</p>
                         <p className="text-lg font-bold">{parseFloat(merchant.balance).toFixed(2)} دج</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">إجمالي الأرباح</p>
-                        <p className="text-lg font-bold text-green-600">
+                        <p className="text-sm text-muted-foreground mb-1">إجمالي الأرباح</p>
+                        <p className="text-lg font-bold text-success">
                           {parseFloat(merchant.total_earnings).toFixed(2)} دج
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">نسبة العمولة</p>
-                        <p className="text-lg font-bold">{merchant.commission_rate}%</p>
+                        <p className="text-sm text-muted-foreground mb-1">نسبة العمولة</p>
+                        <p className="text-lg font-bold text-primary">{merchant.commission_rate}%</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">المستوى</p>
-                        <p className="text-lg font-bold capitalize">{merchant.merchant_tier}</p>
+                        <p className="text-sm text-muted-foreground mb-1">مستوى التاجر</p>
+                        <Badge variant="outline" className="text-sm font-bold capitalize">
+                          {merchant.merchant_tier}
+                        </Badge>
                       </div>
+                    </div>
+
+                    {/* Contact & Business Details */}
+                    <div>
+                      <h4 className="font-semibold mb-3 text-base">معلومات الاتصال والنشاط</h4>
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="bg-muted/50 p-3 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">الاسم الكامل</p>
+                          <p className="font-medium">{merchant.profiles?.full_name || 'غير متوفر'}</p>
+                        </div>
+                        <div className="bg-muted/50 p-3 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">رقم الهاتف</p>
+                          <p className="font-medium font-mono" dir="ltr">
+                            {merchant.phone || merchant.profiles?.phone || 'غير متوفر'}
+                          </p>
+                        </div>
+                        <div className="bg-muted/50 p-3 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">البريد الإلكتروني</p>
+                          <p className="font-medium text-sm break-all">
+                            {merchant.profiles?.email || 'غير متوفر'}
+                          </p>
+                        </div>
+                        <div className="bg-muted/50 p-3 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">نوع النشاط</p>
+                          <p className="font-medium">{merchant.business_type || 'غير محدد'}</p>
+                        </div>
+                        <div className="bg-muted/50 p-3 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">العنوان</p>
+                          <p className="font-medium">{merchant.address || 'غير محدد'}</p>
+                        </div>
+                        <div className="bg-muted/50 p-3 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">تاريخ الانضمام</p>
+                          <p className="font-medium">
+                            {new Date(merchant.created_at).toLocaleDateString('ar-DZ')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const phone = merchant.phone || merchant.profiles?.phone;
+                          if (phone) {
+                            window.open(`https://wa.me/${phone.replace(/[^0-9]/g, '')}`, '_blank');
+                          } else {
+                            toast.error('رقم الهاتف غير متوفر');
+                          }
+                        }}
+                      >
+                        واتساب
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const phone = merchant.phone || merchant.profiles?.phone;
+                          if (phone) {
+                            window.open(`tel:${phone}`, '_blank');
+                          } else {
+                            toast.error('رقم الهاتف غير متوفر');
+                          }
+                        }}
+                      >
+                        اتصال
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const email = merchant.profiles?.email;
+                          if (email) {
+                            window.open(`mailto:${email}`, '_blank');
+                          } else {
+                            toast.error('البريد الإلكتروني غير متوفر');
+                          }
+                        }}
+                      >
+                        بريد إلكتروني
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
