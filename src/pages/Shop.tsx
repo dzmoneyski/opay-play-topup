@@ -227,14 +227,14 @@ const Shop = () => {
                           <img 
                             src={providerLogo} 
                             alt={cardType.name}
-                            className="absolute inset-0 w-full h-full object-cover"
+                            className="absolute inset-0 w-full h-full object-cover brightness-105"
                           />
                         ) : (
                           <div className={`absolute inset-0 bg-gradient-to-br ${getProviderGradient(cardType.provider)}`}></div>
                         )}
                         
-                        {/* Dark Overlay for Better Text Readability */}
-                        <div className="absolute inset-0 bg-black/20"></div>
+                        {/* Subtle Dark Overlay for Better Text Readability */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
                         
                         {/* Content Overlay */}
                         <div className="relative z-10 h-full p-6 flex flex-col justify-between">
