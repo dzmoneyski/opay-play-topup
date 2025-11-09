@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import redotpayCard from '@/assets/redotpay-card.png';
 import payeerCard from '@/assets/payeer-card.png';
+import payeerLogo from '@/assets/payeer-logo.png';
 import webmoneyCard from '@/assets/webmoney-card.png';
 import skrillCard from '@/assets/skrill-card.png';
 import perfectmoneyCard from '@/assets/perfectmoney-card.png';
@@ -238,6 +239,17 @@ const Shop = () => {
                         
                         {/* Content Overlay */}
                         <div className="relative z-10 h-full p-6 flex flex-col justify-between">
+                          {/* Top Logo for Payeer */}
+                          {cardType.provider === 'payeer' && (
+                            <div className="flex justify-start">
+                              <img 
+                                src={payeerLogo} 
+                                alt="Payeer"
+                                className="w-12 h-12 object-contain drop-shadow-lg"
+                              />
+                            </div>
+                          )}
+                          
                           {/* Card Info at Bottom */}
                           <div className="mt-auto space-y-3">
                             {/* Card Name */}
