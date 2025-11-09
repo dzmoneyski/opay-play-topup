@@ -6,14 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, FileText, Camera, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, FileText, Camera, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 
 interface IdentityVerificationProps {
   onSuccess?: () => void;
 }
 
 export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSuccess }) => {
-  const { profile, submitIdentityVerification } = useProfile();
+  const { profile, verificationRequest, submitIdentityVerification } = useProfile();
   const { toast } = useToast();
   
   const [nationalId, setNationalId] = useState('');
@@ -180,6 +180,40 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
             تم تحقق هويتك بنجاح وتم تفعيل حسابك.
           </CardDescription>
         </CardHeader>
+      </Card>
+    );
+  }
+
+  if (profile?.identity_verification_status === 'rejected' && verificationRequest?.rejection_reason) {
+    return (
+      <Card className="border-red-200 bg-red-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-800">
+            <XCircle className="h-5 w-5" />
+            تم رفض طلب التحقق
+          </CardTitle>
+          <CardDescription className="text-red-700">
+            تم رفض طلب تحقق الهوية الخاص بك
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-4 bg-red-100 border border-red-300 rounded-lg">
+            <p className="text-sm font-semibold text-red-800 mb-2">سبب الرفض:</p>
+            <p className="text-sm text-red-700">{verificationRequest.rejection_reason}</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            يمكنك تقديم طلب جديد بعد تصحيح المعلومات المطلوبة
+          </p>
+          <Button
+            onClick={() => {
+              // إعادة تعيين حالة التحقق لتمكين المستخدم من إعادة المحاولة
+              window.location.reload();
+            }}
+            className="w-full"
+          >
+            تقديم طلب جديد
+          </Button>
+        </CardContent>
       </Card>
     );
   }

@@ -15,16 +15,26 @@ interface Profile {
   identity_verification_status: 'pending' | 'verified' | 'rejected';
 }
 
+interface VerificationRequest {
+  id: string;
+  status: string;
+  rejection_reason: string | null;
+  submitted_at: string;
+}
+
 export const useProfile = () => {
   const { user, session } = useAuth();
   const [profile, setProfile] = React.useState<Profile | null>(null);
+  const [verificationRequest, setVerificationRequest] = React.useState<VerificationRequest | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     if (user && session) {
       fetchProfile();
+      fetchVerificationRequest();
     } else {
       setProfile(null);
+      setVerificationRequest(null);
       setLoading(false);
     }
   }, [user, session]);
@@ -75,6 +85,28 @@ export const useProfile = () => {
       console.error('Error fetching profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchVerificationRequest = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('verification_requests')
+        .select('id, status, rejection_reason, submitted_at')
+        .eq('user_id', user.id)
+        .order('submitted_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching verification request:', error);
+      }
+
+      setVerificationRequest(data);
+    } catch (error) {
+      console.error('Error fetching verification request:', error);
     }
   };
 
@@ -275,6 +307,7 @@ export const useProfile = () => {
 
   return {
     profile,
+    verificationRequest,
     loading,
     updateProfile,
     submitPhoneVerification,
