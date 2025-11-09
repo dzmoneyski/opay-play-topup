@@ -22,6 +22,11 @@ import {
   DollarSign,
   Info
 } from 'lucide-react';
+import redotpayCard from '@/assets/redotpay-card.png';
+import payeerCard from '@/assets/payeer-card.png';
+import webmoneyCard from '@/assets/webmoney-card.png';
+import skrillCard from '@/assets/skrill-card.png';
+import perfectmoneyCard from '@/assets/perfectmoney-card.png';
 import {
   Dialog,
   DialogContent,
@@ -116,6 +121,17 @@ const Shop = () => {
       skrill: 'from-violet-500 via-violet-600 to-violet-700',
     };
     return gradients[provider] || 'from-primary via-primary to-primary';
+  };
+
+  const getProviderLogo = (provider: string) => {
+    const logos: { [key: string]: string } = {
+      redotpay: redotpayCard,
+      payeer: payeerCard,
+      webmoney: webmoneyCard,
+      perfectmoney: perfectmoneyCard,
+      skrill: skrillCard,
+    };
+    return logos[provider];
   };
 
   const amount = parseFloat(amountUsd) || 0;
@@ -218,10 +234,20 @@ const Shop = () => {
                           </div>
                         </div>
                         
-                        {/* Provider Icon */}
-                        <div className="bg-white/10 backdrop-blur-sm p-2 rounded-lg border border-white/20">
-                          <CreditCard className="h-6 w-6 text-white" />
-                        </div>
+                        {/* Provider Logo */}
+                        {getProviderLogo(cardType.provider) ? (
+                          <div className="bg-white/95 backdrop-blur-sm p-2 rounded-lg border border-white/20 h-10 w-16 flex items-center justify-center">
+                            <img 
+                              src={getProviderLogo(cardType.provider)} 
+                              alt={cardType.name}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <div className="bg-white/10 backdrop-blur-sm p-2 rounded-lg border border-white/20">
+                            <CreditCard className="h-6 w-6 text-white" />
+                          </div>
+                        )}
                       </div>
                       
                       {/* Middle Section - Card Details */}
