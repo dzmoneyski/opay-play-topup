@@ -15,6 +15,7 @@ import GameManagement from '@/pages/admin/GameManagement';
 import BettingManagement from '@/pages/admin/BettingManagement';
 import MerchantManagement from '@/pages/admin/MerchantManagement';
 import SettingsPage from '@/pages/admin/Settings';
+import DigitalCardsPage from '@/pages/admin/DigitalCards';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -62,6 +63,7 @@ const AdminPanel = () => {
           <Route path="withdrawals" element={<WithdrawalsPage />} />
           <Route path="transfers" element={<TransfersPage />} />
           <Route path="cards" element={<CardsPage />} />
+          <Route path="digital-cards" element={<DigitalCardsPage />} />
           <Route path="games" element={<GameManagement />} />
           <Route path="betting" element={<BettingManagement />} />
           <Route path="merchants" element={<MerchantManagement />} />

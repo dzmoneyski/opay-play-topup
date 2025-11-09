@@ -275,6 +275,13 @@ export type Database = {
             referencedRelation: "digital_card_types"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "digital_card_orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       digital_card_types: {
@@ -1229,10 +1236,17 @@ export type Database = {
             Args: { _admin_id: string; _deposit_id: string; _notes?: string }
             Returns: undefined
           }
-      approve_digital_card_order: {
-        Args: { _admin_notes?: string; _order_id: string }
-        Returns: Json
-      }
+      approve_digital_card_order:
+        | {
+            Args: {
+              _admin_notes?: string
+              _card_code: string
+              _card_pin?: string
+              _order_id: string
+            }
+            Returns: Json
+          }
+        | { Args: { _admin_notes?: string; _order_id: string }; Returns: Json }
       approve_game_topup_order: {
         Args: { _admin_notes?: string; _order_id: string }
         Returns: Json

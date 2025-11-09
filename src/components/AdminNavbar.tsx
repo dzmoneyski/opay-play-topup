@@ -43,7 +43,7 @@ const transactionItems = [
 ];
 
 const serviceItems = [
-  { title: "بطاقات ID", url: "/shop", icon: Wallet },
+  { title: "بطاقات ID", url: "/admin/digital-cards", icon: Wallet },
   { title: "البطاقات الرقمية", url: "/admin/cards", icon: Gift },
   { title: "إدارة الألعاب", url: "/admin/games", icon: Gamepad2, notificationKey: 'pendingGames' },
   { title: "إدارة المراهنات", url: "/admin/betting", icon: Gamepad2, notificationKey: 'pendingBettingVerifications' },
