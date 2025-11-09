@@ -242,7 +242,7 @@ const Shop = () => {
                           <div className="mt-auto space-y-3">
                             {/* Card Name */}
                             <div className="space-y-1">
-                              <h3 className="text-xl font-bold text-white drop-shadow-lg">{cardType.name_ar}</h3>
+                              <h3 className="text-xl font-bold text-white drop-shadow-lg">{cardType.name}</h3>
                             </div>
                             
                             {/* Card Info Grid */}
