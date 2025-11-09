@@ -180,23 +180,23 @@ const Shop = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6">
-        <Tabs defaultValue="shop" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="shop" className="gap-2">
+      <div className="container mx-auto px-3 py-4 md:px-4 md:py-6">
+        <Tabs defaultValue="shop" className="space-y-4 md:space-y-6">
+          <TabsList className="grid w-full grid-cols-2 h-11 md:h-10">
+            <TabsTrigger value="shop" className="gap-1.5 md:gap-2 text-sm md:text-base">
               <ShoppingCart className="h-4 w-4" />
               المتجر
             </TabsTrigger>
-            <TabsTrigger value="orders" className="gap-2">
+            <TabsTrigger value="orders" className="gap-1.5 md:gap-2 text-sm md:text-base">
               <Package className="h-4 w-4" />
               طلباتي ({orders.length})
             </TabsTrigger>
           </TabsList>
 
           {/* Shop Tab */}
-          <TabsContent value="shop" className="space-y-6">
+          <TabsContent value="shop" className="space-y-4 md:space-y-6">
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {[1, 2, 3].map((i) => (
                   <Card key={i} className="animate-pulse h-64">
                     <div className="h-full bg-muted/20" />
@@ -211,7 +211,7 @@ const Shop = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {cardTypes.map((cardType) => {
                   const providerLogo = getProviderLogo(cardType.provider);
                   
@@ -222,7 +222,7 @@ const Shop = () => {
                       onClick={() => handleCardClick(cardType)}
                     >
                       {/* Realistic Card with Real Image Background */}
-                      <div className="relative w-full aspect-[1.586/1] rounded-2xl shadow-xl overflow-hidden border border-white/10">
+                      <div className="relative w-full aspect-[1.586/1] rounded-xl md:rounded-2xl shadow-xl overflow-hidden border border-white/10">
                         {/* Background Image */}
                         {providerLogo ? (
                           <img 
@@ -238,50 +238,49 @@ const Shop = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
                         
                         {/* Content Overlay */}
-                        <div className="relative z-10 h-full p-6 flex flex-col justify-between">
+                        <div className="relative z-10 h-full p-4 md:p-6 flex flex-col justify-between">
                           {/* Top Logo for Payeer */}
                           {cardType.provider === 'payeer' && (
                             <div className="flex justify-start">
                               <img 
                                 src={payeerLogo} 
                                 alt="Payeer"
-                                className="w-12 h-12 object-contain drop-shadow-lg rounded-full"
+                                className="w-10 h-10 md:w-12 md:h-12 object-contain drop-shadow-lg rounded-full"
                                 style={{ mixBlendMode: 'multiply' }}
                               />
                             </div>
                           )}
                           
                           {/* Card Info at Bottom */}
-                          <div className="mt-auto space-y-3">
+                          <div className="mt-auto space-y-2 md:space-y-3">
                             {/* Card Name */}
                             <div className="space-y-1">
-                              <h3 className="text-xl md:text-2xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] [text-shadow:_2px_2px_4px_rgb(0_0_0_/_80%)]">
+                              <h3 className="text-lg md:text-2xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] [text-shadow:_2px_2px_4px_rgb(0_0_0_/_80%)]">
                                 {cardType.name}
                               </h3>
                             </div>
                             
                             {/* Card Info Grid */}
-                            <div className="grid grid-cols-3 gap-2 bg-black/70 backdrop-blur-md rounded-xl p-3 border-2 border-white/30 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-                              <div className="space-y-1">
-                                <p className="text-white/90 text-[10px] md:text-xs font-medium">سعر الصرف:</p>
-                                <p className="text-white font-bold text-xs md:text-sm drop-shadow-md">{cardType.exchange_rate} دج/$</p>
+                            <div className="grid grid-cols-3 gap-1.5 md:gap-2 bg-black/70 backdrop-blur-md rounded-lg md:rounded-xl p-2 md:p-3 border-2 border-white/30 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+                              <div className="space-y-0.5 md:space-y-1">
+                                <p className="text-white/90 text-[9px] md:text-xs font-medium">سعر الصرف:</p>
+                                <p className="text-white font-bold text-[10px] md:text-sm drop-shadow-md">{cardType.exchange_rate} دج/$</p>
                               </div>
-                              <div className="space-y-1">
-                                <p className="text-white/90 text-[10px] md:text-xs font-medium">الحد الأدنى:</p>
-                                <p className="text-white font-bold text-xs md:text-sm drop-shadow-md">${cardType.min_amount}</p>
+                              <div className="space-y-0.5 md:space-y-1">
+                                <p className="text-white/90 text-[9px] md:text-xs font-medium">الحد الأدنى:</p>
+                                <p className="text-white font-bold text-[10px] md:text-sm drop-shadow-md">${cardType.min_amount}</p>
                               </div>
-                              <div className="space-y-1">
-                                <p className="text-white/90 text-[10px] md:text-xs font-medium">الحد الأقصى:</p>
-                                <p className="text-white font-bold text-xs md:text-sm drop-shadow-md">${cardType.max_amount}</p>
+                              <div className="space-y-0.5 md:space-y-1">
+                                <p className="text-white/90 text-[9px] md:text-xs font-medium">الحد الأقصى:</p>
+                                <p className="text-white font-bold text-[10px] md:text-sm drop-shadow-md">${cardType.max_amount}</p>
                               </div>
                             </div>
                             
                             {/* Action Button */}
                             <Button 
-                              className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white border border-white/30 font-bold gap-2 shadow-lg transition-all group-hover:bg-white/40"
-                              size="lg"
+                              className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white border border-white/30 font-bold gap-1.5 md:gap-2 shadow-lg transition-all group-hover:bg-white/40 text-sm md:text-base h-10 md:h-11"
                             >
-                              <ShoppingCart className="h-5 w-5" />
+                              <ShoppingCart className="h-4 w-4 md:h-5 md:w-5" />
                               شراء الآن
                             </Button>
                           </div>
