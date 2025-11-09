@@ -26,6 +26,7 @@ import Install from "./pages/Install";
 import Settings from "./pages/Settings";
 import Stores from "./pages/Stores";
 import Transactions from "./pages/Transactions";
+import Shop from "./pages/Shop";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -136,6 +137,11 @@ const App = () => {
               <Route path="/transactions" element={
                 <ProtectedRoute requireActivation={false}>
                   <Transactions />
+                </ProtectedRoute>
+              } />
+              <Route path="/shop" element={
+                <ProtectedRoute requireActivation={false}>
+                  <Shop />
                 </ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />

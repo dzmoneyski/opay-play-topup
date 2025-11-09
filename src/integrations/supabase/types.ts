@@ -173,6 +173,161 @@ export type Database = {
         }
         Relationships: []
       }
+      digital_card_denominations: {
+        Row: {
+          amount: number
+          card_type_id: string
+          created_at: string
+          id: string
+          is_available: boolean
+          price_dzd: number
+          stock_quantity: number
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          card_type_id: string
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          price_dzd: number
+          stock_quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          card_type_id?: string
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          price_dzd?: number
+          stock_quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digital_card_denominations_card_type_id_fkey"
+            columns: ["card_type_id"]
+            isOneToOne: false
+            referencedRelation: "digital_card_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      digital_card_orders: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          card_code: string | null
+          card_details: Json | null
+          card_pin: string | null
+          card_type_id: string
+          created_at: string
+          denomination_id: string
+          id: string
+          price_paid: number
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          card_code?: string | null
+          card_details?: Json | null
+          card_pin?: string | null
+          card_type_id: string
+          created_at?: string
+          denomination_id: string
+          id?: string
+          price_paid: number
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          card_code?: string | null
+          card_details?: Json | null
+          card_pin?: string | null
+          card_type_id?: string
+          created_at?: string
+          denomination_id?: string
+          id?: string
+          price_paid?: number
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digital_card_orders_card_type_id_fkey"
+            columns: ["card_type_id"]
+            isOneToOne: false
+            referencedRelation: "digital_card_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "digital_card_orders_denomination_id_fkey"
+            columns: ["denomination_id"]
+            isOneToOne: false
+            referencedRelation: "digital_card_denominations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      digital_card_types: {
+        Row: {
+          created_at: string
+          currency: string
+          description: string | null
+          description_ar: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          name_ar: string
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          description?: string | null
+          description_ar?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          name_ar: string
+          provider: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          description?: string | null
+          description_ar?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          name_ar?: string
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       game_packages: {
         Row: {
           created_at: string
