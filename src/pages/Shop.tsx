@@ -233,15 +233,15 @@ const Shop = () => {
                           <img 
                             src={providerLogo} 
                             alt={cardType.name}
-                            className={`absolute inset-0 w-full h-full object-cover ${cardType.is_active ? 'brightness-105' : 'brightness-50 grayscale'}`}
+                            className={`absolute inset-0 w-full h-full object-cover ${cardType.is_active ? 'brightness-105' : 'brightness-75 saturate-50'}`}
                           />
                         ) : (
-                          <div className={`absolute inset-0 bg-gradient-to-br ${getProviderGradient(cardType.provider)} ${!cardType.is_active && 'opacity-50 grayscale'}`}></div>
+                          <div className={`absolute inset-0 bg-gradient-to-br ${getProviderGradient(cardType.provider)} ${!cardType.is_active && 'opacity-60'}`}></div>
                         )}
                         
                         {/* Inactive Overlay */}
                         {!cardType.is_active && (
-                          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] z-20"></div>
+                          <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px] z-20"></div>
                         )}
                         
                         {/* Lock Icon for Inactive Cards */}
