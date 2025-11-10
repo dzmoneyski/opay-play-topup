@@ -172,109 +172,300 @@ const BettingManagement = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8" dir="rtl">
+    <div className="container mx-auto px-4 py-6" dir="rtl">
+      {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">إدارة المراهنات</h1>
+        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+          لوحة إدارة المراهنات
+        </h1>
         <p className="text-muted-foreground">
-          التحقق من الحسابات وإدارة عمليات الإيداع والسحب
+          جميع الطلبات والعمليات في مكان واحد
         </p>
       </div>
 
-      {/* Connection Test Alert */}
-      <Alert className="mb-6">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          اختبار الاتصال بقاعدة البيانات - تأكد من أن جميع الأنظمة تعمل بشكل صحيح
-        </AlertDescription>
-      </Alert>
+      {/* Connection Test */}
+      <div className="mb-6">
+        <BettingFormTest />
+      </div>
 
-      {/* Quick Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {/* Main Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {/* Withdrawal Requests */}
-        <Card className="border-l-4 border-l-destructive">
+        <Card className="border-l-4 border-l-red-500 hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center justify-between">
-              طلبات السحب
+              <span className="flex items-center gap-2">
+                <XCircle className="h-5 w-5 text-red-500" />
+                طلبات السحب
+              </span>
               {pendingWithdrawals.length > 0 && (
-                <Badge variant="destructive">{pendingWithdrawals.length}</Badge>
+                <Badge variant="destructive" className="text-lg px-3 py-1">
+                  {pendingWithdrawals.length}
+                </Badge>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold mb-2">
+            <div className="text-4xl font-bold mb-2 text-red-500">
               {pendingWithdrawals.length}
             </div>
             <p className="text-sm text-muted-foreground">
-              {pendingWithdrawals.length === 0 ? "لا توجد طلبات معلقة" : "طلب معلق"}
+              {pendingWithdrawals.length === 0 ? "لا توجد طلبات معلقة ✓" : "طلب يحتاج للمراجعة"}
             </p>
           </CardContent>
         </Card>
 
         {/* Deposit Requests */}
-        <Card className="border-l-4 border-l-warning">
+        <Card className="border-l-4 border-l-orange-500 hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center justify-between">
-              طلبات الإيداع
+              <span className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-orange-500" />
+                طلبات الإيداع
+              </span>
               {pendingDeposits.length > 0 && (
-                <Badge variant="destructive">{pendingDeposits.length}</Badge>
+                <Badge variant="destructive" className="text-lg px-3 py-1">
+                  {pendingDeposits.length}
+                </Badge>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold mb-2">
+            <div className="text-4xl font-bold mb-2 text-orange-500">
               {pendingDeposits.length}
             </div>
             <p className="text-sm text-muted-foreground">
-              {pendingDeposits.length === 0 ? "لا توجد طلبات معلقة" : "طلب معلق"}
+              {pendingDeposits.length === 0 ? "لا توجد طلبات معلقة ✓" : "طلب يحتاج للمراجعة"}
             </p>
           </CardContent>
         </Card>
 
         {/* Verified Accounts */}
-        <Card className="border-l-4 border-l-green-500">
+        <Card className="border-l-4 border-l-green-500 hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center justify-between">
-              الحسابات المحققة
-              <Badge className="bg-green-500">{verifiedAccounts.length}</Badge>
+              <span className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                الحسابات المحققة
+              </span>
+              <Badge className="bg-green-500 text-lg px-3 py-1">
+                {verifiedAccounts.length}
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold mb-2">
+            <div className="text-4xl font-bold mb-2 text-green-500">
               {verifiedAccounts.length}
             </div>
             <p className="text-sm text-muted-foreground">
-              حساب محقق
+              حساب نشط ومحقق
             </p>
           </CardContent>
         </Card>
 
         {/* Verification Requests */}
-        <Card className="border-l-4 border-l-primary">
+        <Card className="border-l-4 border-l-blue-500 hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center justify-between">
-              طلبات التحقق
+              <span className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-blue-500" />
+                طلبات التحقق
+              </span>
               {pendingAccounts.length > 0 && (
-                <Badge variant="destructive">{pendingAccounts.length}</Badge>
+                <Badge variant="destructive" className="text-lg px-3 py-1">
+                  {pendingAccounts.length}
+                </Badge>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold mb-2">
+            <div className="text-4xl font-bold mb-2 text-blue-500">
               {pendingAccounts.length}
             </div>
             <p className="text-sm text-muted-foreground">
-              {pendingAccounts.length === 0 ? "لا توجد طلبات معلقة" : "طلب معلق"}
+              {pendingAccounts.length === 0 ? "لا توجد طلبات معلقة ✓" : "طلب يحتاج للمراجعة"}
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Test Component */}
-      <div className="mb-6">
-        <BettingFormTest />
+      {/* Quick Actions Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Pending Withdrawals */}
+        {pendingWithdrawals.length > 0 && (
+          <Card className="border-t-4 border-t-red-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <XCircle className="h-5 w-5 text-red-500" />
+                طلبات السحب المعلقة
+              </CardTitle>
+              <CardDescription>
+                راجع كود السحب على المنصة قبل الموافقة
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {pendingWithdrawals.slice(0, 3).map((transaction: any) => (
+                  <div
+                    key={transaction.id}
+                    className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-semibold">
+                        {transaction.user?.full_name || "غير محدد"}
+                      </div>
+                      <Badge className="bg-red-500">{transaction.amount} دج</Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground mb-2">
+                      <div>المنصة: {transaction.platform?.name_ar || "غير محدد"}</div>
+                      <div className="font-mono font-bold text-foreground">
+                        كود السحب: {transaction.withdrawal_code}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setSelectedTransaction(transaction)}
+                    >
+                      <Eye className="h-4 w-4 ml-1" />
+                      مراجعة والموافقة/الرفض
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Pending Deposits */}
+        {pendingDeposits.length > 0 && (
+          <Card className="border-t-4 border-t-orange-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-orange-500" />
+                طلبات الإيداع المعلقة
+              </CardTitle>
+              <CardDescription>
+                راجع طلبات الإيداع وقم بالموافقة عليها
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {pendingDeposits.slice(0, 3).map((transaction: any) => (
+                  <div
+                    key={transaction.id}
+                    className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-semibold">
+                        {transaction.user?.full_name || "غير محدد"}
+                      </div>
+                      <Badge className="bg-orange-500">{transaction.amount} دج</Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground mb-2">
+                      <div>المنصة: {transaction.platform?.name_ar || "غير محدد"}</div>
+                      <div className="font-mono">معرف اللاعب: {transaction.player_id}</div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setSelectedDeposit(transaction)}
+                    >
+                      <Eye className="h-4 w-4 ml-1" />
+                      مراجعة والموافقة/الرفض
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Pending Account Verifications */}
+        {pendingAccounts.length > 0 && (
+          <Card className="border-t-4 border-t-blue-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-blue-500" />
+                طلبات التحقق من الحسابات
+              </CardTitle>
+              <CardDescription>
+                تحقق من أن اللاعبين مسجلين بكود البرومو dz21
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {pendingAccounts.slice(0, 3).map((account: any) => (
+                  <div
+                    key={account.id}
+                    className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-semibold">
+                        {account.user?.full_name || "غير محدد"}
+                      </div>
+                      <Badge variant="secondary">{account.promo_code}</Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground mb-2">
+                      <div>المنصة: {account.platform?.name_ar || "غير محدد"}</div>
+                      <div className="font-mono">معرف اللاعب: {account.player_id}</div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setSelectedAccount(account)}
+                    >
+                      <Eye className="h-4 w-4 ml-1" />
+                      مراجعة والموافقة/الرفض
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Verified Accounts Summary */}
+        {verifiedAccounts.length > 0 && (
+          <Card className="border-t-4 border-t-green-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                آخر الحسابات المحققة
+              </CardTitle>
+              <CardDescription>
+                الحسابات التي تم التحقق منها مؤخراً
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {verifiedAccounts.slice(0, 3).map((account: any) => (
+                  <div
+                    key={account.id}
+                    className="p-4 border rounded-lg bg-green-50 dark:bg-green-950/20"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-semibold">
+                        {account.user?.full_name || "غير محدد"}
+                      </div>
+                      <Badge className="bg-green-500">محقق ✓</Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      <div>المنصة: {account.platform?.name_ar || "غير محدد"}</div>
+                      <div className="font-mono">معرف اللاعب: {account.player_id}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      <Tabs defaultValue="pending-accounts" className="space-y-6">
+      <Tabs defaultValue="pending-accounts" className="space-y-6 mt-8">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="pending-accounts">
             طلبات التحقق
