@@ -269,6 +269,69 @@ const BettingManagement = () => {
         </Card>
       </div>
 
+      {/* Pending Accounts Verification - Main Section */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>طلبات التحقق من الحسابات</CardTitle>
+          <CardDescription>
+            تحقق من أن اللاعبين مسجلين بكود البرومو dz21 على المنصة قبل الموافقة
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {accountsLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : pendingAccounts.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              لا توجد طلبات تحقق جديدة
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>المستخدم</TableHead>
+                  <TableHead>رقم الهاتف</TableHead>
+                  <TableHead>المنصة</TableHead>
+                  <TableHead>معرف اللاعب</TableHead>
+                  <TableHead>كود البرومو</TableHead>
+                  <TableHead>التاريخ</TableHead>
+                  <TableHead>الإجراءات</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingAccounts.map((account: any) => (
+                  <TableRow key={account.id}>
+                    <TableCell>{account.user?.full_name || "غير محدد"}</TableCell>
+                    <TableCell>{account.user?.phone || "غير محدد"}</TableCell>
+                    <TableCell>{account.platform?.name_ar || "غير محدد"}</TableCell>
+                    <TableCell className="font-mono">{account.player_id}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{account.promo_code}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(account.created_at).toLocaleDateString("ar-DZ")}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedAccount(account)}
+                        >
+                          <Eye className="h-4 w-4 ml-1" />
+                          عرض
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Test Component */}
       <div className="mb-6">
         <BettingFormTest />
