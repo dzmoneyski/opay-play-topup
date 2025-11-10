@@ -175,15 +175,16 @@ const BettingManagement = () => {
     <div className="container mx-auto px-4 py-8" dir="rtl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">إدارة المراهنات</h1>
-        <p className="text-muted-foreground">
-          التحقق من الحسابات وإدارة عمليات الإيداع والسحب
-        </p>
       </div>
 
       {/* Test Component */}
       <div className="mb-6">
         <BettingFormTest />
       </div>
+
+      <p className="text-muted-foreground mb-6">
+        التحقق من الحسابات وإدارة عمليات الإيداع والسحب
+      </p>
 
       {/* Connection Test Alert */}
       <Alert className="mb-6">
