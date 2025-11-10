@@ -403,6 +403,59 @@ export default function IdentityVerificationPage() {
                           )}
                         </div>
                       )}
+
+                      {/* Duplicate Warnings */}
+                      {request.duplicates && request.duplicates.length > 0 && (
+                        <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/30 border-2 border-red-500 rounded-lg space-y-2">
+                          <h4 className="text-sm font-bold text-red-800 dark:text-red-300 flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4" />
+                            ⚠️ تحذير: تكرارات مكتشفة
+                          </h4>
+                          {request.duplicates.map((duplicate, idx) => (
+                            <div key={idx} className="p-2 bg-red-100 dark:bg-red-900/20 rounded border border-red-300 dark:border-red-700">
+                              <p className="text-xs font-semibold text-red-900 dark:text-red-200 mb-1">
+                                {duplicate.type === 'national_id' && '🆔 رقم البطاقة الوطنية مستخدم من قبل'}
+                                {duplicate.type === 'name' && '👤 الاسم الكامل مستخدم من قبل'}
+                                {duplicate.type === 'front_image' && '📷 صورة الوجه الأمامي مستخدمة من قبل'}
+                                {duplicate.type === 'back_image' && '📷 صورة الوجه الخلفي مستخدمة من قبل'}
+                                <span className="mr-1 font-bold">({duplicate.count} حساب)</span>
+                              </p>
+                              <div className="space-y-1 mt-2">
+                                {duplicate.users.map((user, userIdx) => (
+                                  <div key={userIdx} className="text-xs text-red-800 dark:text-red-300 flex items-center justify-between bg-white/50 dark:bg-black/20 px-2 py-1 rounded">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium">{user.full_name || 'غير محدد'}</span>
+                                      {user.phone && (
+                                        <span className="text-red-600 dark:text-red-400">• {user.phone}</span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs">
+                                        {new Date(user.submitted_at).toLocaleDateString('ar-DZ')}
+                                      </span>
+                                      <Badge 
+                                        variant={
+                                          user.status === 'approved' ? 'default' : 
+                                          user.status === 'rejected' ? 'destructive' : 
+                                          'secondary'
+                                        }
+                                        className="text-xs"
+                                      >
+                                        {user.status === 'approved' && 'موافق'}
+                                        {user.status === 'rejected' && 'مرفوض'}
+                                        {user.status === 'pending' && 'معلق'}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <p className="text-xs text-red-700 dark:text-red-400 mt-2 font-medium">
+                                ⚠️ يرجى التحقق من أن هذا ليس حساباً مكرراً قبل الموافقة
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
