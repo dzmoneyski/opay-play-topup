@@ -180,6 +180,11 @@ const BettingManagement = () => {
         </p>
       </div>
 
+      {/* Test Component */}
+      <div className="mb-6">
+        <BettingFormTest />
+      </div>
+
       {/* Connection Test Alert */}
       <Alert className="mb-6">
         <AlertCircle className="h-4 w-4" />
@@ -187,11 +192,6 @@ const BettingManagement = () => {
           اختبار الاتصال بقاعدة البيانات - تأكد من أن جميع الأنظمة تعمل بشكل صحيح
         </AlertDescription>
       </Alert>
-
-      {/* Test Component */}
-      <div className="mb-6">
-        <BettingFormTest />
-      </div>
 
       <Tabs defaultValue="pending-accounts" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
