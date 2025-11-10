@@ -188,11 +188,6 @@ const BettingManagement = () => {
         </AlertDescription>
       </Alert>
 
-      {/* Test Component */}
-      <div className="mb-6">
-        <BettingFormTest />
-      </div>
-
       {/* Quick Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Withdrawal Requests */}
@@ -272,6 +267,11 @@ const BettingManagement = () => {
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Test Component */}
+      <div className="mb-6">
+        <BettingFormTest />
       </div>
 
       <Tabs defaultValue="pending-accounts" className="space-y-6">
