@@ -236,6 +236,38 @@ export const useProfile = () => {
     if (!user) return { error: 'لم يتم تسجيل الدخول' };
 
     try {
+      // Check if national_id is already used by another user
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .eq('national_id', nationalId)
+        .neq('user_id', user.id)
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        return { error: `خطأ في التحقق من البيانات: ${checkError.message}` };
+      }
+
+      if (existingProfile) {
+        return { error: 'رقم البطاقة الوطنية مستخدم بالفعل في حساب آخر. كل بطاقة يمكن استخدامها لحساب واحد فقط.' };
+      }
+
+      // Check if national_id exists in verification_requests for another user
+      const { data: existingRequest, error: requestCheckError } = await supabase
+        .from('verification_requests')
+        .select('user_id')
+        .eq('national_id', nationalId)
+        .neq('user_id', user.id)
+        .maybeSingle();
+
+      if (requestCheckError && requestCheckError.code !== 'PGRST116') {
+        return { error: `خطأ في التحقق من البيانات: ${requestCheckError.message}` };
+      }
+
+      if (existingRequest) {
+        return { error: 'رقم البطاقة الوطنية مستخدم بالفعل في حساب آخر. كل بطاقة يمكن استخدامها لحساب واحد فقط.' };
+      }
+
       let frontImageUrl = null;
       let backImageUrl = null;
 

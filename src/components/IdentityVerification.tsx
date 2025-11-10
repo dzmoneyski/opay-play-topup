@@ -120,6 +120,7 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
           title: "خطأ في إرسال الطلب",
           description: result.error,
           variant: "destructive",
+          duration: 6000,
         });
       } else {
         toast({
