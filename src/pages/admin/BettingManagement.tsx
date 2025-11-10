@@ -193,6 +193,87 @@ const BettingManagement = () => {
         <BettingFormTest />
       </div>
 
+      {/* Quick Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Withdrawal Requests */}
+        <Card className="border-l-4 border-l-destructive">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center justify-between">
+              طلبات السحب
+              {pendingWithdrawals.length > 0 && (
+                <Badge variant="destructive">{pendingWithdrawals.length}</Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold mb-2">
+              {pendingWithdrawals.length}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {pendingWithdrawals.length === 0 ? "لا توجد طلبات معلقة" : "طلب معلق"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Deposit Requests */}
+        <Card className="border-l-4 border-l-warning">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center justify-between">
+              طلبات الإيداع
+              {pendingDeposits.length > 0 && (
+                <Badge variant="destructive">{pendingDeposits.length}</Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold mb-2">
+              {pendingDeposits.length}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {pendingDeposits.length === 0 ? "لا توجد طلبات معلقة" : "طلب معلق"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Verified Accounts */}
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center justify-between">
+              الحسابات المحققة
+              <Badge className="bg-green-500">{verifiedAccounts.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold mb-2">
+              {verifiedAccounts.length}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              حساب محقق
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Verification Requests */}
+        <Card className="border-l-4 border-l-primary">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center justify-between">
+              طلبات التحقق
+              {pendingAccounts.length > 0 && (
+                <Badge variant="destructive">{pendingAccounts.length}</Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold mb-2">
+              {pendingAccounts.length}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {pendingAccounts.length === 0 ? "لا توجد طلبات معلقة" : "طلب معلق"}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Tabs defaultValue="pending-accounts" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="pending-accounts">
