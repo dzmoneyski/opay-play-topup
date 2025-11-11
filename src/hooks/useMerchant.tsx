@@ -157,11 +157,46 @@ export const useMerchant = () => {
     }
   };
 
+  const transferFromUserBalance = async (amount: number) => {
+    if (!merchant) {
+      toast.error('لم يتم العثور على حساب التاجر');
+      return { success: false };
+    }
+
+    try {
+      const { data, error } = await supabase.rpc('merchant_transfer_from_user_balance', {
+        _amount: amount
+      });
+
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string; amount?: number; new_merchant_balance?: number };
+
+      if (!result.success) {
+        toast.error(result.error || 'فشلت العملية');
+        return { success: false };
+      }
+
+      toast.success(`تم تحويل ${result.amount} دج إلى حساب التاجر بنجاح!`);
+      
+      // Refresh data
+      await fetchMerchantData();
+      await fetchTransactions();
+
+      return { success: true, data: result };
+    } catch (error: any) {
+      console.error('Error transferring balance:', error);
+      toast.error(error.message || 'حدث خطأ أثناء التحويل');
+      return { success: false };
+    }
+  };
+
   return {
     merchant,
     transactions,
     loading,
     rechargeCustomer,
+    transferFromUserBalance,
     refreshData: () => {
       fetchMerchantData();
       fetchTransactions();

@@ -6,21 +6,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useMerchant } from '@/hooks/useMerchant';
 import { useAuth } from '@/hooks/useAuth';
-import { Wallet, TrendingUp, Users, ArrowUpRight, Phone, Receipt, Award, RefreshCw } from 'lucide-react';
+import { useBalance } from '@/hooks/useBalance';
+import { Wallet, TrendingUp, Users, ArrowUpRight, Phone, Receipt, Award, RefreshCw, ArrowRightLeft } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const MerchantDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { merchant, transactions, loading, rechargeCustomer, refreshData } = useMerchant();
+  const { merchant, transactions, loading, rechargeCustomer, transferFromUserBalance, refreshData } = useMerchant();
+  const { balance, fetchBalance } = useBalance();
   
   const [rechargeForm, setRechargeForm] = useState({
     phone: '',
     amount: ''
   });
+  const [transferAmount, setTransferAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
 
   if (!user) {
     return (
@@ -87,6 +92,21 @@ const MerchantDashboard = () => {
     }
   };
 
+  const handleTransfer = async () => {
+    const amount = parseFloat(transferAmount);
+    if (isNaN(amount) || amount <= 0) return;
+
+    setSubmitting(true);
+    const result = await transferFromUserBalance(amount);
+    setSubmitting(false);
+
+    if (result.success) {
+      setTransferAmount('');
+      setTransferDialogOpen(false);
+      await fetchBalance();
+    }
+  };
+
   const tierColors = {
     bronze: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
     silver: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
@@ -99,6 +119,7 @@ const MerchantDashboard = () => {
     gift_card_purchase: 'شراء بطاقات',
     commission_earned: 'عمولة',
     balance_topup: 'تعمير رصيد',
+    balance_transfer: 'تحويل من الرصيد الشخصي',
     withdrawal: 'سحب'
   };
 
@@ -120,7 +141,7 @@ const MerchantDashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
@@ -129,8 +150,56 @@ const MerchantDashboard = () => {
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground mb-1">الرصيد المتاح</p>
+              <p className="text-sm text-muted-foreground mb-1">رصيد التاجر</p>
               <p className="text-2xl font-bold">{merchant.balance.toFixed(2)} دج</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-primary/20">
+            <CardContent className="pt-6">
+              <Wallet className="h-8 w-8 text-blue-600 mb-2" />
+              <p className="text-sm text-muted-foreground mb-1">رصيدك الشخصي</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {balance?.balance.toFixed(2) || '0.00'} دج
+              </p>
+              <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full mt-3">
+                    <ArrowRightLeft className="ml-2 h-4 w-4" />
+                    تحويل إلى رصيد التاجر
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>تحويل رصيد</DialogTitle>
+                    <DialogDescription>
+                      حول رصيد من حسابك الشخصي إلى حساب التاجر
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>المبلغ المتاح: {balance?.balance.toFixed(2) || '0.00'} دج</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="1"
+                        max={balance?.balance || 0}
+                        value={transferAmount}
+                        onChange={(e) => setTransferAmount(e.target.value)}
+                        placeholder="أدخل المبلغ للتحويل"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setTransferDialogOpen(false)}>
+                      إلغاء
+                    </Button>
+                    <Button onClick={handleTransfer} disabled={submitting || !transferAmount}>
+                      {submitting ? 'جاري التحويل...' : 'تحويل'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
 

@@ -1399,6 +1399,10 @@ export type Database = {
         Args: { _amount: number; _customer_phone: string }
         Returns: Json
       }
+      merchant_transfer_from_user_balance: {
+        Args: { _amount: number }
+        Returns: Json
+      }
       process_betting_deposit: {
         Args: { _amount: number; _platform_id: string; _player_id: string }
         Returns: Json
