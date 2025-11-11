@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTransactionHistory } from '@/hooks/useTransactionHistory';
+import { useAliExpressOrders } from '@/hooks/useAliExpressOrders';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   ArrowRight, 
   Download, 
@@ -15,7 +17,9 @@ import {
   Gamepad2,
   FileText,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  ShoppingBag,
+  Package
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -25,6 +29,7 @@ import { useProfile } from '@/hooks/useProfile';
 const Transactions = () => {
   const navigate = useNavigate();
   const { transactions, loading } = useTransactionHistory(); // No limit = show all
+  const { orders: aliexpressOrders, loading: aliexpressLoading } = useAliExpressOrders();
   const { profile } = useProfile();
   const [expandedTransaction, setExpandedTransaction] = useState<string | null>(null);
 

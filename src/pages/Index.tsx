@@ -107,6 +107,11 @@ const Index = () => {
       return;
     }
 
+    if (service.action === 'aliexpress') {
+      navigate('/aliexpress');
+      return;
+    }
+
     // السماح بالدخول إلى صفحة الخدمة بغض النظر عن حالة التفعيل
     // التحقق من التفعيل سيتم عند محاولة تنفيذ العملية الفعلية
     console.log(`Navigating to service: ${service.title}`);
@@ -171,6 +176,13 @@ const Index = () => {
       subtitle: "Google Play، Steam، Netflix",
       gradient: "bg-gradient-gold",
       action: "buy-cards"
+    },
+    {
+      icon: <ShoppingBag className="h-6 w-6" />,
+      title: "AliExpress",
+      subtitle: "تسوق وادفع بالدينار الجزائري",
+      gradient: "bg-gradient-secondary",
+      action: "aliexpress"
     },
     {
       icon: <CreditCard className="h-6 w-6" />,
