@@ -293,6 +293,7 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
   const [verificationRequest, setVerificationRequest] = React.useState<any>(null);
   const [balanceAction, setBalanceAction] = React.useState({ type: '', amount: '', note: '' });
   const [processing, setProcessing] = React.useState(false);
+  const [heldBalance, setHeldBalance] = React.useState(0);
 
   React.useEffect(() => {
     const fetchUserDetails = async () => {
@@ -308,6 +309,20 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
         if (verificationData?.[0]) {
           setVerificationRequest(verificationData[0]);
         }
+
+        // Calculate held balance from pending orders
+        const [gameOrders, bettingTransactions, withdrawals] = await Promise.all([
+          supabase.from('game_topup_orders').select('amount').eq('user_id', user.user_id).eq('status', 'pending'),
+          supabase.from('betting_transactions').select('amount').eq('user_id', user.user_id).eq('transaction_type', 'deposit').eq('status', 'pending'),
+          supabase.from('withdrawals').select('amount').eq('user_id', user.user_id).in('status', ['pending', 'approved'])
+        ]);
+
+        const totalHeld = 
+          (gameOrders.data?.reduce((sum, o) => sum + Number(o.amount), 0) || 0) +
+          (bettingTransactions.data?.reduce((sum, t) => sum + Number(t.amount), 0) || 0) +
+          (withdrawals.data?.reduce((sum, w) => sum + Number(w.amount), 0) || 0);
+
+        setHeldBalance(totalHeld);
       } catch (error) {
         console.error('Error fetching user details:', error);
       }
@@ -527,13 +542,31 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
                     {user.is_account_activated ? "مفعل" : "غير مفعل"}
                   </Badge>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">الرصيد الحالي:</span>
-                  <span className="font-bold text-lg text-primary">
-                    {formatCurrency(user.balance)}
-                  </span>
+                <div className="space-y-3 pt-2 border-t">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">الرصيد الإجمالي:</span>
+                    <span className="font-bold text-lg text-primary">
+                      {formatCurrency(user.balance)}
+                    </span>
+                  </div>
+                  {heldBalance > 0 && (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-orange-600">محجوز (طلبات معلقة):</span>
+                        <span className="font-semibold text-orange-600">
+                          -{formatCurrency(heldBalance)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm pt-2 border-t">
+                        <span className="text-green-600 font-medium">المتاح للاستخدام:</span>
+                        <span className="font-bold text-lg text-green-600">
+                          {formatCurrency(Math.max(0, user.balance - heldBalance))}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between pt-2">
                   <span className="text-muted-foreground">عدد المعاملات:</span>
                   <span className="font-medium">{user.total_transactions}</span>
                 </div>
