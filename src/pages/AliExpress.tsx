@@ -234,66 +234,69 @@ const AliExpress = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-background to-blue-50 dark:from-gray-900 dark:via-background dark:to-gray-900" dir="rtl">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <BackButton />
         
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+          <div className="inline-block p-3 bg-gradient-to-r from-orange-500 to-blue-500 rounded-full mb-4">
+            <ShoppingCart className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-orange-600 via-red-500 to-blue-600 bg-clip-text text-transparent">
             التسوق من AliExpress
           </h1>
-          <p className="text-muted-foreground">
-            اطلب أي منتج من AliExpress وادفع بالدينار الجزائري
+          <p className="text-lg text-muted-foreground">
+            اطلب أي منتج من AliExpress وادفع بالدينار الجزائري 🇩🇿
           </p>
         </div>
 
         {/* Exchange Rate Info */}
-        <Alert className="mb-6">
-          <TrendingUp className="h-4 w-4" />
-          <AlertDescription>
-            سعر الصرف الحالي: <strong>1 USD = {exchangeRate?.rate} DZD</strong>
+        <Alert className="mb-6 border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20">
+          <TrendingUp className="h-5 w-5 text-orange-600" />
+          <AlertDescription className="text-orange-900 dark:text-orange-200">
+            <span className="font-bold">سعر الصرف الحالي:</span> 1 USD = <span className="text-xl font-black">{exchangeRate?.rate}</span> DZD
           </AlertDescription>
         </Alert>
 
         {/* Stats Cards */}
         <div className="grid md:grid-cols-3 gap-4 mb-6">
-          <Card>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:scale-105 transition-transform">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <DollarSign className="h-6 w-6 text-primary" />
+                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                  <DollarSign className="h-7 w-7" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">رسوم الخدمة</p>
-                  <p className="text-xl font-bold">{fees?.service_fee_percentage}%</p>
+                  <p className="text-sm text-blue-100">رسوم الخدمة</p>
+                  <p className="text-2xl font-black">{fees?.service_fee_percentage}%</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:scale-105 transition-transform">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <Package className="h-6 w-6 text-primary" />
+                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                  <Package className="h-7 w-7" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">رسوم الشحن</p>
-                  <p className="text-xl font-bold">{fees?.default_shipping_fee} DZD</p>
+                  <p className="text-sm text-purple-100">رسوم الشحن</p>
+                  <p className="text-2xl font-black">{fees?.default_shipping_fee} DZD</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-emerald-600 text-white hover:scale-105 transition-transform">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <ShoppingCart className="h-6 w-6 text-primary" />
+                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                  <ShoppingCart className="h-7 w-7" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">رصيدك</p>
-                  <p className="text-xl font-bold">{balance?.balance.toFixed(2)} DZD</p>
+                  <p className="text-sm text-green-100">رصيدك الحالي</p>
+                  <p className="text-2xl font-black">{balance?.balance.toFixed(2)} DZD</p>
                 </div>
               </div>
             </CardContent>
@@ -301,29 +304,36 @@ const AliExpress = () => {
         </div>
 
         {/* Order Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle>طلب منتج جديد</CardTitle>
-            <CardDescription>
-              انسخ رابط المنتج من AliExpress وأدخل المعلومات المطلوبة
-            </CardDescription>
+        <Card className="border-0 shadow-2xl bg-gradient-to-br from-white via-orange-50/30 to-blue-50/30 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800">
+          <CardHeader className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-orange-500 to-blue-500 rounded-lg">
+                <Package className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl">طلب منتج جديد</CardTitle>
+                <CardDescription className="text-base">
+                  انسخ رابط المنتج من AliExpress وأدخل المعلومات المطلوبة
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             {/* Smart Paste Button */}
             {clipboardUrl && !orderForm.product_url && (
-              <Alert className="border-primary/50 bg-primary/5">
-                <Sparkles className="h-4 w-4 text-primary" />
+              <Alert className="border-0 shadow-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white animate-fade-in">
+                <Sparkles className="h-5 w-5" />
                 <AlertDescription className="flex items-center justify-between">
-                  <span className="text-sm">تم رصد رابط AliExpress في الحافظة!</span>
+                  <span className="font-semibold">🔗 تم رصد رابط AliExpress في الحافظة!</span>
                   <Button
                     size="sm"
                     onClick={handlePasteFromClipboard}
-                    className="mr-2"
+                    className="mr-2 bg-white text-green-600 hover:bg-green-50"
                   >
                     {pasteSuccess ? (
                       <>
                         <Check className="ml-1 h-4 w-4" />
-                        تم اللصق
+                        تم اللصق ✓
                       </>
                     ) : (
                       <>
@@ -337,9 +347,11 @@ const AliExpress = () => {
             )}
 
             {/* Product Info */}
-            <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
-              <h3 className="font-semibold flex items-center gap-2">
-                <ExternalLink className="h-4 w-4" />
+            <div className="space-y-4 p-6 bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 rounded-xl border-2 border-orange-200 dark:border-orange-800">
+              <h3 className="font-bold text-lg flex items-center gap-2 text-orange-900 dark:text-orange-200">
+                <div className="p-2 bg-orange-500 rounded-lg">
+                  <ExternalLink className="h-5 w-5 text-white" />
+                </div>
                 معلومات المنتج
               </h3>
               
@@ -415,9 +427,11 @@ const AliExpress = () => {
             </div>
 
             {/* Delivery Info */}
-            <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
-              <h3 className="font-semibold flex items-center gap-2">
-                <Package className="h-4 w-4" />
+            <div className="space-y-4 p-6 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-xl border-2 border-blue-200 dark:border-blue-800">
+              <h3 className="font-bold text-lg flex items-center gap-2 text-blue-900 dark:text-blue-200">
+                <div className="p-2 bg-blue-500 rounded-lg">
+                  <Package className="h-5 w-5 text-white" />
+                </div>
                 معلومات التوصيل
               </h3>
 
@@ -466,40 +480,42 @@ const AliExpress = () => {
 
             {/* Real-time Price Calculation */}
             {orderForm.price_usd && (
-              <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg space-y-3 border border-primary/20">
-                <div className="flex items-center gap-2 mb-3">
-                  <DollarSign className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold">ملخص التكلفة الفوري</h3>
+              <div className="p-6 bg-gradient-to-br from-yellow-400 via-orange-400 to-red-400 text-white rounded-2xl space-y-4 shadow-2xl border-4 border-white/50 animate-scale-in">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-white/30 backdrop-blur-sm rounded-xl">
+                    <DollarSign className="h-7 w-7" />
+                  </div>
+                  <h3 className="font-black text-2xl">💰 ملخص التكلفة الفوري</h3>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm p-2 bg-background/50 rounded">
-                    <span className="text-muted-foreground">سعر المنتج:</span>
-                    <span className="font-medium">{prices.priceDZD.toFixed(2)} DZD</span>
+                <div className="space-y-3">
+                  <div className="flex justify-between p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                    <span className="font-semibold">💵 سعر المنتج:</span>
+                    <span className="font-bold text-lg">{prices.priceDZD.toFixed(2)} DZD</span>
                   </div>
-                  <div className="flex justify-between text-sm p-2 bg-background/50 rounded">
-                    <span className="text-muted-foreground">رسوم الخدمة ({fees?.service_fee_percentage}%):</span>
-                    <span className="font-medium">{prices.serviceFee.toFixed(2)} DZD</span>
+                  <div className="flex justify-between p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                    <span className="font-semibold">🏷️ رسوم الخدمة ({fees?.service_fee_percentage}%):</span>
+                    <span className="font-bold text-lg">{prices.serviceFee.toFixed(2)} DZD</span>
                   </div>
-                  <div className="flex justify-between text-sm p-2 bg-background/50 rounded">
-                    <span className="text-muted-foreground">رسوم الشحن الدولي:</span>
-                    <span className="font-medium">{prices.shippingFee.toFixed(2)} DZD</span>
+                  <div className="flex justify-between p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                    <span className="font-semibold">📦 رسوم الشحن الدولي:</span>
+                    <span className="font-bold text-lg">{prices.shippingFee.toFixed(2)} DZD</span>
                   </div>
                 </div>
-                <div className="h-px bg-primary/20 my-2" />
-                <div className="flex justify-between p-3 bg-primary/10 rounded-lg">
-                  <span className="text-lg font-bold">المجموع الكلي:</span>
-                  <span className="text-xl font-bold text-primary">{prices.totalDZD.toFixed(2)} DZD</span>
+                <div className="h-1 bg-white/30 rounded-full my-3" />
+                <div className="flex justify-between p-4 bg-white/30 backdrop-blur-sm rounded-2xl border-2 border-white/50">
+                  <span className="text-xl font-black">💳 المجموع الكلي:</span>
+                  <span className="text-3xl font-black drop-shadow-lg">{prices.totalDZD.toFixed(2)} DZD</span>
                 </div>
                 {balance && (
-                  <div className="text-xs text-center text-muted-foreground mt-2">
+                  <div className="text-center mt-4 p-3 bg-white/30 backdrop-blur-sm rounded-xl">
                     {balance.balance >= prices.totalDZD ? (
-                      <span className="text-green-600 flex items-center justify-center gap-1">
-                        <Check className="h-3 w-3" />
-                        رصيدك كافٍ لإتمام الطلب
+                      <span className="text-white font-bold flex items-center justify-center gap-2 text-lg">
+                        <Check className="h-5 w-5" />
+                        ✅ رصيدك كافٍ لإتمام الطلب
                       </span>
                     ) : (
-                      <span className="text-destructive">
-                        تحتاج لشحن {(prices.totalDZD - balance.balance).toFixed(2)} DZD إضافية
+                      <span className="text-white font-bold text-lg">
+                        ⚠️ تحتاج لشحن {(prices.totalDZD - balance.balance).toFixed(2)} DZD إضافية
                       </span>
                     )}
                   </div>
@@ -509,12 +525,12 @@ const AliExpress = () => {
 
             <Button
               onClick={handleOrderSubmit}
-              className="w-full"
+              className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 hover:from-green-600 hover:via-emerald-600 hover:to-teal-600 text-white font-black text-lg shadow-2xl hover:shadow-3xl transition-all hover:scale-105"
               size="lg"
               disabled={!orderForm.product_url || !orderForm.product_title || !orderForm.price_usd}
             >
-              <ShoppingCart className="ml-2 h-5 w-5" />
-              طلب المنتج الآن
+              <ShoppingCart className="ml-2 h-6 w-6" />
+              🛒 طلب المنتج الآن
             </Button>
           </CardContent>
         </Card>
