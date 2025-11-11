@@ -520,6 +520,7 @@ export type Database = {
           player_id: string
           processed_at: string | null
           processed_by: string | null
+          proof_image_url: string | null
           status: string
           updated_at: string
           user_id: string
@@ -535,6 +536,7 @@ export type Database = {
           player_id: string
           processed_at?: string | null
           processed_by?: string | null
+          proof_image_url?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -550,6 +552,7 @@ export type Database = {
           player_id?: string
           processed_at?: string | null
           processed_by?: string | null
+          proof_image_url?: string | null
           status?: string
           updated_at?: string
           user_id?: string

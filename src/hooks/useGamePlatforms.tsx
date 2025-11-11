@@ -38,6 +38,7 @@ export interface GameTopupOrder {
   status: string;
   notes: string | null;
   admin_notes: string | null;
+  proof_image_url: string | null;
   processed_at: string | null;
   processed_by: string | null;
   created_at: string;
@@ -190,7 +191,17 @@ export const useApproveGameTopupOrder = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ orderId, adminNotes }: { orderId: string; adminNotes?: string }) => {
+    mutationFn: async ({ orderId, adminNotes, proofImageUrl }: { orderId: string; adminNotes?: string; proofImageUrl?: string }) => {
+      // Update order with proof image URL first
+      if (proofImageUrl) {
+        const { error: updateError } = await supabase
+          .from('game_topup_orders')
+          .update({ proof_image_url: proofImageUrl })
+          .eq('id', orderId);
+        
+        if (updateError) throw updateError;
+      }
+
       const { data, error } = await supabase.rpc('approve_game_topup_order', {
         _order_id: orderId,
         _admin_notes: adminNotes || null

@@ -63,6 +63,7 @@ const GameManagement = () => {
   const [editingPackage, setEditingPackage] = useState<GamePackage | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [adminNotes, setAdminNotes] = useState("");
+  const [proofImageFile, setProofImageFile] = useState<File | null>(null);
   const [orderFilter, setOrderFilter] = useState<"all" | "pending" | "completed" | "rejected">("pending");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -772,7 +773,13 @@ const GameManagement = () => {
       </Tabs>
 
       {/* Order Review Dialog */}
-      <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+      <Dialog open={!!selectedOrder} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedOrder(null);
+          setAdminNotes("");
+          setProofImageFile(null);
+        }
+      }}>
         <DialogContent className="max-w-2xl" dir="rtl">
           <DialogHeader>
             <DialogTitle>مراجعة طلب الشحن</DialogTitle>
@@ -828,6 +835,22 @@ const GameManagement = () => {
                     <p className="text-sm">{selectedOrder.admin_notes}</p>
                   </div>
                 )}
+                {selectedOrder.proof_image_url && (
+                  <div className="col-span-2">
+                    <Label className="text-xs text-muted-foreground">صورة إثبات الشحن</Label>
+                    <div className="mt-2">
+                      <img 
+                        src={selectedOrder.proof_image_url} 
+                        alt="إثبات الشحن" 
+                        className="max-w-full max-h-96 rounded-lg border border-border object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => window.open(selectedOrder.proof_image_url, '_blank')}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        انقر على الصورة لفتحها بالحجم الكامل
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {selectedOrder.status === "pending" && (
@@ -843,12 +866,27 @@ const GameManagement = () => {
                     />
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="proof_image">صورة إثبات الشحن</Label>
+                    <Input
+                      id="proof_image"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setProofImageFile(e.target.files?.[0] || null)}
+                      className="cursor-pointer"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      ارفع صورة تثبت عملية الشحن (لقطة شاشة، إيصال، إلخ)
+                    </p>
+                  </div>
+
                   <div className="flex gap-2 justify-end">
                     <Button
                       variant="outline"
                       onClick={() => {
                         setSelectedOrder(null);
                         setAdminNotes("");
+                        setProofImageFile(null);
                       }}
                     >
                       إلغاء
@@ -870,6 +908,7 @@ const GameManagement = () => {
                             onSuccess: () => {
                               setSelectedOrder(null);
                               setAdminNotes("");
+                              setProofImageFile(null);
                             },
                           }
                         );
@@ -885,16 +924,59 @@ const GameManagement = () => {
                     </Button>
                     <Button
                       className="bg-green-500 hover:bg-green-600"
-                      onClick={() => {
-                        approveOrder.mutate(
-                          { orderId: selectedOrder.id, adminNotes: adminNotes || undefined },
-                          {
-                            onSuccess: () => {
-                              setSelectedOrder(null);
-                              setAdminNotes("");
-                            },
+                      onClick={async () => {
+                        try {
+                          let proofImageUrl: string | undefined = undefined;
+
+                          // Upload proof image if provided
+                          if (proofImageFile) {
+                            const fileExt = proofImageFile.name.split('.').pop();
+                            const fileName = `${selectedOrder.id}-${Date.now()}.${fileExt}`;
+                            
+                            const { error: uploadError } = await supabase.storage
+                              .from('game-charge-proofs')
+                              .upload(fileName, proofImageFile, {
+                                cacheControl: '3600',
+                                upsert: false
+                              });
+
+                            if (uploadError) {
+                              toast({
+                                title: "خطأ في رفع الصورة",
+                                description: uploadError.message,
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+
+                            const { data: { publicUrl } } = supabase.storage
+                              .from('game-charge-proofs')
+                              .getPublicUrl(fileName);
+
+                            proofImageUrl = publicUrl;
                           }
-                        );
+
+                          approveOrder.mutate(
+                            { 
+                              orderId: selectedOrder.id, 
+                              adminNotes: adminNotes || undefined,
+                              proofImageUrl
+                            },
+                            {
+                              onSuccess: () => {
+                                setSelectedOrder(null);
+                                setAdminNotes("");
+                                setProofImageFile(null);
+                              },
+                            }
+                          );
+                        } catch (error: any) {
+                          toast({
+                            title: "خطأ",
+                            description: error.message,
+                            variant: "destructive",
+                          });
+                        }
                       }}
                       disabled={approveOrder.isPending}
                     >
