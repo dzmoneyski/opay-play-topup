@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,10 +10,11 @@ import { useToast } from '@/hooks/use-toast';
 import { useAliExpressSettings } from '@/hooks/useAliExpressSettings';
 import { useAliExpressOrders } from '@/hooks/useAliExpressOrders';
 import { useBalance } from '@/hooks/useBalance';
-import { ShoppingCart, Package, TrendingUp, DollarSign, Loader2, ExternalLink } from 'lucide-react';
+import { ShoppingCart, Package, TrendingUp, DollarSign, Loader2, ExternalLink, Clipboard, Sparkles, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import BackButton from '@/components/BackButton';
+import { supabase } from '@/integrations/supabase/client';
 
 const AliExpress = () => {
   const { toast } = useToast();
@@ -23,6 +24,9 @@ const AliExpress = () => {
   const { balance, fetchBalance } = useBalance();
   const [showOrderDialog, setShowOrderDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [clipboardUrl, setClipboardUrl] = useState<string | null>(null);
+  const [pasteSuccess, setPasteSuccess] = useState(false);
 
   const [orderForm, setOrderForm] = useState({
     product_url: '',
@@ -35,6 +39,78 @@ const AliExpress = () => {
     delivery_address: '',
     notes: ''
   });
+
+  // Check clipboard for AliExpress links
+  useEffect(() => {
+    const checkClipboard = async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text && (text.includes('aliexpress.com') || text.includes('aliexpress.us'))) {
+          setClipboardUrl(text);
+        }
+      } catch (err) {
+        // Clipboard access denied or not available
+        console.log('Clipboard access not available');
+      }
+    };
+    
+    checkClipboard();
+  }, []);
+
+  const handlePasteFromClipboard = async () => {
+    if (clipboardUrl) {
+      setOrderForm({ ...orderForm, product_url: clipboardUrl });
+      setPasteSuccess(true);
+      setTimeout(() => setPasteSuccess(false), 2000);
+      await extractProductData(clipboardUrl);
+    }
+  };
+
+  const extractProductData = async (url: string) => {
+    if (!url || (!url.includes('aliexpress.com') && !url.includes('aliexpress.us'))) {
+      return;
+    }
+
+    setExtracting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('scrape-aliexpress', {
+        body: { url }
+      });
+
+      if (error) throw error;
+
+      if (data?.success && data.data) {
+        const { title, price, image } = data.data;
+        
+        setOrderForm(prev => ({
+          ...prev,
+          product_title: title || prev.product_title,
+          price_usd: price ? price.toString() : prev.price_usd,
+          product_image: image || prev.product_image,
+        }));
+
+        toast({
+          title: '✨ تم استخراج البيانات بنجاح',
+          description: 'تم ملء معلومات المنتج تلقائياً',
+        });
+      } else if (data?.error) {
+        toast({
+          title: 'تنبيه',
+          description: data.error,
+          variant: 'default',
+        });
+      }
+    } catch (error) {
+      console.error('Error extracting product data:', error);
+      toast({
+        title: 'ملاحظة',
+        description: 'لم نتمكن من استخراج البيانات تلقائياً. يرجى إدخالها يدوياً',
+        variant: 'default',
+      });
+    } finally {
+      setExtracting(false);
+    }
+  };
 
   const calculatePrices = () => {
     if (!exchangeRate || !fees || !orderForm.price_usd) {
@@ -233,6 +309,33 @@ const AliExpress = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Smart Paste Button */}
+            {clipboardUrl && !orderForm.product_url && (
+              <Alert className="border-primary/50 bg-primary/5">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <AlertDescription className="flex items-center justify-between">
+                  <span className="text-sm">تم رصد رابط AliExpress في الحافظة!</span>
+                  <Button
+                    size="sm"
+                    onClick={handlePasteFromClipboard}
+                    className="mr-2"
+                  >
+                    {pasteSuccess ? (
+                      <>
+                        <Check className="ml-1 h-4 w-4" />
+                        تم اللصق
+                      </>
+                    ) : (
+                      <>
+                        <Clipboard className="ml-1 h-4 w-4" />
+                        لصق الرابط
+                      </>
+                    )}
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Product Info */}
             <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
               <h3 className="font-semibold flex items-center gap-2">
@@ -242,12 +345,27 @@ const AliExpress = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="product_url">رابط المنتج من AliExpress *</Label>
-                <Input
-                  id="product_url"
-                  placeholder="https://www.aliexpress.com/item/..."
-                  value={orderForm.product_url}
-                  onChange={(e) => setOrderForm({ ...orderForm, product_url: e.target.value })}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="product_url"
+                    placeholder="https://www.aliexpress.com/item/..."
+                    value={orderForm.product_url}
+                    onChange={(e) => {
+                      setOrderForm({ ...orderForm, product_url: e.target.value });
+                      if (e.target.value && (e.target.value.includes('aliexpress.com') || e.target.value.includes('aliexpress.us'))) {
+                        extractProductData(e.target.value);
+                      }
+                    }}
+                    disabled={extracting}
+                  />
+                  {extracting && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
+                </div>
+                {extracting && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    جاري استخراج البيانات تلقائياً...
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -346,27 +464,46 @@ const AliExpress = () => {
               </div>
             </div>
 
-            {/* Price Calculation */}
+            {/* Real-time Price Calculation */}
             {orderForm.price_usd && (
-              <div className="p-4 bg-primary/5 rounded-lg space-y-2">
-                <h3 className="font-semibold mb-3">ملخص التكلفة</h3>
-                <div className="flex justify-between text-sm">
-                  <span>سعر المنتج:</span>
-                  <span>{prices.priceDZD.toFixed(2)} DZD</span>
+              <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg space-y-3 border border-primary/20">
+                <div className="flex items-center gap-2 mb-3">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">ملخص التكلفة الفوري</h3>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>رسوم الخدمة ({fees?.service_fee_percentage}%):</span>
-                  <span>{prices.serviceFee.toFixed(2)} DZD</span>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm p-2 bg-background/50 rounded">
+                    <span className="text-muted-foreground">سعر المنتج:</span>
+                    <span className="font-medium">{prices.priceDZD.toFixed(2)} DZD</span>
+                  </div>
+                  <div className="flex justify-between text-sm p-2 bg-background/50 rounded">
+                    <span className="text-muted-foreground">رسوم الخدمة ({fees?.service_fee_percentage}%):</span>
+                    <span className="font-medium">{prices.serviceFee.toFixed(2)} DZD</span>
+                  </div>
+                  <div className="flex justify-between text-sm p-2 bg-background/50 rounded">
+                    <span className="text-muted-foreground">رسوم الشحن الدولي:</span>
+                    <span className="font-medium">{prices.shippingFee.toFixed(2)} DZD</span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>رسوم الشحن الدولي:</span>
-                  <span>{prices.shippingFee.toFixed(2)} DZD</span>
+                <div className="h-px bg-primary/20 my-2" />
+                <div className="flex justify-between p-3 bg-primary/10 rounded-lg">
+                  <span className="text-lg font-bold">المجموع الكلي:</span>
+                  <span className="text-xl font-bold text-primary">{prices.totalDZD.toFixed(2)} DZD</span>
                 </div>
-                <div className="h-px bg-border my-2" />
-                <div className="flex justify-between text-lg font-bold">
-                  <span>المجموع الكلي:</span>
-                  <span className="text-primary">{prices.totalDZD.toFixed(2)} DZD</span>
-                </div>
+                {balance && (
+                  <div className="text-xs text-center text-muted-foreground mt-2">
+                    {balance.balance >= prices.totalDZD ? (
+                      <span className="text-green-600 flex items-center justify-center gap-1">
+                        <Check className="h-3 w-3" />
+                        رصيدك كافٍ لإتمام الطلب
+                      </span>
+                    ) : (
+                      <span className="text-destructive">
+                        تحتاج لشحن {(prices.totalDZD - balance.balance).toFixed(2)} DZD إضافية
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
