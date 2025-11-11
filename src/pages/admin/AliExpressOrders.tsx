@@ -13,7 +13,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Package, DollarSign, TrendingUp, Loader2, Eye, CheckCircle, XCircle, Truck, ShoppingCart, ExternalLink, Settings2, Filter } from 'lucide-react';
-import { AdminNavbar } from '@/components/AdminNavbar';
 
 const AliExpressOrders = () => {
   const { toast } = useToast();
@@ -132,7 +131,6 @@ const AliExpressOrders = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-background to-blue-50 dark:from-gray-900 dark:via-background dark:to-gray-900" dir="rtl">
-      <AdminNavbar />
       <div className="container mx-auto px-4 py-8">
           <div className="flex justify-between items-center mb-8">
             <div>
