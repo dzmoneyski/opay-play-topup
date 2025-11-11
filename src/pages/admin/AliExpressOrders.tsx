@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Package, DollarSign, TrendingUp, Loader2, Eye, CheckCircle, XCircle, Truck, ShoppingCart, ExternalLink, Settings2, Filter } from 'lucide-react';
 import { AdminNavbar } from '@/components/AdminNavbar';
 import { AdminSidebar } from '@/components/AdminSidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 const AliExpressOrders = () => {
   const { toast } = useToast();
@@ -132,10 +133,11 @@ const AliExpressOrders = () => {
     : orders.filter(o => o.status === statusFilter);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-background to-blue-50 dark:from-gray-900 dark:via-background dark:to-gray-900 flex" dir="rtl">
-      <AdminSidebar />
-      <div className="flex-1">
-        <AdminNavbar />
+    <SidebarProvider>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-background to-blue-50 dark:from-gray-900 dark:via-background dark:to-gray-900 flex w-full" dir="rtl">
+        <AdminSidebar />
+        <div className="flex-1">
+          <AdminNavbar />
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -657,7 +659,8 @@ const AliExpressOrders = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 };
 
