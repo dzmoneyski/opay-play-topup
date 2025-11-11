@@ -50,6 +50,33 @@ export const useMerchant = () => {
     }
   }, [user]);
 
+  // Real-time subscription for merchant balance updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('merchant-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'merchants',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          if (payload.new) {
+            setMerchant(payload.new as Merchant);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const fetchMerchantData = async () => {
     if (!user) return;
 
