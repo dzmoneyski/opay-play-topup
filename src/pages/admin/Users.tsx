@@ -29,8 +29,263 @@ import {
   CheckCircle,
   AlertCircle,
   User,
-  Trash2
+  Trash2,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Send,
+  Gift,
+  Gamepad2,
+  TrendingUp,
+  Package,
+  CreditCard
 } from 'lucide-react';
+import { useTransactionHistory, TransactionHistoryItem } from '@/hooks/useTransactionHistory';
+
+// Helper component to get transaction icon
+const getTransactionIcon = (type: string) => {
+  switch (type) {
+    case 'deposit': return <ArrowDownLeft className="h-4 w-4" />;
+    case 'withdrawal': return <ArrowUpRight className="h-4 w-4" />;
+    case 'transfer_sent': return <Send className="h-4 w-4" />;
+    case 'transfer_received': return <ArrowDownLeft className="h-4 w-4" />;
+    case 'gift_card': return <Gift className="h-4 w-4" />;
+    case 'betting': return <TrendingUp className="h-4 w-4" />;
+    case 'game_topup': return <Gamepad2 className="h-4 w-4" />;
+    default: return <Package className="h-4 w-4" />;
+  }
+};
+
+const getTransactionColor = (amount: number) => {
+  return amount > 0 ? 'text-green-600' : 'text-red-600';
+};
+
+const getStatusBadgeVariant = (status: string) => {
+  switch (status) {
+    case 'completed': return 'default';
+    case 'pending': return 'secondary';
+    case 'rejected': return 'destructive';
+    default: return 'outline';
+  }
+};
+
+// User Transactions Tab Component
+const UserTransactionsTab = ({ userId }: { userId: string }) => {
+  // Create a temporary auth context for this user
+  const { transactions, loading } = useTransactionHistory();
+  
+  // Filter transactions for this specific user
+  const [userTransactions, setUserTransactions] = React.useState<TransactionHistoryItem[]>([]);
+  
+  React.useEffect(() => {
+    const fetchUserTransactions = async () => {
+      try {
+        // Fetch all transaction types for this user
+        const [deposits, withdrawals, transfers, giftCards, betting, gameTopups] = await Promise.all([
+          supabase.from('deposits').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+          supabase.from('withdrawals').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+          supabase.from('transfers').select('*, transaction_number').or(`sender_id.eq.${userId},recipient_id.eq.${userId}`).order('created_at', { ascending: false }),
+          supabase.rpc('get_user_gift_card_redemptions'),
+          supabase.from('betting_transactions').select('*, platform:game_platforms(name, name_ar)').eq('user_id', userId).order('created_at', { ascending: false }),
+          supabase.from('game_topup_orders').select('*, platform:game_platforms(name, name_ar)').eq('user_id', userId).order('created_at', { ascending: false })
+        ]);
+
+        const allTransactions: TransactionHistoryItem[] = [];
+
+        // Process deposits
+        deposits.data?.forEach(deposit => {
+          allTransactions.push({
+            id: deposit.id,
+            type: 'deposit',
+            description: `إيداع عبر ${deposit.payment_method === 'baridimob' ? 'بريدي موب' : deposit.payment_method === 'ccp' ? 'حساب جاري بريدي' : 'الذهبية'}`,
+            amount: Number(deposit.amount),
+            status: deposit.status,
+            created_at: deposit.created_at,
+            icon_type: 'plus'
+          });
+        });
+
+        // Process transfers
+        transfers.data?.forEach(transfer => {
+          const isSender = transfer.sender_id === userId;
+          allTransactions.push({
+            id: transfer.id,
+            type: isSender ? 'transfer_sent' : 'transfer_received',
+            description: isSender ? `تحويل إلى ${transfer.recipient_phone}` : `تحويل من ${transfer.sender_phone}`,
+            amount: isSender ? -Number(transfer.amount) : Number(transfer.amount),
+            status: transfer.status,
+            created_at: transfer.created_at,
+            icon_type: isSender ? 'send' : 'receive',
+            transaction_number: transfer.transaction_number
+          });
+        });
+
+        // Process withdrawals
+        withdrawals.data?.forEach(withdrawal => {
+          allTransactions.push({
+            id: withdrawal.id,
+            type: 'withdrawal',
+            description: `سحب عبر ${withdrawal.withdrawal_method === 'bank' ? 'البنك' : 'نقداً'}`,
+            amount: -Number(withdrawal.amount),
+            status: withdrawal.status,
+            created_at: withdrawal.created_at,
+            icon_type: 'withdraw'
+          });
+        });
+
+        // Process gift cards - filter for this user
+        if (giftCards.data) {
+          giftCards.data
+            .filter((card: any) => card.used_by === userId)
+            .forEach((card: any) => {
+              allTransactions.push({
+                id: card.id,
+                type: 'gift_card',
+                description: `تفعيل بطاقة OpaY`,
+                amount: Number(card.amount),
+                status: 'completed',
+                created_at: card.used_at || card.created_at,
+                icon_type: 'gift'
+              });
+            });
+        }
+
+        // Process betting transactions
+        betting.data?.forEach(transaction => {
+          const platformName = (transaction as any).platform?.name_ar || 'منصة مراهنات';
+          const typeText = transaction.transaction_type === 'deposit' ? 'إيداع' : 'سحب';
+          allTransactions.push({
+            id: transaction.id,
+            type: 'betting',
+            description: `${typeText} على ${platformName}`,
+            amount: transaction.transaction_type === 'deposit' ? -Number(transaction.amount) : Number(transaction.amount),
+            status: transaction.status,
+            created_at: transaction.created_at,
+            icon_type: transaction.transaction_type === 'deposit' ? 'send' : 'receive'
+          });
+        });
+
+        // Process game topup orders
+        gameTopups.data?.forEach(order => {
+          const platformName = (order as any).platform?.name_ar || 'لعبة';
+          allTransactions.push({
+            id: order.id,
+            type: 'game_topup',
+            description: `شحن ${platformName}`,
+            amount: -Number(order.amount),
+            status: order.status,
+            created_at: order.created_at,
+            icon_type: 'game'
+          });
+        });
+
+        // Sort by date
+        allTransactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        setUserTransactions(allTransactions);
+      } catch (error) {
+        console.error('Error fetching user transactions:', error);
+      }
+    };
+
+    fetchUserTransactions();
+  }, [userId]);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ar-DZ', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('ar-DZ', {
+      style: 'currency',
+      currency: 'DZD',
+      minimumFractionDigits: 0
+    }).format(Math.abs(amount));
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'completed': return 'مكتمل';
+      case 'pending': return 'قيد الانتظار';
+      case 'rejected': return 'مرفوض';
+      case 'processing': return 'قيد المعالجة';
+      default: return status;
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>سجل المعاملات الكامل</CardTitle>
+        <CardDescription>
+          جميع الحركات والمعاملات التي تمت على الحساب ({userTransactions.length} معاملة)
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {userTransactions.length > 0 ? (
+          <div className="space-y-2">
+            {userTransactions.map((transaction, index) => (
+              <div 
+                key={transaction.id || index} 
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/5 transition-colors"
+              >
+                <div className="flex items-center gap-4 flex-1">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    transaction.amount > 0 
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-red-100 text-red-700'
+                  }`}>
+                    {getTransactionIcon(transaction.type)}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{transaction.description}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-xs text-muted-foreground">
+                        {formatDate(transaction.created_at)}
+                      </p>
+                      {transaction.transaction_number && (
+                        <>
+                          <span className="text-xs text-muted-foreground">•</span>
+                          <p className="text-xs font-mono text-muted-foreground">
+                            {transaction.transaction_number}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-left">
+                    <p className={`font-bold text-sm ${getTransactionColor(transaction.amount)}`}>
+                      {transaction.amount > 0 ? '+' : ''}
+                      {formatCurrency(transaction.amount)}
+                    </p>
+                    <Badge 
+                      variant={getStatusBadgeVariant(transaction.status)} 
+                      className="text-xs mt-1"
+                    >
+                      {getStatusText(transaction.status)}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <p className="text-muted-foreground text-lg font-medium">لا توجد معاملات</p>
+            <p className="text-muted-foreground text-sm mt-2">لم يقم المستخدم بأي معاملات حتى الآن</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 // User Details Modal Component
 const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void }) => {
@@ -38,7 +293,6 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
   const [verificationRequest, setVerificationRequest] = React.useState<any>(null);
   const [balanceAction, setBalanceAction] = React.useState({ type: '', amount: '', note: '' });
   const [processing, setProcessing] = React.useState(false);
-  const [userTransactions, setUserTransactions] = React.useState<any[]>([]);
 
   React.useEffect(() => {
     const fetchUserDetails = async () => {
@@ -54,21 +308,6 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
         if (verificationData?.[0]) {
           setVerificationRequest(verificationData[0]);
         }
-
-        // Fetch user transactions
-        const [depositsRes, withdrawalsRes, transfersRes] = await Promise.all([
-          supabase.from('deposits').select('*').eq('user_id', user.user_id).order('created_at', { ascending: false }).limit(10),
-          supabase.from('withdrawals').select('*').eq('user_id', user.user_id).order('created_at', { ascending: false }).limit(10),
-          supabase.from('transfers').select('*').or(`sender_id.eq.${user.user_id},recipient_id.eq.${user.user_id}`).order('created_at', { ascending: false }).limit(10)
-        ]);
-
-        const transactions = [
-          ...(depositsRes.data || []).map(t => ({ ...t, type: 'deposit' })),
-          ...(withdrawalsRes.data || []).map(t => ({ ...t, type: 'withdrawal' })),
-          ...(transfersRes.data || []).map(t => ({ ...t, type: 'transfer' }))
-        ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-        setUserTransactions(transactions.slice(0, 10));
       } catch (error) {
         console.error('Error fetching user details:', error);
       }
@@ -499,55 +738,7 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
         )}
 
         {activeTab === 'transactions' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>آخر المعاملات</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {userTransactions.length > 0 ? (
-                <div className="space-y-3">
-                  {userTransactions.map((transaction, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs ${
-                          transaction.type === 'deposit' ? 'bg-green-500' :
-                          transaction.type === 'withdrawal' ? 'bg-red-500' : 'bg-blue-500'
-                        }`}>
-                          {transaction.type === 'deposit' ? '↓' :
-                           transaction.type === 'withdrawal' ? '↑' : '⇄'}
-                        </div>
-                        <div>
-                          <p className="font-medium">
-                            {transaction.type === 'deposit' ? 'إيداع' :
-                             transaction.type === 'withdrawal' ? 'سحب' : 'تحويل'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDate(transaction.created_at)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className={`font-bold ${
-                          transaction.type === 'deposit' ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {transaction.type === 'deposit' ? '+' : '-'}
-                          {formatCurrency(transaction.amount)}
-                        </p>
-                        <Badge variant="outline" className="text-xs">
-                          {transaction.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">لا توجد معاملات</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <UserTransactionsTab userId={user.user_id} />
         )}
 
         {activeTab === 'actions' && (
