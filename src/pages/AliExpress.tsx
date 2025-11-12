@@ -3,20 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ArrowRight, ShoppingCart, DollarSign, Package } from 'lucide-react';
+import { ArrowRight, ShoppingCart, DollarSign, Package, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { useAliExpressSettings } from '@/hooks/useAliExpressSettings';
 import { useAliExpressOrders } from '@/hooks/useAliExpressOrders';
 import { useBalance } from '@/hooks/useBalance';
-import { useUserRoles } from '@/hooks/useUserRoles';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import BackButton from '@/components/BackButton';
+import { format } from 'date-fns';
+import { ar } from 'date-fns/locale';
 
 const urlSchema = z.object({
   url: z.string().url({ message: 'الرجاء إدخال رابط صحيح' }),
@@ -35,7 +37,6 @@ const customerInfoSchema = z.object({
 
 const AliExpress = () => {
   const navigate = useNavigate();
-  const { isAdmin, loading: rolesLoading } = useUserRoles();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [productUrl, setProductUrl] = useState('');
@@ -45,22 +46,28 @@ const AliExpress = () => {
   const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', address: '' });
   
   const { exchangeRate } = useAliExpressSettings();
-  const { createOrder, isCreating } = useAliExpressOrders();
+  const { orders, createOrder, isCreating } = useAliExpressOrders();
   const { balance } = useBalance();
 
   const [isLoadingImages, setIsLoadingImages] = useState(false);
 
-  // Protect route - Only admins can access
-  useEffect(() => {
-    if (!rolesLoading && !isAdmin) {
-      toast({
-        title: "صلاحيات محدودة",
-        description: "هذه الصفحة متاحة للمشرفين فقط",
-        variant: "destructive"
-      });
-      navigate('/');
-    }
-  }, [isAdmin, rolesLoading, navigate, toast]);
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: any }> = {
+      pending: { label: 'قيد الانتظار', variant: 'secondary', icon: Clock },
+      processing: { label: 'قيد المعالجة', variant: 'default', icon: Package },
+      completed: { label: 'مكتمل', variant: 'outline', icon: CheckCircle },
+      cancelled: { label: 'ملغي', variant: 'destructive', icon: XCircle },
+    };
+
+    const config = statusConfig[status] || statusConfig.pending;
+    const Icon = config.icon;
+    return (
+      <Badge variant={config.variant} className="flex items-center gap-1 w-fit">
+        <Icon className="w-3 h-3" />
+        {config.label}
+      </Badge>
+    );
+  };
 
   const urlForm = useForm<z.infer<typeof urlSchema>>({
     resolver: zodResolver(urlSchema),
@@ -159,6 +166,98 @@ const AliExpress = () => {
           </div>
           <p className="text-white/90 text-lg">تسوق من AliExpress بكل سهولة</p>
         </div>
+
+        {/* My Orders Section */}
+        {orders && orders.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                طلباتي
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {orders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {getStatusBadge(order.status)}
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: ar })}
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">الاسم:</span>
+                            <span className="font-medium mr-2">{order.customer_name}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">الهاتف:</span>
+                            <span className="font-medium mr-2">{order.customer_phone}</span>
+                          </div>
+                        </div>
+
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">العنوان:</span>
+                          <p className="text-muted-foreground mt-1">{order.customer_address}</p>
+                        </div>
+
+                        <div className="flex gap-4 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">المنتج:</span>
+                            <span className="font-medium mr-2">${order.product_price.toFixed(2)}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">الشحن:</span>
+                            <span className="font-medium mr-2">${order.shipping_cost.toFixed(2)}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">الإجمالي:</span>
+                            <span className="font-bold text-primary mr-2">{order.total_dzd.toFixed(2)} دج</span>
+                          </div>
+                        </div>
+
+                        {order.admin_notes && (
+                          <div className="bg-muted p-2 rounded text-sm">
+                            <span className="text-muted-foreground font-semibold">ملاحظات المشرف:</span>
+                            <p className="mt-1">{order.admin_notes}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {order.product_images && order.product_images.length > 0 && (
+                        <img
+                          src={order.product_images[0]}
+                          alt="Product"
+                          className="w-20 h-20 object-cover rounded"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30';
+                          }}
+                        />
+                      )}
+                    </div>
+
+                    <a
+                      href={order.product_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline text-sm flex items-center gap-1"
+                    >
+                      عرض المنتج
+                      <ArrowRight className="w-3 h-3" />
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Step 1: URL Input */}
         {step === 1 && (

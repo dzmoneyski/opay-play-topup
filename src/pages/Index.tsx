@@ -196,9 +196,9 @@ const Index = () => {
     {
       icon: <ShoppingBag className="h-6 w-6" />,
       title: "تسوق من AliExpress",
-      subtitle: "للمشرفين فقط",
+      subtitle: "تسوق المنتجات بكل سهولة",
       gradient: "bg-gradient-to-br from-[#FF6A00] to-[#E60000]",
-      action: isAdmin ? "aliexpress" : "admin-only"
+      action: "aliexpress"
     }
   ];
 
