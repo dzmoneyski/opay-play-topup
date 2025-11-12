@@ -46,6 +46,16 @@ serve(async (req) => {
     const finalUrl = response.url; // Get the final URL after redirects
     console.log("Final URL after redirects:", finalUrl);
 
+    // Check if redirected to error page
+    if (finalUrl.includes('/error/') || finalUrl.includes('404.html')) {
+      return new Response(
+        JSON.stringify({ 
+          error: "الرابط غير صحيح أو المنتج غير موجود. يرجى التحقق من الرابط أو إدخال البيانات يدوياً."
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const html = await response.text();
 
     // Extract product data using regex patterns
@@ -132,10 +142,12 @@ serve(async (req) => {
 
     console.log("Extracted data:", productData);
 
-    if (!productData.title && !productData.price) {
+    // Check if we got a 404 title or no data
+    if (!productData.title || productData.title === "404 page" || productData.title === "AliExpress" || 
+        (!productData.price && !productData.image)) {
       return new Response(
         JSON.stringify({ 
-          error: "Could not extract product data. Please enter manually.",
+          error: "لم نتمكن من استخراج البيانات. يرجى التأكد من صحة الرابط أو إدخال البيانات يدوياً.",
           partialData: productData 
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -82,22 +82,31 @@ const AliExpress = () => {
       if (data?.success && data.data) {
         const { title, price, image } = data.data;
         
-        setOrderForm(prev => ({
-          ...prev,
-          product_title: title || prev.product_title,
-          price_usd: price ? price.toString() : prev.price_usd,
-          product_image: image || prev.product_image,
-        }));
+        // Only update if we got valid data
+        if (title && title !== '404 page' && title !== 'AliExpress') {
+          setOrderForm(prev => ({
+            ...prev,
+            product_title: title,
+            price_usd: price ? price.toString() : prev.price_usd,
+            product_image: image || prev.product_image,
+          }));
 
-        toast({
-          title: '✨ تم استخراج البيانات بنجاح',
-          description: 'تم ملء معلومات المنتج تلقائياً',
-        });
+          toast({
+            title: '✨ تم استخراج البيانات بنجاح',
+            description: 'تم ملء معلومات المنتج تلقائياً',
+          });
+        } else {
+          toast({
+            title: '⚠️ فشل استخراج البيانات',
+            description: 'الرابط غير صحيح أو المنتج غير موجود. يرجى إدخال البيانات يدوياً',
+            variant: 'destructive',
+          });
+        }
       } else if (data?.error) {
         toast({
-          title: 'تنبيه',
+          title: '⚠️ خطأ في استخراج البيانات',
           description: data.error,
-          variant: 'default',
+          variant: 'destructive',
         });
       }
     } catch (error) {
