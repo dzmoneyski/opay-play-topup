@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import BackButton from '@/components/BackButton';
 import { supabase } from '@/integrations/supabase/client';
+import { AliExpressProductPreview } from '@/components/AliExpressProductPreview';
 
 const AliExpress = () => {
   const { toast } = useToast();
@@ -27,6 +28,8 @@ const AliExpress = () => {
   const [extracting, setExtracting] = useState(false);
   const [clipboardUrl, setClipboardUrl] = useState<string | null>(null);
   const [pasteSuccess, setPasteSuccess] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewData, setPreviewData] = useState<any>(null);
 
   const [orderForm, setOrderForm] = useState({
     product_url: '',
@@ -97,21 +100,23 @@ const AliExpress = () => {
       if (error) throw error;
 
       if (data?.success && data.data) {
-        const { title, price, image } = data.data;
+        const productData = data.data;
         
         // Only update if we got valid data
-        if (title && title !== '404 page' && title !== 'AliExpress') {
+        if (productData.title && productData.title !== '404 page' && productData.title !== 'AliExpress') {
+          // Store preview data
+          setPreviewData(productData);
+          
+          // Update form with basic data
           setOrderForm(prev => ({
             ...prev,
-            product_title: title,
-            price_usd: price ? price.toString() : prev.price_usd,
-            product_image: image || prev.product_image,
+            product_title: productData.title,
+            price_usd: productData.currentPrice ? productData.currentPrice.toString() : prev.price_usd,
+            product_image: productData.images?.[0] || prev.product_image,
           }));
 
-          toast({
-            title: '✨ تم استخراج البيانات بنجاح',
-            description: 'تم ملء معلومات المنتج تلقائياً',
-          });
+          // Show preview dialog
+          setShowPreview(true);
         } else {
           toast({
             title: '⚠️ فشل استخراج البيانات',
@@ -647,6 +652,24 @@ const AliExpress = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Product Preview Dialog */}
+      {showPreview && previewData && (
+        <AliExpressProductPreview
+          productData={previewData}
+          onClose={() => {
+            setShowPreview(false);
+            setPreviewData(null);
+          }}
+          onConfirm={() => {
+            setShowPreview(false);
+            toast({
+              title: '✅ تم تأكيد المنتج',
+              description: 'يمكنك الآن إكمال بيانات التوصيل',
+            });
+          }}
+        />
+      )}
     </div>
   );
 };

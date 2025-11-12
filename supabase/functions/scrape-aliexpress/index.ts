@@ -68,11 +68,10 @@ serve(async (req) => {
 
     // Extract product data using regex patterns
     const extractData = (html: string) => {
-      // Extract title - try multiple patterns
+      // Extract title
       let title = "";
       const titlePatterns = [
         /<title[^>]*>([^<]+)<\/title>/i,
-        /<h1[^>]*class="[^"]*product-title[^"]*"[^>]*>([^<]+)<\/h1>/i,
         /"title":"([^"]+)"/,
         /"productTitle":"([^"]+)"/,
         /<meta property="og:title" content="([^"]+)"/,
@@ -93,56 +92,127 @@ serve(async (req) => {
         }
       }
 
-      // Try multiple patterns for price
-      let price = "";
-      const pricePatterns = [
+      // Extract current price (sale price)
+      let currentPrice = "";
+      const currentPricePatterns = [
         /"minActivityAmount":\{"value":"?([0-9.]+)"?\}/,
         /"actMinPrice":"?([0-9.]+)"?/,
-        /"originalPrice":\{"value":"?([0-9.]+)"?\}/,
-        /"price":"?US \$([0-9.]+)"?/,
         /"salePrice":\{"min":"?([0-9.]+)"?\}/,
-        /"baseSalePrice":"?([0-9.]+)"?/,
-        /window\.runParams\s*=\s*\{[^}]*"actMinPrice":"?([0-9.]+)"?/,
-        /data-spm-anchor-id="[^"]*"[^>]*>\$([0-9.]+)/,
         /"formatedActivityPrice":"US \$([0-9.]+)"/,
       ];
 
-      for (const pattern of pricePatterns) {
+      for (const pattern of currentPricePatterns) {
         const match = html.match(pattern);
         if (match && match[1]) {
-          price = match[1];
+          currentPrice = match[1];
           break;
         }
       }
 
-      // Try multiple patterns for image
-      let image = "";
-      const imagePatterns = [
-        /"imageUrl":"([^"]+)"/,
-        /"imageBigViewURL":\["([^"]+)"\]/,
-        /<meta property="og:image" content="([^"]+)"/,
-        /"mainImageUrl":"([^"]+)"/,
-        /"imagePathList":\["([^"]+)"\]/,
-        /window\.runParams\s*=\s*\{[^}]*"imageUrl":"([^"]+)"/,
+      // Extract original price
+      let originalPrice = "";
+      const originalPricePatterns = [
+        /"originalPrice":\{"value":"?([0-9.]+)"?\}/,
+        /"baseSalePrice":"?([0-9.]+)"?/,
+        /"originalPriceAmount":"?([0-9.]+)"?/,
       ];
 
-      for (const pattern of imagePatterns) {
+      for (const pattern of originalPricePatterns) {
         const match = html.match(pattern);
         if (match && match[1]) {
-          image = match[1]
-            .replace(/\\u002F/g, "/")
-            .replace(/\\/g, "");
-          if (image.startsWith("//")) {
-            image = "https:" + image;
-          }
+          originalPrice = match[1];
           break;
+        }
+      }
+
+      // Extract rating
+      let rating = "";
+      const ratingPatterns = [
+        /"averageStar":"?([0-9.]+)"?/,
+        /"starRating":"?([0-9.]+)"?/,
+        /"productRating":"?([0-9.]+)"?/,
+      ];
+
+      for (const pattern of ratingPatterns) {
+        const match = html.match(pattern);
+        if (match && match[1]) {
+          rating = match[1];
+          break;
+        }
+      }
+
+      // Extract review count
+      let reviewCount = "";
+      const reviewPatterns = [
+        /"totalReviews":"?([0-9,]+)"?/,
+        /"reviewCount":"?([0-9,]+)"?/,
+        /"totalTradeCount":"?([0-9,]+)"?/,
+      ];
+
+      for (const pattern of reviewPatterns) {
+        const match = html.match(pattern);
+        if (match && match[1]) {
+          reviewCount = match[1].replace(/,/g, "");
+          break;
+        }
+      }
+
+      // Extract multiple images
+      const images: string[] = [];
+      const imagePathMatch = html.match(/"imagePathList":\[([^\]]+)\]/);
+      if (imagePathMatch) {
+        const imageUrls = imagePathMatch[1].match(/"([^"]+)"/g);
+        if (imageUrls) {
+          imageUrls.slice(0, 5).forEach(url => {
+            let cleanUrl = url.replace(/"/g, "").replace(/\\u002F/g, "/").replace(/\\/g, "");
+            if (cleanUrl.startsWith("//")) {
+              cleanUrl = "https:" + cleanUrl;
+            }
+            images.push(cleanUrl);
+          });
+        }
+      }
+
+      // Fallback to single image if no images found
+      if (images.length === 0) {
+        const imagePatterns = [
+          /"imageUrl":"([^"]+)"/,
+          /"imageBigViewURL":\["([^"]+)"\]/,
+          /<meta property="og:image" content="([^"]+)"/,
+          /"mainImageUrl":"([^"]+)"/,
+        ];
+
+        for (const pattern of imagePatterns) {
+          const match = html.match(pattern);
+          if (match && match[1]) {
+            let image = match[1].replace(/\\u002F/g, "/").replace(/\\/g, "");
+            if (image.startsWith("//")) {
+              image = "https:" + image;
+            }
+            images.push(image);
+            break;
+          }
+        }
+      }
+
+      // Extract discount percentage
+      let discountPercent = "";
+      if (currentPrice && originalPrice) {
+        const current = parseFloat(currentPrice);
+        const original = parseFloat(originalPrice);
+        if (original > current) {
+          discountPercent = Math.round(((original - current) / original) * 100).toString();
         }
       }
 
       return {
         title,
-        price: price ? parseFloat(price) : null,
-        image: image || null,
+        currentPrice: currentPrice ? parseFloat(currentPrice) : null,
+        originalPrice: originalPrice ? parseFloat(originalPrice) : null,
+        rating: rating ? parseFloat(rating) : null,
+        reviewCount: reviewCount ? parseInt(reviewCount) : null,
+        images: images.length > 0 ? images : null,
+        discountPercent: discountPercent || null,
       };
     };
 
@@ -152,7 +222,7 @@ serve(async (req) => {
 
     // Check if we got a 404 title or no data
     if (!productData.title || productData.title === "404 page" || productData.title === "AliExpress" || 
-        (!productData.price && !productData.image)) {
+        (!productData.currentPrice && !productData.images)) {
       return new Response(
         JSON.stringify({ 
           error: "لم نتمكن من استخراج البيانات. يرجى التأكد من صحة الرابط أو إدخال البيانات يدوياً.",
