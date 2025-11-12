@@ -209,6 +209,32 @@ serve(async (req) => {
         }
       }
 
+      // Extract shipping cost
+      let shippingCost = "";
+      const shippingPatterns = [
+        /"shippingFee":"?([0-9.]+)"?/,
+        /"freight":"?([0-9.]+)"?/,
+        /"deliveryFee":"?([0-9.]+)"?/,
+        /"logisticsCost":"?([0-9.]+)"?/,
+        /"freightAmount":"?([0-9.]+)"?/,
+        /Shipping:\s*\$([0-9.]+)/i,
+        /Delivery:\s*\$([0-9.]+)/i,
+        /Free Shipping/i, // Will be handled separately
+      ];
+
+      for (const pattern of shippingPatterns) {
+        const match = html.match(pattern);
+        if (match) {
+          if (pattern.source.includes('Free')) {
+            shippingCost = "0";
+            break;
+          } else if (match[1]) {
+            shippingCost = match[1];
+            break;
+          }
+        }
+      }
+
       // Extract discount percentage
       let discountPercent = "";
       if (currentPrice && originalPrice) {
@@ -227,6 +253,7 @@ serve(async (req) => {
         reviewCount: reviewCount ? parseInt(reviewCount) : null,
         images: images.length > 0 ? images : null,
         discountPercent: discountPercent || null,
+        shippingCost: shippingCost ? parseFloat(shippingCost) : null,
       };
     };
 

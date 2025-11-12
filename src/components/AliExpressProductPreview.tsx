@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Star, Package, TrendingDown, X, DollarSign, TrendingUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Star, Package, TrendingDown, X, DollarSign, TrendingUp, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ProductData {
@@ -12,6 +12,7 @@ interface ProductData {
   reviewCount: number | null;
   images: string[] | null;
   discountPercent: string | null;
+  shippingCost: number | null;
 }
 
 interface ExchangeRate {
@@ -54,6 +55,7 @@ export const AliExpressProductPreview = ({
         servicFeeDZD: 0,
         shippingFeeUSD: 0,
         shippingFeeDZD: 0,
+        actualShippingFromSite: false,
         totalUSD: 0, 
         totalDZD: 0 
       };
@@ -68,8 +70,21 @@ export const AliExpressProductPreview = ({
     }
     const serviceFeeUSD = servicFeeDZD / exchangeRate.rate;
     
-    const shippingFeeDZD = fees.default_shipping_fee;
-    const shippingFeeUSD = shippingFeeDZD / exchangeRate.rate;
+    // Use actual shipping from AliExpress if available, otherwise use default
+    let shippingFeeUSD = 0;
+    let shippingFeeDZD = 0;
+    let actualShippingFromSite = false;
+    
+    if (productData.shippingCost !== null && productData.shippingCost !== undefined) {
+      // Use actual shipping cost from AliExpress
+      shippingFeeUSD = productData.shippingCost;
+      shippingFeeDZD = shippingFeeUSD * exchangeRate.rate;
+      actualShippingFromSite = true;
+    } else {
+      // Fallback to default shipping fee
+      shippingFeeDZD = fees.default_shipping_fee;
+      shippingFeeUSD = shippingFeeDZD / exchangeRate.rate;
+    }
     
     const totalDZD = priceDZD + servicFeeDZD + shippingFeeDZD;
     const totalUSD = totalDZD / exchangeRate.rate;
@@ -81,6 +96,7 @@ export const AliExpressProductPreview = ({
       servicFeeDZD,
       shippingFeeUSD,
       shippingFeeDZD,
+      actualShippingFromSite,
       totalUSD, 
       totalDZD 
     };
@@ -249,7 +265,14 @@ export const AliExpressProductPreview = ({
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">رسوم الشحن الدولي</p>
-                    <p className="text-xs text-muted-foreground">شحن من الصين</p>
+                    {prices.actualShippingFromSite ? (
+                      <p className="text-xs text-green-600 dark:text-green-400 font-semibold flex items-center gap-1">
+                        <Check className="h-3 w-3" />
+                        سعر حقيقي من AliExpress
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">تقدير أولي</p>
+                    )}
                   </div>
                 </div>
                 <div className="text-right">
