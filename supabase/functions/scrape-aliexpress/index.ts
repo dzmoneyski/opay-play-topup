@@ -26,21 +26,68 @@ serve(async (req) => {
     const scraperApiKey = Deno.env.get('SCRAPER_API_KEY');
     
     if (!scraperApiKey) {
-      throw new Error('SCRAPER_API_KEY not configured');
+      console.log('SCRAPER_API_KEY not configured, using direct fetch');
     }
 
-    // Use ScraperAPI to fetch the page with JavaScript rendering
-    const scraperUrl = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(url)}&render=true&country_code=dz`;
+    let html: string;
     
-    console.log('Using ScraperAPI to fetch product data...');
-    
-    const response = await fetch(scraperUrl);
+    if (scraperApiKey && scraperApiKey.length > 10) {
+      // Use ScraperAPI with premium settings
+      const scraperParams = new URLSearchParams({
+        api_key: scraperApiKey,
+        url: url,
+        render: 'true',
+        country_code: 'us', // Use US instead of DZ for better compatibility
+        premium: 'true',
+        session_number: '123', // Keep session for consistency
+      });
+      
+      const scraperUrl = `http://api.scraperapi.com?${scraperParams.toString()}`;
+      
+      console.log('Using ScraperAPI with premium settings...');
+      
+      try {
+        const response = await fetch(scraperUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'text/html,application/xhtml+xml',
+          },
+        });
 
-    if (!response.ok) {
-      throw new Error(`ScraperAPI failed: ${response.status}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('ScraperAPI error:', response.status, errorText);
+          throw new Error(`ScraperAPI failed: ${response.status} - ${errorText}`);
+        }
+
+        html = await response.text();
+        console.log('Successfully fetched HTML via ScraperAPI, length:', html.length);
+      } catch (error) {
+        console.error('ScraperAPI request failed:', error);
+        throw error;
+      }
+    } else {
+      // Fallback to direct fetch with better headers
+      console.log('Using direct fetch with enhanced headers...');
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+          'Cache-Control': 'max-age=0',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Direct fetch failed: ${response.status}`);
+      }
+
+      html = await response.text();
+      console.log('Successfully fetched HTML directly, length:', html.length);
     }
-
-    const html = await response.text();
 
     // استخراج البيانات من HTML
     const productData = {
