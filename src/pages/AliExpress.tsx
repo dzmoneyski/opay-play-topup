@@ -1,53 +1,74 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, DollarSign, Link as LinkIcon } from 'lucide-react';
+import { ArrowRight, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import BackButton from '@/components/BackButton';
+import AliExpressProductPreview from '@/components/AliExpressProductPreview';
+import { useAliExpressSettings } from '@/hooks/useAliExpressSettings';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const AliExpress = () => {
   const navigate = useNavigate();
   const [productUrl, setProductUrl] = useState('');
-  const [priceUSD, setPriceUSD] = useState('');
-  const [showPreview, setShowPreview] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [productData, setProductData] = useState<any>(null);
+  
+  const { settings } = useAliExpressSettings();
 
-  // ثوابت الحساب
-  const EXCHANGE_RATE = 250; // 1 USD = 250 DZD
-  const COMMISSION = 0.05; // 5%
+  const handleLoadProduct = async () => {
+    if (!productUrl.includes('aliexpress.com')) {
+      toast.error('الرجاء إدخال رابط صحيح من AliExpress');
+      return;
+    }
 
-  // حساب السعر بالدينار
-  const calculatePriceDZD = () => {
-    const usdAmount = parseFloat(priceUSD) || 0;
-    const dzdAmount = usdAmount * EXCHANGE_RATE;
-    const commission = dzdAmount * COMMISSION;
-    return {
-      basePrice: dzdAmount,
-      commission: commission,
-      total: dzdAmount + commission
-    };
-  };
+    setLoading(true);
+    setProductData(null);
 
-  const prices = calculatePriceDZD();
+    try {
+      const { data, error } = await supabase.functions.invoke('scrape-aliexpress', {
+        body: { url: productUrl }
+      });
 
-  const handleLoadProduct = () => {
-    if (productUrl.includes('aliexpress.com')) {
-      setShowPreview(true);
+      if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setProductData(data);
+      toast.success('تم تحميل بيانات المنتج بنجاح');
+    } catch (error: any) {
+      console.error('Error loading product:', error);
+      toast.error('فشل تحميل بيانات المنتج. الرجاء المحاولة مرة أخرى');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handlePayNow = () => {
-    if (priceUSD && parseFloat(priceUSD) > 0) {
-      // التحويل إلى صفحة الدفع مع البيانات
-      navigate('/deposits', {
-        state: {
-          amount: prices.total,
-          description: `طلب منتج AliExpress - ${priceUSD} USD`,
-          productUrl: productUrl
-        }
-      });
+    if (!productData || !productData.price) {
+      toast.error('الرجاء تحميل المنتج أولاً');
+      return;
     }
+
+    const productPrice = productData.price || 0;
+    const shippingCost = productData.shippingCost !== null ? productData.shippingCost : settings.defaultShippingFee;
+    const totalUSD = productPrice + shippingCost;
+    const totalDZD = totalUSD * settings.exchangeRate;
+    const serviceFee = totalDZD * (settings.serviceFeePercentage / 100);
+    const finalTotal = totalDZD + serviceFee;
+
+    navigate('/deposits', {
+      state: {
+        amount: finalTotal,
+        description: `طلب منتج AliExpress - ${productData.title}`,
+        productUrl: productUrl
+      }
+    });
   };
 
   return (
@@ -83,95 +104,41 @@ const AliExpress = () => {
             </div>
             <Button 
               onClick={handleLoadProduct}
-              disabled={!productUrl}
+              disabled={!productUrl || loading}
               className="w-full"
             >
-              عرض المنتج
+              {loading ? (
+                <>
+                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  جاري التحميل...
+                </>
+              ) : (
+                'عرض المنتج'
+              )}
             </Button>
           </CardContent>
         </Card>
 
         {/* عرض المنتج */}
-        {showPreview && productUrl && (
-          <Card>
-            <CardHeader>
-              <CardTitle>معاينة المنتج</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="w-full h-[500px] border border-border rounded-lg overflow-hidden">
-                <iframe
-                  src={productUrl}
-                  className="w-full h-full"
-                  title="AliExpress Product"
-                  sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                />
-              </div>
-            </CardContent>
-          </Card>
+        {productData && (
+          <AliExpressProductPreview
+            productData={productData}
+            exchangeRate={settings.exchangeRate}
+            serviceFeePercentage={settings.serviceFeePercentage}
+            defaultShippingFee={settings.defaultShippingFee}
+          />
         )}
 
-        {/* إدخال السعر */}
-        {showPreview && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                السعر والدفع
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="price-usd">سعر المنتج بالدولار (USD)</Label>
-                <Input
-                  id="price-usd"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={priceUSD}
-                  onChange={(e) => setPriceUSD(e.target.value)}
-                  className="text-right text-lg font-semibold"
-                />
-              </div>
-
-              {priceUSD && parseFloat(priceUSD) > 0 && (
-                <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">السعر الأساسي</span>
-                    <span className="font-semibold">
-                      {prices.basePrice.toFixed(2)} DZD
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">العمولة (5%)</span>
-                    <span className="font-semibold text-primary">
-                      + {prices.commission.toFixed(2)} DZD
-                    </span>
-                  </div>
-                  <div className="border-t border-border pt-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-bold">المجموع الكلي</span>
-                      <span className="text-2xl font-bold text-primary">
-                        {prices.total.toFixed(2)} DZD
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-sm text-muted-foreground text-center">
-                    سعر الصرف: 1 USD = {EXCHANGE_RATE} DZD
-                  </div>
-                </div>
-              )}
-
-              <Button
-                onClick={handlePayNow}
-                disabled={!priceUSD || parseFloat(priceUSD) <= 0}
-                className="w-full h-12 text-lg"
-                size="lg"
-              >
-                ادفع الآن
-                <ArrowRight className="mr-2 h-5 w-5" />
-              </Button>
-            </CardContent>
-          </Card>
+        {/* زر الدفع */}
+        {productData && (
+          <Button
+            onClick={handlePayNow}
+            className="w-full h-12 text-lg"
+            size="lg"
+          >
+            ادفع الآن
+            <ArrowRight className="mr-2 h-5 w-5" />
+          </Button>
         )}
 
         {/* معلومات إضافية */}
