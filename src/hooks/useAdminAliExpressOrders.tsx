@@ -12,16 +12,15 @@ export const useAdminAliExpressOrders = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('aliexpress_orders')
-        .select(`
-          *,
-          profiles!aliexpress_orders_user_id_fkey(
-            full_name,
-            phone
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching orders:', error);
+        throw error;
+      }
+      
+      console.log('Fetched orders:', data);
       return data as AliExpressOrder[];
     },
   });
