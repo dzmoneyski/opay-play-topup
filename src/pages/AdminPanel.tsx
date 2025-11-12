@@ -14,7 +14,6 @@ import CardsPage from '@/pages/admin/Cards';
 import GameManagement from '@/pages/admin/GameManagement';
 import BettingManagement from '@/pages/admin/BettingManagement';
 import MerchantManagement from '@/pages/admin/MerchantManagement';
-import AliExpressOrders from '@/pages/admin/AliExpressOrders';
 import SettingsPage from '@/pages/admin/Settings';
 import DigitalCardsPage from '@/pages/admin/DigitalCards';
 
@@ -68,7 +67,6 @@ const AdminPanel = () => {
           <Route path="games" element={<GameManagement />} />
           <Route path="betting" element={<BettingManagement />} />
           <Route path="merchants" element={<MerchantManagement />} />
-          <Route path="aliexpress" element={<AliExpressOrders />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>

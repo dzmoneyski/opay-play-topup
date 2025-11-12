@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTransactionHistory } from '@/hooks/useTransactionHistory';
-import { useAliExpressOrders } from '@/hooks/useAliExpressOrders';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +28,6 @@ import { useProfile } from '@/hooks/useProfile';
 const Transactions = () => {
   const navigate = useNavigate();
   const { transactions, loading } = useTransactionHistory(); // No limit = show all
-  const { orders: aliexpressOrders, loading: aliexpressLoading } = useAliExpressOrders();
   const { profile } = useProfile();
   const [expandedTransaction, setExpandedTransaction] = useState<string | null>(null);
 

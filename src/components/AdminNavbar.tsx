@@ -48,7 +48,6 @@ const serviceItems = [
   { title: "البطاقات الرقمية", url: "/admin/cards", icon: Gift },
   { title: "إدارة الألعاب", url: "/admin/games", icon: Gamepad2, notificationKey: 'pendingGames' },
   { title: "إدارة المراهنات", url: "/admin/betting", icon: Gamepad2, notificationKey: 'pendingBettingVerifications' },
-  { title: "طلبات AliExpress", url: "/admin/aliexpress", icon: ShoppingBag },
 ];
 
 export function AdminNavbar() {
