@@ -17,24 +17,20 @@ interface ProductData {
 interface AliExpressProductPreviewProps {
   productData: ProductData;
   exchangeRate: number;
-  serviceFeePercentage: number;
   defaultShippingFee: number;
 }
 
 const AliExpressProductPreview: React.FC<AliExpressProductPreviewProps> = ({
   productData,
   exchangeRate,
-  serviceFeePercentage,
   defaultShippingFee,
 }) => {
   const productPrice = productData.price || 0;
   const shippingCost = productData.shippingCost !== null ? productData.shippingCost : defaultShippingFee;
   
-  // حساب التكاليف
+  // حساب التكاليف - السعر + الشحن فقط بدون عمولة
   const totalUSD = productPrice + shippingCost;
   const totalDZD = totalUSD * exchangeRate;
-  const serviceFee = totalDZD * (serviceFeePercentage / 100);
-  const finalTotal = totalDZD + serviceFee;
 
   const productPriceDZD = productPrice * exchangeRate;
   const shippingCostDZD = shippingCost * exchangeRate;
@@ -114,28 +110,21 @@ const AliExpressProductPreview: React.FC<AliExpressProductPreviewProps> = ({
                   )}
                 </div>
                 <span className="text-muted-foreground">
-                  رسوم الشحن {productData.shippingCost !== null ? '(سعر حقيقي)' : '(تقدير)'}
+                  رسوم الشحن إلى الجزائر {productData.shippingCost !== null ? '(سعر حقيقي)' : '(تقدير)'}
                 </span>
-              </div>
-
-              <div className="flex justify-between items-center text-primary">
-                <span className="font-semibold">
-                  {serviceFee.toFixed(2)} DZD
-                </span>
-                <span>عمولة الخدمة ({serviceFeePercentage}%)</span>
               </div>
 
               <div className="border-t border-border pt-3 mt-3">
                 <div className="flex justify-between items-center">
                   <div className="space-x-2 space-x-reverse">
                     <span className="text-2xl font-bold text-primary">
-                      {finalTotal.toFixed(2)} DZD
+                      {totalDZD.toFixed(2)} DZD
                     </span>
                     <span className="text-sm text-muted-foreground">
                       ({totalUSD.toFixed(2)} USD)
                     </span>
                   </div>
-                  <span className="text-lg font-bold">المجموع الكلي</span>
+                  <span className="text-lg font-bold">المجموع النهائي</span>
                 </div>
               </div>
             </div>

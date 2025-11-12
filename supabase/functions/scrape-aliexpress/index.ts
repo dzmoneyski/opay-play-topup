@@ -257,7 +257,11 @@ function extractDescription(html: string): string {
 }
 
 function extractShippingCost(html: string): number | null {
+  // البحث عن الشحن للجزائر أو الشحن العام
   const patterns = [
+    // الشحن للجزائر بالتحديد
+    /"DZ"[^}]*"freight":"([0-9.]+)"/i,
+    /"Algeria"[^}]*"freight":"([0-9.]+)"/i,
     /"shippingFee":"([0-9.]+)"/,
     /"freight":"([0-9.]+)"/,
     /"deliveryFee":"([0-9.]+)"/,
@@ -265,6 +269,7 @@ function extractShippingCost(html: string): number | null {
     /"freightAmount":"([0-9.]+)"/,
     /Shipping:\s*\$([0-9.]+)/i,
     /Delivery:\s*\$([0-9.]+)/i,
+    /"shippingPrice":\s*"([0-9.]+)"/,
   ];
 
   for (const pattern of patterns) {
@@ -272,15 +277,18 @@ function extractShippingCost(html: string): number | null {
     if (match) {
       const cost = parseFloat(match[1]);
       if (!isNaN(cost)) {
+        console.log(`Found shipping cost: $${cost}`);
         return cost;
       }
     }
   }
 
   // التحقق من الشحن المجاني
-  if (/free\s*shipping/i.test(html)) {
+  if (/free\s*shipping/i.test(html) || /livraison\s*gratuite/i.test(html)) {
+    console.log('Free shipping detected');
     return 0;
   }
 
+  console.log('No shipping cost found in HTML');
   return null;
 }

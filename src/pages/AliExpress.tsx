@@ -57,10 +57,16 @@ const AliExpress = () => {
 
     const productPrice = productData.price || 0;
     const shippingCost = productData.shippingCost !== null ? productData.shippingCost : settings.defaultShippingFee;
+
+    // التحقق من توفر الشحن
+    if (productData.shippingCost === null && settings.defaultShippingFee === 0) {
+      toast.error('🚫 هذا المنتج لا يُشحن إلى الجزائر');
+      return;
+    }
+
+    // حساب التكاليف - السعر + الشحن فقط بدون عمولة
     const totalUSD = productPrice + shippingCost;
     const totalDZD = totalUSD * settings.exchangeRate;
-    const serviceFee = totalDZD * (settings.serviceFeePercentage / 100);
-    const finalTotal = totalDZD + serviceFee;
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -82,9 +88,9 @@ const AliExpress = () => {
           total_usd: totalUSD,
           exchange_rate: settings.exchangeRate,
           total_dzd: totalDZD,
-          service_fee_percentage: settings.serviceFeePercentage,
-          service_fee_dzd: serviceFee,
-          final_total_dzd: finalTotal,
+          service_fee_percentage: 0,
+          service_fee_dzd: 0,
+          final_total_dzd: totalDZD,
         });
 
       if (error) throw error;
@@ -94,7 +100,7 @@ const AliExpress = () => {
       // Navigate to deposits page for payment
       navigate('/deposits', {
         state: {
-          amount: finalTotal,
+          amount: totalDZD,
           description: `طلب منتج AliExpress - ${productData.title}`,
           productUrl: productUrl
         }
@@ -158,7 +164,6 @@ const AliExpress = () => {
           <AliExpressProductPreview
             productData={productData}
             exchangeRate={settings.exchangeRate}
-            serviceFeePercentage={settings.serviceFeePercentage}
             defaultShippingFee={settings.defaultShippingFee}
           />
         )}
@@ -182,8 +187,8 @@ const AliExpress = () => {
               <p className="font-semibold text-primary">📌 ملاحظات هامة:</p>
               <ul className="space-y-1 text-muted-foreground mr-4">
                 <li>• يرجى التأكد من صحة رابط المنتج قبل المتابعة</li>
-                <li>• أدخل السعر بالدولار كما يظهر في صفحة المنتج</li>
-                <li>• العمولة 5% تشمل تكاليف التحويل والمعالجة</li>
+                <li>• السعر النهائي = سعر المنتج + تكلفة الشحن إلى الجزائر</li>
+                <li>• لا توجد عمولات إضافية على السعر</li>
                 <li>• سيتم تحويلك لصفحة الدفع لإتمام العملية</li>
               </ul>
             </div>
