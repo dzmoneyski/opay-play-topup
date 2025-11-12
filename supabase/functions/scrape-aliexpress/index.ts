@@ -230,11 +230,37 @@ serve(async (req) => {
       };
     };
 
-    const productData = extractData(html);
+    let productData = extractData(html);
+
+    // Fallback: try to parse prices from final URL (pdp_npi often contains original/current prices)
+    try {
+      if ((!productData.currentPrice || !productData.originalPrice) && finalUrl) {
+        const urlObj = new URL(finalUrl);
+        const pdp = urlObj.searchParams.get('pdp_npi');
+        const source = decodeURIComponent(pdp || finalUrl);
+        const amounts = Array.from(source.matchAll(/\b(?:US|USD)?\s?\$?\s?([0-9]+(?:\.[0-9]+)?)\b/g)).map(m => parseFloat(m[1]));
+        if (amounts.length >= 2) {
+          const original = amounts[0];
+          const current = amounts[1];
+          productData = {
+            ...productData,
+            currentPrice: productData.currentPrice ?? current,
+            originalPrice: productData.originalPrice ?? (original > current ? original : null),
+            discountPercent: productData.discountPercent ?? (original > current ? Math.round(((original - current) / original) * 100).toString() : null)
+          };
+        } else if (amounts.length === 1) {
+          productData = {
+            ...productData,
+            currentPrice: productData.currentPrice ?? amounts[0]
+          };
+        }
+      }
+    } catch (e) {
+      console.log('Price fallback from URL failed:', e);
+    }
 
     console.log("Extracted data:", productData);
 
-    // Check if we got a 404 title or no data
     if (!productData.title || productData.title === "404 page" || productData.title === "AliExpress" || 
         (!productData.currentPrice && !productData.images)) {
       return new Response(
