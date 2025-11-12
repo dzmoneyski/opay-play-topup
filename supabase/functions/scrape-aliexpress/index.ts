@@ -68,13 +68,15 @@ serve(async (req) => {
 
     // Extract product data using regex patterns
     const extractData = (html: string) => {
-      // Extract title
+      // Extract title with more patterns
       let title = "";
       const titlePatterns = [
-        /<title[^>]*>([^<]+)<\/title>/i,
-        /"title":"([^"]+)"/,
         /"productTitle":"([^"]+)"/,
+        /"title":"([^"]+)"/,
+        /<title[^>]*>([^<]+)<\/title>/i,
         /<meta property="og:title" content="([^"]+)"/,
+        /"subject":"([^"]+)"/,
+        /<h1[^>]*>([^<]+)<\/h1>/i,
       ];
 
       for (const pattern of titlePatterns) {
@@ -85,20 +87,27 @@ serve(async (req) => {
             .replace(/&quot;/g, '"')
             .replace(/&#39;/g, "'")
             .replace(/&amp;/g, "&")
+            .replace(/\\u[\dA-Fa-f]{4}/g, (match) => {
+              return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
+            })
             .trim();
-          if (title && title !== "404 page" && title !== "AliExpress") {
+          if (title && title !== "404 page" && title !== "AliExpress" && title.length > 5) {
             break;
           }
         }
       }
 
-      // Extract current price (sale price)
+      // Extract current price with more patterns
       let currentPrice = "";
       const currentPricePatterns = [
         /"minActivityAmount":\{"value":"?([0-9.]+)"?\}/,
         /"actMinPrice":"?([0-9.]+)"?/,
-        /"salePrice":\{"min":"?([0-9.]+)"?\}/,
+        /"salePrice":\{"min":"?([0-9.]+)"?/,
+        /"price":"?([0-9.]+)"?/,
         /"formatedActivityPrice":"US \$([0-9.]+)"/,
+        /"discountPrice":"?([0-9.]+)"?/,
+        /"minPrice":"?([0-9.]+)"?/,
+        /data-spm-anchor-id="[^"]*"[^>]*>US \$([0-9.]+)/,
       ];
 
       for (const pattern of currentPricePatterns) {
@@ -109,12 +118,13 @@ serve(async (req) => {
         }
       }
 
-      // Extract original price
+      // Extract original price with more patterns
       let originalPrice = "";
       const originalPricePatterns = [
         /"originalPrice":\{"value":"?([0-9.]+)"?\}/,
         /"baseSalePrice":"?([0-9.]+)"?/,
         /"originalPriceAmount":"?([0-9.]+)"?/,
+        /"maxPrice":"?([0-9.]+)"?/,
       ];
 
       for (const pattern of originalPricePatterns) {
@@ -125,12 +135,14 @@ serve(async (req) => {
         }
       }
 
-      // Extract rating
+      // Extract rating with more patterns
       let rating = "";
       const ratingPatterns = [
         /"averageStar":"?([0-9.]+)"?/,
         /"starRating":"?([0-9.]+)"?/,
         /"productRating":"?([0-9.]+)"?/,
+        /"averageStarRate":"?([0-9.]+)"?/,
+        /"evarageStar":"?([0-9.]+)"?/,
       ];
 
       for (const pattern of ratingPatterns) {
@@ -141,12 +153,14 @@ serve(async (req) => {
         }
       }
 
-      // Extract review count
+      // Extract review count with more patterns
       let reviewCount = "";
       const reviewPatterns = [
         /"totalReviews":"?([0-9,]+)"?/,
         /"reviewCount":"?([0-9,]+)"?/,
         /"totalTradeCount":"?([0-9,]+)"?/,
+        /"tradeCount":"?([0-9,]+)"?/,
+        /"validNum":"?([0-9,]+)"?/,
       ];
 
       for (const pattern of reviewPatterns) {
