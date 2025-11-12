@@ -1,70 +1,49 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { ArrowRight, ShoppingCart } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import BackButton from '@/components/BackButton';
-import AliExpressProductPreview from '@/components/AliExpressProductPreview';
 import { useAliExpressSettings } from '@/hooks/useAliExpressSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+const formSchema = z.object({
+  productUrl: z.string().url('الرجاء إدخال رابط صحيح').refine(
+    (url) => url.includes('aliexpress.com'),
+    'الرابط يجب أن يكون من AliExpress'
+  ),
+  price: z.string().min(1, 'الرجاء إدخال السعر').refine(
+    (val) => !isNaN(Number(val)) && Number(val) > 0,
+    'السعر يجب أن يكون رقماً موجباً'
+  ),
+  shippingCost: z.string().min(1, 'الرجاء إدخال رسوم الشحن').refine(
+    (val) => !isNaN(Number(val)) && Number(val) >= 0,
+    'رسوم الشحن يجب أن تكون رقماً موجباً أو صفر'
+  ),
+});
+
 const AliExpress = () => {
   const navigate = useNavigate();
-  const [productUrl, setProductUrl] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [productData, setProductData] = useState<any>(null);
-  
   const { settings } = useAliExpressSettings();
 
-  const handleLoadProduct = async () => {
-    if (!productUrl.includes('aliexpress.com')) {
-      toast.error('الرجاء إدخال رابط صحيح من AliExpress');
-      return;
-    }
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      productUrl: '',
+      price: '',
+      shippingCost: '',
+    },
+  });
 
-    setLoading(true);
-    setProductData(null);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('scrape-aliexpress', {
-        body: { url: productUrl }
-      });
-
-      if (error) throw error;
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      setProductData(data);
-      toast.success('تم تحميل بيانات المنتج بنجاح');
-    } catch (error: any) {
-      console.error('Error loading product:', error);
-      toast.error('فشل تحميل بيانات المنتج. الرجاء المحاولة مرة أخرى');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePayNow = async () => {
-    if (!productData || !productData.price) {
-      toast.error('الرجاء تحميل المنتج أولاً');
-      return;
-    }
-
-    const productPrice = productData.price || 0;
-    const shippingCost = productData.shippingCost !== null ? productData.shippingCost : settings.defaultShippingFee;
-
-    // التحقق من توفر الشحن
-    if (productData.shippingCost === null && settings.defaultShippingFee === 0) {
-      toast.error('🚫 هذا المنتج لا يُشحن إلى الجزائر');
-      return;
-    }
-
-    // حساب التكاليف - السعر + الشحن فقط بدون عمولة
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    const productPrice = Number(values.price);
+    const shippingCost = Number(values.shippingCost);
     const totalUSD = productPrice + shippingCost;
     const totalDZD = totalUSD * settings.exchangeRate;
 
@@ -80,9 +59,9 @@ const AliExpress = () => {
         .from('aliexpress_orders')
         .insert({
           user_id: user.id,
-          product_url: productUrl,
-          product_title: productData.title,
-          product_image: productData.images?.[0] || null,
+          product_url: values.productUrl,
+          product_title: 'طلب من AliExpress',
+          product_image: null,
           price_usd: productPrice,
           shipping_cost_usd: shippingCost,
           total_usd: totalUSD,
@@ -97,12 +76,11 @@ const AliExpress = () => {
 
       toast.success('تم إنشاء الطلب بنجاح! سيتم مراجعة طلبك والتواصل معك قريباً');
 
-      // Navigate to deposits page for payment
       navigate('/deposits', {
         state: {
           amount: totalDZD,
-          description: `طلب منتج AliExpress - ${productData.title}`,
-          productUrl: productUrl
+          description: `طلب منتج AliExpress`,
+          productUrl: values.productUrl
         }
       });
     } catch (error: any) {
@@ -121,75 +99,119 @@ const AliExpress = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 max-w-4xl space-y-6">
-        {/* إدخال رابط المنتج */}
+      <div className="container mx-auto px-4 max-w-2xl space-y-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <LinkIcon className="h-5 w-5" />
-              رابط المنتج
+              <ShoppingCart className="h-5 w-5" />
+              معلومات المنتج
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="product-url">الصق رابط المنتج من AliExpress</Label>
-              <Input
-                id="product-url"
-                type="url"
-                placeholder="https://www.aliexpress.com/item/..."
-                value={productUrl}
-                onChange={(e) => setProductUrl(e.target.value)}
-                className="text-right"
-              />
-            </div>
-            <Button 
-              onClick={handleLoadProduct}
-              disabled={!productUrl || loading}
-              className="w-full"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                  جاري التحميل...
-                </>
-              ) : (
-                'عرض المنتج'
-              )}
-            </Button>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="productUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>رابط المنتج من AliExpress</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://www.aliexpress.com/item/..."
+                          {...field}
+                          className="text-right"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>سعر المنتج (بالدولار USD)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
+                          className="text-right"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="shippingCost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>رسوم الشحن (بالدولار USD)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
+                          className="text-right"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="bg-muted p-4 rounded-lg space-y-2">
+                  <p className="text-sm font-medium">ملخص السعر:</p>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>سعر الصرف:</span>
+                      <span className="font-medium">{settings.exchangeRate} DZD/USD</span>
+                    </div>
+                    {form.watch('price') && form.watch('shippingCost') && (
+                      <>
+                        <div className="flex justify-between">
+                          <span>المجموع بالدولار:</span>
+                          <span className="font-medium">
+                            ${(Number(form.watch('price')) + Number(form.watch('shippingCost'))).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-base font-bold text-primary pt-2 border-t">
+                          <span>المجموع النهائي:</span>
+                          <span>
+                            {((Number(form.watch('price')) + Number(form.watch('shippingCost'))) * settings.exchangeRate).toFixed(2)} DZD
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <Button type="submit" className="w-full h-12 text-lg" size="lg">
+                  إنشاء الطلب والدفع
+                  <ArrowRight className="mr-2 h-5 w-5" />
+                </Button>
+              </form>
+            </Form>
           </CardContent>
         </Card>
 
-        {/* عرض المنتج */}
-        {productData && (
-          <AliExpressProductPreview
-            productData={productData}
-            exchangeRate={settings.exchangeRate}
-            defaultShippingFee={settings.defaultShippingFee}
-          />
-        )}
-
-        {/* زر الدفع */}
-        {productData && (
-          <Button
-            onClick={handlePayNow}
-            className="w-full h-12 text-lg"
-            size="lg"
-          >
-            ادفع الآن
-            <ArrowRight className="mr-2 h-5 w-5" />
-          </Button>
-        )}
-
-        {/* معلومات إضافية */}
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="p-4">
             <div className="space-y-2 text-sm">
-              <p className="font-semibold text-primary">📌 ملاحظات هامة:</p>
+              <p className="font-semibold text-primary">📌 تعليمات:</p>
               <ul className="space-y-1 text-muted-foreground mr-4">
-                <li>• يرجى التأكد من صحة رابط المنتج قبل المتابعة</li>
-                <li>• السعر النهائي = سعر المنتج + تكلفة الشحن إلى الجزائر</li>
-                <li>• لا توجد عمولات إضافية على السعر</li>
-                <li>• سيتم تحويلك لصفحة الدفع لإتمام العملية</li>
+                <li>• انسخ رابط المنتج من AliExpress والصقه في الحقل الأول</li>
+                <li>• أدخل سعر المنتج كما يظهر في الصفحة (بالدولار)</li>
+                <li>• أدخل تكلفة الشحن إلى الجزائر (بالدولار)</li>
+                <li>• سيتم تحويلك لصفحة الدفع بعد إنشاء الطلب</li>
               </ul>
             </div>
           </CardContent>
