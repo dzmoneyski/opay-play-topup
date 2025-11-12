@@ -1,18 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAdminAliExpressOrders } from '@/hooks/useAdminAliExpressOrders';
+import { useUserRoles } from '@/hooks/useUserRoles';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { ExternalLink, Package, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 const AliExpressOrders = () => {
+  const navigate = useNavigate();
+  const { isAdmin, loading: rolesLoading } = useUserRoles();
+  const { toast } = useToast();
   const { orders, isLoading, updateOrderStatus, isUpdating } = useAdminAliExpressOrders();
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
+
+  // Protect route - Only admins can access
+  useEffect(() => {
+    if (!rolesLoading && !isAdmin) {
+      toast({
+        title: "صلاحيات محدودة",
+        description: "هذه الصفحة متاحة للمشرفين فقط",
+        variant: "destructive"
+      });
+      navigate('/');
+    }
+  }, [isAdmin, rolesLoading, navigate, toast]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {

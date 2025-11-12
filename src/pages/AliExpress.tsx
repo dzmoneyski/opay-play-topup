@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,6 +13,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAliExpressSettings } from '@/hooks/useAliExpressSettings';
 import { useAliExpressOrders } from '@/hooks/useAliExpressOrders';
 import { useBalance } from '@/hooks/useBalance';
+import { useUserRoles } from '@/hooks/useUserRoles';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import BackButton from '@/components/BackButton';
 
@@ -33,6 +35,8 @@ const customerInfoSchema = z.object({
 
 const AliExpress = () => {
   const navigate = useNavigate();
+  const { isAdmin, loading: rolesLoading } = useUserRoles();
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [productUrl, setProductUrl] = useState('');
   const [productImages, setProductImages] = useState<string[]>([]);
@@ -45,6 +49,18 @@ const AliExpress = () => {
   const { balance } = useBalance();
 
   const [isLoadingImages, setIsLoadingImages] = useState(false);
+
+  // Protect route - Only admins can access
+  useEffect(() => {
+    if (!rolesLoading && !isAdmin) {
+      toast({
+        title: "صلاحيات محدودة",
+        description: "هذه الصفحة متاحة للمشرفين فقط",
+        variant: "destructive"
+      });
+      navigate('/');
+    }
+  }, [isAdmin, rolesLoading, navigate, toast]);
 
   const urlForm = useForm<z.infer<typeof urlSchema>>({
     resolver: zodResolver(urlSchema),

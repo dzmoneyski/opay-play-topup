@@ -67,6 +67,15 @@ const Index = () => {
       return;
     }
 
+    if (service.action === 'admin-only') {
+      toast({
+        title: "صلاحيات محدودة",
+        description: "هذه الخدمة متاحة للمشرفين فقط",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (service.action === 'deposits') {
       navigate('/deposits');
       return;
@@ -187,9 +196,9 @@ const Index = () => {
     {
       icon: <ShoppingBag className="h-6 w-6" />,
       title: "تسوق من AliExpress",
-      subtitle: "اطلب منتجات من AliExpress بكل سهولة",
+      subtitle: "للمشرفين فقط",
       gradient: "bg-gradient-to-br from-[#FF6A00] to-[#E60000]",
-      action: "aliexpress"
+      action: isAdmin ? "aliexpress" : "admin-only"
     }
   ];
 
@@ -538,10 +547,10 @@ const Index = () => {
             {services.map((service, index) => (
               <Card 
                 key={index} 
-                className={`
+                  className={`
                   group cursor-pointer border-0 bg-gradient-card shadow-card hover:shadow-elevated 
                   transition-all duration-500 hover:scale-105 relative overflow-hidden
-                  ${service.action === 'disabled' ? 'cursor-not-allowed' : ''}
+                  ${(service.action === 'disabled' || service.action === 'admin-only') ? 'cursor-not-allowed' : ''}
                 `}
                 onClick={() => handleServiceClick(service)}
               >
@@ -550,11 +559,11 @@ const Index = () => {
                   <div className={`
                     inline-flex items-center justify-center rounded-2xl mb-4 transition-all duration-500 group-hover:scale-110
                     ${service.gradient} text-white shadow-soft overflow-hidden
-                    ${service.action === 'disabled' ? 'relative' : ''}
+                    ${(service.action === 'disabled' || service.action === 'admin-only') ? 'relative' : ''}
                     ${service.action === 'game-topup' ? 'w-20 h-20 p-0' : 'w-20 h-20 p-4'}
                   `}>
                     {service.icon}
-                    {service.action === 'disabled' && (
+                    {(service.action === 'disabled' || service.action === 'admin-only') && (
                       <div className="absolute -top-1 -right-1 bg-card rounded-full p-1 shadow-md">
                         <Lock className="h-3 w-3 text-muted-foreground" />
                       </div>
