@@ -99,37 +99,39 @@ const AliExpress = () => {
 
       if (error) throw error;
 
-      if (data?.success && data.data) {
-        const productData = data.data;
-        
-        // Only update if we got valid data
-        if (productData.title && productData.title !== '404 page' && productData.title !== 'AliExpress') {
-          // Store preview data
-          setPreviewData(productData);
-          
-          // Update form with basic data
-          setOrderForm(prev => ({
-            ...prev,
-            product_title: productData.title,
-            price_usd: productData.currentPrice ? productData.currentPrice.toString() : prev.price_usd,
-            product_image: productData.images?.[0] || prev.product_image,
-          }));
+      const useData = (incoming: any, partial = false) => {
+        if (!incoming) return false;
+        const hasUseful = Boolean(incoming.currentPrice || (incoming.images && incoming.images.length) || incoming.title);
+        if (!hasUseful) return false;
+        const idMatch = url.match(/item\/(\d+)\.html/i);
+        const safeTitle = (incoming.title && incoming.title !== '404 page' && incoming.title !== 'AliExpress')
+          ? incoming.title
+          : (idMatch ? `AliExpress Item ${idMatch[1]}` : 'AliExpress Product');
 
-          // Show preview dialog
-          setShowPreview(true);
-        } else {
-          toast({
-            title: '⚠️ فشل استخراج البيانات',
-            description: 'الرابط غير صحيح أو المنتج غير موجود. يرجى إدخال البيانات يدوياً',
-            variant: 'destructive',
-          });
+        const normalized = { ...incoming, title: safeTitle };
+        setPreviewData(normalized);
+        setOrderForm(prev => ({
+          ...prev,
+          product_title: safeTitle,
+          price_usd: incoming.currentPrice ? String(incoming.currentPrice) : prev.price_usd,
+          product_image: incoming.images?.[0] || prev.product_image,
+        }));
+        setShowPreview(true);
+        if (partial) {
+          toast({ title: 'تم الاستخراج جزئياً', description: 'أضف/عدل البيانات يدويًا إذا لزم.', duration: 2500 });
+        }
+        return true;
+      };
+
+      if (data?.success && data.data) {
+        if (!useData(data.data)) {
+          toast({ title: '⚠️ فشل استخراج البيانات', description: 'تعذر الحصول على معلومات كافية.', variant: 'destructive' });
         }
       } else if (data?.error) {
-        toast({
-          title: '⚠️ خطأ في استخراج البيانات',
-          description: data.error,
-          variant: 'destructive',
-        });
+        // Try partial data if present
+        if (!(data.partialData && useData(data.partialData, true))) {
+          toast({ title: '⚠️ خطأ في استخراج البيانات', description: data.error, variant: 'destructive' });
+        }
       }
     } catch (error) {
       console.error('Error extracting product data:', error);
