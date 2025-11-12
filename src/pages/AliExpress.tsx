@@ -656,9 +656,12 @@ const AliExpress = () => {
       </Dialog>
 
       {/* Product Preview Dialog */}
-      {showPreview && previewData && (
+      {showPreview && previewData && exchangeRate && fees && (
         <AliExpressProductPreview
           productData={previewData}
+          exchangeRate={exchangeRate}
+          fees={fees}
+          quantity={parseInt(orderForm.quantity) || 1}
           onClose={() => {
             setShowPreview(false);
             setPreviewData(null);

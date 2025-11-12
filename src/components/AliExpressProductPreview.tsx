@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Star, Package, TrendingDown, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Star, Package, TrendingDown, X, DollarSign, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ProductData {
@@ -14,15 +14,79 @@ interface ProductData {
   discountPercent: string | null;
 }
 
+interface ExchangeRate {
+  rate: number;
+}
+
+interface Fees {
+  service_fee_percentage: number;
+  min_service_fee: number;
+  default_shipping_fee: number;
+}
+
 interface AliExpressProductPreviewProps {
   productData: ProductData;
+  exchangeRate: ExchangeRate;
+  fees: Fees;
+  quantity?: number;
   onClose: () => void;
   onConfirm: () => void;
 }
 
-export const AliExpressProductPreview = ({ productData, onClose, onConfirm }: AliExpressProductPreviewProps) => {
+export const AliExpressProductPreview = ({ 
+  productData, 
+  exchangeRate, 
+  fees, 
+  quantity = 1,
+  onClose, 
+  onConfirm 
+}: AliExpressProductPreviewProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const images = productData.images || [];
+
+  // Calculate all prices
+  const calculatePrices = () => {
+    if (!productData.currentPrice) {
+      return { 
+        priceUSD: 0, 
+        priceDZD: 0, 
+        serviceFeeUSD: 0, 
+        servicFeeDZD: 0,
+        shippingFeeUSD: 0,
+        shippingFeeDZD: 0,
+        totalUSD: 0, 
+        totalDZD: 0 
+      };
+    }
+
+    const priceUSD = productData.currentPrice * quantity;
+    const priceDZD = priceUSD * exchangeRate.rate;
+    
+    let servicFeeDZD = (priceDZD * fees.service_fee_percentage) / 100;
+    if (servicFeeDZD < fees.min_service_fee) {
+      servicFeeDZD = fees.min_service_fee;
+    }
+    const serviceFeeUSD = servicFeeDZD / exchangeRate.rate;
+    
+    const shippingFeeDZD = fees.default_shipping_fee;
+    const shippingFeeUSD = shippingFeeDZD / exchangeRate.rate;
+    
+    const totalDZD = priceDZD + servicFeeDZD + shippingFeeDZD;
+    const totalUSD = totalDZD / exchangeRate.rate;
+
+    return { 
+      priceUSD, 
+      priceDZD, 
+      serviceFeeUSD, 
+      servicFeeDZD,
+      shippingFeeUSD,
+      shippingFeeDZD,
+      totalUSD, 
+      totalDZD 
+    };
+  };
+
+  const prices = calculatePrices();
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -123,32 +187,121 @@ export const AliExpressProductPreview = ({ productData, onClose, onConfirm }: Al
             </div>
           )}
 
-          {/* Price */}
-          <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 p-6">
-            <div className="space-y-3">
-              <div className="flex items-baseline gap-3">
-                <span className="text-4xl font-bold text-primary">
-                  ${productData.currentPrice?.toFixed(2) || '0.00'}
-                </span>
-                {productData.originalPrice && productData.originalPrice > (productData.currentPrice || 0) && (
-                  <span className="text-xl text-muted-foreground line-through">
-                    ${productData.originalPrice.toFixed(2)}
-                  </span>
-                )}
+          {/* Professional Price Breakdown */}
+          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-2 border-blue-200 dark:border-blue-800 overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4">
+              <h3 className="text-white font-bold text-xl flex items-center gap-2">
+                <DollarSign className="h-6 w-6" />
+                تفاصيل التكلفة الكاملة
+              </h3>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {/* Product Price */}
+              <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">سعر المنتج</p>
+                    {quantity > 1 && (
+                      <p className="text-xs text-muted-foreground">الكمية: {quantity}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    ${prices.priceUSD.toFixed(2)}
+                  </p>
+                  <p className="text-sm text-muted-foreground font-semibold">
+                    {prices.priceDZD.toFixed(2)} دج
+                  </p>
+                </div>
               </div>
-              
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Package className="h-4 w-4" />
-                <span>السعر قبل الرسوم والشحن</span>
+
+              {/* Service Fee */}
+              <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                    <TrendingDown className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">رسوم الخدمة</p>
+                    <p className="text-xs text-muted-foreground">{fees.service_fee_percentage}% من السعر</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                    ${prices.serviceFeeUSD.toFixed(2)}
+                  </p>
+                  <p className="text-sm text-muted-foreground font-semibold">
+                    {prices.servicFeeDZD.toFixed(2)} دج
+                  </p>
+                </div>
+              </div>
+
+              {/* Shipping Fee */}
+              <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                    <Package className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">رسوم الشحن الدولي</p>
+                    <p className="text-xs text-muted-foreground">شحن من الصين</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                    ${prices.shippingFeeUSD.toFixed(2)}
+                  </p>
+                  <p className="text-sm text-muted-foreground font-semibold">
+                    {prices.shippingFeeDZD.toFixed(2)} دج
+                  </p>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t-2 border-dashed border-gray-300 dark:border-gray-600"></div>
+                </div>
+              </div>
+
+              {/* Total */}
+              <div className="p-6 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl shadow-2xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                      <DollarSign className="h-7 w-7 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white/80 text-sm font-medium">المجموع الإجمالي</p>
+                      <p className="text-white text-xl font-black">Total Amount</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-4xl font-black text-white drop-shadow-lg">
+                      ${prices.totalUSD.toFixed(2)}
+                    </p>
+                    <p className="text-2xl text-white/90 font-bold mt-1">
+                      {prices.totalDZD.toFixed(2)} دج
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </Card>
 
-          {/* Preview Note */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <p className="text-sm text-blue-900 dark:text-blue-100">
-              📋 هذه معاينة للمنتج. بعد التأكيد، سيتم حساب السعر النهائي بالدينار الجزائري مع رسوم الخدمة والشحن.
-            </p>
+          {/* Exchange Rate Info */}
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-2 border-amber-200 dark:border-amber-800 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="h-5 w-5 text-amber-600" />
+              <p className="text-sm text-amber-900 dark:text-amber-100">
+                <span className="font-bold">سعر الصرف المستخدم:</span> 1 USD = {exchangeRate.rate} DZD
+              </p>
+            </div>
           </div>
 
           {/* Action Buttons */}
