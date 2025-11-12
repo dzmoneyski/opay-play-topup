@@ -22,34 +22,71 @@ serve(async (req) => {
 
     console.log("Scraping AliExpress URL:", url);
 
-    // Fetch the page
+    // Follow redirects for shortened URLs and fetch the page
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9,ar;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Cache-Control": "max-age=0",
       },
+      redirect: "follow", // Follow redirects automatically
     });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch page: ${response.status}`);
     }
 
+    const finalUrl = response.url; // Get the final URL after redirects
+    console.log("Final URL after redirects:", finalUrl);
+
     const html = await response.text();
 
     // Extract product data using regex patterns
     const extractData = (html: string) => {
-      const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-      const title = titleMatch 
-        ? titleMatch[1].replace(/\s*-\s*AliExpress.*$/i, "").trim()
-        : "";
+      // Extract title - try multiple patterns
+      let title = "";
+      const titlePatterns = [
+        /<title[^>]*>([^<]+)<\/title>/i,
+        /<h1[^>]*class="[^"]*product-title[^"]*"[^>]*>([^<]+)<\/h1>/i,
+        /"title":"([^"]+)"/,
+        /"productTitle":"([^"]+)"/,
+        /<meta property="og:title" content="([^"]+)"/,
+      ];
+
+      for (const pattern of titlePatterns) {
+        const match = html.match(pattern);
+        if (match && match[1]) {
+          title = match[1]
+            .replace(/\s*-\s*AliExpress.*$/i, "")
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&amp;/g, "&")
+            .trim();
+          if (title && title !== "404 page" && title !== "AliExpress") {
+            break;
+          }
+        }
+      }
 
       // Try multiple patterns for price
       let price = "";
       const pricePatterns = [
-        /"minActivityAmount":\{"value":"([0-9.]+)"/,
-        /"originalPrice":\{"value":"([0-9.]+)"/,
-        /"price":"US \$([0-9.]+)"/,
-        /data-spm-anchor-id=".*?">.*?\$([0-9.]+)/,
-        /"salePrice":"US \$([0-9.]+)"/
+        /"minActivityAmount":\{"value":"?([0-9.]+)"?\}/,
+        /"actMinPrice":"?([0-9.]+)"?/,
+        /"originalPrice":\{"value":"?([0-9.]+)"?\}/,
+        /"price":"?US \$([0-9.]+)"?/,
+        /"salePrice":\{"min":"?([0-9.]+)"?\}/,
+        /"baseSalePrice":"?([0-9.]+)"?/,
+        /window\.runParams\s*=\s*\{[^}]*"actMinPrice":"?([0-9.]+)"?/,
+        /data-spm-anchor-id="[^"]*"[^>]*>\$([0-9.]+)/,
+        /"formatedActivityPrice":"US \$([0-9.]+)"/,
       ];
 
       for (const pattern of pricePatterns) {
@@ -64,14 +101,22 @@ serve(async (req) => {
       let image = "";
       const imagePatterns = [
         /"imageUrl":"([^"]+)"/,
+        /"imageBigViewURL":\["([^"]+)"\]/,
         /<meta property="og:image" content="([^"]+)"/,
-        /"mainImageUrl":"([^"]+)"/
+        /"mainImageUrl":"([^"]+)"/,
+        /"imagePathList":\["([^"]+)"\]/,
+        /window\.runParams\s*=\s*\{[^}]*"imageUrl":"([^"]+)"/,
       ];
 
       for (const pattern of imagePatterns) {
         const match = html.match(pattern);
         if (match && match[1]) {
-          image = match[1].replace(/\\u002F/g, "/");
+          image = match[1]
+            .replace(/\\u002F/g, "/")
+            .replace(/\\/g, "");
+          if (image.startsWith("//")) {
+            image = "https:" + image;
+          }
           break;
         }
       }
