@@ -90,6 +90,7 @@ serve(async (req) => {
     }
 
     // استخراج البيانات من HTML
+    console.log('Starting data extraction...');
     const productData = {
       title: extractTitle(html),
       price: extractPrice(html),
@@ -101,7 +102,21 @@ serve(async (req) => {
       shippingCost: extractShippingCost(html),
     };
 
-    console.log('Extracted product data:', productData);
+    console.log('Extracted product data:', JSON.stringify(productData, null, 2));
+    
+    // تحذير إذا لم يتم العثور على السعر
+    if (productData.price === 0) {
+      console.warn('WARNING: Price extraction failed! Price is 0');
+      // محاولة استخراج السعر من URL كـ fallback
+      const urlPriceMatch = url.match(/USD[^0-9]*([0-9.]+)/);
+      if (urlPriceMatch) {
+        const urlPrice = parseFloat(urlPriceMatch[1]);
+        if (!isNaN(urlPrice) && urlPrice > 0) {
+          console.log(`Found price in URL: $${urlPrice}`);
+          productData.price = urlPrice;
+        }
+      }
+    }
 
     return new Response(
       JSON.stringify(productData),
@@ -138,23 +153,70 @@ function extractTitle(html: string): string {
 }
 
 function extractPrice(html: string): number {
-  const patterns = [
-    /"price":"([0-9.]+)"/,
-    /"actMinPrice":"([0-9.]+)"/,
-    /"salePrice":{[^}]*"min":([0-9.]+)/,
-    /data-spm-anchor-id="[^"]*">\$([0-9.]+)</,
-    /"minPrice":"([0-9.]+)"/,
+  console.log('Extracting price from HTML...');
+  
+  // محاولة استخراج من window.runParams أو الـ JSON data
+  const jsonPatterns = [
+    /window\.runParams\s*=\s*({[^;]+});/,
+    /data:\s*({[^}]*"price"[^}]*})/,
+    /"priceModule":\s*({[^}]+})/,
   ];
 
-  for (const pattern of patterns) {
+  for (const jsonPattern of jsonPatterns) {
+    const jsonMatch = html.match(jsonPattern);
+    if (jsonMatch) {
+      try {
+        const jsonStr = jsonMatch[1];
+        console.log('Found JSON data, searching for price...');
+        
+        // البحث عن السعر في النص JSON
+        const priceMatches = [
+          /"actMinPrice":"?([0-9.]+)"?/,
+          /"minPrice":"?([0-9.]+)"?/,
+          /"salePrice"[^}]*"min":"?([0-9.]+)"?/,
+          /"price":"?([0-9.]+)"?/,
+          /"minActivityAmount":\s*{\s*"value":\s*"?([0-9.]+)"?/,
+        ];
+        
+        for (const pricePattern of priceMatches) {
+          const priceMatch = jsonStr.match(pricePattern);
+          if (priceMatch) {
+            const price = parseFloat(priceMatch[1]);
+            if (!isNaN(price) && price > 0) {
+              console.log(`Found price: $${price}`);
+              return price;
+            }
+          }
+        }
+      } catch (e) {
+        console.log('JSON parse error:', e);
+      }
+    }
+  }
+
+  // Fallback: البحث المباشر في HTML
+  const directPatterns = [
+    /"actMinPrice":"([0-9.]+)"/,
+    /"minPrice":"([0-9.]+)"/,
+    /"price":"([0-9.]+)"/,
+    /"salePrice":\s*"([0-9.]+)"/,
+    /data-spm-anchor-id="[^"]*product_price[^"]*"[^>]*>\$?([0-9.]+)/i,
+    /<span[^>]*price[^>]*>\$?([0-9.]+)<\/span>/i,
+  ];
+
+  console.log('Trying direct pattern matching...');
+  for (const pattern of directPatterns) {
     const match = html.match(pattern);
     if (match) {
       const price = parseFloat(match[1]);
       if (!isNaN(price) && price > 0) {
+        console.log(`Found price via direct pattern: $${price}`);
         return price;
       }
     }
   }
+
+  console.log('No price found');
   return 0;
 }
 
@@ -257,38 +319,81 @@ function extractDescription(html: string): string {
 }
 
 function extractShippingCost(html: string): number | null {
-  // البحث عن الشحن للجزائر أو الشحن العام
-  const patterns = [
-    // الشحن للجزائر بالتحديد
-    /"DZ"[^}]*"freight":"([0-9.]+)"/i,
-    /"Algeria"[^}]*"freight":"([0-9.]+)"/i,
+  console.log('Extracting shipping cost from HTML...');
+  
+  // محاولة استخراج من JSON data
+  const jsonPatterns = [
+    /"shippingModule":\s*({[^}]+})/,
+    /"freightExt":\s*({[^}]+})/,
+    /"freight":\s*({[^}]+})/,
+  ];
+
+  for (const jsonPattern of jsonPatterns) {
+    const jsonMatch = html.match(jsonPattern);
+    if (jsonMatch) {
+      try {
+        const jsonStr = jsonMatch[1];
+        console.log('Found shipping JSON data...');
+        
+        const shippingPatterns = [
+          /"shippingFee":"?([0-9.]+)"?/,
+          /"freight":"?([0-9.]+)"?/,
+          /"freightAmount":"?([0-9.]+)"?/,
+          /"value":"?([0-9.]+)"?/,
+        ];
+        
+        for (const pattern of shippingPatterns) {
+          const match = jsonStr.match(pattern);
+          if (match) {
+            const cost = parseFloat(match[1]);
+            if (!isNaN(cost)) {
+              console.log(`Found shipping cost: $${cost}`);
+              return cost;
+            }
+          }
+        }
+      } catch (e) {
+        console.log('Shipping JSON parse error:', e);
+      }
+    }
+  }
+
+  // Fallback: البحث المباشر
+  const directPatterns = [
     /"shippingFee":"([0-9.]+)"/,
     /"freight":"([0-9.]+)"/,
     /"deliveryFee":"([0-9.]+)"/,
-    /"logisticsCost":"([0-9.]+)"/,
     /"freightAmount":"([0-9.]+)"/,
-    /Shipping:\s*\$([0-9.]+)/i,
-    /Delivery:\s*\$([0-9.]+)/i,
-    /"shippingPrice":\s*"([0-9.]+)"/,
+    /shipping[^>]*>\$?([0-9.]+)/i,
+    /delivery[^>]*>\$?([0-9.]+)/i,
   ];
 
-  for (const pattern of patterns) {
+  for (const pattern of directPatterns) {
     const match = html.match(pattern);
     if (match) {
       const cost = parseFloat(match[1]);
       if (!isNaN(cost)) {
-        console.log(`Found shipping cost: $${cost}`);
+        console.log(`Found shipping cost via direct pattern: $${cost}`);
         return cost;
       }
     }
   }
 
   // التحقق من الشحن المجاني
-  if (/free\s*shipping/i.test(html) || /livraison\s*gratuite/i.test(html)) {
-    console.log('Free shipping detected');
-    return 0;
+  const freeShippingPatterns = [
+    /free\s*shipping/i,
+    /livraison\s*gratuite/i,
+    /"freightFree":\s*true/i,
+    /"isFreeShipping":\s*true/i,
+  ];
+
+  for (const pattern of freeShippingPatterns) {
+    if (pattern.test(html)) {
+      console.log('Free shipping detected');
+      return 0;
+    }
   }
 
-  console.log('No shipping cost found in HTML');
+  console.log('No shipping cost found');
   return null;
 }

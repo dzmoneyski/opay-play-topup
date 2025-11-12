@@ -28,12 +28,8 @@ const AliExpressProductPreview: React.FC<AliExpressProductPreviewProps> = ({
   const productPrice = productData.price || 0;
   const shippingCost = productData.shippingCost !== null ? productData.shippingCost : defaultShippingFee;
   
-  // حساب التكاليف - السعر + الشحن فقط بدون عمولة
+  // حساب التكاليف بالدولار فقط
   const totalUSD = productPrice + shippingCost;
-  const totalDZD = totalUSD * exchangeRate;
-
-  const productPriceDZD = productPrice * exchangeRate;
-  const shippingCostDZD = shippingCost * exchangeRate;
 
   return (
     <Card className="overflow-hidden">
@@ -94,43 +90,38 @@ const AliExpressProductPreview: React.FC<AliExpressProductPreviewProps> = ({
             
             <div className="space-y-2 text-sm">
               <div className="flex justify-between items-center">
-                <div className="space-x-2 space-x-reverse">
-                  <span className="font-semibold">{productPriceDZD.toFixed(2)} DZD</span>
-                  <span className="text-muted-foreground">({productPrice.toFixed(2)} USD)</span>
-                </div>
+                <span className="font-semibold text-lg">${productPrice.toFixed(2)} USD</span>
                 <span className="text-muted-foreground">سعر المنتج</span>
               </div>
 
               <div className="flex justify-between items-center">
-                <div className="space-x-2 space-x-reverse">
-                  <span className="font-semibold">{shippingCostDZD.toFixed(2)} DZD</span>
-                  <span className="text-muted-foreground">({shippingCost.toFixed(2)} USD)</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-lg">${shippingCost.toFixed(2)} USD</span>
                   {productData.shippingCost !== null && (
-                    <Check className="inline h-4 w-4 text-green-500" />
+                    <Check className="h-4 w-4 text-green-500" />
                   )}
                 </div>
                 <span className="text-muted-foreground">
-                  رسوم الشحن إلى الجزائر {productData.shippingCost !== null ? '(سعر حقيقي)' : '(تقدير)'}
+                  {productData.shippingCost === null 
+                    ? 'رسوم الشحن (تقدير)' 
+                    : shippingCost === 0 
+                      ? 'شحن مجاني ✨' 
+                      : 'رسوم الشحن للجزائر'}
                 </span>
               </div>
 
               <div className="border-t border-border pt-3 mt-3">
                 <div className="flex justify-between items-center">
-                  <div className="space-x-2 space-x-reverse">
-                    <span className="text-2xl font-bold text-primary">
-                      {totalDZD.toFixed(2)} DZD
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      ({totalUSD.toFixed(2)} USD)
-                    </span>
-                  </div>
+                  <span className="text-2xl font-bold text-primary">
+                    ${totalUSD.toFixed(2)} USD
+                  </span>
                   <span className="text-lg font-bold">المجموع النهائي</span>
                 </div>
               </div>
             </div>
 
             <div className="text-xs text-muted-foreground text-center pt-2 border-t border-border">
-              سعر الصرف: 1 USD = {exchangeRate} DZD
+              سيتم التحويل للدينار عند الدفع (سعر الصرف: 1 USD = {exchangeRate} DZD)
             </div>
           </div>
 
