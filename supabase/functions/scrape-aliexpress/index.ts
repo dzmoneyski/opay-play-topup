@@ -167,66 +167,60 @@ function extractTitle(html: string): string {
 
 function extractPrice(html: string): number {
   console.log('Extracting price from HTML...');
-  
-  // محاولة استخراج من window.runParams أو الـ JSON data
+
+  const candidates: number[] = [];
+
+  // 1) Try window.runParams / JSON blobs
   const jsonPatterns = [
-    /window\.runParams\s*=\s*({[^;]+});/,
-    /data:\s*({[^}]*"price"[^}]*})/,
-    /"priceModule":\s*({[^}]+})/,
+    /window\.runParams\s*=\s*({[\s\S]*?});/,
+    /"priceModule"\s*:\s*({[\s\S]*?})/,
+    /data:\s*({[\s\S]*?})/,
   ];
 
   for (const jsonPattern of jsonPatterns) {
     const jsonMatch = html.match(jsonPattern);
     if (jsonMatch) {
-      try {
-        const jsonStr = jsonMatch[1];
-        console.log('Found JSON data, searching for price...');
-        
-        // البحث عن السعر في النص JSON
-        const priceMatches = [
-          /"actMinPrice":"?([0-9.]+)"?/,
-          /"minPrice":"?([0-9.]+)"?/,
-          /"salePrice"[^}]*"min":"?([0-9.]+)"?/,
-          /"price":"?([0-9.]+)"?/,
-          /"minActivityAmount":\s*{\s*"value":\s*"?([0-9.]+)"?/,
-        ];
-        
-        for (const pricePattern of priceMatches) {
-          const priceMatch = jsonStr.match(pricePattern);
-          if (priceMatch) {
-            const price = parseFloat(priceMatch[1]);
-            if (!isNaN(price) && price > 0) {
-              console.log(`Found price: $${price}`);
-              return price;
-            }
-          }
+      const jsonStr = jsonMatch[1];
+      // Prefer discounted/activity values
+      const priceRegexes = [
+        /"formatedActivityPrice"\s*:\s*"[^0-9]*([0-9.]+)"/g,
+        /"minActivityAmount"\s*:\s*\{[^}]*"value"\s*:\s*"?([0-9.]+)"?/g,
+        /"actMinPrice"\s*:\s*"?([0-9.]+)"?/g,
+        /"salePrice"[^}]*"min"\s*:\s*"?([0-9.]+)"?/g,
+        /"minPrice"\s*:\s*"?([0-9.]+)"?/g,
+        /"price"\s*:\s*"?([0-9.]+)"?/g,
+      ];
+      for (const re of priceRegexes) {
+        const all = jsonStr.matchAll(re);
+        for (const m of all) {
+          const v = parseFloat(m[1]);
+          if (!isNaN(v) && v > 0) candidates.push(v);
         }
-      } catch (e) {
-        console.log('JSON parse error:', e);
       }
     }
   }
 
-  // Fallback: البحث المباشر في HTML
+  // 2) Fallback: direct HTML
   const directPatterns = [
-    /"actMinPrice":"([0-9.]+)"/,
-    /"minPrice":"([0-9.]+)"/,
-    /"price":"([0-9.]+)"/,
-    /"salePrice":\s*"([0-9.]+)"/,
-    /data-spm-anchor-id="[^"]*product_price[^"]*"[^>]*>\$?([0-9.]+)/i,
-    /<span[^>]*price[^>]*>\$?([0-9.]+)<\/span>/i,
+    /data-activity-price\s*=\s*"?([0-9.]+)"?/g,
+    /data-price\s*=\s*"?([0-9.]+)"?/g,
+    /\$\s*([0-9]+(?:\.[0-9]{1,2})?)/g,
+    /"actMinPrice":"([0-9.]+)"/g,
+    /"minPrice":"([0-9.]+)"/g,
   ];
-
-  console.log('Trying direct pattern matching...');
-  for (const pattern of directPatterns) {
-    const match = html.match(pattern);
-    if (match) {
-      const price = parseFloat(match[1]);
-      if (!isNaN(price) && price > 0) {
-        console.log(`Found price via direct pattern: $${price}`);
-        return price;
-      }
+  for (const re of directPatterns) {
+    const all = html.matchAll(re);
+    for (const m of all) {
+      const v = parseFloat(m[1]);
+      if (!isNaN(v) && v > 0) candidates.push(v);
     }
+  }
+
+  // Choose the most plausible price: the minimum positive value (discounted)
+  if (candidates.length) {
+    const min = Math.min(...candidates);
+    console.log('Price candidates:', candidates.slice(0, 10), '=> chosen =', min);
+    return min;
   }
 
   console.log('No price found');
