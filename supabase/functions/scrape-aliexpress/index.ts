@@ -168,59 +168,90 @@ function extractTitle(html: string): string {
 function extractPrice(html: string): number {
   console.log('Extracting price from HTML...');
 
-  const candidates: number[] = [];
+  // 0) Strongest signal: JSON-LD offers
+  try {
+    const jsonLdRegex = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+    let m: RegExpExecArray | null;
+    while ((m = jsonLdRegex.exec(html)) !== null) {
+      const block = m[1].trim();
+      try {
+        const data = JSON.parse(block);
+        // JSON-LD might be an array or object
+        const items = Array.isArray(data) ? data : [data];
+        for (const item of items) {
+          if (item && (item['@type'] === 'Product' || item.offers)) {
+            const offers = item.offers;
+            const offersArr = Array.isArray(offers) ? offers : [offers];
+            for (const offer of offersArr) {
+              const priceStr = offer?.price ?? offer?.lowPrice ?? offer?.highPrice;
+              const currency = offer?.priceCurrency || item?.priceCurrency;
+              if (priceStr && !isNaN(parseFloat(String(priceStr)))) {
+                const val = parseFloat(String(priceStr));
+                if (val > 0) {
+                  console.log('Price from JSON-LD offers:', val, currency ? `(${currency})` : '');
+                  return val;
+                }
+              }
+            }
+          }
+        }
+      } catch (_) {
+        // ignore JSON parse errors of unrelated blocks
+      }
+    }
+  } catch (_) {}
 
-  // 1) Try window.runParams / JSON blobs
-  const jsonPatterns = [
-    /window\.runParams\s*=\s*({[\s\S]*?});/,
-    /"priceModule"\s*:\s*({[\s\S]*?})/,
-    /data:\s*({[\s\S]*?})/,
-  ];
-
-  for (const jsonPattern of jsonPatterns) {
-    const jsonMatch = html.match(jsonPattern);
-    if (jsonMatch) {
-      const jsonStr = jsonMatch[1];
-      // Prefer discounted/activity values
-      const priceRegexes = [
-        /"formatedActivityPrice"\s*:\s*"[^0-9]*([0-9.]+)"/g,
-        /"minActivityAmount"\s*:\s*\{[^}]*"value"\s*:\s*"?([0-9.]+)"?/g,
-        /"actMinPrice"\s*:\s*"?([0-9.]+)"?/g,
-        /"salePrice"[^}]*"min"\s*:\s*"?([0-9.]+)"?/g,
-        /"minPrice"\s*:\s*"?([0-9.]+)"?/g,
-        /"price"\s*:\s*"?([0-9.]+)"?/g,
-      ];
-      for (const re of priceRegexes) {
-        const all = jsonStr.matchAll(re);
-        for (const m of all) {
-          const v = parseFloat(m[1]);
-          if (!isNaN(v) && v > 0) candidates.push(v);
+  // 1) Next: priceModule from window.runParams (prefer activity/discounted values)
+  const priceModuleMatch = html.match(/"priceModule"\s*:\s*({[\s\S]*?})/);
+  if (priceModuleMatch) {
+    const jsonStr = priceModuleMatch[1];
+    const prioritized = [
+      /"formatedActivityPrice"\s*:\s*"[^0-9]*([0-9.]+)"/, // $1.66
+      /"minActivityAmount"\s*:\s*\{[^}]*"value"\s*:\s*"?([0-9.]+)"?/, // 1.66
+      /"actMinPrice"\s*:\s*"?([0-9.]+)"?/, // 1.66
+      /"salePrice"[^}]*"min"\s*:\s*"?([0-9.]+)"?/, // 1.66
+      /"minPrice"\s*:\s*"?([0-9.]+)"?/, // 1.66
+      /"price"\s*:\s*"?([0-9.]+)"?/, // 1.66
+    ];
+    for (const re of prioritized) {
+      const m = jsonStr.match(re);
+      if (m) {
+        const v = parseFloat(m[1]);
+        if (!isNaN(v) && v > 0) {
+          console.log('Price from priceModule (prioritized):', v);
+          return v;
         }
       }
     }
   }
 
-  // 2) Fallback: direct HTML
-  const directPatterns = [
-    /data-activity-price\s*=\s*"?([0-9.]+)"?/g,
-    /data-price\s*=\s*"?([0-9.]+)"?/g,
-    /\$\s*([0-9]+(?:\.[0-9]{1,2})?)/g,
-    /"actMinPrice":"([0-9.]+)"/g,
-    /"minPrice":"([0-9.]+)"/g,
-  ];
-  for (const re of directPatterns) {
-    const all = html.matchAll(re);
-    for (const m of all) {
-      const v = parseFloat(m[1]);
-      if (!isNaN(v) && v > 0) candidates.push(v);
+  // 2) Meta OpenGraph price
+  const ogPrice = html.match(/<meta[^>]+property=["']og:price:amount["'][^>]+content=["']([0-9.]+)["'][^>]*>/i);
+  if (ogPrice) {
+    const v = parseFloat(ogPrice[1]);
+    if (!isNaN(v) && v > 0) {
+      console.log('Price from og:price:amount:', v);
+      return v;
     }
   }
 
-  // Choose the most plausible price: the minimum positive value (discounted)
-  if (candidates.length) {
-    const min = Math.min(...candidates);
-    console.log('Price candidates:', candidates.slice(0, 10), '=> chosen =', min);
-    return min;
+  // 3) Last-resort: direct patterns (non-greedy)
+  const directPatterns = [
+    /data-activity-price\s*=\s*"?([0-9.]+)"?/,
+    /data-price\s*=\s*"?([0-9.]+)"?/,
+    /\$\s*([0-9]+(?:\.[0-9]{1,2})?)/,
+    /"actMinPrice":"([0-9.]+)"/,
+    /"minPrice":"([0-9.]+)"/,
+  ];
+  for (const re of directPatterns) {
+    const m = html.match(re);
+    if (m) {
+      const v = parseFloat(m[1]);
+      if (!isNaN(v) && v > 0) {
+        console.log('Price from direct pattern:', v);
+        return v;
+      }
+    }
   }
 
   console.log('No price found');
@@ -415,6 +446,7 @@ function getProductId(url: string, html: string): string | null {
 
 async function fetchShippingDZ(productId: string, refererUrl: string, scraperApiKey?: string): Promise<number | null> {
   try {
+    // Primary endpoint
     const freightUrl = `https://www.aliexpress.com/aeglodetailweb/api/logistics/freight?productId=${productId}&count=1&country=DZ&tradeCurrency=USD`;
 
     let requestUrl = freightUrl;
@@ -436,61 +468,149 @@ async function fetchShippingDZ(productId: string, refererUrl: string, scraperApi
       requestUrl = `http://api.scraperapi.com?${params.toString()}`;
     }
 
-    console.log('Fetching freight API:', requestUrl);
+    console.log('Fetching freight API (primary):', requestUrl);
     const resp = await fetch(requestUrl, { headers });
     const text = await resp.text();
 
-    if (!resp.ok) {
-      console.warn('Freight API returned non-OK status:', resp.status, text.slice(0, 200));
+    if (resp.ok) {
+      // Try parse JSON
+      try {
+        const data: any = JSON.parse(text);
+        // Free shipping flags
+        if (data && (data?.body?.isFreeShipping === true || data?.isFreeShipping === true)) {
+          console.log('Freight API reports free shipping (primary)');
+          return 0;
+        }
+        // Value in structured fields (min across candidates)
+        const fromJsonCandidates: number[] = [];
+        const tryPush = (v: any) => {
+          const n = parseFloat(String(v));
+          if (!isNaN(n)) fromJsonCandidates.push(n);
+        };
+        tryPush(data?.body?.freightAmount?.value);
+        tryPush(data?.freightAmount?.value);
+        tryPush(data?.freight?.value);
+        if (Array.isArray(data?.body?.result)) {
+          for (const r of data.body.result) {
+            tryPush(r?.bizData?.freightAmount?.value);
+            tryPush(r?.bizData?.originalFreightAmount?.value);
+          }
+        }
+        if (fromJsonCandidates.length) {
+          const min = Math.min(...fromJsonCandidates);
+          console.log('Freight JSON candidates (primary):', fromJsonCandidates, '=> min =', min);
+          return min;
+        }
+      } catch (_) {
+        // Not JSON or obfuscated; continue with regex extraction below
+      }
+
+      // Regex extraction fallback
+      const candidates: number[] = [];
+      const regexes = [
+        /"freightAmount"[^}]*"value":"?([0-9.]+)"?/g,
+        /"shippingFee":"?([0-9.]+)"?/g,
+        /"freight":"?([0-9.]+)"?/g,
+      ];
+      for (const re of regexes) {
+        const all = text.matchAll(re);
+        for (const m of all) {
+          const v = parseFloat(m[1]);
+          if (!isNaN(v)) candidates.push(v);
+        }
+      }
+      if (/"isFreeShipping"\s*:\s*true/i.test(text) && candidates.length === 0) {
+        console.log('Freight API reports free shipping via regex (primary)');
+        return 0;
+      }
+      if (candidates.length > 0) {
+        const min = Math.min(...candidates);
+        console.log('Freight API shipping candidates (primary):', candidates, '=> min =', min);
+        return min;
+      }
+
+      if (/not\s*deliver|no\s*logistics|not\s*available\s*to\s*DZ/i.test(text)) {
+        console.log('Freight API suggests no shipping to DZ (primary)');
+        // Fallthrough to alt endpoint before returning null
+      }
+    } else {
+      console.warn('Freight API returned non-OK status (primary):', resp.status, text.slice(0, 200));
+    }
+
+    // ALT endpoint fallback (gpsfront)
+    let altUrl = `https://gpsfront.aliexpress.com/getFreight?productId=${productId}&count=1&currency=USD&country=DZ`;
+    if (scraperApiKey && scraperApiKey.length > 10) {
+      const paramsAlt = new URLSearchParams({ api_key: scraperApiKey, url: altUrl, country_code: 'us', premium: 'true', render: 'false' });
+      altUrl = `http://api.scraperapi.com?${paramsAlt.toString()}`;
+    }
+    console.log('Fetching freight API (alt gpsfront):', altUrl);
+    const respAlt = await fetch(altUrl, { headers });
+    const textAlt = await respAlt.text();
+    if (!respAlt.ok) {
+      console.warn('Freight API returned non-OK status (alt):', respAlt.status, textAlt.slice(0, 200));
+      // As last fallback, try to detect free shipping quickly
+      if (/free\s*shipping/i.test(textAlt) || /"isFreeShipping"\s*:\s*true/i.test(textAlt)) {
+        return 0;
+      }
       return null;
     }
 
-    // Try parse JSON
     try {
-      const data: any = JSON.parse(text);
-      // Quick checks for no shipping
-      if (!data || (data.body && data.body.success === false)) {
-        console.log('Freight API indicates failure/no shipping');
-        return null;
+      const dataAlt: any = JSON.parse(textAlt);
+      // Known shapes
+      const candidates: number[] = [];
+      const tryPush = (v: any) => {
+        const n = parseFloat(String(v));
+        if (!isNaN(n)) candidates.push(n);
+      };
+      if (Array.isArray(dataAlt?.result)) {
+        for (const r of dataAlt.result) {
+          tryPush(r?.bizData?.freightAmount?.value);
+          tryPush(r?.bizData?.originalFreightAmount?.value);
+          if (r?.bizData?.isFreeShipping === true) {
+            console.log('gpsfront reports free shipping');
+            return 0;
+          }
+        }
+      }
+      tryPush(dataAlt?.freightAmount?.value);
+      tryPush(dataAlt?.body?.freightAmount?.value);
+
+      if (candidates.length > 0) {
+        const min = Math.min(...candidates);
+        console.log('Freight candidates (alt gpsfront):', candidates, '=> min =', min);
+        return min;
+      }
+
+      if (dataAlt?.isFreeShipping === true) {
+        return 0;
       }
     } catch (_) {
-      // Not JSON or obfuscated, continue with regex extraction
-    }
-
-    // Extract candidate shipping values using regex
-    const candidates: number[] = [];
-    const regexes = [
-      /"freightAmount"[^}]*"value":"?([0-9.]+)"?/g,
-      /"shippingFee":"?([0-9.]+)"?/g,
-      /"freight":"?([0-9.]+)"?/g,
-    ];
-
-    for (const re of regexes) {
-      const all = text.matchAll(re);
-      for (const m of all) {
-        const v = parseFloat(m[1]);
-        if (!isNaN(v)) candidates.push(v);
+      // Regex fallback on alt
+      const candidates: number[] = [];
+      const regexes = [
+        /"freightAmount"[^}]*"value":"?([0-9.]+)"?/g,
+        /"shippingFee":"?([0-9.]+)"?/g,
+        /"freight":"?([0-9.]+)"?/g,
+      ];
+      for (const re of regexes) {
+        const all = textAlt.matchAll(re);
+        for (const m of all) {
+          const v = parseFloat(m[1]);
+          if (!isNaN(v)) candidates.push(v);
+        }
+      }
+      if (/"isFreeShipping"\s*:\s*true/i.test(textAlt) && candidates.length === 0) {
+        return 0;
+      }
+      if (candidates.length > 0) {
+        const min = Math.min(...candidates);
+        console.log('Freight regex candidates (alt):', candidates, '=> min =', min);
+        return min;
       }
     }
 
-    if (/"isFreeShipping"\s*:\s*true/i.test(text) && candidates.length === 0) {
-      console.log('Freight API reports free shipping');
-      return 0;
-    }
-
-    if (candidates.length > 0) {
-      const min = Math.min(...candidates);
-      console.log('Freight API shipping candidates:', candidates, '=> min =', min);
-      return min;
-    }
-
-    // Detect not deliverable
-    if (/not\s*deliver|no\s*logistics|not\s*available\s*to\s*DZ/i.test(text)) {
-      console.log('Freight API suggests no shipping to DZ');
-      return null;
-    }
-
-    console.log('Freight API did not return recognizable shipping values');
+    console.log('Freight API did not return recognizable shipping values (both endpoints)');
     return null;
   } catch (e) {
     console.error('fetchShippingDZ error:', e);
