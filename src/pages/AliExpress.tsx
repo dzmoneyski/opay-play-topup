@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAliExpressSettings } from '@/hooks/useAliExpressSettings';
 import { useAliExpressOrders } from '@/hooks/useAliExpressOrders';
 import { useBalance } from '@/hooks/useBalance';
+import { supabase } from '@/integrations/supabase/client';
 import BackButton from '@/components/BackButton';
 
 const urlSchema = z.object({
@@ -43,6 +44,8 @@ const AliExpress = () => {
   const { createOrder, isCreating } = useAliExpressOrders();
   const { balance } = useBalance();
 
+  const [isLoadingImages, setIsLoadingImages] = useState(false);
+
   const urlForm = useForm<z.infer<typeof urlSchema>>({
     resolver: zodResolver(urlSchema),
   });
@@ -57,9 +60,32 @@ const AliExpress = () => {
 
   const onUrlSubmit = async (values: z.infer<typeof urlSchema>) => {
     setProductUrl(values.url);
-    // Extract images from AliExpress URL (simplified - just use placeholder for now)
-    setProductImages(['https://images.unsplash.com/photo-1523275335684-37898b6baf30']);
-    setStep(2);
+    setIsLoadingImages(true);
+    
+    try {
+      // Call edge function to scrape images
+      const { data, error } = await supabase.functions.invoke('scrape-aliexpress', {
+        body: { url: values.url }
+      });
+
+      if (error) {
+        console.error('Error scraping images:', error);
+        setProductImages(['https://images.unsplash.com/photo-1523275335684-37898b6baf30']);
+      } else if (data?.images && data.images.length > 0) {
+        setProductImages(data.images);
+        if (data.error) {
+          console.warn('Scraping warning:', data.error);
+        }
+      } else {
+        setProductImages(['https://images.unsplash.com/photo-1523275335684-37898b6baf30']);
+      }
+    } catch (error) {
+      console.error('Error calling scrape function:', error);
+      setProductImages(['https://images.unsplash.com/photo-1523275335684-37898b6baf30']);
+    } finally {
+      setIsLoadingImages(false);
+      setStep(2);
+    }
   };
 
   const onPriceSubmit = (values: z.infer<typeof priceSchema>) => {
@@ -141,8 +167,21 @@ const AliExpress = () => {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full bg-[#FF4400] hover:bg-[#E60000]">
-                    التالي <ArrowRight className="mr-2" />
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-[#FF4400] hover:bg-[#E60000]"
+                    disabled={isLoadingImages}
+                  >
+                    {isLoadingImages ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white ml-2"></div>
+                        جاري جلب الصور...
+                      </>
+                    ) : (
+                      <>
+                        التالي <ArrowRight className="mr-2" />
+                      </>
+                    )}
                   </Button>
                 </form>
               </Form>
@@ -159,15 +198,29 @@ const AliExpress = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Product Images */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {productImages.map((img, idx) => (
-                  <img
-                    key={idx}
-                    src={img}
-                    alt={`Product ${idx + 1}`}
-                    className="w-full h-48 object-cover rounded-lg border-2 border-border"
-                  />
-                ))}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Package className="w-5 h-5" />
+                  صور المنتج
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {productImages.map((img, idx) => (
+                    <div key={idx} className="relative group overflow-hidden rounded-lg border-2 border-border hover:border-primary transition-all">
+                      <img
+                        src={img}
+                        alt={`Product ${idx + 1}`}
+                        className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30';
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all"></div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  تحقق من المنتج قبل المتابعة
+                </p>
               </div>
 
               {/* Price Form */}
