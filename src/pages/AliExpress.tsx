@@ -49,7 +49,7 @@ const AliExpress = () => {
     }
   };
 
-  const handlePayNow = () => {
+  const handlePayNow = async () => {
     if (!productData || !productData.price) {
       toast.error('الرجاء تحميل المنتج أولاً');
       return;
@@ -62,13 +62,47 @@ const AliExpress = () => {
     const serviceFee = totalDZD * (settings.serviceFeePercentage / 100);
     const finalTotal = totalDZD + serviceFee;
 
-    navigate('/deposits', {
-      state: {
-        amount: finalTotal,
-        description: `طلب منتج AliExpress - ${productData.title}`,
-        productUrl: productUrl
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('يجب تسجيل الدخول أولاً');
+        navigate('/auth');
+        return;
       }
-    });
+
+      const { error } = await supabase
+        .from('aliexpress_orders')
+        .insert({
+          user_id: user.id,
+          product_url: productUrl,
+          product_title: productData.title,
+          product_image: productData.images?.[0] || null,
+          price_usd: productPrice,
+          shipping_cost_usd: shippingCost,
+          total_usd: totalUSD,
+          exchange_rate: settings.exchangeRate,
+          total_dzd: totalDZD,
+          service_fee_percentage: settings.serviceFeePercentage,
+          service_fee_dzd: serviceFee,
+          final_total_dzd: finalTotal,
+        });
+
+      if (error) throw error;
+
+      toast.success('تم إنشاء الطلب بنجاح! سيتم مراجعة طلبك والتواصل معك قريباً');
+
+      // Navigate to deposits page for payment
+      navigate('/deposits', {
+        state: {
+          amount: finalTotal,
+          description: `طلب منتج AliExpress - ${productData.title}`,
+          productUrl: productUrl
+        }
+      });
+    } catch (error: any) {
+      console.error('Error creating order:', error);
+      toast.error('فشل إنشاء الطلب. الرجاء المحاولة مرة أخرى');
+    }
   };
 
   return (

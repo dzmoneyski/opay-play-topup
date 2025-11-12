@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      aliexpress_orders: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          exchange_rate: number
+          final_total_dzd: number
+          id: string
+          payment_status: string
+          price_usd: number
+          processed_at: string | null
+          processed_by: string | null
+          product_image: string | null
+          product_title: string
+          product_url: string
+          service_fee_dzd: number
+          service_fee_percentage: number
+          shipping_cost_usd: number | null
+          status: string
+          total_dzd: number
+          total_usd: number
+          tracking_number: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          exchange_rate?: number
+          final_total_dzd: number
+          id?: string
+          payment_status?: string
+          price_usd: number
+          processed_at?: string | null
+          processed_by?: string | null
+          product_image?: string | null
+          product_title: string
+          product_url: string
+          service_fee_dzd: number
+          service_fee_percentage?: number
+          shipping_cost_usd?: number | null
+          status?: string
+          total_dzd: number
+          total_usd: number
+          tracking_number?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          exchange_rate?: number
+          final_total_dzd?: number
+          id?: string
+          payment_status?: string
+          price_usd?: number
+          processed_at?: string | null
+          processed_by?: string | null
+          product_image?: string | null
+          product_title?: string
+          product_url?: string
+          service_fee_dzd?: number
+          service_fee_percentage?: number
+          shipping_cost_usd?: number | null
+          status?: string
+          total_dzd?: number
+          total_usd?: number
+          tracking_number?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       betting_accounts: {
         Row: {
           created_at: string

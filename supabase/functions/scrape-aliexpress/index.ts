@@ -22,17 +22,22 @@ serve(async (req) => {
 
     console.log('Fetching AliExpress product:', url);
 
-    // جلب صفحة المنتج
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-      },
-    });
+    // Get ScraperAPI key from environment
+    const scraperApiKey = Deno.env.get('SCRAPER_API_KEY');
+    
+    if (!scraperApiKey) {
+      throw new Error('SCRAPER_API_KEY not configured');
+    }
+
+    // Use ScraperAPI to fetch the page with JavaScript rendering
+    const scraperUrl = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(url)}&render=true&country_code=dz`;
+    
+    console.log('Using ScraperAPI to fetch product data...');
+    
+    const response = await fetch(scraperUrl);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch product: ${response.status}`);
+      throw new Error(`ScraperAPI failed: ${response.status}`);
     }
 
     const html = await response.text();
