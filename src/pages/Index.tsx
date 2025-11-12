@@ -107,6 +107,11 @@ const Index = () => {
       return;
     }
 
+    if (service.action === 'aliexpress') {
+      navigate('/aliexpress');
+      return;
+    }
+
     // السماح بالدخول إلى صفحة الخدمة بغض النظر عن حالة التفعيل
     // التحقق من التفعيل سيتم عند محاولة تنفيذ العملية الفعلية
     console.log(`Navigating to service: ${service.title}`);
@@ -178,6 +183,13 @@ const Index = () => {
       subtitle: "أدخل كود بطاقة OpaY",
       gradient: "bg-gradient-primary",
       action: "cards"
+    },
+    {
+      icon: <ShoppingBag className="h-6 w-6" />,
+      title: "تسوق من AliExpress",
+      subtitle: "اطلب منتجات من AliExpress بكل سهولة",
+      gradient: "bg-gradient-to-br from-[#FF6A00] to-[#E60000]",
+      action: "aliexpress"
     }
   ];
 

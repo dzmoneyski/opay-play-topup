@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      aliexpress_orders: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          customer_address: string
+          customer_name: string
+          customer_phone: string
+          exchange_rate: number
+          id: string
+          processed_at: string | null
+          processed_by: string | null
+          product_images: Json | null
+          product_price: number
+          product_url: string
+          shipping_cost: number
+          status: string
+          total_dzd: number
+          total_usd: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          customer_address: string
+          customer_name: string
+          customer_phone: string
+          exchange_rate: number
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          product_images?: Json | null
+          product_price: number
+          product_url: string
+          shipping_cost: number
+          status?: string
+          total_dzd: number
+          total_usd: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          customer_address?: string
+          customer_name?: string
+          customer_phone?: string
+          exchange_rate?: number
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          product_images?: Json | null
+          product_price?: number
+          product_url?: string
+          shipping_cost?: number
+          status?: string
+          total_dzd?: number
+          total_usd?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       betting_accounts: {
         Row: {
           created_at: string
@@ -1298,6 +1361,10 @@ export type Database = {
         Returns: boolean
       }
       cleanup_expired_verification_codes: { Args: never; Returns: undefined }
+      deduct_balance: {
+        Args: { _amount: number; _user_id: string }
+        Returns: undefined
+      }
       ensure_referral_code: { Args: { _user_id: string }; Returns: string }
       ensure_referral_for_current_user: { Args: never; Returns: Json }
       ensure_user_referral: { Args: { _user_id: string }; Returns: Json }
