@@ -11,13 +11,21 @@ serve(async (req) => {
   }
 
   try {
-    const { url } = await req.json();
+    const { url: rawUrl } = await req.json();
 
-    if (!url) {
+    if (!rawUrl) {
       return new Response(
         JSON.stringify({ error: "URL is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Extract URL from text if user copied the entire share message
+    let url = rawUrl.trim();
+    const urlMatch = url.match(/(https?:\/\/(?:www\.|m\.)?a?\.?aliexpress\.(?:com|us)\/[^\s]+)/i);
+    if (urlMatch) {
+      url = urlMatch[1];
+      console.log("Extracted URL from text:", url);
     }
 
     console.log("Scraping AliExpress URL:", url);

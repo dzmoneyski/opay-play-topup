@@ -66,10 +66,27 @@ const AliExpress = () => {
     }
   };
 
-  const extractProductData = async (url: string) => {
-    if (!url || (!url.includes('aliexpress.com') && !url.includes('aliexpress.us'))) {
+  const extractProductData = async (rawUrl: string) => {
+    if (!rawUrl) return;
+
+    // Extract URL from text if user copied the entire share message
+    let url = rawUrl.trim();
+    const urlMatch = url.match(/(https?:\/\/(?:www\.|m\.)?a?\.?aliexpress\.(?:com|us)\/[^\s]+)/i);
+    if (urlMatch) {
+      url = urlMatch[1];
+    }
+    
+    if (!url.includes('aliexpress.com') && !url.includes('aliexpress.us')) {
+      toast({
+        title: '⚠️ رابط غير صحيح',
+        description: 'يرجى إدخال رابط من موقع AliExpress',
+        variant: 'destructive',
+      });
       return;
     }
+
+    // Update the input field with the clean URL
+    setOrderForm(prev => ({ ...prev, product_url: url }));
 
     setExtracting(true);
     try {
