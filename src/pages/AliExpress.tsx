@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAliExpressSettings } from '@/hooks/useAliExpressSettings';
 import { useAliExpressOrders } from '@/hooks/useAliExpressOrders';
 import { useBalance } from '@/hooks/useBalance';
@@ -167,99 +168,125 @@ const AliExpress = () => {
           <p className="text-white/90 text-lg">تسوق من AliExpress بكل سهولة</p>
         </div>
 
-        {/* My Orders Section */}
-        {orders && orders.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="w-5 h-5" />
-                طلباتي
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {orders.map((order) => (
-                  <div
-                    key={order.id}
-                    className="border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {getStatusBadge(order.status)}
-                          <span className="text-xs text-muted-foreground">
-                            {format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: ar })}
-                          </span>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">الاسم:</span>
-                            <span className="font-medium mr-2">{order.customer_name}</span>
+        <Tabs defaultValue="new-order" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="new-order" className="text-base">
+              <ShoppingCart className="w-4 h-4 ml-2" />
+              قدم طلب
+            </TabsTrigger>
+            <TabsTrigger value="my-orders" className="text-base">
+              <Package className="w-4 h-4 ml-2" />
+              طلباتي ({orders.length})
+            </TabsTrigger>
+          </TabsList>
+
+          {/* My Orders Tab */}
+          <TabsContent value="my-orders">
+            {orders && orders.length > 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="w-5 h-5" />
+                    طلباتي
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {orders.map((order) => (
+                      <div
+                        key={order.id}
+                        className="border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {getStatusBadge(order.status)}
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: ar })}
+                              </span>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">الاسم:</span>
+                                <span className="font-medium mr-2">{order.customer_name}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">الهاتف:</span>
+                                <span className="font-medium mr-2">{order.customer_phone}</span>
+                              </div>
+                            </div>
+
+                            <div className="text-sm">
+                              <span className="text-muted-foreground">العنوان:</span>
+                              <p className="text-muted-foreground mt-1">{order.customer_address}</p>
+                            </div>
+
+                            <div className="flex gap-4 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">المنتج:</span>
+                                <span className="font-medium mr-2">${order.product_price.toFixed(2)}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">الشحن:</span>
+                                <span className="font-medium mr-2">${order.shipping_cost.toFixed(2)}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">الإجمالي:</span>
+                                <span className="font-bold text-primary mr-2">{order.total_dzd.toFixed(2)} دج</span>
+                              </div>
+                            </div>
+
+                            {order.admin_notes && (
+                              <div className="bg-muted p-2 rounded text-sm">
+                                <span className="text-muted-foreground font-semibold">ملاحظات المشرف:</span>
+                                <p className="mt-1">{order.admin_notes}</p>
+                              </div>
+                            )}
                           </div>
-                          <div>
-                            <span className="text-muted-foreground">الهاتف:</span>
-                            <span className="font-medium mr-2">{order.customer_phone}</span>
-                          </div>
+
+                          {order.product_images && order.product_images.length > 0 && (
+                            <img
+                              src={order.product_images[0]}
+                              alt="Product"
+                              className="w-20 h-20 object-cover rounded"
+                              onError={(e) => {
+                                e.currentTarget.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30';
+                              }}
+                            />
+                          )}
                         </div>
 
-                        <div className="text-sm">
-                          <span className="text-muted-foreground">العنوان:</span>
-                          <p className="text-muted-foreground mt-1">{order.customer_address}</p>
-                        </div>
-
-                        <div className="flex gap-4 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">المنتج:</span>
-                            <span className="font-medium mr-2">${order.product_price.toFixed(2)}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">الشحن:</span>
-                            <span className="font-medium mr-2">${order.shipping_cost.toFixed(2)}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">الإجمالي:</span>
-                            <span className="font-bold text-primary mr-2">{order.total_dzd.toFixed(2)} دج</span>
-                          </div>
-                        </div>
-
-                        {order.admin_notes && (
-                          <div className="bg-muted p-2 rounded text-sm">
-                            <span className="text-muted-foreground font-semibold">ملاحظات المشرف:</span>
-                            <p className="mt-1">{order.admin_notes}</p>
-                          </div>
-                        )}
+                        <a
+                          href={order.product_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline text-sm flex items-center gap-1"
+                        >
+                          عرض المنتج
+                          <ArrowRight className="w-3 h-3" />
+                        </a>
                       </div>
-
-                      {order.product_images && order.product_images.length > 0 && (
-                        <img
-                          src={order.product_images[0]}
-                          alt="Product"
-                          className="w-20 h-20 object-cover rounded"
-                          onError={(e) => {
-                            e.currentTarget.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30';
-                          }}
-                        />
-                      )}
-                    </div>
-
-                    <a
-                      href={order.product_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline text-sm flex items-center gap-1"
-                    >
-                      عرض المنتج
-                      <ArrowRight className="w-3 h-3" />
-                    </a>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="py-12">
+                  <div className="text-center space-y-4">
+                    <Package className="w-16 h-16 mx-auto text-muted-foreground" />
+                    <p className="text-muted-foreground text-lg">لا توجد طلبات حالياً</p>
+                    <p className="text-sm text-muted-foreground">ابدأ بتقديم طلب جديد من تبويب "قدم طلب"</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
 
-        {/* Step 1: URL Input */}
+          {/* New Order Tab */}
+          <TabsContent value="new-order">
+            {/* Step 1: URL Input */}
         {step === 1 && (
           <Card>
             <CardHeader>
@@ -564,6 +591,8 @@ const AliExpress = () => {
             </CardContent>
           </Card>
         )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
