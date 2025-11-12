@@ -89,6 +89,19 @@ serve(async (req) => {
       console.log('Successfully fetched HTML directly, length:', html.length);
     }
 
+    // استخراج المعرف ومحاولة جلب الشحن عبر API رسمي
+    const productId = getProductId(url, html);
+    let shippingFromApi: number | null = null;
+    if (productId) {
+      try {
+        shippingFromApi = await fetchShippingDZ(productId, url, scraperApiKey || undefined);
+      } catch (e) {
+        console.log('Freight API fetch failed, will fallback to HTML extraction.', e);
+      }
+    } else {
+      console.warn('Could not determine productId; skipping freight API.');
+    }
+
     // استخراج البيانات من HTML
     console.log('Starting data extraction...');
     const productData = {
@@ -99,7 +112,7 @@ serve(async (req) => {
       rating: extractRating(html),
       orders: extractOrders(html),
       description: extractDescription(html),
-      shippingCost: extractShippingCost(html),
+      shippingCost: shippingFromApi ?? extractShippingCost(html),
     };
 
     console.log('Extracted product data:', JSON.stringify(productData, null, 2));
@@ -397,3 +410,97 @@ function extractShippingCost(html: string): number | null {
   console.log('No shipping cost found');
   return null;
 }
+
+function getProductId(url: string, html: string): string | null {
+  const urlMatch = url.match(/item\/(\d+)\.html/);
+  if (urlMatch) return urlMatch[1];
+  const htmlMatch = html.match(/"productId"\s*:\s*"?(\d+)"?/);
+  if (htmlMatch) return htmlMatch[1];
+  return null;
+}
+
+async function fetchShippingDZ(productId: string, refererUrl: string, scraperApiKey?: string): Promise<number | null> {
+  try {
+    const freightUrl = `https://www.aliexpress.com/aeglodetailweb/api/logistics/freight?productId=${productId}&count=1&country=DZ&tradeCurrency=USD`;
+
+    let requestUrl = freightUrl;
+    const headers: Record<string, string> = {
+      'Accept': 'application/json, text/plain, */*',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Referer': refererUrl,
+      'Accept-Language': 'en-US,en;q=0.9'
+    };
+
+    if (scraperApiKey && scraperApiKey.length > 10) {
+      const params = new URLSearchParams({
+        api_key: scraperApiKey,
+        url: requestUrl,
+        country_code: 'us',
+        premium: 'true',
+        render: 'false',
+      });
+      requestUrl = `http://api.scraperapi.com?${params.toString()}`;
+    }
+
+    console.log('Fetching freight API:', requestUrl);
+    const resp = await fetch(requestUrl, { headers });
+    const text = await resp.text();
+
+    if (!resp.ok) {
+      console.warn('Freight API returned non-OK status:', resp.status, text.slice(0, 200));
+      return null;
+    }
+
+    // Try parse JSON
+    try {
+      const data: any = JSON.parse(text);
+      // Quick checks for no shipping
+      if (!data || (data.body && data.body.success === false)) {
+        console.log('Freight API indicates failure/no shipping');
+        return null;
+      }
+    } catch (_) {
+      // Not JSON or obfuscated, continue with regex extraction
+    }
+
+    // Extract candidate shipping values using regex
+    const candidates: number[] = [];
+    const regexes = [
+      /"freightAmount"[^}]*"value":"?([0-9.]+)"?/g,
+      /"shippingFee":"?([0-9.]+)"?/g,
+      /"freight":"?([0-9.]+)"?/g,
+    ];
+
+    for (const re of regexes) {
+      const all = text.matchAll(re);
+      for (const m of all) {
+        const v = parseFloat(m[1]);
+        if (!isNaN(v)) candidates.push(v);
+      }
+    }
+
+    if (/"isFreeShipping"\s*:\s*true/i.test(text) && candidates.length === 0) {
+      console.log('Freight API reports free shipping');
+      return 0;
+    }
+
+    if (candidates.length > 0) {
+      const min = Math.min(...candidates);
+      console.log('Freight API shipping candidates:', candidates, '=> min =', min);
+      return min;
+    }
+
+    // Detect not deliverable
+    if (/not\s*deliver|no\s*logistics|not\s*available\s*to\s*DZ/i.test(text)) {
+      console.log('Freight API suggests no shipping to DZ');
+      return null;
+    }
+
+    console.log('Freight API did not return recognizable shipping values');
+    return null;
+  } catch (e) {
+    console.error('fetchShippingDZ error:', e);
+    return null;
+  }
+}
+
