@@ -33,7 +33,7 @@ const Diaspora = () => {
   const { user } = useAuth();
   const { balance, fetchBalance } = useBalance();
   const { toast } = useToast();
-  const { isAdmin } = useUserRoles();
+  const { isAdmin, loading } = useUserRoles();
   const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -48,8 +48,8 @@ const Diaspora = () => {
   useEffect(() => {
     if (!user) {
       navigate('/auth');
-    } else if (isAdmin === false) {
-      // If user is not admin, redirect to home
+    } else if (!loading && isAdmin === false) {
+      // Only redirect after loading is complete and user is not admin
       toast({
         title: "صفحة غير متاحة",
         description: "هذه الصفحة قيد الإنشاء وغير متاحة حالياً",
@@ -57,9 +57,13 @@ const Diaspora = () => {
       });
       navigate('/');
     }
-  }, [user, isAdmin, navigate, toast]);
+  }, [user, isAdmin, loading, navigate, toast]);
 
-  if (!user || isAdmin === false) {
+  if (!user || loading) {
+    return null;
+  }
+
+  if (isAdmin === false) {
     return null;
   }
 
