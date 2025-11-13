@@ -35,6 +35,7 @@ const Diaspora = () => {
   const { toast } = useToast();
   const { isAdmin, loading } = useUserRoles();
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     amount: '',
@@ -150,12 +151,12 @@ const Diaspora = () => {
   ];
 
   const paymentMethods = [
-    { name: "Revolut", color: "from-[#0075EB] to-[#00C6FF]", icon: CreditCard },
-    { name: "Wise", color: "from-[#9FE870] to-[#37B45B]", icon: Landmark },
-    { name: "Paysera", color: "from-[#FF6B35] to-[#F7931E]", icon: CreditCard },
-    { name: "SEPA", color: "from-[#003399] to-[#0066CC]", icon: Landmark },
-    { name: "Bank Transfer", color: "from-[#6366F1] to-[#8B5CF6]", icon: Landmark },
-    { name: "Western Union", color: "from-[#FFCC00] to-[#FF9900]", icon: Send }
+    { name: "Revolut", color: "from-[#0075EB] to-[#00C6FF]", icon: CreditCard, bankAccountIndex: 0 },
+    { name: "Wise", color: "from-[#9FE870] to-[#37B45B]", icon: Landmark, bankAccountIndex: 1 },
+    { name: "Paysera", color: "from-[#FF6B35] to-[#F7931E]", icon: CreditCard, bankAccountIndex: 2 },
+    { name: "SEPA", color: "from-[#003399] to-[#0066CC]", icon: Landmark, bankAccountIndex: null },
+    { name: "Bank Transfer", color: "from-[#6366F1] to-[#8B5CF6]", icon: Landmark, bankAccountIndex: null },
+    { name: "Western Union", color: "from-[#FFCC00] to-[#FF9900]", icon: Send, bankAccountIndex: null }
   ];
 
   const bankAccounts = [
@@ -257,9 +258,13 @@ const Diaspora = () => {
           <CardContent>
             <div className="grid grid-cols-3 gap-2">
               {paymentMethods.map((method, index) => (
-                <div
+                <button
                   key={index}
-                  className={`relative overflow-hidden rounded-lg p-3 bg-gradient-to-br ${method.color} shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105`}
+                  type="button"
+                  onClick={() => setSelectedPaymentMethod(method.name)}
+                  className={`relative overflow-hidden rounded-lg p-3 bg-gradient-to-br ${method.color} shadow-md transition-all duration-300 hover:scale-105 ${
+                    selectedPaymentMethod === method.name ? 'ring-2 ring-white ring-offset-2 scale-105' : 'hover:shadow-lg'
+                  }`}
                 >
                   <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
                   <div className="relative z-10">
@@ -268,22 +273,30 @@ const Diaspora = () => {
                       {method.name}
                     </p>
                   </div>
-                </div>
+                  {selectedPaymentMethod === method.name && (
+                    <div className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-primary" />
+                    </div>
+                  )}
+                </button>
               ))}
             </div>
             <p className="text-[10px] text-muted-foreground text-center mt-3">
-              نقبل التحويلات من جميع البنوك والمحافظ الإلكترونية العالمية
+              اختر طريقة الدفع لعرض معلومات الحساب البنكي
             </p>
           </CardContent>
         </Card>
 
-        {/* Bank Accounts Information */}
-        <div className="space-y-3 mb-6">
-          <h3 className="text-base font-bold flex items-center gap-2">
-            <Landmark className="w-5 h-5 text-primary" />
-            معلومات التحويل البنكي
-          </h3>
-          {bankAccounts.map((account, index) => (
+        {/* Bank Accounts Information - Shows when payment method is selected */}
+        {selectedPaymentMethod && paymentMethods.find(m => m.name === selectedPaymentMethod)?.bankAccountIndex !== null && (
+          <div className="space-y-3 mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
+            <h3 className="text-base font-bold flex items-center gap-2">
+              <Landmark className="w-5 h-5 text-primary" />
+              معلومات التحويل لـ {selectedPaymentMethod}
+            </h3>
+            {bankAccounts
+              .filter((_, index) => index === paymentMethods.find(m => m.name === selectedPaymentMethod)?.bankAccountIndex)
+              .map((account, index) => (
             <Card key={index} className={`border-primary/20 bg-gradient-to-br ${account.color} text-white overflow-hidden`}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -346,7 +359,8 @@ const Diaspora = () => {
               </CardContent>
             </Card>
           ))}
-        </div>
+          </div>
+        )}
 
         {/* Instructions */}
         <Card className="border-primary/20 bg-primary/5 mb-6">
