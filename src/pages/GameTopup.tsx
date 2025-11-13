@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Gamepad2, AlertCircle, Loader2, Wallet } from "lucide-react";
+import { ArrowLeft, Gamepad2, AlertCircle, Loader2, Wallet, Lock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useGamePlatforms, useGamePackages, useCreateGameTopupOrder } from "@/hooks/useGamePlatforms";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BettingForm } from "@/components/BettingForm";
 import { useBalance } from "@/hooks/useBalance";
 import { getPlatformLogo } from "@/lib/gamePlatformLogos";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 const GameTopup = () => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const GameTopup = () => {
   const [playerId, setPlayerId] = useState("");
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [currentTab, setCurrentTab] = useState<'games' | 'betting'>('games');
+  const [showUnderReviewDialog, setShowUnderReviewDialog] = useState(false);
   
   const { data: platforms, isLoading: platformsLoading } = useGamePlatforms();
   const { data: packages, isLoading: packagesLoading } = useGamePackages(selectedPlatform);
@@ -66,14 +68,16 @@ const GameTopup = () => {
   };
 
   const handlePlatformSelect = (platformId: string, category: 'game' | 'betting') => {
+    // Show dialog for betting platforms instead of selecting them
+    if (category === 'betting') {
+      setShowUnderReviewDialog(true);
+      return;
+    }
+    
     setSelectedPlatform(platformId);
     setSelectedPackage(null);
     setPlayerId("");
-    if (category === 'betting') {
-      setCurrentTab('betting');
-    } else {
-      setCurrentTab('games');
-    }
+    setCurrentTab('games');
   };
 
   const selectedPlatformData = platforms?.find(p => p.id === selectedPlatform);
@@ -343,6 +347,36 @@ const GameTopup = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Under Review Dialog */}
+      <Dialog open={showUnderReviewDialog} onOpenChange={setShowUnderReviewDialog}>
+        <DialogContent className="sm:max-w-md text-center" dir="rtl">
+          <DialogHeader>
+            <div className="flex justify-center mb-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-gold/20 blur-3xl rounded-full animate-pulse"></div>
+                <div className="relative bg-gradient-gold/10 p-8 rounded-full border-4 border-gradient-gold/30">
+                  <Lock className="h-20 w-20 text-primary animate-pulse" />
+                </div>
+              </div>
+            </div>
+            <DialogTitle className="text-2xl font-bold text-center">
+              قيد المراجعة
+            </DialogTitle>
+            <DialogDescription className="text-center text-base mt-2">
+              نعمل حالياً على تحسين خدمة المراهنات لتقديم أفضل تجربة لك. سيتم إطلاق الخدمة قريباً.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            <Button
+              onClick={() => setShowUnderReviewDialog(false)}
+              className="w-full bg-gradient-primary hover:opacity-90"
+            >
+              حسناً، فهمت
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
