@@ -31,6 +31,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { 
   Globe2, 
   CheckCircle, 
@@ -40,7 +48,10 @@ import {
   User,
   CreditCard,
   FileText,
-  Loader2
+  Loader2,
+  Settings,
+  Save,
+  Copy
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -82,6 +93,31 @@ const DiasporaTransfers = () => {
   });
   
   const [rejectionReason, setRejectionReason] = useState('');
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  // Diaspora settings state
+  const [diasporaSettings, setDiasporaSettings] = useState({
+    enabled: true,
+    default_exchange_rate: 280,
+    revolut: {
+      account_name: 'OpaY Services',
+      account_number: 'GB29 REVO 0099 6900 1234 56',
+      bic: 'REVOGB21',
+      currency: 'EUR/USD'
+    },
+    wise: {
+      account_name: 'OpaY International',
+      account_number: 'BE68 5390 0754 7034',
+      bic: 'TRWIBEB1XXX',
+      currency: 'EUR/USD'
+    },
+    paysera: {
+      account_name: 'OpaY Transfer',
+      account_number: 'LT12 3456 7890 1234 5678',
+      bic: 'EVIULT2VXXX',
+      currency: 'EUR'
+    }
+  });
 
   // Load default exchange rate from settings
   React.useEffect(() => {
@@ -97,6 +133,7 @@ const DiasporaTransfers = () => {
 
         if (data?.setting_value) {
           const settings = data.setting_value as any;
+          setDiasporaSettings(settings);
           if (settings.default_exchange_rate) {
             const rate = settings.default_exchange_rate;
             setDefaultExchangeRate(rate);
@@ -293,6 +330,49 @@ const DiasporaTransfers = () => {
     });
   };
 
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const { error } = await supabase
+        .from('platform_settings')
+        .upsert({
+          setting_key: 'diaspora_settings',
+          setting_value: diasporaSettings as any,
+          description: 'إعدادات خدمة الجالية والحسابات البنكية'
+        }, { onConflict: 'setting_key' });
+      
+      if (error) throw error;
+
+      toast({
+        title: "تم الحفظ بنجاح",
+        description: "تم حفظ إعدادات الجالية",
+      });
+
+      // Update default exchange rate
+      setDefaultExchangeRate(diasporaSettings.default_exchange_rate);
+      setApprovalData(prev => ({ ...prev, exchangeRate: diasporaSettings.default_exchange_rate.toString() }));
+      
+      // Refresh transfers
+      queryClient.invalidateQueries({ queryKey: ['admin-diaspora-transfers'] });
+    } catch (error: any) {
+      toast({
+        title: "حدث خطأ",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "تم النسخ",
+      description: `تم نسخ ${label} بنجاح`,
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -339,12 +419,27 @@ const DiasporaTransfers = () => {
           إدارة طلبات الجالية
         </h1>
         <p className="text-muted-foreground mt-2">
-          إدارة طلبات تحويلات الجالية الجزائرية في الخارج
+          إدارة طلبات تحويلات الجالية الجزائرية في الخارج والإعدادات
         </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <Tabs defaultValue="requests" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="requests">
+            <FileText className="w-4 h-4 ml-2" />
+            الطلبات
+          </TabsTrigger>
+          <TabsTrigger value="settings">
+            <Settings className="w-4 h-4 ml-2" />
+            الإعدادات
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Requests Tab */}
+        <TabsContent value="requests" className="space-y-6"  >
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -517,7 +612,326 @@ const DiasporaTransfers = () => {
             </Table>
           </div>
         </CardContent>
-      </Card>
+          </Card>
+        </TabsContent>
+
+        {/* Settings Tab */}
+        <TabsContent value="settings" className="space-y-6">
+          {/* Service Enable/Disable */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="w-5 h-5 text-primary" />
+                الإعدادات العامة
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                <div className="space-y-0.5">
+                  <Label>تفعيل خدمة الجالية</Label>
+                  <p className="text-sm text-muted-foreground">
+                    السماح بتحويلات الجالية الجزائرية من الخارج
+                  </p>
+                </div>
+                <Switch
+                  checked={diasporaSettings.enabled}
+                  onCheckedChange={(checked) => setDiasporaSettings(prev => ({ ...prev, enabled: checked }))}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label htmlFor="default_exchange_rate">سعر الصرف الافتراضي (1 USD/EUR = ... DZD)</Label>
+                <Input
+                  id="default_exchange_rate"
+                  type="number"
+                  step="0.01"
+                  value={diasporaSettings.default_exchange_rate}
+                  onChange={(e) => setDiasporaSettings(prev => ({ 
+                    ...prev, 
+                    default_exchange_rate: parseFloat(e.target.value) || 0 
+                  }))}
+                />
+                <p className="text-xs text-muted-foreground">
+                  سيتم استخدام هذا السعر كقيمة افتراضية عند الموافقة على الطلبات
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Revolut Account */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[#0075EB]">
+                <CreditCard className="w-5 h-5" />
+                حساب Revolut
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>اسم الحساب</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={diasporaSettings.revolut.account_name}
+                      onChange={(e) => setDiasporaSettings(prev => ({
+                        ...prev,
+                        revolut: { ...prev.revolut, account_name: e.target.value }
+                      }))}
+                    />
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => copyToClipboard(diasporaSettings.revolut.account_name, 'اسم الحساب')}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>رقم الحساب / IBAN</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={diasporaSettings.revolut.account_number}
+                      onChange={(e) => setDiasporaSettings(prev => ({
+                        ...prev,
+                        revolut: { ...prev.revolut, account_number: e.target.value }
+                      }))}
+                      className="font-mono"
+                    />
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => copyToClipboard(diasporaSettings.revolut.account_number, 'رقم الحساب')}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>BIC / SWIFT</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={diasporaSettings.revolut.bic}
+                      onChange={(e) => setDiasporaSettings(prev => ({
+                        ...prev,
+                        revolut: { ...prev.revolut, bic: e.target.value }
+                      }))}
+                      className="font-mono"
+                    />
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => copyToClipboard(diasporaSettings.revolut.bic, 'BIC')}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>العملة</Label>
+                  <Input
+                    value={diasporaSettings.revolut.currency}
+                    onChange={(e) => setDiasporaSettings(prev => ({
+                      ...prev,
+                      revolut: { ...prev.revolut, currency: e.target.value }
+                    }))}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Wise Account */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[#37B45B]">
+                <CreditCard className="w-5 h-5" />
+                حساب Wise
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>اسم الحساب</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={diasporaSettings.wise.account_name}
+                      onChange={(e) => setDiasporaSettings(prev => ({
+                        ...prev,
+                        wise: { ...prev.wise, account_name: e.target.value }
+                      }))}
+                    />
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => copyToClipboard(diasporaSettings.wise.account_name, 'اسم الحساب')}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>رقم الحساب / IBAN</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={diasporaSettings.wise.account_number}
+                      onChange={(e) => setDiasporaSettings(prev => ({
+                        ...prev,
+                        wise: { ...prev.wise, account_number: e.target.value }
+                      }))}
+                      className="font-mono"
+                    />
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => copyToClipboard(diasporaSettings.wise.account_number, 'رقم الحساب')}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>BIC / SWIFT</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={diasporaSettings.wise.bic}
+                      onChange={(e) => setDiasporaSettings(prev => ({
+                        ...prev,
+                        wise: { ...prev.wise, bic: e.target.value }
+                      }))}
+                      className="font-mono"
+                    />
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => copyToClipboard(diasporaSettings.wise.bic, 'BIC')}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>العملة</Label>
+                  <Input
+                    value={diasporaSettings.wise.currency}
+                    onChange={(e) => setDiasporaSettings(prev => ({
+                      ...prev,
+                      wise: { ...prev.wise, currency: e.target.value }
+                    }))}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Paysera Account */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[#FF6B35]">
+                <CreditCard className="w-5 h-5" />
+                حساب Paysera
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>اسم الحساب</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={diasporaSettings.paysera.account_name}
+                      onChange={(e) => setDiasporaSettings(prev => ({
+                        ...prev,
+                        paysera: { ...prev.paysera, account_name: e.target.value }
+                      }))}
+                    />
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => copyToClipboard(diasporaSettings.paysera.account_name, 'اسم الحساب')}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>رقم الحساب / IBAN</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={diasporaSettings.paysera.account_number}
+                      onChange={(e) => setDiasporaSettings(prev => ({
+                        ...prev,
+                        paysera: { ...prev.paysera, account_number: e.target.value }
+                      }))}
+                      className="font-mono"
+                    />
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => copyToClipboard(diasporaSettings.paysera.account_number, 'رقم الحساب')}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>BIC / SWIFT</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={diasporaSettings.paysera.bic}
+                      onChange={(e) => setDiasporaSettings(prev => ({
+                        ...prev,
+                        paysera: { ...prev.paysera, bic: e.target.value }
+                      }))}
+                      className="font-mono"
+                    />
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => copyToClipboard(diasporaSettings.paysera.bic, 'BIC')}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>العملة</Label>
+                  <Input
+                    value={diasporaSettings.paysera.currency}
+                    onChange={(e) => setDiasporaSettings(prev => ({
+                      ...prev,
+                      paysera: { ...prev.paysera, currency: e.target.value }
+                    }))}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Save Button */}
+          <div className="flex justify-end">
+            <Button 
+              onClick={handleSaveSettings}
+              disabled={savingSettings}
+              size="lg"
+              className="gap-2"
+            >
+              {savingSettings ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  جاري الحفظ...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  حفظ الإعدادات
+                </>
+              )}
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Approval Dialog */}
       <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
