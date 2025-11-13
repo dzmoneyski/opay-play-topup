@@ -56,15 +56,28 @@ const Diaspora = () => {
           .from('platform_settings')
           .select('setting_value')
           .eq('setting_key', 'diaspora_settings')
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
 
         if (data?.setting_value) {
           setDiasporaSettings(data.setting_value);
+        } else {
+          // توفير إعدادات افتراضية إذا لم تكن موجودة
+          setDiasporaSettings({
+            enabled: true,
+            default_exchange_rate: 150,
+            bank_accounts: []
+          });
         }
       } catch (error) {
         console.error('Error loading diaspora settings:', error);
+        // توفير إعدادات افتراضية في حالة الخطأ
+        setDiasporaSettings({
+          enabled: true,
+          default_exchange_rate: 150,
+          bank_accounts: []
+        });
       }
     };
 
