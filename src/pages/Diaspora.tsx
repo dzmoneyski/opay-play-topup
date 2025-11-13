@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
 import { useBalance } from '@/hooks/useBalance';
 import { useToast } from '@/hooks/use-toast';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { supabase } from '@/integrations/supabase/client';
 import BackButton from '@/components/BackButton';
 import {
@@ -32,6 +33,7 @@ const Diaspora = () => {
   const { user } = useAuth();
   const { balance, fetchBalance } = useBalance();
   const { toast } = useToast();
+  const { isAdmin } = useUserRoles();
   const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -43,8 +45,21 @@ const Diaspora = () => {
     note: ''
   });
 
-  if (!user) {
-    navigate('/auth');
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+    } else if (isAdmin === false) {
+      // If user is not admin, redirect to home
+      toast({
+        title: "صفحة غير متاحة",
+        description: "هذه الصفحة قيد الإنشاء وغير متاحة حالياً",
+        variant: "destructive"
+      });
+      navigate('/');
+    }
+  }, [user, isAdmin, navigate, toast]);
+
+  if (!user || isAdmin === false) {
     return null;
   }
 
@@ -185,6 +200,20 @@ const Diaspora = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8 relative z-10">
+        {/* Admin Badge */}
+        <div className="mb-4">
+          <Card className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/20">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-amber-500" />
+                <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                  وضع المعاينة - هذه الصفحة مرئية للمشرفين فقط وقيد التطوير
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Header Section */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
