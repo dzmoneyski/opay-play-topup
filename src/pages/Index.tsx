@@ -44,7 +44,8 @@ import {
   Users,
   Settings,
   MessageCircle,
-  ExternalLink
+  ExternalLink,
+  FileText
 } from "lucide-react";
 
 const Index = () => {
@@ -407,13 +408,19 @@ const Index = () => {
               rel="noopener noreferrer"
               className="block group"
             >
-              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-[#0088cc] to-[#229ED9] shadow-elevated hover:shadow-glow transition-all duration-300 hover:scale-[1.02] h-full">
+              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-[#0088cc] to-[#229ED9] shadow-elevated hover:shadow-glow transition-all duration-300 hover:scale-[1.02] h-full min-h-[160px] sm:min-h-[180px]">
                 <div className="absolute inset-0 bg-gradient-glass"></div>
-                <CardContent className="p-3 sm:p-4 relative z-10">
-                  <div className="flex flex-col items-center justify-center text-center gap-2 sm:gap-3 h-full">
+                {/* Floating Icons Background */}
+                <div className="absolute inset-0 opacity-10">
+                  <MessageCircle className="absolute top-2 right-2 w-6 h-6 animate-pulse" />
+                  <CheckCircle className="absolute bottom-3 left-3 w-5 h-5 animate-bounce" />
+                  <Users className="absolute top-1/2 right-4 w-4 h-4 animate-pulse" />
+                </div>
+                <CardContent className="p-3 sm:p-4 relative z-10 h-full flex flex-col justify-between">
+                  <div className="flex flex-col items-center text-center gap-2">
                     <div className="relative">
                       <div className="absolute inset-0 bg-white/30 rounded-full blur-md animate-pulse-glow"></div>
-                      <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                      <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden">
                         <img 
                           src={telegramLogo} 
                           alt="Telegram" 
@@ -421,14 +428,23 @@ const Index = () => {
                         />
                       </div>
                     </div>
-                    <div>
-                      <h3 className="text-white font-bold text-xs sm:text-sm mb-1 flex items-center justify-center gap-1">
-                        مجتمع تلغرام
-                        <ExternalLink className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-70 group-hover:opacity-100 transition-opacity" />
-                      </h3>
-                      <p className="text-white/80 text-[10px] sm:text-xs leading-tight">
-                        شاهد تجارب المستخدمين
-                      </p>
+                    <h3 className="text-white font-bold text-sm sm:text-base flex items-center gap-1">
+                      انضم لمجتمعنا
+                      <ExternalLink className="h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity animate-pulse" />
+                    </h3>
+                  </div>
+                  <div className="space-y-1 mt-2">
+                    <div className="flex items-center gap-1.5 text-white/90">
+                      <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
+                      <p className="text-[10px] sm:text-xs font-medium">تحقق من صحة التطبيق</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-white/90">
+                      <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
+                      <p className="text-[10px] sm:text-xs font-medium">شاهد تجارب المستخدمين</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-white/90">
+                      <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
+                      <p className="text-[10px] sm:text-xs font-medium">دعم فوري 24/7</p>
                     </div>
                   </div>
                 </CardContent>
@@ -440,24 +456,39 @@ const Index = () => {
               onClick={() => navigate('/about-us')}
               className="block group cursor-pointer"
             >
-              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-primary to-primary/80 shadow-elevated hover:shadow-glow transition-all duration-300 hover:scale-[1.02] h-full">
+              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-primary to-primary/80 shadow-elevated hover:shadow-glow transition-all duration-300 hover:scale-[1.02] h-full min-h-[160px] sm:min-h-[180px]">
                 <div className="absolute inset-0 bg-gradient-glass"></div>
-                <CardContent className="p-3 sm:p-4 relative z-10">
-                  <div className="flex flex-col items-center justify-center text-center gap-2 sm:gap-3 h-full">
+                {/* Floating Icons Background */}
+                <div className="absolute inset-0 opacity-10">
+                  <Shield className="absolute top-2 left-2 w-6 h-6 animate-pulse" />
+                  <FileText className="absolute bottom-3 right-3 w-5 h-5 animate-bounce" />
+                  <CheckCircle className="absolute top-1/2 left-4 w-4 h-4 animate-pulse" />
+                </div>
+                <CardContent className="p-3 sm:p-4 relative z-10 h-full flex flex-col justify-between">
+                  <div className="flex flex-col items-center text-center gap-2">
                     <div className="relative">
                       <div className="absolute inset-0 bg-white/30 rounded-full blur-md animate-pulse-glow"></div>
-                      <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+                      <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <Shield className="w-6 h-6 sm:w-7 sm:h-7 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
                       </div>
                     </div>
-                    <div>
-                      <h3 className="text-white font-bold text-xs sm:text-sm mb-1 flex items-center justify-center gap-1">
-                        من نحن؟
-                        <ArrowLeft className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-70 group-hover:opacity-100 transition-all group-hover:translate-x-0.5" />
-                      </h3>
-                      <p className="text-white/80 text-[10px] sm:text-xs leading-tight">
-                        منصة موثوقة 100%
-                      </p>
+                    <h3 className="text-white font-bold text-sm sm:text-base flex items-center gap-1">
+                      من نحن؟
+                      <ArrowLeft className="h-3 w-3 opacity-70 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 animate-pulse" />
+                    </h3>
+                  </div>
+                  <div className="space-y-1 mt-2">
+                    <div className="flex items-center gap-1.5 text-white/90">
+                      <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
+                      <p className="text-[10px] sm:text-xs font-medium">منصة جزائرية مسجلة</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-white/90">
+                      <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
+                      <p className="text-[10px] sm:text-xs font-medium">موثوقة 100%</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-white/90">
+                      <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
+                      <p className="text-[10px] sm:text-xs font-medium">شاهد سجلنا التجاري</p>
                     </div>
                   </div>
                 </CardContent>
