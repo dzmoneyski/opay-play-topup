@@ -1029,74 +1029,76 @@ const DiasporaTransfers = () => {
 
       {/* Approval Dialog */}
       <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>الموافقة على التحويل</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg">الموافقة على التحويل</DialogTitle>
+            <DialogDescription className="text-sm">
               قم بإدخال سعر الصرف لتحويل المبلغ إلى الدينار الجزائري
             </DialogDescription>
           </DialogHeader>
 
           {selectedTransfer && (
-            <div className="space-y-4">
-              <div className="bg-muted p-4 rounded-lg space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">المستخدم:</span>
+            <div className="space-y-3">
+              {/* Transfer Info - Compact */}
+              <div className="bg-muted/50 p-3 rounded-md space-y-1.5 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">المستخدم:</span>
                   <span className="font-medium">{selectedTransfer.profiles?.full_name}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">الهاتف:</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">الهاتف:</span>
                   <span className="font-medium">{selectedTransfer.profiles?.phone}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">المبلغ المطلوب:</span>
-                  <span className="font-bold text-lg text-primary">${selectedTransfer.amount}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">المبلغ المطلوب:</span>
+                  <span className="font-bold text-primary">${selectedTransfer.amount}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">الدولة:</span>
-                  <span>{selectedTransfer.sender_country} {selectedTransfer.sender_city && `- ${selectedTransfer.sender_city}`}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">الدولة:</span>
+                  <span className="text-xs">{selectedTransfer.sender_country} {selectedTransfer.sender_city && `- ${selectedTransfer.sender_city}`}</span>
                 </div>
                 {selectedTransfer.payment_method && (
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">طريقة الدفع:</span>
-                    <span>{selectedTransfer.payment_method}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">طريقة الدفع:</span>
+                    <span className="text-xs">{selectedTransfer.payment_method}</span>
                   </div>
                 )}
                 {selectedTransfer.transaction_reference && (
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">المرجع:</span>
-                    <span className="font-mono text-sm">{selectedTransfer.transaction_reference}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">المرجع:</span>
+                    <span className="font-mono text-xs">{selectedTransfer.transaction_reference}</span>
                   </div>
                 )}
               </div>
 
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg">
-                <div className="flex gap-2">
-                  <span className="text-yellow-800 dark:text-yellow-200 text-sm">💡</span>
-                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                    إذا كان المبلغ المستلم مختلفاً عن المطلوب، أدخله في الحقل أدناه
-                  </p>
-                </div>
+              {/* Warning - Compact */}
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 px-3 py-2 rounded-md flex items-start gap-2">
+                <span className="text-yellow-800 dark:text-yellow-200 text-sm">💡</span>
+                <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                  إذا كان المبلغ المستلم مختلفاً عن المطلوب، أدخله في الحقل أدناه
+                </p>
               </div>
 
-              <div>
-                <Label htmlFor="receivedAmount">المبلغ المستلم فعلياً (USD/EUR) - اختياري</Label>
+              {/* Received Amount Input - Compact */}
+              <div className="space-y-1.5">
+                <Label htmlFor="receivedAmount" className="text-sm">المبلغ المستلم فعلياً (USD/EUR) - اختياري</Label>
                 <Input
                   id="receivedAmount"
                   type="number"
-                  placeholder={`${selectedTransfer.amount} (افتراضي)`}
+                  placeholder={`${selectedTransfer.amount}`}
                   value={approvalData.receivedAmount}
                   onChange={(e) => setApprovalData({ ...approvalData, receivedAmount: e.target.value })}
                   step="0.01"
-                  className="mt-2"
+                  className="h-9"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground">
                   اتركه فارغاً إذا كان المبلغ المستلم مطابقاً للمطلوب
                 </p>
               </div>
 
-              <div>
-                <Label htmlFor="exchangeRate">سعر الصرف (1 USD/EUR = ... DZD)</Label>
+              {/* Exchange Rate Input - Compact */}
+              <div className="space-y-1.5">
+                <Label htmlFor="exchangeRate" className="text-sm">سعر الصرف (1 USD/EUR = ... DZD)</Label>
                 <Input
                   id="exchangeRate"
                   type="number"
@@ -1104,15 +1106,16 @@ const DiasporaTransfers = () => {
                   value={approvalData.exchangeRate}
                   onChange={(e) => setApprovalData({ ...approvalData, exchangeRate: e.target.value })}
                   step="0.01"
-                  className="mt-2"
+                  className="h-9"
                 />
               </div>
 
+              {/* Calculated Amount - Compact */}
               {approvalData.exchangeRate && (
-                <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg space-y-2">
+                <div className="bg-primary/5 border border-primary/20 p-3 rounded-md">
                   <div className="flex justify-between items-center">
                     <p className="text-sm text-muted-foreground">المبلغ بالدينار الجزائري:</p>
-                    <p className="text-2xl font-bold text-primary">
+                    <p className="text-xl font-bold text-primary">
                       {(
                         (approvalData.receivedAmount ? parseFloat(approvalData.receivedAmount) : selectedTransfer.amount) * 
                         parseFloat(approvalData.exchangeRate || '0')
@@ -1120,22 +1123,23 @@ const DiasporaTransfers = () => {
                     </p>
                   </div>
                   {approvalData.receivedAmount && parseFloat(approvalData.receivedAmount) !== selectedTransfer.amount && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
                       ⚠️ المبلغ المستلم ({approvalData.receivedAmount}) مختلف عن المطلوب ({selectedTransfer.amount})
                     </p>
                   )}
                 </div>
               )}
 
-              <div>
-                <Label htmlFor="adminNotes">ملاحظات المشرف (اختياري)</Label>
+              {/* Admin Notes - Compact */}
+              <div className="space-y-1.5">
+                <Label htmlFor="adminNotes" className="text-sm">ملاحظات المشرف (اختياري)</Label>
                 <Textarea
                   id="adminNotes"
                   placeholder="أي ملاحظات إضافية عن الطلب..."
                   value={approvalData.adminNotes}
                   onChange={(e) => setApprovalData({ ...approvalData, adminNotes: e.target.value })}
-                  rows={3}
-                  className="mt-2"
+                  rows={2}
+                  className="text-sm"
                 />
               </div>
             </div>
