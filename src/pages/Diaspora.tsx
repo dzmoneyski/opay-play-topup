@@ -203,41 +203,14 @@ const Diaspora = () => {
     { icon: Heart, text: "دعم عائلتك بسهولة" }
   ];
 
-  const paymentMethods = [
-    { name: "Revolut", color: "from-[#0075EB] to-[#00C6FF]", icon: CreditCard, bankAccountIndex: 0 },
-    { name: "Wise", color: "from-[#9FE870] to-[#37B45B]", icon: Landmark, bankAccountIndex: 1 },
-    { name: "Paysera", color: "from-[#FF6B35] to-[#F7931E]", icon: CreditCard, bankAccountIndex: 2 },
-    { name: "SEPA", color: "from-[#003399] to-[#0066CC]", icon: Landmark, bankAccountIndex: null },
-    { name: "Bank Transfer", color: "from-[#6366F1] to-[#8B5CF6]", icon: Landmark, bankAccountIndex: null },
-    { name: "Western Union", color: "from-[#FFCC00] to-[#FF9900]", icon: Send, bankAccountIndex: null }
-  ];
+  const paymentMethods = diasporaSettings?.bank_accounts?.map((account: any) => ({
+    name: account.name,
+    color: account.color,
+    icon: account.icon === 'Landmark' ? Landmark : account.icon === 'Send' ? Send : CreditCard,
+    bankAccountId: account.id
+  })) || [];
 
-  const bankAccounts = diasporaSettings ? [
-    {
-      name: "Revolut",
-      accountNumber: diasporaSettings.revolut.account_number,
-      accountName: diasporaSettings.revolut.account_name,
-      bic: diasporaSettings.revolut.bic,
-      currency: diasporaSettings.revolut.currency,
-      color: "from-[#0075EB] to-[#00C6FF]"
-    },
-    {
-      name: "Wise",
-      accountNumber: diasporaSettings.wise.account_number,
-      accountName: diasporaSettings.wise.account_name,
-      bic: diasporaSettings.wise.bic,
-      currency: diasporaSettings.wise.currency,
-      color: "from-[#9FE870] to-[#37B45B]"
-    },
-    {
-      name: "Paysera",
-      accountNumber: diasporaSettings.paysera.account_number,
-      accountName: diasporaSettings.paysera.account_name,
-      bic: diasporaSettings.paysera.bic,
-      currency: diasporaSettings.paysera.currency,
-      color: "from-[#FF6B35] to-[#F7931E]"
-    }
-  ] : [];
+  const bankAccounts = diasporaSettings?.bank_accounts || [];
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -341,79 +314,78 @@ const Diaspora = () => {
         </Card>
 
         {/* Bank Accounts Information - Shows when payment method is selected */}
-        {selectedPaymentMethod && paymentMethods.find(m => m.name === selectedPaymentMethod)?.bankAccountIndex !== null && (
-          <div className="space-y-3 mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
-            <h3 className="text-base font-bold flex items-center gap-2">
-              <Landmark className="w-5 h-5 text-primary" />
-              معلومات التحويل لـ {selectedPaymentMethod}
-            </h3>
-            {bankAccounts
-              .filter((_, index) => index === paymentMethods.find(m => m.name === selectedPaymentMethod)?.bankAccountIndex)
-              .map((account, index) => (
-            <Card key={index} className={`border-primary/20 bg-gradient-to-br ${account.color} text-white overflow-hidden`}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-bold text-base">{account.name}</h4>
-                  <span className="text-xs bg-white/20 px-2 py-1 rounded-full">{account.currency}</span>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-[10px] opacity-80">اسم الحساب</p>
-                        <p className="text-xs font-bold">{account.accountName}</p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 w-7 p-0 hover:bg-white/20"
-                        onClick={() => copyToClipboard(account.accountName, "اسم الحساب")}
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
+        {selectedPaymentMethod && (() => {
+          const selectedAccount = bankAccounts.find((acc: any) => acc.name === selectedPaymentMethod);
+          return selectedAccount ? (
+            <div className="space-y-3 mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
+              <h3 className="text-base font-bold flex items-center gap-2">
+                <Landmark className="w-5 h-5 text-primary" />
+                معلومات التحويل لـ {selectedPaymentMethod}
+              </h3>
+              <Card className={`border-primary/20 bg-gradient-to-br ${selectedAccount.color} text-white overflow-hidden`}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-bold text-base">{selectedAccount.name}</h4>
+                    <span className="text-xs bg-white/20 px-2 py-1 rounded-full">{selectedAccount.currency}</span>
                   </div>
+                  
+                  <div className="space-y-2">
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] opacity-80">اسم الحساب</p>
+                          <p className="text-xs font-bold">{selectedAccount.account_name}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0 hover:bg-white/20"
+                          onClick={() => copyToClipboard(selectedAccount.account_name, "اسم الحساب")}
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
 
-                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-[10px] opacity-80">IBAN / رقم الحساب</p>
-                        <p className="text-xs font-bold font-mono">{account.accountNumber}</p>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] opacity-80">IBAN / رقم الحساب</p>
+                          <p className="text-xs font-bold font-mono">{selectedAccount.account_number}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0 hover:bg-white/20"
+                          onClick={() => copyToClipboard(selectedAccount.account_number, "رقم الحساب")}
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 w-7 p-0 hover:bg-white/20"
-                        onClick={() => copyToClipboard(account.accountNumber, "رقم الحساب")}
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </Button>
                     </div>
-                  </div>
 
-                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-[10px] opacity-80">BIC / SWIFT</p>
-                        <p className="text-xs font-bold font-mono">{account.bic}</p>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] opacity-80">BIC / SWIFT</p>
+                          <p className="text-xs font-bold font-mono">{selectedAccount.bic}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0 hover:bg-white/20"
+                          onClick={() => copyToClipboard(selectedAccount.bic, "BIC")}
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 w-7 p-0 hover:bg-white/20"
-                        onClick={() => copyToClipboard(account.bic, "BIC")}
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </Button>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-          </div>
-        )}
+                </CardContent>
+              </Card>
+            </div>
+          ) : null;
+        })()}
 
         {/* Instructions */}
         <Card className="border-primary/20 bg-primary/5 mb-6">
@@ -490,11 +462,11 @@ const Diaspora = () => {
                   className="w-full mt-1.5 flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <option value="">اختر طريقة الدفع</option>
-                  <option value="revolut">Revolut</option>
-                  <option value="wise">Wise</option>
-                  <option value="paysera">Paysera</option>
-                  <option value="bank_transfer">Bank Transfer</option>
-                  <option value="western_union">Western Union</option>
+                  {bankAccounts.map((account: any) => (
+                    <option key={account.id} value={account.name.toLowerCase()}>
+                      {account.name}
+                    </option>
+                  ))}
                   <option value="other">أخرى</option>
                 </select>
               </div>

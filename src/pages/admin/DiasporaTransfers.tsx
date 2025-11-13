@@ -51,7 +51,11 @@ import {
   Loader2,
   Settings,
   Save,
-  Copy
+  Copy,
+  Trash2,
+  Plus,
+  Landmark,
+  Edit
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -99,25 +103,72 @@ const DiasporaTransfers = () => {
   const [diasporaSettings, setDiasporaSettings] = useState({
     enabled: true,
     default_exchange_rate: 280,
-    revolut: {
-      account_name: 'OpaY Services',
-      account_number: 'GB29 REVO 0099 6900 1234 56',
-      bic: 'REVOGB21',
-      currency: 'EUR/USD'
-    },
-    wise: {
-      account_name: 'OpaY International',
-      account_number: 'BE68 5390 0754 7034',
-      bic: 'TRWIBEB1XXX',
-      currency: 'EUR/USD'
-    },
-    paysera: {
-      account_name: 'OpaY Transfer',
-      account_number: 'LT12 3456 7890 1234 5678',
-      bic: 'EVIULT2VXXX',
-      currency: 'EUR'
-    }
+    bank_accounts: [
+      {
+        id: '1',
+        name: 'Revolut',
+        account_name: 'OpaY Services',
+        account_number: 'GB29 REVO 0099 6900 1234 56',
+        bic: 'REVOGB21',
+        currency: 'EUR/USD',
+        color: 'from-[#0075EB] to-[#00C6FF]',
+        icon: 'CreditCard'
+      },
+      {
+        id: '2',
+        name: 'Wise',
+        account_name: 'OpaY International',
+        account_number: 'BE68 5390 0754 7034',
+        bic: 'TRWIBEB1XXX',
+        currency: 'EUR/USD',
+        color: 'from-[#9FE870] to-[#37B45B]',
+        icon: 'Landmark'
+      },
+      {
+        id: '3',
+        name: 'Paysera',
+        account_name: 'OpaY Transfer',
+        account_number: 'LT12 3456 7890 1234 5678',
+        bic: 'EVIULT2VXXX',
+        currency: 'EUR',
+        color: 'from-[#FF6B35] to-[#F7931E]',
+        icon: 'CreditCard'
+      },
+      {
+        id: '4',
+        name: 'SEPA',
+        account_name: 'OpaY Europe',
+        account_number: 'FR76 3000 4000 0100 0000 0000 001',
+        bic: 'BNPAFRPPXXX',
+        currency: 'EUR',
+        color: 'from-[#003399] to-[#0066CC]',
+        icon: 'Landmark'
+      },
+      {
+        id: '5',
+        name: 'Bank Transfer',
+        account_name: 'OpaY Financial',
+        account_number: 'DE89 3704 0044 0532 0130 00',
+        bic: 'COBADEFFXXX',
+        currency: 'EUR/USD',
+        color: 'from-[#6366F1] to-[#8B5CF6]',
+        icon: 'Landmark'
+      }
+    ]
   });
+
+  const [newAccount, setNewAccount] = useState({
+    name: '',
+    account_name: '',
+    account_number: '',
+    bic: '',
+    currency: 'EUR/USD',
+    color: 'from-[#6366F1] to-[#8B5CF6]',
+    icon: 'CreditCard'
+  });
+  
+  const [showAddAccountDialog, setShowAddAccountDialog] = useState(false);
+  const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
 
   // Load default exchange rate from settings
   React.useEffect(() => {
@@ -371,6 +422,65 @@ const DiasporaTransfers = () => {
       title: "تم النسخ",
       description: `تم نسخ ${label} بنجاح`,
     });
+  };
+
+  const handleAddAccount = () => {
+    if (!newAccount.name || !newAccount.account_name || !newAccount.account_number || !newAccount.bic) {
+      toast({
+        title: "خطأ",
+        description: "يرجى ملء جميع الحقول المطلوبة",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const account = {
+      ...newAccount,
+      id: Date.now().toString()
+    };
+
+    setDiasporaSettings(prev => ({
+      ...prev,
+      bank_accounts: [...prev.bank_accounts, account]
+    }));
+
+    setNewAccount({
+      name: '',
+      account_name: '',
+      account_number: '',
+      bic: '',
+      currency: 'EUR/USD',
+      color: 'from-[#6366F1] to-[#8B5CF6]',
+      icon: 'CreditCard'
+    });
+    
+    setShowAddAccountDialog(false);
+    
+    toast({
+      title: "تم الإضافة",
+      description: "تم إضافة الحساب البنكي بنجاح",
+    });
+  };
+
+  const handleDeleteAccount = (accountId: string) => {
+    setDiasporaSettings(prev => ({
+      ...prev,
+      bank_accounts: prev.bank_accounts.filter(acc => acc.id !== accountId)
+    }));
+    
+    toast({
+      title: "تم الحذف",
+      description: "تم حذف الحساب البنكي",
+    });
+  };
+
+  const handleUpdateAccount = (accountId: string, field: string, value: string) => {
+    setDiasporaSettings(prev => ({
+      ...prev,
+      bank_accounts: prev.bank_accounts.map(acc => 
+        acc.id === accountId ? { ...acc, [field]: value } : acc
+      )
+    }));
   };
 
   const getStatusBadge = (status: string) => {
@@ -660,252 +770,114 @@ const DiasporaTransfers = () => {
             </CardContent>
           </Card>
 
-          {/* Revolut Account */}
+          {/* Bank Accounts List */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[#0075EB]">
-                <CreditCard className="w-5 h-5" />
-                حساب Revolut
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Landmark className="w-5 h-5 text-primary" />
+                  الحسابات البنكية
+                </CardTitle>
+                <Button onClick={() => setShowAddAccountDialog(true)} size="sm" className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  إضافة حساب جديد
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>اسم الحساب</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={diasporaSettings.revolut.account_name}
-                      onChange={(e) => setDiasporaSettings(prev => ({
-                        ...prev,
-                        revolut: { ...prev.revolut, account_name: e.target.value }
-                      }))}
-                    />
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => copyToClipboard(diasporaSettings.revolut.account_name, 'اسم الحساب')}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>رقم الحساب / IBAN</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={diasporaSettings.revolut.account_number}
-                      onChange={(e) => setDiasporaSettings(prev => ({
-                        ...prev,
-                        revolut: { ...prev.revolut, account_number: e.target.value }
-                      }))}
-                      className="font-mono"
-                    />
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => copyToClipboard(diasporaSettings.revolut.account_number, 'رقم الحساب')}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>BIC / SWIFT</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={diasporaSettings.revolut.bic}
-                      onChange={(e) => setDiasporaSettings(prev => ({
-                        ...prev,
-                        revolut: { ...prev.revolut, bic: e.target.value }
-                      }))}
-                      className="font-mono"
-                    />
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => copyToClipboard(diasporaSettings.revolut.bic, 'BIC')}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>العملة</Label>
-                  <Input
-                    value={diasporaSettings.revolut.currency}
-                    onChange={(e) => setDiasporaSettings(prev => ({
-                      ...prev,
-                      revolut: { ...prev.revolut, currency: e.target.value }
-                    }))}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              {diasporaSettings.bank_accounts.map((account) => (
+                <Card key={account.id} className="relative overflow-hidden">
+                  <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${account.color}`} />
+                  <CardContent className="pt-6 pr-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h4 className="font-bold text-lg">{account.name}</h4>
+                        <Badge variant="outline" className="mt-1">{account.currency}</Badge>
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteAccount(account.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
 
-          {/* Wise Account */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[#37B45B]">
-                <CreditCard className="w-5 h-5" />
-                حساب Wise
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>اسم الحساب</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={diasporaSettings.wise.account_name}
-                      onChange={(e) => setDiasporaSettings(prev => ({
-                        ...prev,
-                        wise: { ...prev.wise, account_name: e.target.value }
-                      }))}
-                    />
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => copyToClipboard(diasporaSettings.wise.account_name, 'اسم الحساب')}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>رقم الحساب / IBAN</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={diasporaSettings.wise.account_number}
-                      onChange={(e) => setDiasporaSettings(prev => ({
-                        ...prev,
-                        wise: { ...prev.wise, account_number: e.target.value }
-                      }))}
-                      className="font-mono"
-                    />
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => copyToClipboard(diasporaSettings.wise.account_number, 'رقم الحساب')}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>BIC / SWIFT</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={diasporaSettings.wise.bic}
-                      onChange={(e) => setDiasporaSettings(prev => ({
-                        ...prev,
-                        wise: { ...prev.wise, bic: e.target.value }
-                      }))}
-                      className="font-mono"
-                    />
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => copyToClipboard(diasporaSettings.wise.bic, 'BIC')}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>العملة</Label>
-                  <Input
-                    value={diasporaSettings.wise.currency}
-                    onChange={(e) => setDiasporaSettings(prev => ({
-                      ...prev,
-                      wise: { ...prev.wise, currency: e.target.value }
-                    }))}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">اسم الحساب</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            value={account.account_name}
+                            onChange={(e) => handleUpdateAccount(account.id, 'account_name', e.target.value)}
+                            className="text-sm"
+                          />
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            onClick={() => copyToClipboard(account.account_name, 'اسم الحساب')}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
 
-          {/* Paysera Account */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[#FF6B35]">
-                <CreditCard className="w-5 h-5" />
-                حساب Paysera
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>اسم الحساب</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={diasporaSettings.paysera.account_name}
-                      onChange={(e) => setDiasporaSettings(prev => ({
-                        ...prev,
-                        paysera: { ...prev.paysera, account_name: e.target.value }
-                      }))}
-                    />
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => copyToClipboard(diasporaSettings.paysera.account_name, 'اسم الحساب')}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">رقم الحساب / IBAN</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            value={account.account_number}
+                            onChange={(e) => handleUpdateAccount(account.id, 'account_number', e.target.value)}
+                            className="font-mono text-sm"
+                          />
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            onClick={() => copyToClipboard(account.account_number, 'رقم الحساب')}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">BIC / SWIFT</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            value={account.bic}
+                            onChange={(e) => handleUpdateAccount(account.id, 'bic', e.target.value)}
+                            className="font-mono text-sm"
+                          />
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            onClick={() => copyToClipboard(account.bic, 'BIC')}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">العملة</Label>
+                        <Input
+                          value={account.currency}
+                          onChange={(e) => handleUpdateAccount(account.id, 'currency', e.target.value)}
+                          className="text-sm"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              {diasporaSettings.bank_accounts.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Landmark className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                  <p>لا توجد حسابات بنكية. قم بإضافة حساب جديد.</p>
                 </div>
-                <div className="space-y-2">
-                  <Label>رقم الحساب / IBAN</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={diasporaSettings.paysera.account_number}
-                      onChange={(e) => setDiasporaSettings(prev => ({
-                        ...prev,
-                        paysera: { ...prev.paysera, account_number: e.target.value }
-                      }))}
-                      className="font-mono"
-                    />
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => copyToClipboard(diasporaSettings.paysera.account_number, 'رقم الحساب')}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>BIC / SWIFT</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={diasporaSettings.paysera.bic}
-                      onChange={(e) => setDiasporaSettings(prev => ({
-                        ...prev,
-                        paysera: { ...prev.paysera, bic: e.target.value }
-                      }))}
-                      className="font-mono"
-                    />
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => copyToClipboard(diasporaSettings.paysera.bic, 'BIC')}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>العملة</Label>
-                  <Input
-                    value={diasporaSettings.paysera.currency}
-                    onChange={(e) => setDiasporaSettings(prev => ({
-                      ...prev,
-                      paysera: { ...prev.paysera, currency: e.target.value }
-                    }))}
-                  />
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
@@ -932,6 +904,122 @@ const DiasporaTransfers = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Add Account Dialog */}
+      <Dialog open={showAddAccountDialog} onOpenChange={setShowAddAccountDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>إضافة حساب بنكي جديد</DialogTitle>
+            <DialogDescription>
+              أدخل معلومات الحساب البنكي الجديد
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="new_bank_name">اسم البنك / المحفظة *</Label>
+                <Input
+                  id="new_bank_name"
+                  placeholder="مثال: Western Union"
+                  value={newAccount.name}
+                  onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="new_currency">العملة *</Label>
+                <Input
+                  id="new_currency"
+                  placeholder="EUR/USD"
+                  value={newAccount.currency}
+                  onChange={(e) => setNewAccount({ ...newAccount, currency: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="new_account_name">اسم الحساب *</Label>
+              <Input
+                id="new_account_name"
+                placeholder="مثال: OpaY Services"
+                value={newAccount.account_name}
+                onChange={(e) => setNewAccount({ ...newAccount, account_name: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="new_account_number">رقم الحساب / IBAN *</Label>
+              <Input
+                id="new_account_number"
+                placeholder="مثال: GB29 REVO 0099 6900 1234 56"
+                value={newAccount.account_number}
+                onChange={(e) => setNewAccount({ ...newAccount, account_number: e.target.value })}
+                className="font-mono"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="new_bic">BIC / SWIFT *</Label>
+              <Input
+                id="new_bic"
+                placeholder="مثال: REVOGB21"
+                value={newAccount.bic}
+                onChange={(e) => setNewAccount({ ...newAccount, bic: e.target.value })}
+                className="font-mono"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="new_color">اللون (Tailwind Gradient)</Label>
+              <Select
+                value={newAccount.color}
+                onValueChange={(value) => setNewAccount({ ...newAccount, color: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="from-[#0075EB] to-[#00C6FF]">أزرق (Revolut)</SelectItem>
+                  <SelectItem value="from-[#9FE870] to-[#37B45B]">أخضر (Wise)</SelectItem>
+                  <SelectItem value="from-[#FF6B35] to-[#F7931E]">برتقالي (Paysera)</SelectItem>
+                  <SelectItem value="from-[#003399] to-[#0066CC]">أزرق داكن (SEPA)</SelectItem>
+                  <SelectItem value="from-[#6366F1] to-[#8B5CF6]">بنفسجي</SelectItem>
+                  <SelectItem value="from-[#FFCC00] to-[#FF9900]">ذهبي</SelectItem>
+                  <SelectItem value="from-[#EC4899] to-[#F43F5E]">وردي</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="new_icon">الأيقونة</Label>
+              <Select
+                value={newAccount.icon}
+                onValueChange={(value) => setNewAccount({ ...newAccount, icon: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CreditCard">بطاقة ائتمان</SelectItem>
+                  <SelectItem value="Landmark">بنك</SelectItem>
+                  <SelectItem value="Send">إرسال</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddAccountDialog(false)}>
+              إلغاء
+            </Button>
+            <Button onClick={handleAddAccount} className="gap-2">
+              <Plus className="w-4 h-4" />
+              إضافة الحساب
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Approval Dialog */}
       <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
