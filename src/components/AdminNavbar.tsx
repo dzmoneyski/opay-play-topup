@@ -15,7 +15,8 @@ import {
   X,
   Home,
   Wallet,
-  ShoppingBag
+  ShoppingBag,
+  Globe2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +50,7 @@ const serviceItems = [
   { title: "إدارة الألعاب", url: "/admin/games", icon: Gamepad2, notificationKey: 'pendingGames' },
   { title: "إدارة المراهنات", url: "/admin/betting", icon: Gamepad2, notificationKey: 'pendingBettingVerifications' },
   { title: "طلبات علي اكسبرس", url: "/admin/aliexpress", icon: ShoppingBag },
+  { title: "طلبات الجالية", url: "/admin/diaspora", icon: Globe2 },
 ];
 
 export function AdminNavbar() {
