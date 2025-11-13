@@ -1365,6 +1365,16 @@ export type Database = {
             Args: { _admin_id: string; _deposit_id: string; _notes?: string }
             Returns: undefined
           }
+      approve_diaspora_transfer: {
+        Args: {
+          _admin_id: string
+          _admin_notes?: string
+          _exchange_rate: number
+          _received_amount?: number
+          _transfer_id: string
+        }
+        Returns: Json
+      }
       approve_digital_card_order:
         | { Args: { _admin_notes?: string; _order_id: string }; Returns: Json }
         | {
@@ -1500,6 +1510,14 @@ export type Database = {
       redeem_gift_card: { Args: { _card_code: string }; Returns: Json }
       reject_betting_deposit: {
         Args: { _admin_notes?: string; _transaction_id: string }
+        Returns: Json
+      }
+      reject_diaspora_transfer: {
+        Args: {
+          _admin_id: string
+          _rejection_reason: string
+          _transfer_id: string
+        }
         Returns: Json
       }
       reject_digital_card_order: {

@@ -93,6 +93,7 @@ const DiasporaTransfers = () => {
   
   const [approvalData, setApprovalData] = useState({
     exchangeRate: '280',
+    receivedAmount: '', // المبلغ الذي تم استلامه فعلياً (إذا كان مختلفاً)
     adminNotes: ''
   });
   
@@ -234,50 +235,35 @@ const DiasporaTransfers = () => {
 
   // Approve transfer mutation
   const approveMutation = useMutation({
-    mutationFn: async ({ transferId, exchangeRate, adminNotes }: { 
+    mutationFn: async ({ 
+      transferId, 
+      exchangeRate, 
+      receivedAmount,
+      adminNotes 
+    }: { 
       transferId: string; 
       exchangeRate: number;
+      receivedAmount: number | null;
       adminNotes: string;
     }) => {
-      const transfer = transfers?.find(t => t.id === transferId);
-      if (!transfer) throw new Error('Transfer not found');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('غير مصرح');
 
-      const amountDzd = transfer.amount * exchangeRate;
-
-      // Update transfer status
-      const { error: updateError } = await supabase
-        .from('diaspora_transfers')
-        .update({
-          status: 'approved',
-          exchange_rate: exchangeRate,
-          amount_dzd: amountDzd,
-          admin_notes: adminNotes,
-          processed_at: new Date().toISOString()
-        })
-        .eq('id', transferId);
-
-      if (updateError) throw updateError;
-
-      // Add deposit to credit user account
-      const { error: depositError } = await supabase
-        .from('deposits')
-        .insert({
-          user_id: transfer.sender_id,
-          amount: amountDzd,
-          payment_method: 'diaspora_transfer',
-          status: 'approved',
-          admin_notes: `تحويل من الجالية - ${transfer.sender_country}`,
-          processed_at: new Date().toISOString()
-        });
-
-      if (depositError) throw depositError;
-
-      // Update user balance
-      const { error: balanceError } = await supabase.rpc('recalculate_user_balance', {
-        _user_id: transfer.sender_id
+      // استخدام الدالة الجديدة من قاعدة البيانات
+      const { data, error } = await supabase.rpc('approve_diaspora_transfer', {
+        _transfer_id: transferId,
+        _admin_id: user.id,
+        _exchange_rate: exchangeRate,
+        _received_amount: receivedAmount,
+        _admin_notes: adminNotes
       });
 
-      if (balanceError) throw balanceError;
+      if (error) throw error;
+      
+      const result = data as { success: boolean; error?: string; message?: string };
+      if (!result?.success) throw new Error(result?.error || 'فشلت العملية');
+      
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-diaspora-transfers'] });
@@ -287,7 +273,7 @@ const DiasporaTransfers = () => {
       });
       setShowApprovalDialog(false);
       setSelectedTransfer(null);
-      setApprovalData({ exchangeRate: '280', adminNotes: '' });
+      setApprovalData({ exchangeRate: '280', receivedAmount: '', adminNotes: '' });
     },
     onError: (error) => {
       toast({
@@ -301,16 +287,21 @@ const DiasporaTransfers = () => {
   // Reject transfer mutation
   const rejectMutation = useMutation({
     mutationFn: async ({ transferId, reason }: { transferId: string; reason: string }) => {
-      const { error } = await supabase
-        .from('diaspora_transfers')
-        .update({
-          status: 'rejected',
-          admin_notes: reason,
-          processed_at: new Date().toISOString()
-        })
-        .eq('id', transferId);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('غير مصرح');
+
+      const { data, error } = await supabase.rpc('reject_diaspora_transfer', {
+        _transfer_id: transferId,
+        _admin_id: user.id,
+        _rejection_reason: reason
+      });
 
       if (error) throw error;
+      
+      const result = data as { success: boolean; error?: string; message?: string };
+      if (!result?.success) throw new Error(result?.error || 'فشلت العملية');
+      
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-diaspora-transfers'] });
@@ -335,6 +326,7 @@ const DiasporaTransfers = () => {
     setSelectedTransfer(transfer);
     setApprovalData({
       exchangeRate: defaultExchangeRate.toString(),
+      receivedAmount: '', // فارغ افتراضياً
       adminNotes: ''
     });
     setShowApprovalDialog(true);
@@ -358,9 +350,23 @@ const DiasporaTransfers = () => {
       return;
     }
 
+    const receivedAmount = approvalData.receivedAmount 
+      ? parseFloat(approvalData.receivedAmount) 
+      : null;
+
+    if (receivedAmount !== null && (isNaN(receivedAmount) || receivedAmount <= 0)) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال مبلغ صحيح أو تركه فارغاً",
+        variant: "destructive"
+      });
+      return;
+    }
+
     approveMutation.mutate({
       transferId: selectedTransfer.id,
       exchangeRate,
+      receivedAmount,
       adminNotes: approvalData.adminNotes
     });
   };
@@ -1039,17 +1045,58 @@ const DiasporaTransfers = () => {
                   <span className="font-medium">{selectedTransfer.profiles?.full_name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">المبلغ:</span>
-                  <span className="font-bold text-lg">${selectedTransfer.amount}</span>
+                  <span className="text-sm text-muted-foreground">الهاتف:</span>
+                  <span className="font-medium">{selectedTransfer.profiles?.phone}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">المبلغ المطلوب:</span>
+                  <span className="font-bold text-lg text-primary">${selectedTransfer.amount}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">الدولة:</span>
-                  <span>{selectedTransfer.sender_country}</span>
+                  <span>{selectedTransfer.sender_country} {selectedTransfer.sender_city && `- ${selectedTransfer.sender_city}`}</span>
+                </div>
+                {selectedTransfer.payment_method && (
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">طريقة الدفع:</span>
+                    <span>{selectedTransfer.payment_method}</span>
+                  </div>
+                )}
+                {selectedTransfer.transaction_reference && (
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">المرجع:</span>
+                    <span className="font-mono text-sm">{selectedTransfer.transaction_reference}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg">
+                <div className="flex gap-2">
+                  <span className="text-yellow-800 dark:text-yellow-200 text-sm">💡</span>
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    إذا كان المبلغ المستلم مختلفاً عن المطلوب، أدخله في الحقل أدناه
+                  </p>
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="exchangeRate">سعر الصرف (1 USD = ... DZD)</Label>
+                <Label htmlFor="receivedAmount">المبلغ المستلم فعلياً (USD/EUR) - اختياري</Label>
+                <Input
+                  id="receivedAmount"
+                  type="number"
+                  placeholder={`${selectedTransfer.amount} (افتراضي)`}
+                  value={approvalData.receivedAmount}
+                  onChange={(e) => setApprovalData({ ...approvalData, receivedAmount: e.target.value })}
+                  step="0.01"
+                  className="mt-2"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  اتركه فارغاً إذا كان المبلغ المستلم مطابقاً للمطلوب
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="exchangeRate">سعر الصرف (1 USD/EUR = ... DZD)</Label>
                 <Input
                   id="exchangeRate"
                   type="number"
@@ -1062,19 +1109,29 @@ const DiasporaTransfers = () => {
               </div>
 
               {approvalData.exchangeRate && (
-                <div className="bg-primary/5 p-4 rounded-lg">
-                  <p className="text-sm text-muted-foreground">المبلغ بالدينار:</p>
-                  <p className="text-2xl font-bold text-primary">
-                    {(selectedTransfer.amount * parseFloat(approvalData.exchangeRate || '0')).toLocaleString()} دج
-                  </p>
+                <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg space-y-2">
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-muted-foreground">المبلغ بالدينار الجزائري:</p>
+                    <p className="text-2xl font-bold text-primary">
+                      {(
+                        (approvalData.receivedAmount ? parseFloat(approvalData.receivedAmount) : selectedTransfer.amount) * 
+                        parseFloat(approvalData.exchangeRate || '0')
+                      ).toLocaleString('ar-DZ', { minimumFractionDigits: 2 })} دج
+                    </p>
+                  </div>
+                  {approvalData.receivedAmount && parseFloat(approvalData.receivedAmount) !== selectedTransfer.amount && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      ⚠️ المبلغ المستلم ({approvalData.receivedAmount}) مختلف عن المطلوب ({selectedTransfer.amount})
+                    </p>
+                  )}
                 </div>
               )}
 
               <div>
-                <Label htmlFor="adminNotes">ملاحظات (اختياري)</Label>
+                <Label htmlFor="adminNotes">ملاحظات المشرف (اختياري)</Label>
                 <Textarea
                   id="adminNotes"
-                  placeholder="أي ملاحظات إضافية..."
+                  placeholder="أي ملاحظات إضافية عن الطلب..."
                   value={approvalData.adminNotes}
                   onChange={(e) => setApprovalData({ ...approvalData, adminNotes: e.target.value })}
                   rows={3}
