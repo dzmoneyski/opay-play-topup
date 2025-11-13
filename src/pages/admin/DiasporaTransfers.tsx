@@ -74,6 +74,7 @@ const DiasporaTransfers = () => {
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [showRejectionDialog, setShowRejectionDialog] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [defaultExchangeRate, setDefaultExchangeRate] = useState(280);
   
   const [approvalData, setApprovalData] = useState({
     exchangeRate: '280',
@@ -81,6 +82,34 @@ const DiasporaTransfers = () => {
   });
   
   const [rejectionReason, setRejectionReason] = useState('');
+
+  // Load default exchange rate from settings
+  React.useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('platform_settings')
+          .select('setting_value')
+          .eq('setting_key', 'diaspora_settings')
+          .single();
+
+        if (error) throw error;
+
+        if (data?.setting_value) {
+          const settings = data.setting_value as any;
+          if (settings.default_exchange_rate) {
+            const rate = settings.default_exchange_rate;
+            setDefaultExchangeRate(rate);
+            setApprovalData(prev => ({ ...prev, exchangeRate: rate.toString() }));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    };
+
+    loadSettings();
+  }, []);
 
   // Fetch diaspora transfers
   const { data: transfers, isLoading } = useQuery({
@@ -216,6 +245,10 @@ const DiasporaTransfers = () => {
 
   const handleApprove = (transfer: DiasporaTransfer) => {
     setSelectedTransfer(transfer);
+    setApprovalData({
+      exchangeRate: defaultExchangeRate.toString(),
+      adminNotes: ''
+    });
     setShowApprovalDialog(true);
   };
 

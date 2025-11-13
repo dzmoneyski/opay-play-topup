@@ -22,7 +22,8 @@ import {
   TrendingUp,
   Calculator,
   AlertCircle,
-  Calendar
+  Calendar,
+  Globe2
 } from 'lucide-react';
 
 interface FeeConfig {
@@ -105,6 +106,29 @@ export default function SettingsPage() {
     baridimob: '0551234567',
     ccp: '1234567890123',
     edahabiya: '0987654321'
+  });
+
+  const [diasporaSettings, setDiasporaSettings] = React.useState({
+    enabled: true,
+    default_exchange_rate: 280,
+    revolut: {
+      account_name: 'OpaY Services',
+      account_number: 'GB29 REVO 0099 6900 1234 56',
+      bic: 'REVOGB21',
+      currency: 'EUR/USD'
+    },
+    wise: {
+      account_name: 'OpaY International',
+      account_number: 'BE68 5390 0754 7034',
+      bic: 'TRWIBEB1XXX',
+      currency: 'EUR/USD'
+    },
+    paysera: {
+      account_name: 'OpaY Transfer',
+      account_number: 'LT12 3456 7890 1234 5678',
+      bic: 'EVIULT2VXXX',
+      currency: 'EUR'
+    }
   });
 
   const [platformRevenue, setPlatformRevenue] = React.useState({
@@ -210,6 +234,29 @@ export default function SettingsPage() {
     loadWalletSettings();
   }, []);
 
+  // Load diaspora settings
+  React.useEffect(() => {
+    const loadDiasporaSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('platform_settings')
+          .select('setting_value')
+          .eq('setting_key', 'diaspora_settings')
+          .single();
+
+        if (error) throw error;
+
+        if (data?.setting_value) {
+          setDiasporaSettings(data.setting_value as any);
+        }
+      } catch (error) {
+        console.error('Error loading diaspora settings:', error);
+      }
+    };
+
+    loadDiasporaSettings();
+  }, []);
+
   const handleInputChange = (key: string, value: any) => {
     setSettings(prev => ({
       ...prev,
@@ -277,6 +324,30 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Error saving wallet settings:', error);
       alert('خطأ في حفظ إعدادات المحافظ');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveDiasporaSettings = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('platform_settings')
+        .upsert({
+          setting_key: 'diaspora_settings',
+          setting_value: diasporaSettings as any,
+          description: 'إعدادات خدمة الجالية والحسابات البنكية'
+        }, { onConflict: 'setting_key' });
+      
+      if (error) throw error;
+
+      console.log('Diaspora settings saved successfully');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error('Error saving diaspora settings:', error);
+      alert('خطأ في حفظ إعدادات الجالية');
     } finally {
       setSaving(false);
     }
@@ -1063,6 +1134,224 @@ export default function SettingsPage() {
                   rows={2}
                 />
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Diaspora Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe2 className="h-5 w-5" />
+              إعدادات خدمة الجالية
+            </CardTitle>
+            <CardDescription>
+              إدارة الحسابات البنكية وإعدادات تحويلات الجالية
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Enable/Disable Service */}
+            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+              <div className="space-y-0.5">
+                <Label>تفعيل خدمة الجالية</Label>
+                <p className="text-sm text-muted-foreground">
+                  السماح بتحويلات الجالية الجزائرية من الخارج
+                </p>
+              </div>
+              <Switch
+                checked={diasporaSettings.enabled}
+                onCheckedChange={(checked) => setDiasporaSettings(prev => ({ ...prev, enabled: checked }))}
+              />
+            </div>
+
+            {diasporaSettings.enabled && (
+              <>
+                {/* Default Exchange Rate */}
+                <div className="space-y-2">
+                  <Label htmlFor="default_exchange_rate">سعر الصرف الافتراضي (1 USD/EUR = ... DZD)</Label>
+                  <Input
+                    id="default_exchange_rate"
+                    type="number"
+                    step="0.01"
+                    value={diasporaSettings.default_exchange_rate}
+                    onChange={(e) => setDiasporaSettings(prev => ({ 
+                      ...prev, 
+                      default_exchange_rate: parseFloat(e.target.value) || 0 
+                    }))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    سيتم استخدام هذا السعر كقيمة افتراضية عند الموافقة على الطلبات
+                  </p>
+                </div>
+
+                <Separator />
+
+                {/* Revolut Account */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-primary" />
+                    حساب Revolut
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>اسم الحساب</Label>
+                      <Input
+                        value={diasporaSettings.revolut.account_name}
+                        onChange={(e) => setDiasporaSettings(prev => ({
+                          ...prev,
+                          revolut: { ...prev.revolut, account_name: e.target.value }
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>رقم الحساب / IBAN</Label>
+                      <Input
+                        value={diasporaSettings.revolut.account_number}
+                        onChange={(e) => setDiasporaSettings(prev => ({
+                          ...prev,
+                          revolut: { ...prev.revolut, account_number: e.target.value }
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>BIC / SWIFT</Label>
+                      <Input
+                        value={diasporaSettings.revolut.bic}
+                        onChange={(e) => setDiasporaSettings(prev => ({
+                          ...prev,
+                          revolut: { ...prev.revolut, bic: e.target.value }
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>العملة</Label>
+                      <Input
+                        value={diasporaSettings.revolut.currency}
+                        onChange={(e) => setDiasporaSettings(prev => ({
+                          ...prev,
+                          revolut: { ...prev.revolut, currency: e.target.value }
+                        }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Wise Account */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-primary" />
+                    حساب Wise
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>اسم الحساب</Label>
+                      <Input
+                        value={diasporaSettings.wise.account_name}
+                        onChange={(e) => setDiasporaSettings(prev => ({
+                          ...prev,
+                          wise: { ...prev.wise, account_name: e.target.value }
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>رقم الحساب / IBAN</Label>
+                      <Input
+                        value={diasporaSettings.wise.account_number}
+                        onChange={(e) => setDiasporaSettings(prev => ({
+                          ...prev,
+                          wise: { ...prev.wise, account_number: e.target.value }
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>BIC / SWIFT</Label>
+                      <Input
+                        value={diasporaSettings.wise.bic}
+                        onChange={(e) => setDiasporaSettings(prev => ({
+                          ...prev,
+                          wise: { ...prev.wise, bic: e.target.value }
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>العملة</Label>
+                      <Input
+                        value={diasporaSettings.wise.currency}
+                        onChange={(e) => setDiasporaSettings(prev => ({
+                          ...prev,
+                          wise: { ...prev.wise, currency: e.target.value }
+                        }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Paysera Account */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-primary" />
+                    حساب Paysera
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>اسم الحساب</Label>
+                      <Input
+                        value={diasporaSettings.paysera.account_name}
+                        onChange={(e) => setDiasporaSettings(prev => ({
+                          ...prev,
+                          paysera: { ...prev.paysera, account_name: e.target.value }
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>رقم الحساب / IBAN</Label>
+                      <Input
+                        value={diasporaSettings.paysera.account_number}
+                        onChange={(e) => setDiasporaSettings(prev => ({
+                          ...prev,
+                          paysera: { ...prev.paysera, account_number: e.target.value }
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>BIC / SWIFT</Label>
+                      <Input
+                        value={diasporaSettings.paysera.bic}
+                        onChange={(e) => setDiasporaSettings(prev => ({
+                          ...prev,
+                          paysera: { ...prev.paysera, bic: e.target.value }
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>العملة</Label>
+                      <Input
+                        value={diasporaSettings.paysera.currency}
+                        onChange={(e) => setDiasporaSettings(prev => ({
+                          ...prev,
+                          paysera: { ...prev.paysera, currency: e.target.value }
+                        }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="flex justify-end pt-4">
+                  <Button 
+                    onClick={handleSaveDiasporaSettings}
+                    disabled={saving}
+                    className="gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    حفظ إعدادات الجالية
+                  </Button>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

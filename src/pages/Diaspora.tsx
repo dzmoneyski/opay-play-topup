@@ -46,6 +46,31 @@ const Diaspora = () => {
     note: ''
   });
 
+  const [diasporaSettings, setDiasporaSettings] = useState<any>(null);
+
+  // Load diaspora settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('platform_settings')
+          .select('setting_value')
+          .eq('setting_key', 'diaspora_settings')
+          .single();
+
+        if (error) throw error;
+
+        if (data?.setting_value) {
+          setDiasporaSettings(data.setting_value);
+        }
+      } catch (error) {
+        console.error('Error loading diaspora settings:', error);
+      }
+    };
+
+    loadSettings();
+  }, []);
+
   useEffect(() => {
     if (!user) {
       navigate('/auth');
@@ -66,6 +91,34 @@ const Diaspora = () => {
 
   if (isAdmin === false) {
     return null;
+  }
+
+  if (!diasporaSettings) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!diasporaSettings.enabled) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
+        <BackButton />
+        <Card className="max-w-md mx-4">
+          <CardContent className="p-8 text-center">
+            <Globe2 className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-bold mb-2">الخدمة غير متاحة حالياً</h2>
+            <p className="text-muted-foreground">
+              خدمة الجالية غير متاحة في الوقت الحالي. يرجى المحاولة لاحقاً.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -159,32 +212,32 @@ const Diaspora = () => {
     { name: "Western Union", color: "from-[#FFCC00] to-[#FF9900]", icon: Send, bankAccountIndex: null }
   ];
 
-  const bankAccounts = [
+  const bankAccounts = diasporaSettings ? [
     {
       name: "Revolut",
-      accountNumber: "GB29 REVO 0099 6900 1234 56",
-      accountName: "OpaY Services",
-      bic: "REVOGB21",
-      currency: "EUR/USD",
+      accountNumber: diasporaSettings.revolut.account_number,
+      accountName: diasporaSettings.revolut.account_name,
+      bic: diasporaSettings.revolut.bic,
+      currency: diasporaSettings.revolut.currency,
       color: "from-[#0075EB] to-[#00C6FF]"
     },
     {
       name: "Wise",
-      accountNumber: "BE68 5390 0754 7034",
-      accountName: "OpaY International",
-      bic: "TRWIBEB1XXX",
-      currency: "EUR/USD",
+      accountNumber: diasporaSettings.wise.account_number,
+      accountName: diasporaSettings.wise.account_name,
+      bic: diasporaSettings.wise.bic,
+      currency: diasporaSettings.wise.currency,
       color: "from-[#9FE870] to-[#37B45B]"
     },
     {
       name: "Paysera",
-      accountNumber: "LT12 3456 7890 1234 5678",
-      accountName: "OpaY Transfer",
-      bic: "EVIULT2VXXX",
-      currency: "EUR",
+      accountNumber: diasporaSettings.paysera.account_number,
+      accountName: diasporaSettings.paysera.account_name,
+      bic: diasporaSettings.paysera.bic,
+      currency: diasporaSettings.paysera.currency,
       color: "from-[#FF6B35] to-[#F7931E]"
     }
-  ];
+  ] : [];
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
