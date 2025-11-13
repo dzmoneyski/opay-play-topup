@@ -261,6 +261,50 @@ const GameManagement = () => {
     }
   };
 
+  const handleTogglePlatformActive = async (id: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("game_platforms")
+        .update({ is_active: !currentStatus })
+        .eq("id", id);
+      if (error) throw error;
+      toast({ 
+        title: !currentStatus ? "تم إظهار المنصة" : "تم إخفاء المنصة",
+        description: !currentStatus 
+          ? "المنصة الآن مرئية للمستخدمين" 
+          : "المنصة الآن مخفية عن المستخدمين"
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin-game-platforms"] });
+      queryClient.invalidateQueries({ queryKey: ["game-platforms"] });
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleTogglePackageActive = async (id: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("game_packages")
+        .update({ is_active: !currentStatus })
+        .eq("id", id);
+      if (error) throw error;
+      toast({ 
+        title: !currentStatus ? "تم إظهار الباقة" : "تم إخفاء الباقة" 
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin-game-packages"] });
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6" dir="rtl">
       <div className="flex items-center justify-between">
@@ -602,10 +646,16 @@ const GameManagement = () => {
                       </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className={`px-2 py-1 rounded ${platform.is_active ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                      {platform.is_active ? 'مفعل' : 'غير مفعل'}
-                    </span>
+                  <div className="flex items-center justify-between gap-2 text-xs pt-3 border-t">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={platform.is_active}
+                        onCheckedChange={() => handleTogglePlatformActive(platform.id, platform.is_active)}
+                      />
+                      <span className="text-sm">
+                        {platform.is_active ? 'ظاهر للمستخدمين' : 'مخفي عن المستخدمين'}
+                      </span>
+                    </div>
                     <span className="text-muted-foreground">ترتيب: {platform.display_order}</span>
                   </div>
                 </CardContent>
@@ -759,11 +809,17 @@ const GameManagement = () => {
                       </Button>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between text-sm pt-3 border-t">
                     <span className="font-bold text-primary">{pkg.price} دج</span>
-                    <span className={`px-2 py-1 rounded text-xs ${pkg.is_active ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                      {pkg.is_active ? 'مفعل' : 'غير مفعل'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={pkg.is_active}
+                        onCheckedChange={() => handleTogglePackageActive(pkg.id, pkg.is_active)}
+                      />
+                      <span className="text-xs">
+                        {pkg.is_active ? 'ظاهر' : 'مخفي'}
+                      </span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
