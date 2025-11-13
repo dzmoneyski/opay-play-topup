@@ -22,7 +22,9 @@ import {
   Clock,
   Heart,
   CreditCard,
-  Landmark
+  Landmark,
+  Copy,
+  MessageCircle
 } from 'lucide-react';
 
 const Diaspora = () => {
@@ -137,6 +139,41 @@ const Diaspora = () => {
     { name: "Western Union", color: "from-[#FFCC00] to-[#FF9900]", icon: Send }
   ];
 
+  const bankAccounts = [
+    {
+      name: "Revolut",
+      accountNumber: "GB29 REVO 0099 6900 1234 56",
+      accountName: "OpaY Services",
+      bic: "REVOGB21",
+      currency: "EUR/USD",
+      color: "from-[#0075EB] to-[#00C6FF]"
+    },
+    {
+      name: "Wise",
+      accountNumber: "BE68 5390 0754 7034",
+      accountName: "OpaY International",
+      bic: "TRWIBEB1XXX",
+      currency: "EUR/USD",
+      color: "from-[#9FE870] to-[#37B45B]"
+    },
+    {
+      name: "Paysera",
+      accountNumber: "LT12 3456 7890 1234 5678",
+      accountName: "OpaY Transfer",
+      bic: "EVIULT2VXXX",
+      currency: "EUR",
+      color: "from-[#FF6B35] to-[#F7931E]"
+    }
+  ];
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "تم النسخ",
+      description: `تم نسخ ${label} بنجاح`,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <BackButton />
@@ -207,13 +244,111 @@ const Diaspora = () => {
           </CardContent>
         </Card>
 
+        {/* Bank Accounts Information */}
+        <div className="space-y-3 mb-6">
+          <h3 className="text-base font-bold flex items-center gap-2">
+            <Landmark className="w-5 h-5 text-primary" />
+            معلومات التحويل البنكي
+          </h3>
+          {bankAccounts.map((account, index) => (
+            <Card key={index} className={`border-primary/20 bg-gradient-to-br ${account.color} text-white overflow-hidden`}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-bold text-base">{account.name}</h4>
+                  <span className="text-xs bg-white/20 px-2 py-1 rounded-full">{account.currency}</span>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] opacity-80">اسم الحساب</p>
+                        <p className="text-xs font-bold">{account.accountName}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 hover:bg-white/20"
+                        onClick={() => copyToClipboard(account.accountName, "اسم الحساب")}
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] opacity-80">IBAN / رقم الحساب</p>
+                        <p className="text-xs font-bold font-mono">{account.accountNumber}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 hover:bg-white/20"
+                        onClick={() => copyToClipboard(account.accountNumber, "رقم الحساب")}
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] opacity-80">BIC / SWIFT</p>
+                        <p className="text-xs font-bold font-mono">{account.bic}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 hover:bg-white/20"
+                        onClick={() => copyToClipboard(account.bic, "BIC")}
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Instructions */}
+        <Card className="border-primary/20 bg-primary/5 mb-6">
+          <CardContent className="p-4">
+            <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-primary" />
+              خطوات التحويل
+            </h4>
+            <ol className="space-y-2 text-xs text-muted-foreground">
+              <li className="flex gap-2">
+                <span className="font-bold text-primary">1.</span>
+                <span>قم بتحويل المبلغ إلى أحد الحسابات المذكورة أعلاه</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="font-bold text-primary">2.</span>
+                <span>املأ النموذج أدناه بمعلومات المستلم في الجزائر</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="font-bold text-primary">3.</span>
+                <span>سنتواصل معك لتأكيد استلام التحويل وإتمام العملية</span>
+              </li>
+            </ol>
+          </CardContent>
+        </Card>
+
         {/* Main Form */}
         <Card className="border-primary/20 shadow-xl">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Send className="w-5 h-5 text-primary" />
-              معلومات التحويل
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Users className="w-5 h-5 text-primary" />
+              معلومات المستلم في الجزائر
             </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              بعد إرسال التحويل البنكي، املأ هذا النموذج
+            </p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -351,11 +486,26 @@ const Diaspora = () => {
 
         {/* Contact Info */}
         <Card className="mt-4 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-          <CardContent className="p-4 text-center">
-            <p className="text-sm font-medium mb-2">هل لديك استفسار؟</p>
-            <p className="text-xs text-muted-foreground">
-              تواصل معنا عبر واتساب أو تيليجرام للحصول على الدعم الفوري
-            </p>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <MessageCircle className="w-8 h-8 text-primary" />
+              <div className="flex-1">
+                <p className="text-sm font-medium">هل لديك استفسار؟</p>
+                <p className="text-xs text-muted-foreground">
+                  تواصل معنا للحصول على الدعم الفوري
+                </p>
+              </div>
+              <a 
+                href="https://t.me/+TRFfgKdTvkI2ZDhk" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <Button size="sm" className="h-8">
+                  <MessageCircle className="w-4 h-4 ml-1" />
+                  تواصل
+                </Button>
+              </a>
+            </div>
           </CardContent>
         </Card>
       </div>
