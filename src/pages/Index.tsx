@@ -398,48 +398,75 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Telegram Community Banner */}
-          <div className="mb-6">
+          {/* Info Banners Grid */}
+          <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Telegram Banner */}
             <a 
               href="https://t.me/+TRFfgKdTvkI2ZDhk" 
               target="_blank" 
               rel="noopener noreferrer"
               className="block group"
             >
-              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-[#0088cc] to-[#229ED9] shadow-elevated hover:shadow-glow transition-all duration-500 hover:scale-[1.02]">
+              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-[#0088cc] to-[#229ED9] shadow-elevated hover:shadow-glow transition-all duration-500 hover:scale-[1.02] h-full">
                 <div className="absolute inset-0 bg-gradient-glass"></div>
-                <CardContent className="p-4 sm:p-5 relative z-10">
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="relative flex-shrink-0">
-                      <div className="absolute inset-0 bg-white/30 rounded-full blur-md animate-pulse-glow"></div>
-                      <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                        <img 
-                          src={telegramLogo} 
-                          alt="Telegram" 
-                          className="w-full h-full object-cover drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
-                        />
+                <CardContent className="p-4 relative z-10">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-shrink-0">
+                        <div className="absolute inset-0 bg-white/30 rounded-full blur-md animate-pulse-glow"></div>
+                        <div className="relative w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                          <img 
+                            src={telegramLogo} 
+                            alt="Telegram" 
+                            className="w-full h-full object-cover drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
+                          />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-white font-bold text-sm mb-0.5 flex items-center gap-1.5">
+                          انضم لمجتمع OpaY
+                          <ExternalLink className="h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                        </h3>
                       </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-bold text-sm sm:text-base mb-0.5 flex items-center gap-1.5">
-                        انضم لمجتمع OpaY على تلغرام
-                        <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5 opacity-70 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                      </h3>
-                      <p className="text-white/90 text-xs leading-relaxed">
-                        تحقق من صحة التطبيق • شاهد تجارب المستخدمين • احصل على الدعم الفوري
-                      </p>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="hidden sm:flex bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm group-hover:translate-x-2 transition-transform flex-shrink-0"
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                    </Button>
+                    <p className="text-white/90 text-xs leading-relaxed">
+                      تحقق من صحة التطبيق • شاهد تجارب المستخدمين • احصل على الدعم الفوري
+                    </p>
                   </div>
                 </CardContent>
               </Card>
             </a>
+
+            {/* About Us Banner */}
+            <div
+              onClick={() => navigate('/about-us')}
+              className="block group cursor-pointer"
+            >
+              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-primary to-primary/80 shadow-elevated hover:shadow-glow transition-all duration-500 hover:scale-[1.02] h-full">
+                <div className="absolute inset-0 bg-gradient-glass"></div>
+                <CardContent className="p-4 relative z-10">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-shrink-0">
+                        <div className="absolute inset-0 bg-white/30 rounded-full blur-md animate-pulse-glow"></div>
+                        <div className="relative w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                          <Shield className="w-6 h-6 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-white font-bold text-sm mb-0.5 flex items-center gap-1.5">
+                          من نحن؟
+                          <ArrowLeft className="h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity group-hover:translate-x-1 flex-shrink-0" />
+                        </h3>
+                      </div>
+                    </div>
+                    <p className="text-white/90 text-xs leading-relaxed">
+                      منصة جزائرية مسجلة • موثوقة 100% • شاهد سجلنا التجاري
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Hero Balance Display */}

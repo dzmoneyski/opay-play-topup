@@ -28,6 +28,7 @@ import Stores from "./pages/Stores";
 import Transactions from "./pages/Transactions";
 import Shop from "./pages/Shop";
 import AliExpress from "./pages/AliExpress";
+import AboutUs from "./pages/AboutUs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -148,6 +149,11 @@ const App = () => {
               <Route path="/aliexpress" element={
                 <ProtectedRoute requireActivation={false}>
                   <AliExpress />
+                </ProtectedRoute>
+              } />
+              <Route path="/about-us" element={
+                <ProtectedRoute requireActivation={false}>
+                  <AboutUs />
                 </ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />
