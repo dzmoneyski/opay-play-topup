@@ -399,8 +399,8 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Info Banners Grid */}
-          <div className="mb-4 grid grid-cols-2 gap-2">
+          {/* Info Banners Grid - Compact */}
+          <div className="mb-3 grid grid-cols-2 gap-1.5">
             {/* Telegram Banner */}
             <a 
               href="https://t.me/+TRFfgKdTvkI2ZDhk" 
@@ -408,16 +408,11 @@ const Index = () => {
               rel="noopener noreferrer"
               className="block group"
             >
-              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-[#0088cc] to-[#229ED9] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.01]">
+              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-[#0088cc] to-[#229ED9] shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.01]">
                 <div className="absolute inset-0 bg-gradient-glass"></div>
-                {/* Decorative Elements */}
-                <div className="absolute top-1 right-1 w-8 h-8 rounded-full bg-white/10 blur-xl"></div>
-                <div className="absolute bottom-1 left-1 w-6 h-6 rounded-full bg-white/10 blur-lg"></div>
-                
-                <CardContent className="p-2.5 sm:p-3 relative z-10">
-                  {/* Header with Icon and Title */}
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                <CardContent className="p-2 relative z-10">
+                  <div className="flex items-start gap-1.5">
+                    <div className="w-6 h-6 rounded-full bg-white/25 backdrop-blur-sm border border-white/30 flex items-center justify-center flex-shrink-0">
                       <img 
                         src={telegramLogo} 
                         alt="Telegram" 
@@ -425,33 +420,15 @@ const Index = () => {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-bold text-[11px] sm:text-xs leading-tight">
+                      <h3 className="text-white font-bold text-[10px] leading-tight mb-0.5">
                         مجتمع تلغرام
                       </h3>
-                      <p className="text-white/70 text-[8px] sm:text-[9px]">+5000 عضو نشط</p>
+                      <div className="space-y-0.5">
+                        <p className="text-white/85 text-[8px] leading-tight">• تحقق من المصداقية</p>
+                        <p className="text-white/85 text-[8px] leading-tight">• تجارب المستخدمين</p>
+                        <p className="text-white/85 text-[8px] leading-tight">• دعم فوري 24/7</p>
+                      </div>
                     </div>
-                    <ExternalLink className="h-2.5 w-2.5 text-white/70 group-hover:text-white transition-colors flex-shrink-0" />
-                  </div>
-                  
-                  {/* Features Grid */}
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1">
-                      <div className="w-1 h-1 rounded-full bg-white/80 flex-shrink-0"></div>
-                      <p className="text-white/90 text-[9px] sm:text-[10px] font-medium leading-tight">تحقق من المصداقية</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-1 h-1 rounded-full bg-white/80 flex-shrink-0"></div>
-                      <p className="text-white/90 text-[9px] sm:text-[10px] font-medium leading-tight">تجارب المستخدمين</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-1 h-1 rounded-full bg-white/80 flex-shrink-0"></div>
-                      <p className="text-white/90 text-[9px] sm:text-[10px] font-medium leading-tight">دعم فوري 24/7</p>
-                    </div>
-                  </div>
-                  
-                  {/* CTA */}
-                  <div className="mt-2 pt-1.5 border-t border-white/20">
-                    <p className="text-white font-semibold text-[9px] sm:text-[10px] text-center">اضغط للانضمام الآن</p>
                   </div>
                 </CardContent>
               </Card>
@@ -462,46 +439,23 @@ const Index = () => {
               onClick={() => navigate('/about-us')}
               className="block group cursor-pointer"
             >
-              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-primary to-primary/80 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.01]">
+              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-primary to-primary/80 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.01]">
                 <div className="absolute inset-0 bg-gradient-glass"></div>
-                {/* Decorative Elements */}
-                <div className="absolute top-1 left-1 w-8 h-8 rounded-full bg-white/10 blur-xl"></div>
-                <div className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-white/10 blur-lg"></div>
-                
-                <CardContent className="p-2.5 sm:p-3 relative z-10">
-                  {/* Header with Icon and Title */}
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                      <Shield className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
+                <CardContent className="p-2 relative z-10">
+                  <div className="flex items-start gap-1.5">
+                    <div className="w-6 h-6 rounded-full bg-white/25 backdrop-blur-sm border border-white/30 flex items-center justify-center flex-shrink-0">
+                      <Shield className="w-3.5 h-3.5 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-bold text-[11px] sm:text-xs leading-tight">
+                      <h3 className="text-white font-bold text-[10px] leading-tight mb-0.5">
                         من نحن؟
                       </h3>
-                      <p className="text-white/70 text-[8px] sm:text-[9px]">شركة مسجلة</p>
+                      <div className="space-y-0.5">
+                        <p className="text-white/85 text-[8px] leading-tight">• منصة جزائرية رسمية</p>
+                        <p className="text-white/85 text-[8px] leading-tight">• موثوقة 100%</p>
+                        <p className="text-white/85 text-[8px] leading-tight">• شاهد السجل التجاري</p>
+                      </div>
                     </div>
-                    <ArrowLeft className="h-2.5 w-2.5 text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all flex-shrink-0" />
-                  </div>
-                  
-                  {/* Features Grid */}
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1">
-                      <div className="w-1 h-1 rounded-full bg-white/80 flex-shrink-0"></div>
-                      <p className="text-white/90 text-[9px] sm:text-[10px] font-medium leading-tight">منصة جزائرية رسمية</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-1 h-1 rounded-full bg-white/80 flex-shrink-0"></div>
-                      <p className="text-white/90 text-[9px] sm:text-[10px] font-medium leading-tight">موثوقة 100%</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-1 h-1 rounded-full bg-white/80 flex-shrink-0"></div>
-                      <p className="text-white/90 text-[9px] sm:text-[10px] font-medium leading-tight">شاهد السجل التجاري</p>
-                    </div>
-                  </div>
-                  
-                  {/* CTA */}
-                  <div className="mt-2 pt-1.5 border-t border-white/20">
-                    <p className="text-white font-semibold text-[9px] sm:text-[10px] text-center">اضغط لمعرفة المزيد</p>
                   </div>
                 </CardContent>
               </Card>
