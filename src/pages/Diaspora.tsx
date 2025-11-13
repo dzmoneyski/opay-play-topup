@@ -35,12 +35,12 @@ const Diaspora = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    recipientPhone: '',
-    recipientName: '',
     amount: '',
-    note: '',
     senderCountry: '',
-    senderCity: ''
+    senderCity: '',
+    paymentMethod: '',
+    transactionReference: '',
+    note: ''
   });
 
   if (!user) {
@@ -51,7 +51,7 @@ const Diaspora = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.recipientPhone || !formData.amount || !formData.senderCountry) {
+    if (!formData.amount || !formData.senderCountry || !formData.paymentMethod || !formData.transactionReference) {
       toast({
         title: "معلومات ناقصة",
         description: "يرجى ملء جميع الحقول المطلوبة",
@@ -78,11 +78,11 @@ const Diaspora = () => {
         .from('diaspora_transfers')
         .insert({
           sender_id: user.id,
-          recipient_phone: formData.recipientPhone,
-          recipient_name: formData.recipientName || null,
           amount: amount,
           sender_country: formData.senderCountry,
           sender_city: formData.senderCity || null,
+          payment_method: formData.paymentMethod,
+          transaction_reference: formData.transactionReference,
           note: formData.note || null,
           status: 'pending'
         })
@@ -93,17 +93,17 @@ const Diaspora = () => {
 
       toast({
         title: "تم إرسال الطلب بنجاح",
-        description: "سيتم التواصل معك قريباً لإكمال العملية",
+        description: "سيتم مراجعة التحويل وشحن رصيدك قريباً",
       });
 
       // Reset form
       setFormData({
-        recipientPhone: '',
-        recipientName: '',
         amount: '',
-        note: '',
         senderCountry: '',
-        senderCity: ''
+        senderCity: '',
+        paymentMethod: '',
+        transactionReference: '',
+        note: ''
       });
 
       // Navigate to home after 2 seconds
@@ -197,7 +197,7 @@ const Diaspora = () => {
             الجالية الجزائرية
           </h1>
           <p className="text-muted-foreground text-sm">
-            أرسل المال إلى عائلتك في الجزائر بكل سهولة وأمان
+            قم بشحن رصيدك من الخارج وأرسل المال لعائلتك بسهولة
           </p>
         </div>
 
@@ -329,11 +329,15 @@ const Diaspora = () => {
               </li>
               <li className="flex gap-2">
                 <span className="font-bold text-primary">2.</span>
-                <span>املأ النموذج أدناه بمعلومات المستلم في الجزائر</span>
+                <span>املأ النموذج أدناه بمعلومات التحويل ورقم المرجع</span>
               </li>
               <li className="flex gap-2">
                 <span className="font-bold text-primary">3.</span>
-                <span>سنتواصل معك لتأكيد استلام التحويل وإتمام العملية</span>
+                <span>سيتم شحن رصيدك بعد تأكيد استلام التحويل</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="font-bold text-primary">4.</span>
+                <span>استخدم رصيدك لإرسال المال لعائلتك عبر التحويل المحلي</span>
               </li>
             </ol>
           </CardContent>
@@ -343,54 +347,21 @@ const Diaspora = () => {
         <Card className="border-primary/20 shadow-xl">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Users className="w-5 h-5 text-primary" />
-              معلومات المستلم في الجزائر
+              <Send className="w-5 h-5 text-primary" />
+              معلومات التحويل
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              بعد إرسال التحويل البنكي، املأ هذا النموذج
+              بعد إرسال التحويل البنكي، املأ هذا النموذج لشحن رصيدك
             </p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Recipient Info */}
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="recipientPhone" className="text-sm flex items-center gap-2">
-                    <Phone className="w-4 h-4" />
-                    رقم هاتف المستلم في الجزائر *
-                  </Label>
-                  <Input
-                    id="recipientPhone"
-                    type="tel"
-                    placeholder="مثال: 0555123456"
-                    value={formData.recipientPhone}
-                    onChange={(e) => setFormData({ ...formData, recipientPhone: e.target.value })}
-                    required
-                    className="mt-1.5"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="recipientName" className="text-sm flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    اسم المستلم (اختياري)
-                  </Label>
-                  <Input
-                    id="recipientName"
-                    type="text"
-                    placeholder="الاسم الكامل"
-                    value={formData.recipientName}
-                    onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
-                    className="mt-1.5"
-                  />
-                </div>
-              </div>
 
               {/* Amount */}
               <div>
                 <Label htmlFor="amount" className="text-sm flex items-center gap-2">
                   <DollarSign className="w-4 h-4" />
-                  المبلغ (بالدولار أو اليورو) *
+                  المبلغ المرسل (بالدولار أو اليورو) *
                 </Label>
                 <Input
                   id="amount"
@@ -403,6 +374,49 @@ const Diaspora = () => {
                   step="0.01"
                   className="mt-1.5"
                 />
+              </div>
+
+              {/* Payment Method */}
+              <div>
+                <Label htmlFor="paymentMethod" className="text-sm flex items-center gap-2">
+                  <CreditCard className="w-4 h-4" />
+                  طريقة الدفع المستخدمة *
+                </Label>
+                <select
+                  id="paymentMethod"
+                  value={formData.paymentMethod}
+                  onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                  required
+                  className="w-full mt-1.5 flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="">اختر طريقة الدفع</option>
+                  <option value="revolut">Revolut</option>
+                  <option value="wise">Wise</option>
+                  <option value="paysera">Paysera</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="western_union">Western Union</option>
+                  <option value="other">أخرى</option>
+                </select>
+              </div>
+
+              {/* Transaction Reference */}
+              <div>
+                <Label htmlFor="transactionReference" className="text-sm flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" />
+                  رقم مرجع التحويل *
+                </Label>
+                <Input
+                  id="transactionReference"
+                  type="text"
+                  placeholder="مثال: REF123456789"
+                  value={formData.transactionReference}
+                  onChange={(e) => setFormData({ ...formData, transactionReference: e.target.value })}
+                  required
+                  className="mt-1.5"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  رقم التحويل الذي ظهر لك بعد إتمام العملية
+                </p>
               </div>
 
               {/* Sender Location */}
@@ -459,7 +473,7 @@ const Diaspora = () => {
                   <div className="flex gap-2 items-start">
                     <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                     <p className="text-[11px] text-muted-foreground">
-                      بعد إرسال الطلب، سيتواصل معك فريقنا لتأكيد التفاصيل وإكمال عملية التحويل بأفضل سعر صرف
+                      بعد التحقق من التحويل، سيتم شحن رصيدك تلقائياً بأفضل سعر صرف. يمكنك بعدها إرسال المال لعائلتك عبر التحويل المحلي
                     </p>
                   </div>
                 </CardContent>

@@ -245,14 +245,14 @@ export type Database = {
           exchange_rate: number | null
           id: string
           note: string | null
+          payment_method: string | null
           processed_at: string | null
           processed_by: string | null
-          recipient_name: string | null
-          recipient_phone: string
           sender_city: string | null
           sender_country: string
           sender_id: string
           status: string
+          transaction_reference: string | null
           updated_at: string
         }
         Insert: {
@@ -263,14 +263,14 @@ export type Database = {
           exchange_rate?: number | null
           id?: string
           note?: string | null
+          payment_method?: string | null
           processed_at?: string | null
           processed_by?: string | null
-          recipient_name?: string | null
-          recipient_phone: string
           sender_city?: string | null
           sender_country: string
           sender_id: string
           status?: string
+          transaction_reference?: string | null
           updated_at?: string
         }
         Update: {
@@ -281,14 +281,14 @@ export type Database = {
           exchange_rate?: number | null
           id?: string
           note?: string | null
+          payment_method?: string | null
           processed_at?: string | null
           processed_by?: string | null
-          recipient_name?: string | null
-          recipient_phone?: string
           sender_city?: string | null
           sender_country?: string
           sender_id?: string
           status?: string
+          transaction_reference?: string | null
           updated_at?: string
         }
         Relationships: []
