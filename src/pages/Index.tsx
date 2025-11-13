@@ -400,7 +400,7 @@ const Index = () => {
           </div>
 
           {/* Info Banners Grid */}
-          <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-3">
+          <div className="mb-4 grid grid-cols-2 gap-2">
             {/* Telegram Banner */}
             <a 
               href="https://t.me/+TRFfgKdTvkI2ZDhk" 
@@ -408,44 +408,50 @@ const Index = () => {
               rel="noopener noreferrer"
               className="block group"
             >
-              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-[#0088cc] to-[#229ED9] shadow-elevated hover:shadow-glow transition-all duration-300 hover:scale-[1.02] h-full min-h-[160px] sm:min-h-[180px]">
+              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-[#0088cc] to-[#229ED9] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.01]">
                 <div className="absolute inset-0 bg-gradient-glass"></div>
-                {/* Floating Icons Background */}
-                <div className="absolute inset-0 opacity-10">
-                  <MessageCircle className="absolute top-2 right-2 w-6 h-6 animate-pulse" />
-                  <CheckCircle className="absolute bottom-3 left-3 w-5 h-5 animate-bounce" />
-                  <Users className="absolute top-1/2 right-4 w-4 h-4 animate-pulse" />
-                </div>
-                <CardContent className="p-3 sm:p-4 relative z-10 h-full flex flex-col justify-between">
-                  <div className="flex flex-col items-center text-center gap-2">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-white/30 rounded-full blur-md animate-pulse-glow"></div>
-                      <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                        <img 
-                          src={telegramLogo} 
-                          alt="Telegram" 
-                          className="w-full h-full object-cover drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
-                        />
-                      </div>
+                {/* Decorative Elements */}
+                <div className="absolute top-1 right-1 w-8 h-8 rounded-full bg-white/10 blur-xl"></div>
+                <div className="absolute bottom-1 left-1 w-6 h-6 rounded-full bg-white/10 blur-lg"></div>
+                
+                <CardContent className="p-2.5 sm:p-3 relative z-10">
+                  {/* Header with Icon and Title */}
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                      <img 
+                        src={telegramLogo} 
+                        alt="Telegram" 
+                        className="w-full h-full object-cover rounded-full" 
+                      />
                     </div>
-                    <h3 className="text-white font-bold text-sm sm:text-base flex items-center gap-1">
-                      انضم لمجتمعنا
-                      <ExternalLink className="h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity animate-pulse" />
-                    </h3>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-white font-bold text-[11px] sm:text-xs leading-tight">
+                        مجتمع تلغرام
+                      </h3>
+                      <p className="text-white/70 text-[8px] sm:text-[9px]">+5000 عضو نشط</p>
+                    </div>
+                    <ExternalLink className="h-2.5 w-2.5 text-white/70 group-hover:text-white transition-colors flex-shrink-0" />
                   </div>
-                  <div className="space-y-1 mt-2">
-                    <div className="flex items-center gap-1.5 text-white/90">
-                      <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
-                      <p className="text-[10px] sm:text-xs font-medium">تحقق من صحة التطبيق</p>
+                  
+                  {/* Features Grid */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1">
+                      <div className="w-1 h-1 rounded-full bg-white/80 flex-shrink-0"></div>
+                      <p className="text-white/90 text-[9px] sm:text-[10px] font-medium leading-tight">تحقق من المصداقية</p>
                     </div>
-                    <div className="flex items-center gap-1.5 text-white/90">
-                      <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
-                      <p className="text-[10px] sm:text-xs font-medium">شاهد تجارب المستخدمين</p>
+                    <div className="flex items-center gap-1">
+                      <div className="w-1 h-1 rounded-full bg-white/80 flex-shrink-0"></div>
+                      <p className="text-white/90 text-[9px] sm:text-[10px] font-medium leading-tight">تجارب المستخدمين</p>
                     </div>
-                    <div className="flex items-center gap-1.5 text-white/90">
-                      <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
-                      <p className="text-[10px] sm:text-xs font-medium">دعم فوري 24/7</p>
+                    <div className="flex items-center gap-1">
+                      <div className="w-1 h-1 rounded-full bg-white/80 flex-shrink-0"></div>
+                      <p className="text-white/90 text-[9px] sm:text-[10px] font-medium leading-tight">دعم فوري 24/7</p>
                     </div>
+                  </div>
+                  
+                  {/* CTA */}
+                  <div className="mt-2 pt-1.5 border-t border-white/20">
+                    <p className="text-white font-semibold text-[9px] sm:text-[10px] text-center">اضغط للانضمام الآن</p>
                   </div>
                 </CardContent>
               </Card>
@@ -456,40 +462,46 @@ const Index = () => {
               onClick={() => navigate('/about-us')}
               className="block group cursor-pointer"
             >
-              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-primary to-primary/80 shadow-elevated hover:shadow-glow transition-all duration-300 hover:scale-[1.02] h-full min-h-[160px] sm:min-h-[180px]">
+              <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-primary to-primary/80 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.01]">
                 <div className="absolute inset-0 bg-gradient-glass"></div>
-                {/* Floating Icons Background */}
-                <div className="absolute inset-0 opacity-10">
-                  <Shield className="absolute top-2 left-2 w-6 h-6 animate-pulse" />
-                  <FileText className="absolute bottom-3 right-3 w-5 h-5 animate-bounce" />
-                  <CheckCircle className="absolute top-1/2 left-4 w-4 h-4 animate-pulse" />
-                </div>
-                <CardContent className="p-3 sm:p-4 relative z-10 h-full flex flex-col justify-between">
-                  <div className="flex flex-col items-center text-center gap-2">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-white/30 rounded-full blur-md animate-pulse-glow"></div>
-                      <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <Shield className="w-6 h-6 sm:w-7 sm:h-7 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
-                      </div>
+                {/* Decorative Elements */}
+                <div className="absolute top-1 left-1 w-8 h-8 rounded-full bg-white/10 blur-xl"></div>
+                <div className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-white/10 blur-lg"></div>
+                
+                <CardContent className="p-2.5 sm:p-3 relative z-10">
+                  {/* Header with Icon and Title */}
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                      <Shield className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
                     </div>
-                    <h3 className="text-white font-bold text-sm sm:text-base flex items-center gap-1">
-                      من نحن؟
-                      <ArrowLeft className="h-3 w-3 opacity-70 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 animate-pulse" />
-                    </h3>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-white font-bold text-[11px] sm:text-xs leading-tight">
+                        من نحن؟
+                      </h3>
+                      <p className="text-white/70 text-[8px] sm:text-[9px]">شركة مسجلة</p>
+                    </div>
+                    <ArrowLeft className="h-2.5 w-2.5 text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all flex-shrink-0" />
                   </div>
-                  <div className="space-y-1 mt-2">
-                    <div className="flex items-center gap-1.5 text-white/90">
-                      <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
-                      <p className="text-[10px] sm:text-xs font-medium">منصة جزائرية مسجلة</p>
+                  
+                  {/* Features Grid */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1">
+                      <div className="w-1 h-1 rounded-full bg-white/80 flex-shrink-0"></div>
+                      <p className="text-white/90 text-[9px] sm:text-[10px] font-medium leading-tight">منصة جزائرية رسمية</p>
                     </div>
-                    <div className="flex items-center gap-1.5 text-white/90">
-                      <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
-                      <p className="text-[10px] sm:text-xs font-medium">موثوقة 100%</p>
+                    <div className="flex items-center gap-1">
+                      <div className="w-1 h-1 rounded-full bg-white/80 flex-shrink-0"></div>
+                      <p className="text-white/90 text-[9px] sm:text-[10px] font-medium leading-tight">موثوقة 100%</p>
                     </div>
-                    <div className="flex items-center gap-1.5 text-white/90">
-                      <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
-                      <p className="text-[10px] sm:text-xs font-medium">شاهد سجلنا التجاري</p>
+                    <div className="flex items-center gap-1">
+                      <div className="w-1 h-1 rounded-full bg-white/80 flex-shrink-0"></div>
+                      <p className="text-white/90 text-[9px] sm:text-[10px] font-medium leading-tight">شاهد السجل التجاري</p>
                     </div>
+                  </div>
+                  
+                  {/* CTA */}
+                  <div className="mt-2 pt-1.5 border-t border-white/20">
+                    <p className="text-white font-semibold text-[9px] sm:text-[10px] text-center">اضغط لمعرفة المزيد</p>
                   </div>
                 </CardContent>
               </Card>
