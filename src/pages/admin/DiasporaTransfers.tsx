@@ -59,6 +59,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DiasporaTransfer {
   id: string;
@@ -85,6 +86,7 @@ interface DiasporaTransfer {
 const DiasporaTransfers = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [selectedTransfer, setSelectedTransfer] = useState<DiasporaTransfer | null>(null);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [showRejectionDialog, setShowRejectionDialog] = useState(false);
@@ -527,26 +529,26 @@ const DiasporaTransfers = () => {
   const rejectedCount = transfers?.filter(t => t.status === 'rejected').length || 0;
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-2 md:px-4 py-3 md:py-8">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Globe2 className="w-8 h-8 text-primary" />
+      <div className="mb-3 md:mb-6">
+        <h1 className="text-xl md:text-3xl font-bold flex items-center gap-2">
+          <Globe2 className="w-5 h-5 md:w-8 md:h-8 text-primary" />
           إدارة طلبات الجالية
         </h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-xs md:text-sm text-muted-foreground mt-1 md:mt-2">
           إدارة طلبات تحويلات الجالية الجزائرية في الخارج والإعدادات
         </p>
       </div>
 
       <Tabs defaultValue="requests" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="requests">
-            <FileText className="w-4 h-4 ml-2" />
+        <TabsList className="grid w-full grid-cols-2 mb-3 md:mb-6">
+          <TabsTrigger value="requests" className="text-xs md:text-sm">
+            <FileText className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2" />
             الطلبات
           </TabsTrigger>
-          <TabsTrigger value="settings">
-            <Settings className="w-4 h-4 ml-2" />
+          <TabsTrigger value="settings" className="text-xs md:text-sm">
+            <Settings className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2" />
             الإعدادات
           </TabsTrigger>
         </TabsList>
@@ -606,12 +608,12 @@ const DiasporaTransfers = () => {
       </div>
 
       {/* Filter */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2">
-            <Label>تصفية حسب الحالة:</Label>
+      <Card className="mb-3 md:mb-6">
+        <CardContent className="p-2 md:p-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
+            <Label className="text-xs md:text-sm">تصفية حسب الحالة:</Label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full md:w-48 h-8 md:h-10 text-xs md:text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -625,35 +627,132 @@ const DiasporaTransfers = () => {
         </CardContent>
       </Card>
 
-      {/* Transfers Table */}
+      {/* Transfers Table/Cards */}
       <Card>
-        <CardHeader>
-          <CardTitle>طلبات التحويل</CardTitle>
+        <CardHeader className="p-3 md:p-6">
+          <CardTitle className="text-sm md:text-base">طلبات التحويل</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>المستخدم</TableHead>
-                  <TableHead>المبلغ</TableHead>
-                  <TableHead>الدولة</TableHead>
-                  <TableHead>طريقة الدفع</TableHead>
-                  <TableHead>المرجع</TableHead>
-                  <TableHead>التاريخ</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>الإجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transfers?.length === 0 ? (
+        <CardContent className="p-2 md:p-6">
+          {transfers?.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground text-xs md:text-sm">
+              لا توجد طلبات
+            </div>
+          ) : isMobile ? (
+            // Mobile Card View
+            <div className="space-y-2">
+              {transfers?.map((transfer) => (
+                <Card key={transfer.id} className="border-2 hover:border-primary/50 transition-colors">
+                  <CardContent className="p-3">
+                    {/* Header Row */}
+                    <div className="flex items-start justify-between mb-2 pb-2 border-b">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-1 mb-1">
+                          <User className="w-3 h-3 text-muted-foreground" />
+                          <span className="font-medium text-xs">
+                            {transfer.profiles?.full_name || 'غير محدد'}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground">
+                          {transfer.profiles?.phone || transfer.profiles?.email}
+                        </span>
+                      </div>
+                      {getStatusBadge(transfer.status)}
+                    </div>
+
+                    {/* Amount & Country */}
+                    <div className="grid grid-cols-2 gap-2 mb-2 pb-2 border-b">
+                      <div>
+                        <div className="text-[10px] text-muted-foreground mb-1">المبلغ</div>
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="w-3 h-3 text-green-600" />
+                          <span className="font-bold text-sm">{transfer.amount}</span>
+                        </div>
+                        {transfer.amount_dzd && (
+                          <span className="text-[10px] text-muted-foreground">
+                            ({transfer.amount_dzd.toLocaleString()} دج)
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-muted-foreground mb-1">الدولة</div>
+                        <span className="text-xs font-medium">{transfer.sender_country}</span>
+                        {transfer.sender_city && (
+                          <div className="text-[10px] text-muted-foreground">{transfer.sender_city}</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Payment Method & Reference */}
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <div>
+                        <div className="text-[10px] text-muted-foreground mb-1">طريقة الدفع</div>
+                        <span className="text-xs">{getPaymentMethodLabel(transfer.payment_method)}</span>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-muted-foreground mb-1">المرجع</div>
+                        <span className="font-mono text-[10px] bg-muted px-1 py-0.5 rounded">
+                          {transfer.transaction_reference || '-'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Date & Actions */}
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-[10px] text-muted-foreground">
+                          {format(new Date(transfer.created_at), 'dd MMM yyyy', { locale: ar })}
+                        </span>
+                      </div>
+                      
+                      {transfer.status === 'pending' && (
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="h-7 px-2"
+                            onClick={() => handleApprove(transfer)}
+                          >
+                            <CheckCircle className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-7 px-2"
+                            onClick={() => handleReject(transfer)}
+                          >
+                            <XCircle className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      )}
+                      {transfer.status !== 'pending' && transfer.admin_notes && (
+                        <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
+                          {transfer.admin_notes}
+                        </span>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            // Desktop Table View
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      لا توجد طلبات
-                    </TableCell>
+                    <TableHead>المستخدم</TableHead>
+                    <TableHead>المبلغ</TableHead>
+                    <TableHead>الدولة</TableHead>
+                    <TableHead>طريقة الدفع</TableHead>
+                    <TableHead>المرجع</TableHead>
+                    <TableHead>التاريخ</TableHead>
+                    <TableHead>الحالة</TableHead>
+                    <TableHead>الإجراءات</TableHead>
                   </TableRow>
-                ) : (
-                  transfers?.map((transfer) => (
+                </TableHeader>
+                <TableBody>
+                  {transfers?.map((transfer) => (
                     <TableRow key={transfer.id}>
                       <TableCell>
                         <div className="flex flex-col">
@@ -722,30 +821,30 @@ const DiasporaTransfers = () => {
                         )}
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
-          </Card>
+      </Card>
         </TabsContent>
 
         {/* Settings Tab */}
-        <TabsContent value="settings" className="space-y-6">
+        <TabsContent value="settings" className="space-y-3 md:space-y-6">
           {/* Service Enable/Disable */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5 text-primary" />
+            <CardHeader className="p-3 md:p-6">
+              <CardTitle className="flex items-center gap-2 text-sm md:text-base">
+                <Settings className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                 الإعدادات العامة
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+            <CardContent className="space-y-3 md:space-y-6 p-3 md:p-6">
+              <div className="flex items-center justify-between p-2 md:p-4 bg-muted/30 rounded-lg">
                 <div className="space-y-0.5">
-                  <Label>تفعيل خدمة الجالية</Label>
-                  <p className="text-sm text-muted-foreground">
+                  <Label className="text-xs md:text-sm">تفعيل خدمة الجالية</Label>
+                  <p className="text-[10px] md:text-sm text-muted-foreground">
                     السماح بتحويلات الجالية الجزائرية من الخارج
                   </p>
                 </div>
@@ -758,18 +857,21 @@ const DiasporaTransfers = () => {
               <Separator />
 
               <div className="space-y-2">
-                <Label htmlFor="default_exchange_rate">سعر الصرف الافتراضي (1 USD/EUR = ... DZD)</Label>
+                <Label htmlFor="default_exchange_rate" className="text-xs md:text-sm">
+                  سعر الصرف الافتراضي (1 USD/EUR = ... DZD)
+                </Label>
                 <Input
                   id="default_exchange_rate"
                   type="number"
                   step="0.01"
+                  className="h-8 md:h-10 text-xs md:text-sm"
                   value={diasporaSettings.default_exchange_rate}
                   onChange={(e) => setDiasporaSettings(prev => ({ 
                     ...prev, 
                     default_exchange_rate: parseFloat(e.target.value) || 0 
                   }))}
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[10px] md:text-xs text-muted-foreground">
                   سيتم استخدام هذا السعر كقيمة افتراضية عند الموافقة على الطلبات
                 </p>
               </div>
@@ -778,99 +880,106 @@ const DiasporaTransfers = () => {
 
           {/* Bank Accounts List */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Landmark className="w-5 h-5 text-primary" />
+            <CardHeader className="p-3 md:p-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
+                <CardTitle className="flex items-center gap-2 text-sm md:text-base">
+                  <Landmark className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                   الحسابات البنكية
                 </CardTitle>
-                <Button onClick={() => setShowAddAccountDialog(true)} size="sm" className="gap-2">
-                  <Plus className="w-4 h-4" />
+                <Button 
+                  onClick={() => setShowAddAccountDialog(true)} 
+                  size="sm" 
+                  className="gap-1 h-7 md:h-9 text-xs md:text-sm w-full md:w-auto"
+                >
+                  <Plus className="w-3 h-3 md:w-4 md:h-4" />
                   إضافة حساب جديد
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2 md:space-y-4 p-3 md:p-6">
               {diasporaSettings.bank_accounts.map((account) => (
                 <Card key={account.id} className="relative overflow-hidden">
                   <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${account.color}`} />
-                  <CardContent className="pt-6 pr-6">
-                    <div className="flex items-start justify-between mb-4">
+                  <CardContent className="pt-3 md:pt-6 pr-3 md:pr-6 p-2 md:p-4">
+                    <div className="flex items-start justify-between mb-2 md:mb-4">
                       <div>
-                        <h4 className="font-bold text-lg">{account.name}</h4>
-                        <Badge variant="outline" className="mt-1">{account.currency}</Badge>
+                        <h4 className="font-bold text-sm md:text-lg">{account.name}</h4>
+                        <Badge variant="outline" className="mt-1 text-[10px] md:text-xs">{account.currency}</Badge>
                       </div>
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7 w-7 md:h-10 md:w-10"
                         onClick={() => handleDeleteAccount(account.id)}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
                       </Button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">اسم الحساب</Label>
-                        <div className="flex gap-2">
+                    <div className="grid grid-cols-1 gap-2 md:gap-4">
+                      <div className="space-y-1 md:space-y-2">
+                        <Label className="text-[10px] md:text-xs text-muted-foreground">اسم الحساب</Label>
+                        <div className="flex gap-1 md:gap-2">
                           <Input
                             value={account.account_name}
                             onChange={(e) => handleUpdateAccount(account.id, 'account_name', e.target.value)}
-                            className="text-sm"
+                            className="text-xs md:text-sm h-7 md:h-10"
                           />
                           <Button
                             size="icon"
                             variant="outline"
+                            className="h-7 w-7 md:h-10 md:w-10"
                             onClick={() => copyToClipboard(account.account_name, 'اسم الحساب')}
                           >
-                            <Copy className="w-4 h-4" />
+                            <Copy className="w-3 h-3 md:w-4 md:h-4" />
                           </Button>
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">رقم الحساب / IBAN</Label>
-                        <div className="flex gap-2">
+                      <div className="space-y-1 md:space-y-2">
+                        <Label className="text-[10px] md:text-xs text-muted-foreground">رقم الحساب / IBAN</Label>
+                        <div className="flex gap-1 md:gap-2">
                           <Input
                             value={account.account_number}
                             onChange={(e) => handleUpdateAccount(account.id, 'account_number', e.target.value)}
-                            className="font-mono text-sm"
+                            className="font-mono text-xs md:text-sm h-7 md:h-10"
                           />
                           <Button
                             size="icon"
                             variant="outline"
+                            className="h-7 w-7 md:h-10 md:w-10"
                             onClick={() => copyToClipboard(account.account_number, 'رقم الحساب')}
                           >
-                            <Copy className="w-4 h-4" />
+                            <Copy className="w-3 h-3 md:w-4 md:h-4" />
                           </Button>
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">BIC / SWIFT</Label>
-                        <div className="flex gap-2">
+                      <div className="space-y-1 md:space-y-2">
+                        <Label className="text-[10px] md:text-xs text-muted-foreground">BIC / SWIFT</Label>
+                        <div className="flex gap-1 md:gap-2">
                           <Input
                             value={account.bic}
                             onChange={(e) => handleUpdateAccount(account.id, 'bic', e.target.value)}
-                            className="font-mono text-sm"
+                            className="font-mono text-xs md:text-sm h-7 md:h-10"
                           />
                           <Button
                             size="icon"
                             variant="outline"
+                            className="h-7 w-7 md:h-10 md:w-10"
                             onClick={() => copyToClipboard(account.bic, 'BIC')}
                           >
-                            <Copy className="w-4 h-4" />
+                            <Copy className="w-3 h-3 md:w-4 md:h-4" />
                           </Button>
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">العملة</Label>
+                      <div className="space-y-1 md:space-y-2">
+                        <Label className="text-[10px] md:text-xs text-muted-foreground">العملة</Label>
                         <Input
                           value={account.currency}
                           onChange={(e) => handleUpdateAccount(account.id, 'currency', e.target.value)}
-                          className="text-sm"
+                          className="text-xs md:text-sm h-7 md:h-10"
                         />
                       </div>
                     </div>
@@ -893,16 +1002,16 @@ const DiasporaTransfers = () => {
               onClick={handleSaveSettings}
               disabled={savingSettings}
               size="lg"
-              className="gap-2"
+              className="gap-1 md:gap-2 h-8 md:h-11 text-xs md:text-base w-full md:w-auto"
             >
               {savingSettings ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" />
                   جاري الحفظ...
                 </>
               ) : (
                 <>
-                  <Save className="w-4 h-4" />
+                  <Save className="w-3 h-3 md:w-4 md:h-4" />
                   حفظ الإعدادات
                 </>
               )}
@@ -913,10 +1022,10 @@ const DiasporaTransfers = () => {
 
       {/* Add Account Dialog */}
       <Dialog open={showAddAccountDialog} onOpenChange={setShowAddAccountDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>إضافة حساب بنكي جديد</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-[95vw] md:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="p-3 md:p-6">
+            <DialogTitle className="text-sm md:text-lg">إضافة حساب بنكي جديد</DialogTitle>
+            <DialogDescription className="text-xs md:text-sm">
               أدخل معلومات الحساب البنكي الجديد
             </DialogDescription>
           </DialogHeader>
