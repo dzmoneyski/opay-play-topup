@@ -20,7 +20,9 @@ import {
   CheckCircle,
   Shield,
   Clock,
-  Heart
+  Heart,
+  CreditCard,
+  Landmark
 } from 'lucide-react';
 
 const Diaspora = () => {
@@ -126,6 +128,15 @@ const Diaspora = () => {
     { icon: Heart, text: "دعم عائلتك بسهولة" }
   ];
 
+  const paymentMethods = [
+    { name: "Revolut", color: "from-[#0075EB] to-[#00C6FF]", icon: CreditCard },
+    { name: "Wise", color: "from-[#9FE870] to-[#37B45B]", icon: Landmark },
+    { name: "Paysera", color: "from-[#FF6B35] to-[#F7931E]", icon: CreditCard },
+    { name: "SEPA", color: "from-[#003399] to-[#0066CC]", icon: Landmark },
+    { name: "Bank Transfer", color: "from-[#6366F1] to-[#8B5CF6]", icon: Landmark },
+    { name: "Western Union", color: "from-[#FFCC00] to-[#FF9900]", icon: Send }
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <BackButton />
@@ -164,6 +175,37 @@ const Diaspora = () => {
             </Card>
           ))}
         </div>
+
+        {/* Payment Methods Section */}
+        <Card className="border-primary/20 bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-primary" />
+              طرق الدفع المدعومة
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-2">
+              {paymentMethods.map((method, index) => (
+                <div
+                  key={index}
+                  className={`relative overflow-hidden rounded-lg p-3 bg-gradient-to-br ${method.color} shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105`}
+                >
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
+                  <div className="relative z-10">
+                    <method.icon className="w-5 h-5 text-white mb-1" />
+                    <p className="text-[10px] font-bold text-white leading-tight">
+                      {method.name}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center mt-3">
+              نقبل التحويلات من جميع البنوك والمحافظ الإلكترونية العالمية
+            </p>
+          </CardContent>
+        </Card>
 
         {/* Main Form */}
         <Card className="border-primary/20 shadow-xl">
