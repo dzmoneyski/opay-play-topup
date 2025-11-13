@@ -236,6 +236,63 @@ export type Database = {
         }
         Relationships: []
       }
+      diaspora_transfers: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          amount_dzd: number | null
+          created_at: string
+          exchange_rate: number | null
+          id: string
+          note: string | null
+          processed_at: string | null
+          processed_by: string | null
+          recipient_name: string | null
+          recipient_phone: string
+          sender_city: string | null
+          sender_country: string
+          sender_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          amount_dzd?: number | null
+          created_at?: string
+          exchange_rate?: number | null
+          id?: string
+          note?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          recipient_name?: string | null
+          recipient_phone: string
+          sender_city?: string | null
+          sender_country: string
+          sender_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          amount_dzd?: number | null
+          created_at?: string
+          exchange_rate?: number | null
+          id?: string
+          note?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string
+          sender_city?: string | null
+          sender_country?: string
+          sender_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       digital_card_fee_settings: {
         Row: {
           created_at: string

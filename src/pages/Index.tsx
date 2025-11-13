@@ -45,7 +45,9 @@ import {
   Settings,
   MessageCircle,
   ExternalLink,
-  FileText
+  FileText,
+  Globe2,
+  Heart
 } from "lucide-react";
 
 const Index = () => {
@@ -122,6 +124,11 @@ const Index = () => {
       return;
     }
 
+    if (service.action === 'diaspora') {
+      navigate('/diaspora');
+      return;
+    }
+
     // السماح بالدخول إلى صفحة الخدمة بغض النظر عن حالة التفعيل
     // التحقق من التفعيل سيتم عند محاولة تنفيذ العملية الفعلية
     console.log(`Navigating to service: ${service.title}`);
@@ -137,6 +144,18 @@ const Index = () => {
       subtitle: "أضف أموال عبر Baridimob وCCP",
       gradient: "bg-gradient-primary",
       action: "deposits"
+    },
+    {
+      icon: (
+        <div className="relative">
+          <Globe2 className="h-6 w-6" />
+          <Heart className="h-3 w-3 text-destructive absolute -top-0.5 -right-0.5" />
+        </div>
+      ),
+      title: "الجالية الجزائرية",
+      subtitle: "أرسل المال لعائلتك في الجزائر",
+      gradient: "bg-gradient-to-br from-green-500 to-emerald-600",
+      action: "diaspora"
     },
     {
       icon: <Users className="h-6 w-6" />,
