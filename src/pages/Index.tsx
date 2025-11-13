@@ -52,14 +52,26 @@ import {
 
 const Index = () => {
   const { user, signOut } = useAuth();
-  const { profile } = useProfile();
-  const { isAdmin } = useUserRoles();
+  const { profile, loading: profileLoading } = useProfile();
+  const { isAdmin, loading: rolesLoading } = useUserRoles();
   const { balance, loading: balanceLoading } = useBalance();
   const { transactions, loading: transactionsLoading } = useTransactionHistory(10); // Limit to 10 for dashboard
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showBalance, setShowBalance] = React.useState(true);
   const [showQRScanner, setShowQRScanner] = React.useState(false);
+
+  // إذا كانت البيانات الأساسية قيد التحميل، عرض شاشة تحميل
+  if (profileLoading || rolesLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleServiceClick = (service: any) => {
     if (service.action === 'disabled') {
