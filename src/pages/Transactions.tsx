@@ -81,49 +81,81 @@ const Transactions = () => {
     return '';
   };
 
-  const generatePDF = () => {
-    const doc = new jsPDF();
-    
-    // Add Arabic font support (simplified - in production you'd want to add a proper Arabic font)
-    doc.setFont('helvetica');
-    doc.setFontSize(20);
-    doc.text('Statement Account', 105, 20, { align: 'center' });
-    
-    doc.setFontSize(12);
-    doc.text(`Name: ${profile?.full_name || 'N/A'}`, 20, 40);
-    doc.text(`Phone: ${profile?.phone || 'N/A'}`, 20, 50);
-    doc.text(`Date: ${format(new Date(), 'dd/MM/yyyy')}`, 20, 60);
-    
-    doc.setFontSize(10);
-    let yPosition = 80;
-    
-    doc.text('Date', 20, yPosition);
-    doc.text('Type', 70, yPosition);
-    doc.text('Amount', 120, yPosition);
-    doc.text('Status', 160, yPosition);
-    
-    yPosition += 10;
-    doc.line(20, yPosition, 190, yPosition);
-    yPosition += 5;
-    
-    transactions.forEach((transaction) => {
-      if (yPosition > 270) {
-        doc.addPage();
-        yPosition = 20;
-      }
-      
-      const date = format(new Date(transaction.created_at), 'dd/MM/yyyy', { locale: ar });
-      const amount = `${getAmountPrefix(transaction.type)}${transaction.amount.toLocaleString('ar-DZ')} DZD`;
-      
-      doc.text(date, 20, yPosition);
-      doc.text(transaction.description.substring(0, 20), 70, yPosition);
-      doc.text(amount, 120, yPosition);
-      doc.text(transaction.status, 160, yPosition);
-      
-      yPosition += 8;
-    });
-    
-    doc.save(`statement-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  const generatePDF = async () => {
+    // Build an Arabic/RTL-friendly receipt using HTML then convert it to PDF per page
+    const perPage = 18;
+    const pages = Math.max(1, Math.ceil(transactions.length / perPage));
+
+    const pdf = new jsPDF('p', 'mm', 'a4');
+
+    for (let p = 0; p < pages; p++) {
+      const slice = transactions.slice(p * perPage, (p + 1) * perPage);
+
+      const container = document.createElement('div');
+      container.dir = 'rtl';
+      container.style.width = '794px'; // A4 width at ~96dpi
+      container.style.padding = '32px';
+      container.style.background = '#ffffff';
+      container.style.color = '#111827';
+      container.style.fontFamily = "'Tajawal','Cairo','Noto Naskh Arabic','Segoe UI', Tahoma, Arial, sans-serif";
+
+      const headerHtml = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div>
+            <h2 style="margin:0;font-size:22px">كشف الحساب</h2>
+            <div style="color:#6b7280;font-size:14px">${new Date().toLocaleString('ar-DZ')}</div>
+          </div>
+          <div style="text-align:left">
+            <div>الاسم: <strong style="color:#111827">${profile?.full_name || 'غير متوفر'}</strong></div>
+            <div>الهاتف: <strong style="color:#111827">${profile?.phone || 'غير متوفر'}</strong></div>
+          </div>
+        </div>
+      `;
+
+      const rows = slice.map((t) => {
+        const date = new Date(t.created_at).toLocaleString('ar-DZ');
+        const amount = `${getAmountPrefix(t.type)}${Number(t.amount).toLocaleString('ar-DZ')} دج`;
+        return `
+          <tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${date}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${t.description}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${amount}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${t.status}</td>
+          </tr>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        ${headerHtml}
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="background:#F3F4F6">
+              <th style="text-align:right;padding:10px 12px;border-bottom:1px solid #e5e7eb">التاريخ</th>
+              <th style="text-align:right;padding:10px 12px;border-bottom:1px solid #e5e7eb">النوع</th>
+              <th style="text-align:right;padding:10px 12px;border-bottom:1px solid #e5e7eb">المبلغ</th>
+              <th style="text-align:right;padding:10px 12px;border-bottom:1px solid #e5e7eb">الحالة</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div style="margin-top:12px;color:#6b7280;font-size:12px">صفحة ${p + 1} من ${pages}</div>
+      `;
+
+      document.body.appendChild(container);
+      await new Promise((r) => requestAnimationFrame(() => r(null)));
+
+      const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      const img = canvas.toDataURL('image/png');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      if (p > 0) pdf.addPage();
+      pdf.addImage(img, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+      document.body.removeChild(container);
+    }
+
+    pdf.save(`statement-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
   const generateSingleTransactionPDF = async (transaction: any) => {
