@@ -9,7 +9,9 @@ const config: CapacitorConfig = {
     cleartext: true
   },
   android: {
-    allowMixedContent: true
+    allowMixedContent: true,
+    // Remove AD_ID permission since app doesn't use advertising
+    includePlugins: []
   }
 };
 
