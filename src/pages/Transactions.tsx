@@ -23,6 +23,7 @@ import {
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { useProfile } from '@/hooks/useProfile';
 
 const Transactions = () => {
@@ -125,84 +126,55 @@ const Transactions = () => {
     doc.save(`statement-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
-  const generateSingleTransactionPDF = (transaction: any) => {
-    const doc = new jsPDF();
+  const generateSingleTransactionPDF = async (transaction: any) => {
+    // Create a temporary RTL receipt node and render it to an image to preserve Arabic shaping
+    const container = document.createElement('div');
+    container.dir = 'rtl';
+    container.style.width = '794px'; // ~A4 width at 96 DPI
+    container.style.padding = '32px';
+    container.style.background = '#ffffff';
+    container.style.color = '#111827';
+    container.style.fontFamily = "'Tajawal','Cairo','Noto Naskh Arabic','Segoe UI', Tahoma, Arial, sans-serif";
     
-    // Header
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(22);
-    doc.text('Transaction Receipt', 105, 25, { align: 'center' });
-    
-    // Decorative line
-    doc.setDrawColor(59, 130, 246);
-    doc.setLineWidth(0.5);
-    doc.line(20, 35, 190, 35);
-    
-    // User Info Section
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Account Holder: ${profile?.full_name || 'N/A'}`, 20, 50);
-    doc.text(`Phone: ${profile?.phone || 'N/A'}`, 20, 58);
-    
-    // Transaction Details Section
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('Transaction Details', 20, 75);
-    doc.setLineWidth(0.3);
-    doc.line(20, 78, 190, 78);
-    
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
-    
-    let yPos = 90;
-    
-    // Transaction ID
-    doc.text('Transaction ID:', 20, yPos);
-    doc.setFont('helvetica', 'bold');
-    doc.text(transaction.transaction_number || transaction.id.slice(0, 8).toUpperCase(), 70, yPos);
-    yPos += 12;
-    
-    // Type
-    doc.setFont('helvetica', 'normal');
-    doc.text('Type:', 20, yPos);
-    doc.setFont('helvetica', 'bold');
-    doc.text(transaction.description, 70, yPos);
-    yPos += 12;
-    
-    // Amount
-    doc.setFont('helvetica', 'normal');
-    doc.text('Amount:', 20, yPos);
-    doc.setFont('helvetica', 'bold');
-    const amountText = `${getAmountPrefix(transaction.type)}${transaction.amount.toLocaleString('en-US')} DZD`;
-    doc.text(amountText, 70, yPos);
-    yPos += 12;
-    
-    // Status
-    doc.setFont('helvetica', 'normal');
-    doc.text('Status:', 20, yPos);
-    doc.setFont('helvetica', 'bold');
-    doc.text(transaction.status, 70, yPos);
-    yPos += 12;
-    
-    // Date
-    doc.setFont('helvetica', 'normal');
-    doc.text('Date & Time:', 20, yPos);
-    doc.setFont('helvetica', 'bold');
-    const dateText = format(new Date(transaction.created_at), 'dd/MM/yyyy - hh:mm:ss a', { locale: ar });
-    doc.text(dateText, 70, yPos);
-    
-    // Footer line
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.3);
-    doc.line(20, 270, 190, 270);
-    
-    // Footer text
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Generated on: ${format(new Date(), 'dd/MM/yyyy - hh:mm a')}`, 105, 280, { align: 'center' });
-    
-    doc.save(`receipt-${transaction.transaction_number || transaction.id.slice(0, 8)}.pdf`);
+    const amountText = `${getAmountPrefix(transaction.type)}${Number(transaction.amount).toLocaleString('ar-DZ')} دج`;
+    const dateText = format(new Date(transaction.created_at), 'EEEE, dd MMMM yyyy - hh:mm:ss a', { locale: ar });
+
+    container.innerHTML = `
+      <div style="border:1px solid #e5e7eb;border-radius:12px;padding:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h2 style="margin:0;font-size:24px">إيصال المعاملة</h2>
+          <span style="background:#EEF2FF;color:#4338CA;padding:6px 12px;border-radius:9999px;font-weight:700">
+            ${transaction.transaction_number || transaction.id.slice(0,8).toUpperCase()}
+          </span>
+        </div>
+        <div style="margin-bottom:16px;color:#6b7280">
+          <div>اسم صاحب الحساب: <strong style="color:#111827">${profile?.full_name || 'غير متوفر'}</strong></div>
+          <div>رقم الهاتف: <strong style="color:#111827">${profile?.phone || 'غير متوفر'}</strong></div>
+        </div>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:14px">
+          <div>النوع: <strong>${transaction.description}</strong></div>
+          <div>الحالة: <strong>${transaction.status}</strong></div>
+          <div>المبلغ: <strong>${amountText}</strong></div>
+          <div>التاريخ والوقت: <strong>${dateText}</strong></div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(container);
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+
+    const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+    const imgData = canvas.toDataURL('image/png');
+
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`receipt-${transaction.transaction_number || transaction.id.slice(0, 8)}.pdf`);
+
+    document.body.removeChild(container);
   };
 
   return (
