@@ -14,6 +14,61 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_activation_log: {
+        Row: {
+          activated_at: string
+          activated_by: string
+          activation_reason: string | null
+          admin_notes: string | null
+          has_referral: boolean | null
+          id: string
+          referrer_id: string | null
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string
+          activated_by: string
+          activation_reason?: string | null
+          admin_notes?: string | null
+          has_referral?: boolean | null
+          id?: string
+          referrer_id?: string | null
+          user_id: string
+        }
+        Update: {
+          activated_at?: string
+          activated_by?: string
+          activation_reason?: string | null
+          admin_notes?: string | null
+          has_referral?: boolean | null
+          id?: string
+          referrer_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_activation_log_activated_by_fkey"
+            columns: ["activated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "account_activation_log_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "account_activation_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       aliexpress_orders: {
         Row: {
           admin_notes: string | null
@@ -1413,6 +1468,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_activate_account: {
+        Args: { _admin_id: string; _admin_notes?: string; _user_id: string }
+        Returns: Json
+      }
       admin_adjust_balance: {
         Args: { _amount: number; _note?: string; _target_user: string }
         Returns: Json
