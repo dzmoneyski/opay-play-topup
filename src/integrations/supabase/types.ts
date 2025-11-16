@@ -1109,6 +1109,80 @@ export type Database = {
         }
         Relationships: []
       }
+      suspicious_referrals: {
+        Row: {
+          admin_notes: string | null
+          duplicate_count: number | null
+          duplicate_phone: string | null
+          flagged_at: string
+          id: string
+          referral_id: string
+          referred_user_id: string
+          referrer_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          suspicious_reason: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          duplicate_count?: number | null
+          duplicate_phone?: string | null
+          flagged_at?: string
+          id?: string
+          referral_id: string
+          referred_user_id: string
+          referrer_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          suspicious_reason: string
+        }
+        Update: {
+          admin_notes?: string | null
+          duplicate_count?: number | null
+          duplicate_phone?: string | null
+          flagged_at?: string
+          id?: string
+          referral_id?: string
+          referred_user_id?: string
+          referrer_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          suspicious_reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suspicious_referrals_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: true
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suspicious_referrals_referred_user_id_fkey"
+            columns: ["referred_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "suspicious_referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "suspicious_referrals_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       transfers: {
         Row: {
           amount: number
@@ -1414,6 +1488,10 @@ export type Database = {
         Args: { _active_referrals: number }
         Returns: number
       }
+      cancel_fraudulent_referral: {
+        Args: { _admin_id: string; _admin_notes?: string; _referral_id: string }
+        Returns: Json
+      }
       check_and_award_achievements: {
         Args: { _user_id: string }
         Returns: undefined
@@ -1435,6 +1513,7 @@ export type Database = {
       ensure_referral_code: { Args: { _user_id: string }; Returns: string }
       ensure_referral_for_current_user: { Args: never; Returns: Json }
       ensure_user_referral: { Args: { _user_id: string }; Returns: Json }
+      flag_suspicious_referrals: { Args: never; Returns: Json }
       generate_merchant_code: { Args: never; Returns: string }
       generate_transfer_transaction_number: { Args: never; Returns: string }
       generate_unique_referral_code: { Args: never; Returns: string }

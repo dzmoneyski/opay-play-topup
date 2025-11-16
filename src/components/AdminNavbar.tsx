@@ -16,7 +16,8 @@ import {
   Home,
   Wallet,
   ShoppingBag,
-  Globe2
+  Globe2,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +37,7 @@ const mainItems = [
   { title: "طلبات التحقق", url: "/admin/identity-verification", icon: Shield, notificationKey: 'pendingVerifications' },
   { title: "المستخدمين", url: "/admin/users", icon: Users },
   { title: "إدارة التجار", url: "/admin/merchants", icon: Users },
+  { title: "الإحالات المشبوهة", url: "/admin/suspicious-referrals", icon: AlertTriangle },
 ];
 
 const transactionItems = [
