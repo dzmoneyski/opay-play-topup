@@ -40,6 +40,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import { useTransactionHistory, TransactionHistoryItem } from '@/hooks/useTransactionHistory';
+import { toast } from 'sonner';
 
 // Helper component to get transaction icon
 const getTransactionIcon = (type: string) => {
@@ -370,29 +371,57 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
   const handleAccountAction = async (action: 'activate' | 'suspend' | 'block') => {
     setProcessing(true);
     try {
-      const updates: any = {};
-      
-      switch (action) {
-        case 'activate':
-          updates.is_account_activated = true;
-          break;
-        case 'suspend':
-          updates.is_account_activated = false;
-          break;
-        case 'block':
-          updates.is_account_activated = false;
-          // Could add a blocked status field
-          break;
+      if (action === 'activate') {
+        // Use new admin_activate_account function with referral warning
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (!currentUser) throw new Error('غير مصرح');
+
+        const { data, error } = await supabase.rpc('admin_activate_account', {
+          _user_id: user.user_id,
+          _admin_id: currentUser.id,
+        });
+
+        if (error) throw error;
+
+        const result = data as { 
+          success: boolean; 
+          error?: string; 
+          message?: string; 
+          has_referral?: boolean; 
+          referrer_name?: string;
+        };
+
+        if (!result.success) {
+          toast.error(result.error || 'حدث خطأ');
+          return;
+        }
+
+        // Show warning if user is part of referral system
+        if (result.has_referral && result.referrer_name) {
+          toast.warning(`⚠️ تحذير: إحالة نشطة - هذا المستخدم تمت إحالته من قبل: ${result.referrer_name}. سيحصل المُحيل على 100 دج عند التفعيل.`, {
+            duration: 8000,
+          });
+        }
+
+        toast.success(result.message || 'تم تفعيل الحساب');
+      } else {
+        // Suspend or block
+        const updates: any = {
+          is_account_activated: false
+        };
+
+        await supabase
+          .from('profiles')
+          .update(updates)
+          .eq('user_id', user.user_id);
+
+        toast.success(action === 'suspend' ? 'تم تعليق الحساب' : 'تم حظر الحساب');
       }
 
-      await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('user_id', user.user_id);
-
       onUpdate();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating account:', error);
+      toast.error(error.message || 'فشل تحديث الحساب');
     } finally {
       setProcessing(false);
     }

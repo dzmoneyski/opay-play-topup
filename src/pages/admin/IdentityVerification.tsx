@@ -141,8 +141,9 @@ export default function IdentityVerificationPage() {
       });
     } else {
       toast({
-        title: "تم بنجاح",
-        description: "تم الموافقة على طلب التحقق وتفعيل الحساب",
+        title: "✅ تم الموافقة على التحقق",
+        description: "⚠️ يجب تفعيل الحساب يدوياً في صفحة المستخدمين لتفعيل الإحالات",
+        duration: 6000,
       });
     }
     setProcessing(false);
