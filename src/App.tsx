@@ -1,13 +1,16 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PublicRoute from "@/components/PublicRoute";
 import { PWAPermissionsPrompt } from "@/components/PWAPermissionsPrompt";
+import { PageTransition } from "@/components/PageTransition";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AccountActivation from "./pages/AccountActivation";
@@ -51,6 +54,7 @@ const App = () => {
           <Sonner />
           <PWAPermissionsPrompt />
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               <Route path="/" element={
                 <ProtectedRoute requireActivation={false}>
