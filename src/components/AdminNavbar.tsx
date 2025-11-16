@@ -17,7 +17,8 @@ import {
   Wallet,
   ShoppingBag,
   Globe2,
-  AlertTriangle
+  AlertTriangle,
+  Ban
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +39,7 @@ const mainItems = [
   { title: "المستخدمين", url: "/admin/users", icon: Users },
   { title: "إدارة التجار", url: "/admin/merchants", icon: Users },
   { title: "الإحالات المشبوهة", url: "/admin/suspicious-referrals", icon: AlertTriangle },
+  { title: "المستخدمون المحتالون", url: "/admin/fraudulent-users", icon: Ban },
 ];
 
 const transactionItems = [
