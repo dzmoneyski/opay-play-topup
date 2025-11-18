@@ -136,6 +136,14 @@ export const useGameTopupOrders = () => {
   return useQuery({
     queryKey: ["game-topup-orders"],
     queryFn: async () => {
+      // Get current authenticated user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        throw new Error("المستخدم غير مسجل الدخول");
+      }
+
+      // Fetch only the current user's orders
       const { data, error } = await supabase
         .from("game_topup_orders")
         .select(`
@@ -143,6 +151,7 @@ export const useGameTopupOrders = () => {
           platform:game_platforms(*),
           package:game_packages(*)
         `)
+        .eq('user_id', user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
