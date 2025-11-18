@@ -279,6 +279,28 @@ const GameTopup = () => {
                               minute: '2-digit'
                             })}</span>
                           </div>
+                          
+                          {/* Proof Image - Show when order is completed and proof exists */}
+                          {order.status === 'completed' && order.proof_image_url && (
+                            <div className="mt-4 space-y-2">
+                              <div className="flex items-center gap-2 text-sm font-medium text-green-600">
+                                <AlertCircle className="h-4 w-4" />
+                                <span>وصل الشحن</span>
+                              </div>
+                              <div className="rounded-lg border border-border overflow-hidden bg-muted/30">
+                                <img 
+                                  src={order.proof_image_url} 
+                                  alt="وصل الشحن"
+                                  className="w-full h-auto object-contain max-h-96 cursor-pointer hover:opacity-90 transition-opacity"
+                                  onClick={() => window.open(order.proof_image_url, '_blank')}
+                                />
+                              </div>
+                              <p className="text-xs text-muted-foreground text-center">
+                                اضغط على الصورة لعرضها بالحجم الكامل
+                              </p>
+                            </div>
+                          )}
+                          
                           {order.admin_notes && (
                             <Alert className="mt-3">
                               <AlertCircle className="h-4 w-4" />
