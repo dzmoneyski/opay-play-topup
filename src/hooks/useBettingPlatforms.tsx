@@ -440,12 +440,20 @@ export const useBettingTransactions = () => {
   return useQuery({
     queryKey: ["betting-transactions"],
     queryFn: async () => {
+      // Get current authenticated user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        throw new Error("المستخدم غير مسجل الدخول");
+      }
+
       const { data, error } = await supabase
         .from("betting_transactions")
         .select(`
           *,
           platform:game_platforms(*)
         `)
+        .eq('user_id', user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;

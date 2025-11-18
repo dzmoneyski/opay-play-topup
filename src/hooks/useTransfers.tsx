@@ -97,6 +97,13 @@ export const useTransfers = () => {
 
   const getUserTransfers = async () => {
     try {
+      // Get current authenticated user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('transfers')
         .select(`
@@ -105,6 +112,7 @@ export const useTransfers = () => {
           sender:profiles!transfers_sender_id_fkey(full_name, phone),
           recipient:profiles!transfers_recipient_id_fkey(full_name, phone)
         `)
+        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
       if (error) {
