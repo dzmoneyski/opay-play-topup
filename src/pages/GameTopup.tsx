@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Gamepad2, AlertCircle, Loader2, Wallet, Lock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useGamePlatforms, useGamePackages, useCreateGameTopupOrder } from "@/hooks/useGamePlatforms";
+import { useGamePlatforms, useGamePackages, useCreateGameTopupOrder, useGameTopupOrders } from "@/hooks/useGamePlatforms";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BettingForm } from "@/components/BettingForm";
@@ -21,13 +21,14 @@ const GameTopup = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState("");
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
-  const [currentTab, setCurrentTab] = useState<'games' | 'betting'>('games');
+  const [currentTab, setCurrentTab] = useState<'games' | 'betting' | 'orders'>('games');
   const [showUnderReviewDialog, setShowUnderReviewDialog] = useState(false);
   
   const { data: platforms, isLoading: platformsLoading } = useGamePlatforms();
   const { data: packages, isLoading: packagesLoading } = useGamePackages(selectedPlatform);
   const createOrder = useCreateGameTopupOrder();
   const { balance, loading: balanceLoading, fetchBalance } = useBalance();
+  const { data: orders, isLoading: ordersLoading } = useGameTopupOrders();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,10 +156,11 @@ const GameTopup = () => {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <Tabs value={currentTab} onValueChange={(v) => setCurrentTab(v as 'games' | 'betting')} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs value={currentTab} onValueChange={(v) => setCurrentTab(v as 'games' | 'betting' | 'orders')} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="games">الألعاب</TabsTrigger>
               <TabsTrigger value="betting">توقعات كرة القدم</TabsTrigger>
+              <TabsTrigger value="orders">الطلبيات</TabsTrigger>
             </TabsList>
 
             <TabsContent value="games" className="space-y-6">
@@ -221,6 +223,91 @@ const GameTopup = () => {
                   </Card>
                 ))}
               </div>
+            </TabsContent>
+
+            {/* Orders Tab */}
+            <TabsContent value="orders" className="space-y-4">
+              {ordersLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : orders && orders.length > 0 ? (
+                <div className="space-y-4">
+                  {orders.map((order) => {
+                    const platformName = order.platform?.name_ar || "منصة غير معروفة";
+                    const packageName = order.package?.name_ar || "باقة غير معروفة";
+                    const statusColors = {
+                      pending: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+                      completed: "bg-green-500/10 text-green-500 border-green-500/20",
+                      rejected: "bg-red-500/10 text-red-500 border-red-500/20"
+                    };
+                    const statusText = {
+                      pending: "قيد المعالجة",
+                      completed: "تم القبول",
+                      rejected: "تم الرفض"
+                    };
+
+                    return (
+                      <Card key={order.id} className="hover-lift">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                              <CardTitle className="text-lg">{platformName}</CardTitle>
+                              <CardDescription>{packageName}</CardDescription>
+                            </div>
+                            <Badge className={`${statusColors[order.status as keyof typeof statusColors]} border`}>
+                              {statusText[order.status as keyof typeof statusText]}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">معرف اللاعب:</span>
+                            <span className="font-medium">{order.player_id}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">المبلغ:</span>
+                            <span className="font-bold text-primary">{order.amount} دج</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">التاريخ:</span>
+                            <span>{new Date(order.created_at).toLocaleDateString('ar-DZ', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}</span>
+                          </div>
+                          {order.admin_notes && (
+                            <Alert className="mt-3">
+                              <AlertCircle className="h-4 w-4" />
+                              <AlertDescription className="text-sm">
+                                <strong>ملاحظة الإدارة:</strong> {order.admin_notes}
+                              </AlertDescription>
+                            </Alert>
+                          )}
+                          {order.notes && (
+                            <div className="text-sm mt-2 p-2 bg-muted rounded-md">
+                              <span className="text-muted-foreground">ملاحظاتك:</span> {order.notes}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Gamepad2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">لا توجد طلبيات بعد</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      ابدأ بطلب شحن لحسابك من تبويب الألعاب
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
         )}
