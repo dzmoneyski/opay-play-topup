@@ -146,24 +146,18 @@ export const useProfile = () => {
       return { error: profileError };
     }
 
-    // Delete any existing verification code for this user first
-    const { error: deleteError } = await supabase
-      .from('phone_verification_codes')
-      .delete()
-      .eq('user_id', user.id);
-
-    if (deleteError) {
-      console.error('Error deleting old verification codes:', deleteError);
-    }
-
-    // Insert new verification code in secure table
+    // Use upsert to handle existing verification codes automatically
     const { error } = await supabase
       .from('phone_verification_codes')
-      .insert({
+      .upsert({
         user_id: user.id,
         phone,
         code: verificationCode,
-        expires_at: expiresAt.toISOString()
+        expires_at: expiresAt.toISOString(),
+        attempts: 0
+      }, {
+        onConflict: 'user_id',
+        ignoreDuplicates: false
       });
 
     if (error) {
