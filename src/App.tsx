@@ -23,6 +23,7 @@ const Transfer = lazy(() => import("./pages/Transfer"));
 const Withdrawals = lazy(() => import("./pages/Withdrawals"));
 const Rewards = lazy(() => import("./pages/Rewards"));
 const Cards = lazy(() => import("./pages/Cards"));
+const CardDelivery = lazy(() => import("./pages/CardDelivery"));
 const GameTopup = lazy(() => import("./pages/GameTopup"));
 const P2P = lazy(() => import("./pages/P2P"));
 const BecomePartner = lazy(() => import("./pages/BecomePartner"));
@@ -111,6 +112,11 @@ const AnimatedRoutes = () => {
               <Route path="/cards" element={
                 <ProtectedRoute requireActivation={false}>
                   <Cards />
+                </ProtectedRoute>
+              } />
+              <Route path="/card-delivery" element={
+                <ProtectedRoute requireActivation={false}>
+                  <CardDelivery />
                 </ProtectedRoute>
               } />
               <Route path="/game-topup" element={

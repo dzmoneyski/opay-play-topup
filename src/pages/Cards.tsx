@@ -6,11 +6,13 @@ import { Label } from '@/components/ui/label';
 import { useGiftCards } from '@/hooks/useGiftCards';
 import { useBalance } from '@/hooks/useBalance';
 import { useToast } from '@/hooks/use-toast';
-import { CreditCard, Wallet, QrCode } from 'lucide-react';
+import { CreditCard, Wallet, QrCode, Truck } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import { BrowserMultiFormatReader } from '@zxing/library';
+import { useNavigate } from 'react-router-dom';
 
 const Cards = () => {
+  const navigate = useNavigate();
   const [cardCode, setCardCode] = useState('');
   const [showScanner, setShowScanner] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -135,6 +137,20 @@ const Cards = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Order Card Delivery Button */}
+        <Button 
+          onClick={() => navigate('/card-delivery')}
+          variant="outline"
+          size="lg"
+          className="w-full h-16 text-base gap-3 border-2 hover:bg-primary/5"
+        >
+          <Truck className="h-6 w-6" />
+          <div className="text-right">
+            <div className="font-bold">اطلب بطاقة إلى المنزل</div>
+            <div className="text-xs text-muted-foreground">الدفع عند الاستلام</div>
+          </div>
+        </Button>
 
         {/* Gift Card Form */}
         <Card className="border-2 border-dashed border-primary/20">

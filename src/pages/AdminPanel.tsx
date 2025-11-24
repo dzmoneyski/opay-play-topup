@@ -20,6 +20,7 @@ import AliExpressOrders from '@/pages/admin/AliExpressOrders';
 import DiasporaTransfers from '@/pages/admin/DiasporaTransfers';
 import SuspiciousReferralsPage from '@/pages/admin/SuspiciousReferrals';
 import FraudulentUsersPage from '@/pages/admin/FraudulentUsers';
+import CardDeliveryOrders from '@/pages/admin/CardDeliveryOrders';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -67,6 +68,7 @@ const AdminPanel = () => {
           <Route path="withdrawals" element={<WithdrawalsPage />} />
           <Route path="transfers" element={<TransfersPage />} />
           <Route path="cards" element={<CardsPage />} />
+          <Route path="card-delivery" element={<CardDeliveryOrders />} />
           <Route path="digital-cards" element={<DigitalCardsPage />} />
           <Route path="games" element={<GameManagement />} />
           <Route path="betting" element={<BettingManagement />} />
