@@ -205,7 +205,7 @@ export default function CardDelivery() {
                 <span className="font-semibold">{deliveryFee.toLocaleString()} دج</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                * رسوم التوصيل يدفعها الزبون
+                * الزبون هو من يدفعها
               </p>
 
               <div className="border-t pt-3 mt-3">
