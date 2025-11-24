@@ -146,18 +146,25 @@ All colors MUST be HSL.
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    /* تسريع الرسوميات */
+    transform: translateZ(0);
+    will-change: transform;
   }
 
   /* تحسين التمرير على الهاتف */
   html {
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
+    /* تسريع أداء التمرير */
+    overflow-x: hidden;
   }
 
   /* تحسين الأزرار للمس */
   button, a, input, textarea, select {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    /* تحسين الأداء */
+    will-change: transform, opacity;
   }
 
   /* حجم أدنى للعناصر القابلة للمس */
@@ -166,6 +173,14 @@ All colors MUST be HSL.
       min-height: 44px;
       min-width: 44px;
     }
+  }
+  
+  /* تحسين أداء الانتقالات */
+  * {
+    -webkit-backface-visibility: hidden;
+    -moz-backface-visibility: hidden;
+    -webkit-transform: translate3d(0, 0, 0);
+    -moz-transform: translate3d(0, 0, 0);
   }
 }
 
@@ -187,20 +202,32 @@ All colors MUST be HSL.
 
 /* ===== Smooth Page Transitions ===== */
 @layer utilities {
+  /* تحسين سرعة الانتقالات */
+  .page-transition {
+    transition: opacity 0.15s cubic-bezier(0.25, 0.1, 0.25, 1),
+                transform 0.15s cubic-bezier(0.25, 0.1, 0.25, 1);
+    will-change: opacity, transform;
+  }
+  
   /* Smooth hover effects */
   .hover-lift {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   .hover-lift:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px -8px hsl(var(--primary) / 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -4px hsl(var(--primary) / 0.2);
   }
   
   /* Smooth link transitions */
   a:not(.no-transition), 
   button:not(.no-transition) {
-    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+    transition: color 0.15s ease, 
+                background-color 0.15s ease, 
+                border-color 0.15s ease, 
+                transform 0.15s ease, 
+                opacity 0.15s ease;
   }
   
   /* Loading skeleton animation */
@@ -227,13 +254,13 @@ All colors MUST be HSL.
   
   /* Fade animations */
   .fade-in {
-    animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fadeIn 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
   
   @keyframes fadeIn {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(5px);
     }
     to {
       opacity: 1;
@@ -243,13 +270,13 @@ All colors MUST be HSL.
   
   /* Scale animations */
   .scale-in {
-    animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: scaleIn 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
   
   @keyframes scaleIn {
     from {
       opacity: 0;
-      transform: scale(0.95);
+      transform: scale(0.97);
     }
     to {
       opacity: 1;
