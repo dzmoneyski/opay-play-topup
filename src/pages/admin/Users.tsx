@@ -37,8 +37,11 @@ import {
   Gamepad2,
   TrendingUp,
   Package,
-  CreditCard
+  CreditCard,
+  MessageCircle
 } from 'lucide-react';
+import TelegramIcon from '@/assets/telegram-logo.png';
+import { ExternalLink } from 'lucide-react';
 import { useTransactionHistory, TransactionHistoryItem } from '@/hooks/useTransactionHistory';
 import { toast } from 'sonner';
 
@@ -529,9 +532,33 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
                   <span className="text-muted-foreground">الاسم الكامل:</span>
                   <span className="font-medium">{user.full_name || 'غير محدد'}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">رقم الهاتف:</span>
-                  <span className="font-medium">{user.phone || 'غير محدد'}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{user.phone || 'غير محدد'}</span>
+                    {user.phone && (
+                      <div className="flex gap-1">
+                        <a
+                          href={`https://wa.me/${user.phone.replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded-md hover:bg-green-100 transition-colors"
+                          title="واتساب"
+                        >
+                          <MessageCircle className="h-4 w-4 text-green-600" />
+                        </a>
+                        <a
+                          href={`https://t.me/${user.phone.replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded-md hover:bg-blue-100 transition-colors"
+                          title="تلغرام"
+                        >
+                          <img src={TelegramIcon} alt="Telegram" className="h-4 w-4" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">البريد الإلكتروني:</span>
@@ -1216,9 +1243,33 @@ export default function UsersPage() {
                             <Mail className="h-3 w-3" />
                             {user.email || 'غير محدد'}
                           </span>
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1.5">
                             <Phone className="h-3 w-3" />
                             {user.phone || 'غير محدد'}
+                            {user.phone && (
+                              <>
+                                <a
+                                  href={`https://wa.me/${user.phone.replace(/[^0-9]/g, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1 rounded hover:bg-green-100 transition-colors"
+                                  title="واتساب"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MessageCircle className="h-3.5 w-3.5 text-green-600" />
+                                </a>
+                                <a
+                                  href={`https://t.me/${user.phone.replace(/[^0-9]/g, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1 rounded hover:bg-blue-100 transition-colors"
+                                  title="تلغرام"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <img src={TelegramIcon} alt="Telegram" className="h-3.5 w-3.5" />
+                                </a>
+                              </>
+                            )}
                           </span>
                            <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
