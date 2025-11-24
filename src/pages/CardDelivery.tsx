@@ -204,6 +204,9 @@ export default function CardDelivery() {
                 <span className="text-muted-foreground">رسوم التوصيل:</span>
                 <span className="font-semibold">{deliveryFee.toLocaleString()} دج</span>
               </div>
+              <p className="text-xs text-muted-foreground">
+                * رسوم التوصيل يدفعها الزبون
+              </p>
 
               <div className="border-t pt-3 mt-3">
                 <div className="flex justify-between text-xl font-bold">
