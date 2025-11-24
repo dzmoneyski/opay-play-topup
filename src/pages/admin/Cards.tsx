@@ -6,11 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAdminCardDeliveryOrders } from '@/hooks/useAdminCardDeliveryOrders';
 import QRCode from 'qrcode';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { format } from 'date-fns';
+import { ar } from 'date-fns/locale';
 import { 
   Gift, 
   Search, 
@@ -27,7 +33,8 @@ import {
   EyeOff,
   Trash2,
   Edit,
-  FileText
+  FileText,
+  Truck
 } from 'lucide-react';
 
 interface GiftCard {
@@ -40,6 +47,20 @@ interface GiftCard {
   created_at: string;
   updated_at: string;
 }
+
+const STATUS_LABELS = {
+  pending: { label: "قيد الانتظار", variant: "secondary" as const },
+  confirmed: { label: "مؤكد", variant: "default" as const },
+  preparing: { label: "قيد التحضير", variant: "default" as const },
+  shipped: { label: "تم الشحن", variant: "default" as const },
+  delivered: { label: "تم التوصيل", variant: "default" as const },
+  cancelled: { label: "ملغي", variant: "destructive" as const },
+};
+
+const PAYMENT_STATUS_LABELS = {
+  cod_pending: { label: "في انتظار الدفع", variant: "secondary" as const },
+  cod_received: { label: "تم الدفع", variant: "default" as const },
+};
 
 export default function CardsPage() {
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
@@ -59,6 +80,17 @@ export default function CardsPage() {
   const [quantity, setQuantity] = useState<number>(10);
   const [generating, setGenerating] = useState(false);
   const [exportingPDF, setExportingPDF] = useState(false);
+
+  // Card Delivery Orders state
+  const { orders, isLoading: ordersLoading, updateOrder, deleteOrder } = useAdminCardDeliveryOrders();
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [updateData, setUpdateData] = useState({
+    status: "",
+    payment_status: "",
+    tracking_number: "",
+    admin_notes: "",
+  });
 
   const { toast } = useToast();
 
@@ -739,6 +771,43 @@ export default function CardsPage() {
     document.body.removeChild(link);
   };
 
+  // Card Delivery Orders functions
+  const handleViewOrder = (order: any) => {
+    setSelectedOrder(order);
+    setUpdateData({
+      status: order.status,
+      payment_status: order.payment_status,
+      tracking_number: order.tracking_number || "",
+      admin_notes: order.admin_notes || "",
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleUpdateOrder = async () => {
+    if (!selectedOrder) return;
+
+    try {
+      await updateOrder({
+        orderId: selectedOrder.id,
+        updates: updateData,
+      });
+      setIsDialogOpen(false);
+      setSelectedOrder(null);
+    } catch (error) {
+      console.error("Error updating order:", error);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm("هل أنت متأكد من حذف هذا الطلب؟")) return;
+
+    try {
+      await deleteOrder(orderId);
+    } catch (error) {
+      console.error("Error deleting order:", error);
+    }
+  };
+
   // Filter cards
   const filteredCards = giftCards.filter(card => {
     const matchesSearch = 
@@ -820,10 +889,27 @@ export default function CardsPage() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">إدارة البطاقات</h1>
           <p className="text-muted-foreground mt-2">
-            إنشاء وإدارة بطاقات الشحن
+            إنشاء وإدارة بطاقات الشحن وطلبات التوصيل
           </p>
         </div>
-        <div className="flex gap-2">
+      </div>
+
+      {/* Tabs for Gift Cards and Card Delivery */}
+      <Tabs defaultValue="gift-cards" className="space-y-6">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="gift-cards" className="flex items-center gap-2">
+            <Gift className="w-4 h-4" />
+            بطاقات الهدايا
+          </TabsTrigger>
+          <TabsTrigger value="delivery-orders" className="flex items-center gap-2">
+            <Truck className="w-4 h-4" />
+            طلبات التوصيل
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Gift Cards Tab */}
+        <TabsContent value="gift-cards" className="space-y-6">
+          <div className="flex gap-2">
           <Button onClick={exportGiftCards} variant="outline">
             <Download className="w-4 h-4 mr-2" />
             تصدير CSV
@@ -883,7 +969,6 @@ export default function CardsPage() {
             </DialogContent>
           </Dialog>
         </div>
-      </div>
 
       {/* Statistics Cards */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -1188,6 +1273,207 @@ export default function CardsPage() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        {/* Card Delivery Orders Tab */}
+        <TabsContent value="delivery-orders" className="space-y-6">
+          <Card className="p-6">
+            {ordersLoading ? (
+              <div className="text-center py-8">جاري التحميل...</div>
+            ) : orders.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                لا توجد طلبات توصيل
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>التاريخ</TableHead>
+                      <TableHead>الاسم</TableHead>
+                      <TableHead>الهاتف</TableHead>
+                      <TableHead>الولاية</TableHead>
+                      <TableHead>قيمة البطاقة</TableHead>
+                      <TableHead>المجموع</TableHead>
+                      <TableHead>الحالة</TableHead>
+                      <TableHead>حالة الدفع</TableHead>
+                      <TableHead>الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {orders.map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell>
+                          {format(new Date(order.created_at), "dd/MM/yyyy HH:mm", {
+                            locale: ar,
+                          })}
+                        </TableCell>
+                        <TableCell className="font-medium">{order.full_name}</TableCell>
+                        <TableCell>{order.phone}</TableCell>
+                        <TableCell>{order.wilaya}</TableCell>
+                        <TableCell>{order.card_amount.toLocaleString()} دج</TableCell>
+                        <TableCell className="font-semibold">
+                          {order.total_amount.toLocaleString()} دج
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={STATUS_LABELS[order.status as keyof typeof STATUS_LABELS]?.variant}>
+                            {STATUS_LABELS[order.status as keyof typeof STATUS_LABELS]?.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={PAYMENT_STATUS_LABELS[order.payment_status as keyof typeof PAYMENT_STATUS_LABELS]?.variant}>
+                            {PAYMENT_STATUS_LABELS[order.payment_status as keyof typeof PAYMENT_STATUS_LABELS]?.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewOrder(order)}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteOrder(order.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </Card>
+
+          {/* Update Order Dialog */}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>تفاصيل الطلب وتحديثه</DialogTitle>
+              </DialogHeader>
+
+              {selectedOrder && (
+                <div className="space-y-6">
+                  {/* Order Details */}
+                  <Card className="p-4 bg-muted/50">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">الاسم:</span>
+                        <p className="font-semibold">{selectedOrder.full_name}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">الهاتف:</span>
+                        <p className="font-semibold">{selectedOrder.phone}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">الولاية:</span>
+                        <p className="font-semibold">{selectedOrder.wilaya}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">قيمة البطاقة:</span>
+                        <p className="font-semibold">{selectedOrder.card_amount.toLocaleString()} دج</p>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">العنوان:</span>
+                        <p className="font-semibold">{selectedOrder.address}</p>
+                      </div>
+                      {selectedOrder.delivery_notes && (
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">ملاحظات العميل:</span>
+                          <p className="font-semibold">{selectedOrder.delivery_notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+
+                  {/* Update Form */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>حالة الطلب</Label>
+                      <Select
+                        value={updateData.status}
+                        onValueChange={(value) =>
+                          setUpdateData({ ...updateData, status: value })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(STATUS_LABELS).map(([value, { label }]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>حالة الدفع</Label>
+                      <Select
+                        value={updateData.payment_status}
+                        onValueChange={(value) =>
+                          setUpdateData({ ...updateData, payment_status: value })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(PAYMENT_STATUS_LABELS).map(([value, { label }]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>رقم التتبع</Label>
+                      <Input
+                        value={updateData.tracking_number}
+                        onChange={(e) =>
+                          setUpdateData({ ...updateData, tracking_number: e.target.value })
+                        }
+                        placeholder="أدخل رقم التتبع"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>ملاحظات الإدارة</Label>
+                      <Textarea
+                        value={updateData.admin_notes}
+                        onChange={(e) =>
+                          setUpdateData({ ...updateData, admin_notes: e.target.value })
+                        }
+                        placeholder="أضف ملاحظات..."
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                      إلغاء
+                    </Button>
+                    <Button onClick={handleUpdateOrder}>
+                      حفظ التحديثات
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
