@@ -30,6 +30,8 @@ export default function IdentityVerificationPage() {
   const [requestToReview, setRequestToReview] = React.useState<any>(null);
   const [imageLoading, setImageLoading] = React.useState(false);
   const [imageError, setImageError] = React.useState(false);
+  const [previewImages, setPreviewImages] = React.useState<{front: string | null, back: string | null}>({front: null, back: null});
+  const [imagesLoading, setImagesLoading] = React.useState(false);
 
   React.useEffect(() => {
     if (!rolesLoading && !isAdmin) {
@@ -41,6 +43,20 @@ export default function IdentityVerificationPage() {
       navigate('/admin');
     }
   }, [isAdmin, rolesLoading, navigate, toast]);
+
+  // Load images when review dialog opens
+  React.useEffect(() => {
+    const loadImages = async () => {
+      if (reviewDialogOpen && requestToReview) {
+        setImagesLoading(true);
+        const frontUrl = await getSignedImageUrl(requestToReview.national_id_front_image);
+        const backUrl = await getSignedImageUrl(requestToReview.national_id_back_image);
+        setPreviewImages({ front: frontUrl, back: backUrl });
+        setImagesLoading(false);
+      }
+    };
+    loadImages();
+  }, [reviewDialogOpen, requestToReview]);
 
   const getImageUrl = (imagePath: string | null) => {
     if (!imagePath) return null;
@@ -700,45 +716,66 @@ export default function IdentityVerificationPage() {
               {/* ID Images */}
               <div className="space-y-3">
                 <h3 className="font-semibold text-lg border-b pb-2">صور الهوية الوطنية</h3>
-                {(requestToReview.national_id_front_image || requestToReview.national_id_back_image) ? (
+                {imagesLoading ? (
+                  <div className="text-center py-8">
+                    <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">جاري تحميل الصور...</p>
+                  </div>
+                ) : (requestToReview.national_id_front_image || requestToReview.national_id_back_image) ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {requestToReview.national_id_front_image && (
                       <div className="space-y-2">
                         <p className="text-sm font-medium text-muted-foreground">الوجه الأمامي</p>
-                        <div 
-                          className="relative group cursor-pointer"
-                          onClick={() => handleImagePreview(requestToReview.national_id_front_image)}
-                        >
-                          <img 
-                            src={getImageUrl(requestToReview.national_id_front_image) || ''} 
-                            alt="الوجه الأمامي"
-                            className="w-full h-48 object-cover rounded-lg border bg-muted transition-transform group-hover:scale-[1.02]"
-                            onError={(e) => handleImageError(e, requestToReview.national_id_front_image)}
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
-                            <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        {previewImages.front ? (
+                          <div 
+                            className="relative group cursor-pointer"
+                            onClick={() => handleImagePreview(requestToReview.national_id_front_image)}
+                          >
+                            <img 
+                              src={previewImages.front} 
+                              alt="الوجه الأمامي"
+                              className="w-full h-48 object-cover rounded-lg border bg-muted transition-transform group-hover:scale-[1.02]"
+                              onError={(e) => {
+                                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE4IiBmaWxsPSIjOWNhM2FmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+2YTYpyDYqtmI2KzYryDYtdmI2LHYqTwvdGV4dD48L3N2Zz4=';
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
+                              <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <div className="w-full h-48 flex items-center justify-center bg-muted/30 rounded-lg border border-dashed">
+                            <p className="text-sm text-muted-foreground">فشل تحميل الصورة</p>
+                          </div>
+                        )}
                       </div>
                     )}
                     
                     {requestToReview.national_id_back_image && (
                       <div className="space-y-2">
                         <p className="text-sm font-medium text-muted-foreground">الوجه الخلفي</p>
-                        <div 
-                          className="relative group cursor-pointer"
-                          onClick={() => handleImagePreview(requestToReview.national_id_back_image)}
-                        >
-                          <img 
-                            src={getImageUrl(requestToReview.national_id_back_image) || ''} 
-                            alt="الوجه الخلفي"
-                            className="w-full h-48 object-cover rounded-lg border bg-muted transition-transform group-hover:scale-[1.02]"
-                            onError={(e) => handleImageError(e, requestToReview.national_id_back_image)}
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
-                            <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        {previewImages.back ? (
+                          <div 
+                            className="relative group cursor-pointer"
+                            onClick={() => handleImagePreview(requestToReview.national_id_back_image)}
+                          >
+                            <img 
+                              src={previewImages.back} 
+                              alt="الوجه الخلفي"
+                              className="w-full h-48 object-cover rounded-lg border bg-muted transition-transform group-hover:scale-[1.02]"
+                              onError={(e) => {
+                                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE4IiBmaWxsPSIjOWNhM2FmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+2YTYpyDYqtmI2KzYryDYtdmI2LHYqTwvdGV4dD48L3N2Zz4=';
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
+                              <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <div className="w-full h-48 flex items-center justify-center bg-muted/30 rounded-lg border border-dashed">
+                            <p className="text-sm text-muted-foreground">فشل تحميل الصورة</p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
