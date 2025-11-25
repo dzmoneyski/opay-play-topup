@@ -545,8 +545,9 @@ export default function IdentityVerificationPage() {
                     <div className="flex flex-col sm:flex-row gap-2">
                       <Button
                         onClick={() => {
+                          console.log('Opening review dialog for:', request);
                           setRequestToReview(request);
-                          setReviewDialogOpen(true);
+                          setTimeout(() => setReviewDialogOpen(true), 0);
                         }}
                         variant="outline"
                         className="flex-1"
@@ -640,7 +641,14 @@ export default function IdentityVerificationPage() {
             </DialogDescription>
           </DialogHeader>
           
-          {requestToReview && (
+          {!requestToReview ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center space-y-3">
+                <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-muted-foreground">جاري تحميل البيانات...</p>
+              </div>
+            </div>
+          ) : (
             <div className="space-y-6">
               {/* User Information */}
               <div className="space-y-3">
@@ -845,7 +853,7 @@ export default function IdentityVerificationPage() {
                         رفض الطلب
                       </Button>
                     </DialogFooter>
-                   </DialogContent>
+                    </DialogContent>
                 </Dialog>
               </div>
             </div>
