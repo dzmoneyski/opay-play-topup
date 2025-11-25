@@ -87,7 +87,13 @@ export default function IdentityVerificationPage() {
         return null;
       }
       
-      return data.signedUrl;
+      // Convert relative URL to absolute URL
+      const signedUrl = data.signedUrl;
+      if (signedUrl.startsWith('/')) {
+        return `https://zxnwixjdwimfblcwfkgo.supabase.co/storage/v1${signedUrl}`;
+      }
+      
+      return signedUrl;
     } catch (err) {
       console.error('Exception creating signed URL:', err);
       return null;
