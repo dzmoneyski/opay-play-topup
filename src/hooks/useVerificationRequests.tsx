@@ -80,10 +80,12 @@ export const useVerificationRequests = () => {
       }
 
       // Check for duplicates for each request
+      const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]));
+      
       const requestsWithProfilesAndDuplicates = await Promise.all(
         (requestsData || []).map(async (request) => {
-          const profile = profilesData?.find(p => p.user_id === request.user_id) || null;
-          const duplicates = await checkDuplicates(request, requestsData || []);
+          const profile = profilesMap.get(request.user_id) || null;
+          const duplicates = await checkDuplicates(request, requestsData || [], profilesMap);
           
           return {
             ...request,
@@ -103,37 +105,36 @@ export const useVerificationRequests = () => {
 
   const checkDuplicates = async (
     currentRequest: any,
-    allRequests: any[]
+    allRequests: any[],
+    profilesCache: Map<string, any>
   ): Promise<DuplicateInfo[]> => {
     const duplicates: DuplicateInfo[] = [];
+    
+    const addDuplicateInfo = (type: 'national_id' | 'name' | 'front_image' | 'back_image', matches: any[]) => {
+      if (matches.length > 0) {
+        duplicates.push({
+          type,
+          count: matches.length,
+          users: matches.map(req => {
+            const profile = profilesCache.get(req.user_id);
+            return {
+              user_id: req.user_id,
+              full_name: profile?.full_name || null,
+              phone: profile?.phone || null,
+              submitted_at: req.submitted_at,
+              status: req.status
+            };
+          })
+        });
+      }
+    };
 
     // Check for duplicate national_id
     const nationalIdMatches = allRequests.filter(
       req => req.id !== currentRequest.id && 
              req.national_id === currentRequest.national_id
     );
-    
-    if (nationalIdMatches.length > 0) {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, phone')
-        .in('user_id', nationalIdMatches.map(r => r.user_id));
-
-      duplicates.push({
-        type: 'national_id',
-        count: nationalIdMatches.length,
-        users: nationalIdMatches.map(req => {
-          const profile = profiles?.find(p => p.user_id === req.user_id);
-          return {
-            user_id: req.user_id,
-            full_name: profile?.full_name || null,
-            phone: profile?.phone || null,
-            submitted_at: req.submitted_at,
-            status: req.status
-          };
-        })
-      });
-    }
+    addDuplicateInfo('national_id', nationalIdMatches);
 
     // Check for duplicate full_name_on_id
     if (currentRequest.full_name_on_id) {
@@ -142,28 +143,7 @@ export const useVerificationRequests = () => {
                req.full_name_on_id && 
                req.full_name_on_id.toLowerCase().trim() === currentRequest.full_name_on_id.toLowerCase().trim()
       );
-      
-      if (nameMatches.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, full_name, phone')
-          .in('user_id', nameMatches.map(r => r.user_id));
-
-        duplicates.push({
-          type: 'name',
-          count: nameMatches.length,
-          users: nameMatches.map(req => {
-            const profile = profiles?.find(p => p.user_id === req.user_id);
-            return {
-              user_id: req.user_id,
-              full_name: profile?.full_name || null,
-              phone: profile?.phone || null,
-              submitted_at: req.submitted_at,
-              status: req.status
-            };
-          })
-        });
-      }
+      addDuplicateInfo('name', nameMatches);
     }
 
     // Check for duplicate front image
@@ -172,28 +152,7 @@ export const useVerificationRequests = () => {
         req => req.id !== currentRequest.id && 
                req.national_id_front_image === currentRequest.national_id_front_image
       );
-      
-      if (frontImageMatches.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, full_name, phone')
-          .in('user_id', frontImageMatches.map(r => r.user_id));
-
-        duplicates.push({
-          type: 'front_image',
-          count: frontImageMatches.length,
-          users: frontImageMatches.map(req => {
-            const profile = profiles?.find(p => p.user_id === req.user_id);
-            return {
-              user_id: req.user_id,
-              full_name: profile?.full_name || null,
-              phone: profile?.phone || null,
-              submitted_at: req.submitted_at,
-              status: req.status
-            };
-          })
-        });
-      }
+      addDuplicateInfo('front_image', frontImageMatches);
     }
 
     // Check for duplicate back image
@@ -202,28 +161,7 @@ export const useVerificationRequests = () => {
         req => req.id !== currentRequest.id && 
                req.national_id_back_image === currentRequest.national_id_back_image
       );
-      
-      if (backImageMatches.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, full_name, phone')
-          .in('user_id', backImageMatches.map(r => r.user_id));
-
-        duplicates.push({
-          type: 'back_image',
-          count: backImageMatches.length,
-          users: backImageMatches.map(req => {
-            const profile = profiles?.find(p => p.user_id === req.user_id);
-            return {
-              user_id: req.user_id,
-              full_name: profile?.full_name || null,
-              phone: profile?.phone || null,
-              submitted_at: req.submitted_at,
-              status: req.status
-            };
-          })
-        });
-      }
+      addDuplicateInfo('back_image', backImageMatches);
     }
 
     return duplicates;
