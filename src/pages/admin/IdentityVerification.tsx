@@ -611,7 +611,14 @@ export default function IdentityVerificationPage() {
             </DialogDescription>
           </DialogHeader>
           
-          {requestToReview && (
+           {!requestToReview ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center space-y-3">
+                <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-muted-foreground">جاري تحميل البيانات...</p>
+              </div>
+            </div>
+          ) : (
             <div className="space-y-6">
               {/* User Information */}
               <div className="space-y-3">
