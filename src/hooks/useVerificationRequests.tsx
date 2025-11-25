@@ -46,15 +46,16 @@ export const useVerificationRequests = () => {
   React.useEffect(() => {
     if (user) {
       fetchVerificationRequests();
-    } else {
-      setRequests([]);
-      setLoading(false);
     }
   }, [user]);
 
   const fetchVerificationRequests = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
+    setLoading(true);
     try {
       // First get all verification requests
       const { data: requestsData, error: requestsError } = await supabase
