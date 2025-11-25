@@ -86,6 +86,7 @@ export default function IdentityVerificationPage() {
     const signedUrl = await getSignedImageUrl(imagePath);
     if (signedUrl) {
       setImagePreview(signedUrl);
+      setImageLoading(false);
     } else {
       setImageError(true);
       setImageLoading(false);
