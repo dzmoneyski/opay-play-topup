@@ -339,43 +339,100 @@ export default function IdentityVerificationPage() {
 
                       {/* مقارنة المعلومات */}
                       {request.full_name_on_id && (
-                        <div className="mt-3 p-3 bg-muted/50 rounded-lg border">
-                          <h4 className="text-xs font-semibold text-foreground mb-2">مقارنة المعلومات</h4>
-                          <div className="grid sm:grid-cols-2 gap-2 text-xs">
-                            <div>
-                              <span className="text-muted-foreground">الاسم في الحساب: </span>
-                              <span className="font-medium">{request.profiles?.full_name || 'غير محدد'}</span>
+                        <div className="mt-3 p-4 bg-muted/50 rounded-lg border">
+                          <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                            <Eye className="h-4 w-4" />
+                            مقارنة المعلومات
+                          </h4>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between p-2 bg-background rounded border">
+                              <span className="font-medium text-sm">{request.profiles?.full_name || 'غير محدد'}</span>
+                              <span className="text-xs text-muted-foreground">الاسم في الحساب</span>
                             </div>
-                            <div>
-                              <span className="text-muted-foreground">الاسم على البطاقة: </span>
-                              <span className={`font-medium ${
+                            <div className="flex items-center justify-between p-2 bg-background rounded border">
+                              <span className={`font-medium text-sm ${
                                 request.full_name_on_id === request.profiles?.full_name 
-                                  ? 'text-green-600' 
-                                  : 'text-red-600'
+                                  ? 'text-green-600 dark:text-green-400' 
+                                  : 'text-red-600 dark:text-red-400'
                               }`}>
                                 {request.full_name_on_id}
                               </span>
+                              <span className="text-xs text-muted-foreground">الاسم على البطاقة</span>
                             </div>
+                            {request.full_name_on_id !== request.profiles?.full_name && (
+                              <div className="flex items-center gap-2 text-xs text-yellow-700 dark:text-yellow-500 bg-yellow-50 dark:bg-yellow-950/30 p-2 rounded">
+                                <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                                <span>الأسماء غير متطابقة - يرجى التحقق بعناية</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
 
                       {/* تحذيرات التكرار */}
                       {request.duplicates && request.duplicates.length > 0 && (
-                        <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/30 border-2 border-red-500 rounded-lg">
-                          <h4 className="text-sm font-bold text-red-800 dark:text-red-300 flex items-center gap-2 mb-2">
-                            <AlertCircle className="h-4 w-4" />
-                            ⚠️ تحذير: تكرارات مكتشفة
+                        <div className="mt-3 p-4 bg-red-50 dark:bg-red-950/30 border-2 border-red-500 rounded-lg space-y-3">
+                          <h4 className="text-sm font-bold text-red-800 dark:text-red-300 flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5" />
+                            ⚠️ تحذير: تكرارات مكتشفة ({request.duplicates.length})
                           </h4>
-                          {request.duplicates.map((duplicate: any, idx: number) => (
-                            <div key={idx} className="text-xs text-red-800 dark:text-red-300 mb-1">
-                              {duplicate.type === 'national_id' && '🆔 رقم البطاقة مستخدم من قبل'}
-                              {duplicate.type === 'name' && '👤 الاسم مستخدم من قبل'}
-                              {duplicate.type === 'front_image' && '📷 الصورة الأمامية مستخدمة من قبل'}
-                              {duplicate.type === 'back_image' && '📷 الصورة الخلفية مستخدمة من قبل'}
-                              <span className="mr-1 font-bold">({duplicate.count} حساب)</span>
-                            </div>
-                          ))}
+                          <div className="space-y-2">
+                            {request.duplicates.map((duplicate: any, idx: number) => (
+                              <div key={idx} className="p-3 bg-red-100/50 dark:bg-red-900/20 rounded-lg border border-red-300 dark:border-red-700 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm font-semibold text-red-900 dark:text-red-200">
+                                    {duplicate.type === 'national_id' && '🆔 رقم البطاقة الوطنية'}
+                                    {duplicate.type === 'name' && '👤 الاسم الكامل'}
+                                    {duplicate.type === 'front_image' && '📷 الصورة الأمامية'}
+                                    {duplicate.type === 'back_image' && '📷 الصورة الخلفية'}
+                                  </p>
+                                  <Badge variant="destructive" className="text-xs">
+                                    {duplicate.count} حساب مكرر
+                                  </Badge>
+                                </div>
+                                <div className="space-y-1">
+                                  {duplicate.users.slice(0, 3).map((user: any, userIdx: number) => (
+                                    <div key={userIdx} className="text-xs text-red-800 dark:text-red-300 flex items-center justify-between bg-white/60 dark:bg-black/30 px-3 py-2 rounded border border-red-200 dark:border-red-800">
+                                      <div className="flex items-center gap-2 flex-1">
+                                        <span className="font-medium">{user.full_name || 'غير محدد'}</span>
+                                        {user.phone && (
+                                          <span className="text-red-600 dark:text-red-400">• {user.phone}</span>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs text-muted-foreground">
+                                          {new Date(user.submitted_at).toLocaleDateString('ar-DZ', { month: 'short', day: 'numeric' })}
+                                        </span>
+                                        <Badge 
+                                          variant={
+                                            user.status === 'approved' ? 'default' : 
+                                            user.status === 'rejected' ? 'destructive' : 
+                                            'secondary'
+                                          }
+                                          className="text-xs"
+                                        >
+                                          {user.status === 'approved' && '✓ موافق'}
+                                          {user.status === 'rejected' && '✗ مرفوض'}
+                                          {user.status === 'pending' && '○ معلق'}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  ))}
+                                  {duplicate.users.length > 3 && (
+                                    <p className="text-xs text-red-700 dark:text-red-400 text-center py-1">
+                                      ... و {duplicate.users.length - 3} حساب آخر
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex items-start gap-2 p-3 bg-red-200/50 dark:bg-red-900/40 rounded border border-red-400">
+                            <AlertCircle className="h-4 w-4 text-red-800 dark:text-red-300 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-red-800 dark:text-red-300 font-medium">
+                              يرجى التحقق من أن هذا ليس حساباً مكرراً قبل الموافقة. في حالة الشك، يُفضل رفض الطلب.
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -384,42 +441,49 @@ export default function IdentityVerificationPage() {
 
                 <CardContent className="pt-0 space-y-4">
                   {/* الصور المصغرة */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-semibold">صور الهوية</h4>
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      صور الهوية الوطنية
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {request.national_id_front_image && (
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground">الوجه الأمامي</p>
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-muted-foreground">📄 الوجه الأمامي</p>
                           <div 
-                            className="relative group cursor-pointer"
+                            className="relative group cursor-pointer overflow-hidden rounded-lg border-2 border-border hover:border-primary transition-colors"
                             onClick={() => openImagePreview(request.national_id_front_image)}
                           >
                             <img 
                               src={`https://zxnwixjdwimfblcwfkgo.supabase.co/storage/v1/object/public/identity-documents/${request.national_id_front_image}`}
                               alt="الوجه الأمامي"
-                              className="w-full h-24 object-cover rounded-lg border"
+                              className="w-full h-32 object-cover"
                             />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
-                              <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100" />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center">
+                              <div className="transform scale-0 group-hover:scale-100 transition-transform duration-200 bg-white rounded-full p-2">
+                                <ZoomIn className="h-5 w-5 text-primary" />
+                              </div>
                             </div>
                           </div>
                         </div>
                       )}
                       
                       {request.national_id_back_image && (
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground">الوجه الخلفي</p>
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-muted-foreground">📄 الوجه الخلفي</p>
                           <div 
-                            className="relative group cursor-pointer"
+                            className="relative group cursor-pointer overflow-hidden rounded-lg border-2 border-border hover:border-primary transition-colors"
                             onClick={() => openImagePreview(request.national_id_back_image)}
                           >
                             <img 
                               src={`https://zxnwixjdwimfblcwfkgo.supabase.co/storage/v1/object/public/identity-documents/${request.national_id_back_image}`}
                               alt="الوجه الخلفي"
-                              className="w-full h-24 object-cover rounded-lg border"
+                              className="w-full h-32 object-cover"
                             />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
-                              <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100" />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center">
+                              <div className="transform scale-0 group-hover:scale-100 transition-transform duration-200 bg-white rounded-full p-2">
+                                <ZoomIn className="h-5 w-5 text-primary" />
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -431,25 +495,25 @@ export default function IdentityVerificationPage() {
 
                   {/* أزرار الإجراءات */}
                   {request.status === 'pending' && (
-                    <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <Button
                         onClick={() => setPreviewRequest(request)}
                         variant="outline"
-                        className="flex-1"
-                        size="sm"
+                        className="w-full border-2 hover:border-primary hover:bg-primary/5"
+                        size="default"
                       >
                         <Eye className="w-4 h-4 ml-2" />
-                        معاينة الطلب
+                        معاينة كاملة
                       </Button>
                       
                       <Button
                         onClick={() => handleApprove(request.id)}
                         disabled={processing}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                        size="sm"
+                        className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white shadow-sm"
+                        size="default"
                       >
                         <CheckCircle className="w-4 h-4 ml-2" />
-                        موافقة
+                        {processing ? 'جاري...' : 'موافقة'}
                       </Button>
                       
                       <Button
@@ -458,8 +522,8 @@ export default function IdentityVerificationPage() {
                           setSelectedRequest(request);
                           setShowRejectDialog(true);
                         }}
-                        className="flex-1"
-                        size="sm"
+                        className="w-full shadow-sm"
+                        size="default"
                         disabled={processing}
                       >
                         <XCircle className="w-4 h-4 ml-2" />
@@ -607,10 +671,11 @@ export default function IdentityVerificationPage() {
           )}
           
           {/* أزرار الإجراءات في نافذة المعاينة */}
-          <DialogFooter className="flex gap-2">
+          <DialogFooter className="flex flex-row gap-2 justify-end sm:justify-end border-t pt-4">
             <Button
               variant="outline"
               onClick={() => setPreviewRequest(null)}
+              size="default"
             >
               إغلاق
             </Button>
@@ -624,6 +689,8 @@ export default function IdentityVerificationPage() {
                     setShowRejectDialog(true);
                   }}
                   disabled={processing}
+                  size="default"
+                  className="shadow-sm"
                 >
                   <XCircle className="w-4 h-4 ml-2" />
                   رفض الطلب
@@ -632,7 +699,8 @@ export default function IdentityVerificationPage() {
                 <Button
                   onClick={() => handleApprove(previewRequest.id)}
                   disabled={processing}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white shadow-sm"
+                  size="default"
                 >
                   <CheckCircle className="w-4 h-4 ml-2" />
                   الموافقة على الطلب
@@ -645,37 +713,55 @@ export default function IdentityVerificationPage() {
 
       {/* نافذة الرفض */}
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <XCircle className="h-5 w-5" />
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader className="text-right">
+            <DialogTitle className="flex items-center gap-2 text-red-600 justify-end">
               رفض طلب التحقق
+              <XCircle className="h-5 w-5" />
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-right">
               يرجى إدخال سبب الرفض ليتمكن المستخدم من معرفة المشكلة وتصحيحها
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          {selectedRequest && (
+            <div className="bg-muted/50 p-3 rounded-lg border text-right">
+              <p className="text-sm font-semibold mb-1">معلومات الطلب:</p>
+              <div className="text-xs space-y-1 text-muted-foreground">
+                <p>الاسم: <span className="font-medium text-foreground">{selectedRequest.profiles?.full_name || 'غير محدد'}</span></p>
+                <p>رقم الهاتف: <span className="font-medium text-foreground">{selectedRequest.profiles?.phone || 'غير محدد'}</span></p>
+                <p>رقم الهوية: <span className="font-medium text-foreground">{selectedRequest.national_id}</span></p>
+              </div>
+            </div>
+          )}
+          
+          <div className="space-y-3 py-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium">سبب الرفض *</label>
+              <label className="text-sm font-semibold text-right block">سبب الرفض *</label>
               <Textarea
-                placeholder="مثال: الصورة غير واضحة، البيانات غير مطابقة، إلخ..."
+                placeholder="مثال: الصورة غير واضحة، البيانات غير مطابقة، الاسم لا يطابق الهوية..."
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
-                rows={4}
+                rows={5}
+                className="text-right resize-none"
+                dir="rtl"
               />
+              <p className="text-xs text-muted-foreground text-right">
+                سيتم إرسال هذا السبب للمستخدم لمعرفة المشكلة
+              </p>
             </div>
           </div>
           
-          <DialogFooter className="flex gap-2">
+          <DialogFooter className="flex flex-row gap-2 justify-end">
             <Button
               variant="outline"
               onClick={() => {
                 setShowRejectDialog(false);
                 setRejectionReason('');
+                setSelectedRequest(null);
               }}
               disabled={processing}
+              className="flex-1 sm:flex-initial"
             >
               إلغاء
             </Button>
@@ -684,8 +770,19 @@ export default function IdentityVerificationPage() {
               variant="destructive"
               onClick={handleReject}
               disabled={processing || !rejectionReason.trim()}
+              className="flex-1 sm:flex-initial"
             >
-              {processing ? 'جاري الرفض...' : 'تأكيد الرفض'}
+              {processing ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  جاري الرفض...
+                </>
+              ) : (
+                <>
+                  <XCircle className="w-4 h-4 ml-2" />
+                  تأكيد الرفض
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
