@@ -31,6 +31,7 @@ export default function IdentityVerificationPage() {
   const [imageError, setImageError] = React.useState(false);
   const [previewImages, setPreviewImages] = React.useState<{front: string | null, back: string | null}>({front: null, back: null});
   const [imagesLoading, setImagesLoading] = React.useState(false);
+  const [showRejectDialog, setShowRejectDialog] = React.useState(false);
 
   React.useEffect(() => {
     if (!rolesLoading && !isAdmin) {
@@ -565,43 +566,19 @@ export default function IdentityVerificationPage() {
                         موافقة
                       </Button>
                       
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="destructive"
-                            onClick={() => setSelectedRequest(request)}
-                            className="flex-1"
-                            size="sm"
-                          >
-                            <XCircle className="w-4 h-4 ml-2" />
-                            رفض
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-md">
-                          <DialogHeader>
-                            <DialogTitle>رفض طلب التحقق</DialogTitle>
-                            <DialogDescription>
-                              يرجى إدخال سبب رفض طلب التحقق من الهوية لـ {request.profiles?.full_name}
-                            </DialogDescription>
-                          </DialogHeader>
-                          <Textarea
-                            placeholder="سبب الرفض (مثال: صورة الهوية غير واضحة، بيانات غير مطابقة، إلخ)"
-                            value={rejectionReason}
-                            onChange={(e) => setRejectionReason(e.target.value)}
-                            className="mt-4"
-                            rows={3}
-                          />
-                          <DialogFooter>
-                            <Button
-                              variant="destructive"
-                              onClick={() => selectedRequest && handleReject(selectedRequest.id, rejectionReason)}
-                              disabled={processing || !rejectionReason.trim()}
-                            >
-                              رفض الطلب
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          setSelectedRequest(request);
+                          setShowRejectDialog(true);
+                        }}
+                        className="flex-1"
+                        size="sm"
+                        disabled={processing}
+                      >
+                        <XCircle className="w-4 h-4 ml-2" />
+                        رفض
+                      </Button>
                     </div>
                   )}
                   
@@ -806,48 +783,74 @@ export default function IdentityVerificationPage() {
                   الموافقة على الطلب
                 </Button>
                 
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      onClick={() => setSelectedRequest(requestToReview)}
-                      className="flex-1"
-                    >
-                      <XCircle className="w-4 h-4 ml-2" />
-                      رفض الطلب
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>رفض طلب التحقق</DialogTitle>
-                      <DialogDescription>
-                        يرجى إدخال سبب رفض طلب التحقق من الهوية لـ {requestToReview.profiles?.full_name}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <Textarea
-                      placeholder="سبب الرفض (مثال: صورة الهوية غير واضحة، بيانات غير مطابقة، إلخ)"
-                      value={rejectionReason}
-                      onChange={(e) => setRejectionReason(e.target.value)}
-                      className="mt-4"
-                      rows={3}
-                    />
-                    <DialogFooter>
-                      <Button
-                        variant="destructive"
-                        onClick={() => {
-                          handleReject(requestToReview.id, rejectionReason);
-                          setRequestToReview(null);
-                        }}
-                        disabled={processing || !rejectionReason.trim()}
-                      >
-                        رفض الطلب
-                      </Button>
-                    </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setSelectedRequest(requestToReview);
+                    setShowRejectDialog(true);
+                    setRequestToReview(null);
+                  }}
+                  className="flex-1"
+                  disabled={processing}
+                >
+                  <XCircle className="w-4 h-4 ml-2" />
+                  رفض الطلب
+                </Button>
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Rejection Dialog - Separate from Review Dialog */}
+      <Dialog open={showRejectDialog} onOpenChange={(open) => {
+        setShowRejectDialog(open);
+        if (!open) {
+          setSelectedRequest(null);
+          setRejectionReason('');
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>رفض طلب التحقق</DialogTitle>
+            <DialogDescription>
+              يرجى إدخال سبب رفض طلب التحقق من الهوية لـ {selectedRequest?.profiles?.full_name}
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            placeholder="سبب الرفض (مثال: صورة الهوية غير واضحة، بيانات غير مطابقة، إلخ)"
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            className="mt-4"
+            rows={3}
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowRejectDialog(false);
+                setSelectedRequest(null);
+                setRejectionReason('');
+              }}
+              disabled={processing}
+            >
+              إلغاء
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (selectedRequest) {
+                  await handleReject(selectedRequest.id, rejectionReason);
+                  setShowRejectDialog(false);
+                  setSelectedRequest(null);
+                  setRejectionReason('');
+                }
+              }}
+              disabled={processing || !rejectionReason.trim()}
+            >
+              {processing ? 'جاري الرفض...' : 'رفض الطلب'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
