@@ -39,6 +39,8 @@ export const useVerification = () => {
 
     setLoading(true);
     try {
+      console.log('🔍 جاري جلب طلبات التحقق...');
+      
       // جلب جميع الطلبات
       const { data: requestsData, error } = await supabase
         .from('verification_requests')
@@ -46,9 +48,11 @@ export const useVerification = () => {
         .order('submitted_at', { ascending: false });
 
       if (error) {
-        console.error('خطأ في جلب الطلبات:', error);
+        console.error('❌ خطأ في جلب الطلبات:', error);
         throw error;
       }
+
+      console.log(`✅ تم جلب ${requestsData?.length || 0} طلب`);
 
       if (!requestsData || requestsData.length === 0) {
         setRequests([]);
@@ -64,8 +68,10 @@ export const useVerification = () => {
         .in('user_id', userIds);
 
       if (profilesError) {
-        console.error('خطأ في جلب بيانات المستخدمين:', profilesError);
+        console.error('⚠️ خطأ في جلب بيانات المستخدمين:', profilesError);
       }
+
+      console.log(`👥 تم جلب بيانات ${profiles?.length || 0} مستخدم`);
 
       // دمج البيانات
       const requestsWithProfiles = requestsData.map(req => {
@@ -81,8 +87,9 @@ export const useVerification = () => {
       });
 
       setRequests(requestsWithProfiles as VerificationRequest[]);
+      console.log('✅ تم دمج البيانات بنجاح');
     } catch (error: any) {
-      console.error('خطأ في جلب الطلبات:', error);
+      console.error('❌ خطأ في جلب الطلبات:', error);
       setRequests([]);
     } finally {
       setLoading(false);
