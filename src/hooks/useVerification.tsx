@@ -32,7 +32,10 @@ export const useVerification = () => {
 
   // جلب الطلبات
   const fetchRequests = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -42,24 +45,45 @@ export const useVerification = () => {
         .select('*')
         .order('submitted_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('خطأ في جلب الطلبات:', error);
+        throw error;
+      }
+
+      if (!requestsData || requestsData.length === 0) {
+        setRequests([]);
+        setLoading(false);
+        return;
+      }
 
       // جلب بيانات المستخدمين
-      const userIds = requestsData?.map(r => r.user_id) || [];
-      const { data: profiles } = await supabase
+      const userIds = requestsData.map(r => r.user_id);
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, full_name, phone, email')
         .in('user_id', userIds);
 
+      if (profilesError) {
+        console.error('خطأ في جلب بيانات المستخدمين:', profilesError);
+      }
+
       // دمج البيانات
-      const requestsWithProfiles = requestsData?.map(req => ({
-        ...req,
-        user: profiles?.find(p => p.user_id === req.user_id)
-      })) || [];
+      const requestsWithProfiles = requestsData.map(req => {
+        const profile = profiles?.find(p => p.user_id === req.user_id);
+        return {
+          ...req,
+          user: profile ? {
+            full_name: profile.full_name,
+            phone: profile.phone,
+            email: profile.email
+          } : null
+        };
+      });
 
       setRequests(requestsWithProfiles as VerificationRequest[]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('خطأ في جلب الطلبات:', error);
+      setRequests([]);
     } finally {
       setLoading(false);
     }
