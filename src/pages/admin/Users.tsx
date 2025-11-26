@@ -73,15 +73,16 @@ const getStatusBadgeVariant = (status: string) => {
 };
 
 // User Transactions Tab Component
-const UserTransactionsTab = ({ userId }: { userId: string }) => {
-  // Create a temporary auth context for this user
-  const { transactions, loading } = useTransactionHistory();
-  
-  // Filter transactions for this specific user
+const UserTransactionsTab = ({ userId, isActive }: { userId: string; isActive: boolean }) => {
   const [userTransactions, setUserTransactions] = React.useState<TransactionHistoryItem[]>([]);
+  const [loading, setLoading] = React.useState(false);
   
   React.useEffect(() => {
+    // Only fetch when tab is active
+    if (!isActive) return;
+    
     const fetchUserTransactions = async () => {
+      setLoading(true);
       try {
         // Fetch all transaction types for this user
         const [deposits, withdrawals, transfers, giftCards, betting, gameTopups] = await Promise.all([
@@ -187,11 +188,13 @@ const UserTransactionsTab = ({ userId }: { userId: string }) => {
         setUserTransactions(allTransactions);
       } catch (error) {
         console.error('Error fetching user transactions:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchUserTransactions();
-  }, [userId]);
+  }, [userId, isActive]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ar-DZ', {
@@ -230,7 +233,23 @@ const UserTransactionsTab = ({ userId }: { userId: string }) => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {userTransactions.length > 0 ? (
+        {loading ? (
+          <div className="space-y-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center gap-4 p-4 border rounded-lg animate-pulse">
+                <div className="w-10 h-10 rounded-full bg-muted" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-muted rounded w-1/3" />
+                  <div className="h-3 bg-muted rounded w-1/4" />
+                </div>
+                <div className="space-y-2">
+                  <div className="h-4 bg-muted rounded w-20" />
+                  <div className="h-5 bg-muted rounded w-16" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : userTransactions.length > 0 ? (
           <div className="space-y-2">
             {userTransactions.map((transaction, index) => (
               <div 
@@ -298,9 +317,11 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
   const [balanceAction, setBalanceAction] = React.useState({ type: '', amount: '', note: '' });
   const [processing, setProcessing] = React.useState(false);
   const [heldBalance, setHeldBalance] = React.useState(0);
+  const [loadingDetails, setLoadingDetails] = React.useState(true);
 
   React.useEffect(() => {
     const fetchUserDetails = async () => {
+      setLoadingDetails(true);
       try {
         // Fetch verification request
         const { data: verificationData } = await supabase
@@ -329,6 +350,8 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
         setHeldBalance(totalHeld);
       } catch (error) {
         console.error('Error fetching user details:', error);
+      } finally {
+        setLoadingDetails(false);
       }
     };
 
@@ -490,6 +513,13 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
 
   return (
     <div className="space-y-6">
+      {loadingDetails && (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <span className="mr-3 text-muted-foreground">جاري تحميل البيانات...</span>
+        </div>
+      )}
+      
       {/* Tab Navigation */}
       <div className="border-b border-border">
         <div className="flex space-x-8 space-x-reverse">
@@ -827,7 +857,7 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
         )}
 
         {activeTab === 'transactions' && (
-          <UserTransactionsTab userId={user.user_id} />
+          <UserTransactionsTab userId={user.user_id} isActive={activeTab === 'transactions'} />
         )}
 
         {activeTab === 'actions' && (
