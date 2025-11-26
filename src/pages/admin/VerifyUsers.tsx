@@ -46,22 +46,33 @@ export default function VerifyUsers() {
 
   // الموافقة على الطلب
   const handleApprove = async (id: string) => {
-    setProcessing(true);
-    const result = await approveRequest(id);
+    if (processing) return;
     
-    if (result.error) {
+    setProcessing(true);
+    try {
+      const result = await approveRequest(id);
+      
+      if (result.error) {
+        toast({
+          title: "خطأ",
+          description: result.error,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "تم بنجاح ✓",
+          description: "تمت الموافقة على الطلب وتم تفعيل الحساب",
+        });
+      }
+    } catch (error: any) {
       toast({
         title: "خطأ",
-        description: result.error,
+        description: error.message || "حدث خطأ أثناء الموافقة",
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "تم بنجاح",
-        description: "تمت الموافقة على الطلب",
-      });
+    } finally {
+      setProcessing(false);
     }
-    setProcessing(false);
   };
 
   // رفض الطلب
@@ -75,25 +86,36 @@ export default function VerifyUsers() {
       return;
     }
 
+    if (processing) return;
+
     setProcessing(true);
-    const result = await rejectRequest(selectedRequest.id, rejectionReason);
-    
-    if (result.error) {
+    try {
+      const result = await rejectRequest(selectedRequest.id, rejectionReason);
+      
+      if (result.error) {
+        toast({
+          title: "خطأ",
+          description: result.error,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "تم الرفض ✓",
+          description: "تم رفض الطلب وإرسال السبب للمستخدم",
+        });
+        setShowRejectDialog(false);
+        setSelectedRequest(null);
+        setRejectionReason('');
+      }
+    } catch (error: any) {
       toast({
         title: "خطأ",
-        description: result.error,
+        description: error.message || "حدث خطأ أثناء الرفض",
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "تم بنجاح",
-        description: "تم رفض الطلب",
-      });
-      setShowRejectDialog(false);
-      setSelectedRequest(null);
-      setRejectionReason('');
+    } finally {
+      setProcessing(false);
     }
-    setProcessing(false);
   };
 
   if (rolesLoading || loading) {
