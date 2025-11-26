@@ -321,10 +321,12 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
 
   React.useEffect(() => {
     const fetchUserDetails = async () => {
+      console.log('🔵 Starting to fetch user details for:', user.user_id);
       setLoadingDetails(true);
       try {
         // Fetch verification data only (most important)
-        const verificationPromise = supabase
+        console.log('🔵 Fetching verification data...');
+        const verificationData = await supabase
           .from('verification_requests')
           .select('*')
           .eq('user_id', user.user_id)
@@ -332,13 +334,14 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
           .limit(1)
           .maybeSingle();
 
-        const verificationData = await verificationPromise;
+        console.log('✅ Verification data received:', verificationData);
         
         if (verificationData.data) {
           setVerificationRequest(verificationData.data);
         }
 
         // Fetch held balance data (non-blocking)
+        console.log('🔵 Fetching held balance data...');
         Promise.all([
           supabase.from('game_topup_orders')
             .select('amount')
@@ -359,15 +362,17 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
             (bettingTransactions.data?.reduce((sum, t) => sum + Number(t.amount), 0) || 0) +
             (withdrawals.data?.reduce((sum, w) => sum + Number(w.amount), 0) || 0);
 
+          console.log('✅ Held balance calculated:', totalHeld);
           setHeldBalance(totalHeld);
         }).catch(err => {
-          console.error('Error fetching held balance:', err);
+          console.error('❌ Error fetching held balance:', err);
         });
 
       } catch (error) {
-        console.error('Error fetching user details:', error);
+        console.error('❌ Error fetching user details:', error);
       } finally {
         // Set loading to false immediately after essential data loads
+        console.log('✅ Setting loadingDetails to false');
         setLoadingDetails(false);
       }
     };
@@ -528,16 +533,21 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
     }).format(amount);
   };
 
+  console.log('🔍 UserDetailsModal - loadingDetails:', loadingDetails);
+  
   if (loadingDetails) {
+    console.log('🔄 Showing loading state...');
     return (
-      <div className="flex items-center justify-center min-h-[400px] bg-background">
+      <div className="flex items-center justify-center min-h-[400px] bg-card">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent" />
-          <p className="text-lg font-medium text-foreground">جاري تحميل البيانات...</p>
+          <p className="text-lg font-medium text-card-foreground">جاري تحميل البيانات...</p>
         </div>
       </div>
     );
   }
+
+  console.log('✅ Rendering modal content');
 
   return (
     <div className="space-y-6">
