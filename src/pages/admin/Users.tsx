@@ -323,19 +323,23 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
     const fetchUserDetails = async () => {
       setLoadingDetails(true);
       try {
-        // Add timeout to prevent infinite loading
-        const timeout = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Request timeout')), 10000)
-        );
+        // Fetch verification data only (most important)
+        const verificationPromise = supabase
+          .from('verification_requests')
+          .select('*')
+          .eq('user_id', user.user_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-        // Fetch only essential data
-        const dataPromise = Promise.all([
-          supabase.from('verification_requests')
-            .select('*')
-            .eq('user_id', user.user_id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single(),
+        const verificationData = await verificationPromise;
+        
+        if (verificationData.data) {
+          setVerificationRequest(verificationData.data);
+        }
+
+        // Fetch held balance data (non-blocking)
+        Promise.all([
           supabase.from('game_topup_orders')
             .select('amount')
             .eq('user_id', user.user_id)
@@ -349,27 +353,21 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
             .select('amount')
             .eq('user_id', user.user_id)
             .in('status', ['pending', 'approved'])
-        ]);
+        ]).then(([gameOrders, bettingTransactions, withdrawals]) => {
+          const totalHeld = 
+            (gameOrders.data?.reduce((sum, o) => sum + Number(o.amount), 0) || 0) +
+            (bettingTransactions.data?.reduce((sum, t) => sum + Number(t.amount), 0) || 0) +
+            (withdrawals.data?.reduce((sum, w) => sum + Number(w.amount), 0) || 0);
 
-        const [verificationData, gameOrders, bettingTransactions, withdrawals] = await Promise.race([
-          dataPromise,
-          timeout
-        ]) as any[];
+          setHeldBalance(totalHeld);
+        }).catch(err => {
+          console.error('Error fetching held balance:', err);
+        });
 
-        if (verificationData?.data) {
-          setVerificationRequest(verificationData.data);
-        }
-
-        const totalHeld = 
-          (gameOrders?.data?.reduce((sum: number, o: any) => sum + Number(o.amount), 0) || 0) +
-          (bettingTransactions?.data?.reduce((sum: number, t: any) => sum + Number(t.amount), 0) || 0) +
-          (withdrawals?.data?.reduce((sum: number, w: any) => sum + Number(w.amount), 0) || 0);
-
-        setHeldBalance(totalHeld);
       } catch (error) {
         console.error('Error fetching user details:', error);
-        toast.error('فشل تحميل بعض البيانات');
       } finally {
+        // Set loading to false immediately after essential data loads
         setLoadingDetails(false);
       }
     };
@@ -532,10 +530,10 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
 
   if (loadingDetails) {
     return (
-      <div className="flex items-center justify-center min-h-[500px]">
+      <div className="flex items-center justify-center min-h-[400px] bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent" />
-          <p className="text-lg font-medium">جاري تحميل البيانات...</p>
+          <p className="text-lg font-medium text-foreground">جاري تحميل البيانات...</p>
         </div>
       </div>
     );
@@ -1366,13 +1364,13 @@ export default function UsersPage() {
                           عرض التفاصيل
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-background">
+                      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-card text-card-foreground">
                         <DialogHeader>
-                          <DialogTitle className="flex items-center gap-2">
+                          <DialogTitle className="flex items-center gap-2 text-foreground">
                             <User className="h-5 w-5" />
                             تفاصيل المستخدم - {user.full_name || 'غير محدد'}
                           </DialogTitle>
-                          <DialogDescription>
+                          <DialogDescription className="text-muted-foreground">
                             إدارة شاملة لحساب المستخدم والتحكم في جميع الخيارات
                           </DialogDescription>
                         </DialogHeader>
