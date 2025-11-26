@@ -308,13 +308,10 @@ export const useProfile = () => {
         .insert({
           user_id: user.id,
           national_id: nationalId,
-          national_id_front_image: frontImageUrl,
-          national_id_back_image: backImageUrl,
-          full_name_on_id: additionalInfo?.fullNameOnId || null,
+          full_name: additionalInfo?.fullNameOnId || profile?.full_name || '',
           date_of_birth: additionalInfo?.dateOfBirth || null,
-          place_of_birth: additionalInfo?.placeOfBirth || null,
-          address: additionalInfo?.address || null,
-          status: 'pending'
+          id_front_image: frontImageUrl,
+          id_back_image: backImageUrl
         })
         .select()
         .single();

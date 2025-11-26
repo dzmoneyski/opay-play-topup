@@ -1,0 +1,114 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
+
+export interface VerificationRequest {
+  id: string;
+  user_id: string;
+  national_id: string;
+  full_name: string;
+  date_of_birth: string | null;
+  id_front_image: string;
+  id_back_image: string;
+  status: 'pending' | 'approved' | 'rejected';
+  rejection_reason: string | null;
+  submitted_at: string;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  user?: {
+    full_name: string | null;
+    phone: string | null;
+    email: string | null;
+  };
+}
+
+/**
+ * Hook للتعامل مع طلبات التحقق من الهوية
+ */
+export const useVerification = () => {
+  const { user } = useAuth();
+  const [requests, setRequests] = useState<VerificationRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // جلب الطلبات
+  const fetchRequests = async () => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      // جلب جميع الطلبات
+      const { data: requestsData, error } = await supabase
+        .from('verification_requests')
+        .select('*')
+        .order('submitted_at', { ascending: false });
+
+      if (error) throw error;
+
+      // جلب بيانات المستخدمين
+      const userIds = requestsData?.map(r => r.user_id) || [];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, phone, email')
+        .in('user_id', userIds);
+
+      // دمج البيانات
+      const requestsWithProfiles = requestsData?.map(req => ({
+        ...req,
+        user: profiles?.find(p => p.user_id === req.user_id)
+      })) || [];
+
+      setRequests(requestsWithProfiles as VerificationRequest[]);
+    } catch (error) {
+      console.error('خطأ في جلب الطلبات:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchRequests();
+    }
+  }, [user]);
+
+  // الموافقة على الطلب
+  const approveRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase.rpc('approve_verification', {
+        request_id: requestId
+      });
+
+      if (error) throw error;
+
+      await fetchRequests();
+      return { success: true };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  };
+
+  // رفض الطلب
+  const rejectRequest = async (requestId: string, reason: string) => {
+    try {
+      const { error } = await supabase.rpc('reject_verification', {
+        request_id: requestId,
+        reason: reason
+      });
+
+      if (error) throw error;
+
+      await fetchRequests();
+      return { success: true };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  };
+
+  return {
+    requests,
+    loading,
+    approveRequest,
+    rejectRequest,
+    refetch: fetchRequests
+  };
+};
