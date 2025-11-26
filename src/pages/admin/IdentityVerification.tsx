@@ -544,10 +544,7 @@ export default function IdentityVerificationPage() {
                   {request.status === 'pending' && (
                     <div className="flex flex-col sm:flex-row gap-2">
                       <Button
-                        onClick={() => {
-                          console.log('Opening review dialog for:', request);
-                          setRequestToReview(request);
-                        }}
+                        onClick={() => setRequestToReview(request)}
                         variant="outline"
                         className="flex-1"
                         size="sm"
@@ -557,7 +554,9 @@ export default function IdentityVerificationPage() {
                       </Button>
                       
                       <Button
-                        onClick={() => handleApprove(request.id)}
+                        onClick={async () => {
+                          await handleApprove(request.id);
+                        }}
                         disabled={processing}
                         className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                         size="sm"
@@ -772,8 +771,8 @@ export default function IdentityVerificationPage() {
               <Separator />
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
-                  onClick={() => {
-                    handleApprove(requestToReview.id);
+                  onClick={async () => {
+                    await handleApprove(requestToReview.id);
                     setRequestToReview(null);
                   }}
                   disabled={processing}
@@ -787,8 +786,6 @@ export default function IdentityVerificationPage() {
                   variant="destructive"
                   onClick={() => {
                     setSelectedRequest(requestToReview);
-                    // لا نغلق dialog المعاينة فوراً
-                    // سيتم إغلاقه بعد اكتمال عملية الرفض
                     setShowRejectDialog(true);
                   }}
                   className="flex-1"
@@ -830,7 +827,6 @@ export default function IdentityVerificationPage() {
               variant="outline"
               onClick={() => {
                 setShowRejectDialog(false);
-                setRequestToReview(null); // إغلاق dialog المعاينة عند الإلغاء
                 setSelectedRequest(null);
                 setRejectionReason('');
               }}
@@ -844,14 +840,14 @@ export default function IdentityVerificationPage() {
                 if (selectedRequest) {
                   await handleReject(selectedRequest.id, rejectionReason);
                   setShowRejectDialog(false);
-                  setRequestToReview(null); // إغلاق dialog المعاينة أيضاً
+                  setRequestToReview(null);
                   setSelectedRequest(null);
                   setRejectionReason('');
                 }
               }}
               disabled={processing || !rejectionReason.trim()}
             >
-              {processing ? 'جاري الرفض...' : 'رفض الطلب'}
+              {processing ? 'جاري الرفض...' : 'تأكيد الرفض'}
             </Button>
           </DialogFooter>
         </DialogContent>
