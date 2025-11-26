@@ -34,6 +34,7 @@ export interface VerificationRequest {
   profiles?: {
     full_name: string | null;
     phone: string | null;
+    email: string | null;
   };
   duplicates?: DuplicateInfo[];
 }
@@ -72,7 +73,7 @@ export const useVerificationRequests = () => {
       const userIds = [...new Set(requestsData?.map(req => req.user_id) || [])];
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, full_name, phone')
+        .select('user_id, full_name, phone, email')
         .in('user_id', userIds);
 
       if (profilesError) {
