@@ -323,24 +323,17 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
     const fetchUserDetails = async () => {
       setLoadingDetails(true);
       try {
-        // Fetch verification request
-        const { data: verificationData } = await supabase
-          .from('verification_requests')
-          .select('*')
-          .eq('user_id', user.user_id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (verificationData?.[0]) {
-          setVerificationRequest(verificationData[0]);
-        }
-
-        // Calculate held balance from pending orders
-        const [gameOrders, bettingTransactions, withdrawals] = await Promise.all([
+        // Fetch all data in parallel
+        const [verificationData, gameOrders, bettingTransactions, withdrawals] = await Promise.all([
+          supabase.from('verification_requests').select('*').eq('user_id', user.user_id).order('created_at', { ascending: false }).limit(1),
           supabase.from('game_topup_orders').select('amount').eq('user_id', user.user_id).eq('status', 'pending'),
           supabase.from('betting_transactions').select('amount').eq('user_id', user.user_id).eq('transaction_type', 'deposit').eq('status', 'pending'),
           supabase.from('withdrawals').select('amount').eq('user_id', user.user_id).in('status', ['pending', 'approved'])
         ]);
+
+        if (verificationData.data?.[0]) {
+          setVerificationRequest(verificationData.data[0]);
+        }
 
         const totalHeld = 
           (gameOrders.data?.reduce((sum, o) => sum + Number(o.amount), 0) || 0) +
@@ -511,14 +504,24 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
     }).format(amount);
   };
 
+  if (loadingDetails) {
+    return (
+      <div className="space-y-6 py-8">
+        <div className="flex flex-col items-center justify-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
+          <p className="text-muted-foreground text-lg">جاري تحميل بيانات المستخدم...</p>
+        </div>
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-20 bg-muted rounded animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {loadingDetails && (
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-          <span className="mr-3 text-muted-foreground">جاري تحميل البيانات...</span>
-        </div>
-      )}
       
       {/* Tab Navigation */}
       <div className="border-b border-border">
@@ -1016,41 +1019,44 @@ export default function UsersPage() {
   const [loading, setLoading] = React.useState(true);
   const [syncing, setSyncing] = React.useState(false);
 
-  // Fetch real user data
+  // Fetch real user data - optimized
   React.useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const { data: profiles, error } = await supabase
-          .from('profiles')
-          .select(`
-            *
-          `)
-          .order('created_at', { ascending: false });
         
-        if (error) throw error;
+        // Fetch all data in parallel for better performance
+        const [profilesRes, balancesRes, rolesRes, depositsRes, withdrawalsRes, transfersRes] = await Promise.all([
+          supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+          supabase.from('user_balances').select('user_id, balance'),
+          supabase.from('user_roles').select('user_id, role'),
+          supabase.from('deposits').select('user_id'),
+          supabase.from('withdrawals').select('user_id'),
+          supabase.from('transfers').select('sender_id, recipient_id')
+        ]);
+        
+        if (profilesRes.error) throw profilesRes.error;
 
-        // Get additional data for each user
-        const usersWithStats = await Promise.all(
-          (profiles || []).map(async (profile) => {
-            const [depositsRes, withdrawalsRes, transfersRes, balanceRes, roleRes] = await Promise.all([
-              supabase.from('deposits').select('id').eq('user_id', profile.user_id),
-              supabase.from('withdrawals').select('id').eq('user_id', profile.user_id),
-              supabase.from('transfers').select('id').or(`sender_id.eq.${profile.user_id},recipient_id.eq.${profile.user_id}`),
-              supabase.from('user_balances').select('balance').eq('user_id', profile.user_id).single(),
-              supabase.from('user_roles').select('role').eq('user_id', profile.user_id).single()
-            ]);
+        // Create lookup maps for O(1) access
+        const balanceMap = new Map((balancesRes.data || []).map(b => [b.user_id, Number(b.balance) || 0]));
+        const roleMap = new Map((rolesRes.data || []).map(r => [r.user_id, [r]]));
+        
+        // Count transactions per user
+        const transactionCount = new Map<string, number>();
+        (depositsRes.data || []).forEach(d => transactionCount.set(d.user_id, (transactionCount.get(d.user_id) || 0) + 1));
+        (withdrawalsRes.data || []).forEach(w => transactionCount.set(w.user_id, (transactionCount.get(w.user_id) || 0) + 1));
+        (transfersRes.data || []).forEach(t => {
+          transactionCount.set(t.sender_id, (transactionCount.get(t.sender_id) || 0) + 1);
+          transactionCount.set(t.recipient_id, (transactionCount.get(t.recipient_id) || 0) + 1);
+        });
 
-            return {
-              ...profile,
-              balance: Number(balanceRes.data?.balance) || 0,
-              user_roles: roleRes.data ? [roleRes.data] : [],
-              total_transactions: (depositsRes.data?.length || 0) + 
-                                (withdrawalsRes.data?.length || 0) + 
-                                (transfersRes.data?.length || 0)
-            };
-          })
-        );
+        // Merge data efficiently
+        const usersWithStats = (profilesRes.data || []).map(profile => ({
+          ...profile,
+          balance: balanceMap.get(profile.user_id) || 0,
+          user_roles: roleMap.get(profile.user_id) || [],
+          total_transactions: transactionCount.get(profile.user_id) || 0
+        }));
 
         setUsers(usersWithStats);
       } catch (error) {
