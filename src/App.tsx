@@ -17,7 +17,7 @@ const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
 const AccountActivation = lazy(() => import("./pages/AccountActivation"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
-const IdentityVerificationPage = lazy(() => import("./pages/IdentityVerificationPage"));
+const VerifyIdentity = lazy(() => import("./pages/VerifyIdentity"));
 const Deposits = lazy(() => import("./pages/Deposits"));
 const Transfer = lazy(() => import("./pages/Transfer"));
 const Withdrawals = lazy(() => import("./pages/Withdrawals"));
@@ -106,7 +106,7 @@ const AnimatedRoutes = () => {
               } />
               <Route path="/identity-verification" element={
                 <ProtectedRoute requireActivation={false}>
-                  <IdentityVerificationPage />
+                  <VerifyIdentity />
                 </ProtectedRoute>
               } />
               <Route path="/cards" element={

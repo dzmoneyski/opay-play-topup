@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AdminNavbar } from '@/components/AdminNavbar';
 import { AdminAlertBanner } from '@/components/AdminAlertBanner';
 import AdminDashboard from '@/pages/admin/Dashboard';
-import IdentityVerificationPage from '@/pages/admin/IdentityVerification';
+import VerifyUsers from '@/pages/admin/VerifyUsers';
 import UsersPage from '@/pages/admin/Users';
 import DepositsPage from '@/pages/admin/Deposits';
 import WithdrawalsPage from '@/pages/admin/Withdrawals';
@@ -62,7 +62,7 @@ const AdminPanel = () => {
         
         <Routes>
           <Route index element={<AdminDashboard />} />
-          <Route path="identity-verification" element={<IdentityVerificationPage />} />
+          <Route path="identity-verification" element={<VerifyUsers />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="deposits" element={<DepositsPage />} />
           <Route path="withdrawals" element={<WithdrawalsPage />} />

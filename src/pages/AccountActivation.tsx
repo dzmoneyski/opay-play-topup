@@ -19,7 +19,6 @@ import {
   ArrowLeft,
   Copy
 } from 'lucide-react';
-import { IdentityVerification } from '@/components/IdentityVerification';
 
 const AccountActivation = () => {
   const navigate = useNavigate();
@@ -334,16 +333,27 @@ const AccountActivation = () => {
 
         {/* Step 2: Identity Verification */}
         {profile?.is_phone_verified && !profile?.is_identity_verified && (
-          <div className="animate-slide-up" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
-            <IdentityVerification 
-              onSuccess={() => {
-                toast({
-                  title: "تم إرسال طلب التفعيل بنجاح",
-                  description: "سيتم مراجعة طلبك خلال 24 ساعة وإشعارك بالنتيجة",
-                });
-              }} 
-            />
-          </div>
+          <Card className="animate-slide-up border-2 border-yellow-500/50" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-6 w-6 text-yellow-600" />
+                التحقق من الهوية
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
+                للحصول على حساب موثق والوصول إلى جميع الخدمات، يجب التحقق من هويتك.
+              </p>
+              <Button 
+                onClick={() => navigate('/identity-verification')}
+                className="w-full"
+                size="lg"
+              >
+                <Shield className="h-5 w-5 ml-2" />
+                بدء التحقق من الهوية
+              </Button>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
