@@ -323,26 +323,52 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
     const fetchUserDetails = async () => {
       setLoadingDetails(true);
       try {
-        // Fetch all data in parallel
-        const [verificationData, gameOrders, bettingTransactions, withdrawals] = await Promise.all([
-          supabase.from('verification_requests').select('*').eq('user_id', user.user_id).order('created_at', { ascending: false }).limit(1),
-          supabase.from('game_topup_orders').select('amount').eq('user_id', user.user_id).eq('status', 'pending'),
-          supabase.from('betting_transactions').select('amount').eq('user_id', user.user_id).eq('transaction_type', 'deposit').eq('status', 'pending'),
-          supabase.from('withdrawals').select('amount').eq('user_id', user.user_id).in('status', ['pending', 'approved'])
+        // Add timeout to prevent infinite loading
+        const timeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout')), 10000)
+        );
+
+        // Fetch only essential data
+        const dataPromise = Promise.all([
+          supabase.from('verification_requests')
+            .select('*')
+            .eq('user_id', user.user_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single(),
+          supabase.from('game_topup_orders')
+            .select('amount')
+            .eq('user_id', user.user_id)
+            .eq('status', 'pending'),
+          supabase.from('betting_transactions')
+            .select('amount')
+            .eq('user_id', user.user_id)
+            .eq('transaction_type', 'deposit')
+            .eq('status', 'pending'),
+          supabase.from('withdrawals')
+            .select('amount')
+            .eq('user_id', user.user_id)
+            .in('status', ['pending', 'approved'])
         ]);
 
-        if (verificationData.data?.[0]) {
-          setVerificationRequest(verificationData.data[0]);
+        const [verificationData, gameOrders, bettingTransactions, withdrawals] = await Promise.race([
+          dataPromise,
+          timeout
+        ]) as any[];
+
+        if (verificationData?.data) {
+          setVerificationRequest(verificationData.data);
         }
 
         const totalHeld = 
-          (gameOrders.data?.reduce((sum, o) => sum + Number(o.amount), 0) || 0) +
-          (bettingTransactions.data?.reduce((sum, t) => sum + Number(t.amount), 0) || 0) +
-          (withdrawals.data?.reduce((sum, w) => sum + Number(w.amount), 0) || 0);
+          (gameOrders?.data?.reduce((sum: number, o: any) => sum + Number(o.amount), 0) || 0) +
+          (bettingTransactions?.data?.reduce((sum: number, t: any) => sum + Number(t.amount), 0) || 0) +
+          (withdrawals?.data?.reduce((sum: number, w: any) => sum + Number(w.amount), 0) || 0);
 
         setHeldBalance(totalHeld);
       } catch (error) {
         console.error('Error fetching user details:', error);
+        toast.error('فشل تحميل بعض البيانات');
       } finally {
         setLoadingDetails(false);
       }
@@ -506,15 +532,10 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
 
   if (loadingDetails) {
     return (
-      <div className="space-y-6 py-8">
-        <div className="flex flex-col items-center justify-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
-          <p className="text-muted-foreground text-lg">جاري تحميل بيانات المستخدم...</p>
-        </div>
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-20 bg-muted rounded animate-pulse" />
-          ))}
+      <div className="flex items-center justify-center min-h-[500px]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent" />
+          <p className="text-lg font-medium">جاري تحميل البيانات...</p>
         </div>
       </div>
     );
@@ -1345,11 +1366,11 @@ export default function UsersPage() {
                           عرض التفاصيل
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-background">
                         <DialogHeader>
                           <DialogTitle className="flex items-center gap-2">
                             <User className="h-5 w-5" />
-                            تفاصيل المستخدم - {user.full_name}
+                            تفاصيل المستخدم - {user.full_name || 'غير محدد'}
                           </DialogTitle>
                           <DialogDescription>
                             إدارة شاملة لحساب المستخدم والتحكم في جميع الخيارات
