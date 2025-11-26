@@ -4,35 +4,50 @@ import { useUserRoles } from '@/hooks/useUserRoles';
 import { useVerificationRequests } from '@/hooks/useVerificationRequests';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, CheckCircle, Clock, Eye, Shield, XCircle, Phone, Calendar, FileText, Search, ZoomIn } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminAlertBanner } from '@/components/AdminAlertBanner';
 
+/**
+ * صفحة التحقق من الهوية للمشرفين
+ * 
+ * الوظائف الرئيسية:
+ * 1. عرض قائمة طلبات التحقق من الهوية
+ * 2. البحث والتصفية حسب الحالة
+ * 3. قبول أو رفض الطلبات مباشرة
+ * 4. معاينة تفاصيل الطلب كاملة
+ * 
+ * الأزرار:
+ * - "معاينة الطلب": يفتح نافذة كبيرة تعرض جميع التفاصيل والصور
+ * - "موافقة": يوافق على الطلب مباشرة بدون نافذة
+ * - "رفض": يفتح نافذة صغيرة لإدخال سبب الرفض
+ */
 export default function IdentityVerificationPage() {
   const navigate = useNavigate();
   const { isAdmin, loading: rolesLoading } = useUserRoles();
   const { requests, loading: requestsLoading, approveRequest, rejectRequest } = useVerificationRequests();
   const { toast } = useToast();
-  const [selectedRequest, setSelectedRequest] = React.useState<any>(null);
-  const [rejectionReason, setRejectionReason] = React.useState('');
-  const [processing, setProcessing] = React.useState(false);
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [statusFilter, setStatusFilter] = React.useState('all');
-  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
-  const [requestToReview, setRequestToReview] = React.useState<any>(null);
-  const [imageLoading, setImageLoading] = React.useState(false);
-  const [imageError, setImageError] = React.useState(false);
-  const [previewImages, setPreviewImages] = React.useState<{front: string | null, back: string | null}>({front: null, back: null});
-  const [imagesLoading, setImagesLoading] = React.useState(false);
-  const [showRejectDialog, setShowRejectDialog] = React.useState(false);
 
+  // الحالات (States)
+  const [selectedRequest, setSelectedRequest] = React.useState<any>(null); // الطلب المختار للرفض
+  const [rejectionReason, setRejectionReason] = React.useState(''); // سبب الرفض
+  const [processing, setProcessing] = React.useState(false); // حالة المعالجة
+  const [searchTerm, setSearchTerm] = React.useState(''); // كلمة البحث
+  const [statusFilter, setStatusFilter] = React.useState('all'); // فلتر الحالة
+  
+  // حالات المعاينة
+  const [previewRequest, setPreviewRequest] = React.useState<any>(null); // الطلب المعاين
+  const [imagePreview, setImagePreview] = React.useState<string | null>(null); // معاينة صورة مكبرة
+  const [showRejectDialog, setShowRejectDialog] = React.useState(false); // إظهار نافذة الرفض
+
+  // التحقق من صلاحيات المشرف
   React.useEffect(() => {
     if (!rolesLoading && !isAdmin) {
       toast({
@@ -44,114 +59,35 @@ export default function IdentityVerificationPage() {
     }
   }, [isAdmin, rolesLoading, navigate, toast]);
 
-  // Load images when review dialog opens
-  React.useEffect(() => {
-    const loadImages = async () => {
-      if (requestToReview) {
-        setImagesLoading(true);
-        const frontUrl = await getSignedImageUrl(requestToReview.national_id_front_image);
-        const backUrl = await getSignedImageUrl(requestToReview.national_id_back_image);
-        setPreviewImages({ front: frontUrl, back: backUrl });
-        setImagesLoading(false);
-      }
-    };
-    loadImages();
-  }, [requestToReview]);
-
-  const getImageUrl = (imagePath: string | null) => {
+  /**
+   * الحصول على رابط الصورة
+   * يحول المسار إلى رابط كامل للعرض
+   */
+  const getImageUrl = async (imagePath: string | null): Promise<string | null> => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
-    const { data } = supabase.storage.from('identity-documents').getPublicUrl(imagePath);
-    return data.publicUrl;
-  };
-
-  const getSignedImageUrl = async (imagePath: string | null): Promise<string | null> => {
-    if (!imagePath) return null;
-    if (imagePath.startsWith('http')) {
-      // Extract path from full URL
-      const pos = imagePath.indexOf('identity-documents/');
-      if (pos !== -1) {
-        imagePath = imagePath.substring(pos + 'identity-documents/'.length);
-      } else {
-        return imagePath;
-      }
-    }
     
     try {
       const { data, error } = await supabase.storage
         .from('identity-documents')
-        .createSignedUrl(imagePath, 3600);
+        .createSignedUrl(imagePath, 3600); // صالح لمدة ساعة
       
       if (error || !data?.signedUrl) {
-        console.error('Error creating signed URL:', error);
+        console.error('خطأ في إنشاء رابط الصورة:', error);
         return null;
       }
       
-      // Convert relative URL to absolute URL
-      const signedUrl = data.signedUrl;
-      if (signedUrl.startsWith('/')) {
-        return `https://zxnwixjdwimfblcwfkgo.supabase.co/storage/v1${signedUrl}`;
-      }
-      
-      return signedUrl;
+      return data.signedUrl;
     } catch (err) {
-      console.error('Exception creating signed URL:', err);
+      console.error('خطأ:', err);
       return null;
     }
   };
 
-  const handleImagePreview = async (imagePath: string | null) => {
-    if (!imagePath) return;
-    setImageLoading(true);
-    setImageError(false);
-    
-    const signedUrl = await getSignedImageUrl(imagePath);
-    if (signedUrl) {
-      setImagePreview(signedUrl);
-      setImageLoading(false);
-    } else {
-      setImageError(true);
-      setImageLoading(false);
-    }
-  };
-
-  const handleImageError = async (
-    e: React.SyntheticEvent<HTMLImageElement, Event>,
-    imagePath: string | null
-  ) => {
-    const target = e.currentTarget;
-    if (!imagePath) return;
-    if (target.dataset.retried === 'true') {
-      target.style.display = 'none';
-      return;
-    }
-    target.dataset.retried = 'true';
-
-    let path = imagePath;
-    if (imagePath.startsWith('http')) {
-      const pos = imagePath.indexOf('identity-documents/');
-      if (pos !== -1) {
-        path = imagePath.substring(pos + 'identity-documents/'.length);
-      } else {
-        target.style.display = 'none';
-        return;
-      }
-    }
-
-    try {
-      const { data, error } = await supabase.storage
-        .from('identity-documents')
-        .createSignedUrl(path, 3600);
-      if (error || !data?.signedUrl) {
-        target.style.display = 'none';
-        return;
-      }
-      target.src = data.signedUrl;
-    } catch (err) {
-      target.style.display = 'none';
-    }
-  };
-
+  /**
+   * معالجة الموافقة على الطلب
+   * يتم استدعاؤها عند الضغط على زر "موافقة"
+   */
   const handleApprove = async (requestId: string) => {
     setProcessing(true);
     const result = await approveRequest(requestId);
@@ -168,12 +104,18 @@ export default function IdentityVerificationPage() {
         description: "⚠️ يجب تفعيل الحساب يدوياً في صفحة المستخدمين لتفعيل الإحالات",
         duration: 6000,
       });
+      // إغلاق نافذة المعاينة إن كانت مفتوحة
+      setPreviewRequest(null);
     }
     setProcessing(false);
   };
 
-  const handleReject = async (requestId: string, reason: string) => {
-    if (!reason.trim()) {
+  /**
+   * معالجة رفض الطلب
+   * يتم استدعاؤها عند تأكيد الرفض في نافذة الرفض
+   */
+  const handleReject = async () => {
+    if (!selectedRequest || !rejectionReason.trim()) {
       toast({
         title: "خطأ",
         description: "يجب إدخال سبب الرفض",
@@ -183,7 +125,7 @@ export default function IdentityVerificationPage() {
     }
 
     setProcessing(true);
-    const result = await rejectRequest(requestId, reason);
+    const result = await rejectRequest(selectedRequest.id, rejectionReason);
     
     if (result.error) {
       toast({
@@ -196,24 +138,39 @@ export default function IdentityVerificationPage() {
         title: "تم بنجاح",
         description: "تم رفض طلب التحقق",
       });
+      // إغلاق النوافذ وإعادة تعيين الحالات
       setRejectionReason('');
       setSelectedRequest(null);
+      setShowRejectDialog(false);
+      setPreviewRequest(null);
     }
     setProcessing(false);
   };
 
+  /**
+   * فتح معاينة صورة مكبرة
+   */
+  const openImagePreview = async (imagePath: string | null) => {
+    if (!imagePath) return;
+    const url = await getImageUrl(imagePath);
+    if (url) setImagePreview(url);
+  };
+
+  /**
+   * الحصول على شارة الحالة
+   */
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
         return (
-          <Badge variant="secondary" className="flex items-center gap-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+          <Badge variant="secondary" className="flex items-center gap-1 bg-yellow-100 text-yellow-800">
             <Clock className="w-3 h-3" />
             قيد المراجعة
           </Badge>
         );
       case 'approved':
         return (
-          <Badge variant="default" className="flex items-center gap-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+          <Badge variant="default" className="flex items-center gap-1 bg-green-100 text-green-800">
             <CheckCircle className="w-3 h-3" />
             موافق عليه
           </Badge>
@@ -230,6 +187,9 @@ export default function IdentityVerificationPage() {
     }
   };
 
+  /**
+   * تنسيق التاريخ
+   */
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ar-DZ', {
       year: 'numeric',
@@ -240,6 +200,7 @@ export default function IdentityVerificationPage() {
     });
   };
 
+  // حالة التحميل
   if (rolesLoading || requestsLoading) {
     return (
       <div className="p-6">
@@ -250,20 +211,17 @@ export default function IdentityVerificationPage() {
               <div key={i} className="h-24 bg-muted rounded" />
             ))}
           </div>
-          <div className="space-y-4">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-48 bg-muted rounded" />
-            ))}
-          </div>
         </div>
       </div>
     );
   }
 
-  const pendingRequests = requests.filter(req => req.status === 'pending');
-  const approvedRequests = requests.filter(req => req.status === 'approved').length;
-  const rejectedRequests = requests.filter(req => req.status === 'rejected').length;
+  // إحصائيات الطلبات
+  const pendingCount = requests.filter(req => req.status === 'pending').length;
+  const approvedCount = requests.filter(req => req.status === 'approved').length;
+  const rejectedCount = requests.filter(req => req.status === 'rejected').length;
 
+  // تصفية الطلبات حسب البحث والحالة
   const filteredRequests = requests.filter(request => {
     const matchesSearch = 
       request.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -277,10 +235,9 @@ export default function IdentityVerificationPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Alert Banner */}
       <AdminAlertBanner />
       
-      {/* Page Header */}
+      {/* العنوان وشريط البحث */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">التحقق من الهوية</h1>
@@ -289,7 +246,6 @@ export default function IdentityVerificationPage() {
           </p>
         </div>
         
-        {/* Search Bar */}
         <div className="relative w-full md:w-96">
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -301,7 +257,7 @@ export default function IdentityVerificationPage() {
         </div>
       </div>
 
-      {/* Tabs with Stats */}
+      {/* التبويبات مع الإحصائيات */}
       <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
         <TabsList className="grid w-full grid-cols-4 h-auto p-1">
           <TabsTrigger value="all" className="flex flex-col items-center gap-1 py-3">
@@ -315,7 +271,7 @@ export default function IdentityVerificationPage() {
           <TabsTrigger value="pending" className="flex flex-col items-center gap-1 py-3">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-yellow-600" />
-              <span className="font-semibold text-yellow-600">{pendingRequests.length}</span>
+              <span className="font-semibold text-yellow-600">{pendingCount}</span>
             </div>
             <span className="text-xs">قيد المراجعة</span>
           </TabsTrigger>
@@ -323,7 +279,7 @@ export default function IdentityVerificationPage() {
           <TabsTrigger value="approved" className="flex flex-col items-center gap-1 py-3">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="font-semibold text-green-600">{approvedRequests}</span>
+              <span className="font-semibold text-green-600">{approvedCount}</span>
             </div>
             <span className="text-xs">موافق عليها</span>
           </TabsTrigger>
@@ -331,13 +287,13 @@ export default function IdentityVerificationPage() {
           <TabsTrigger value="rejected" className="flex flex-col items-center gap-1 py-3">
             <div className="flex items-center gap-2">
               <XCircle className="h-4 w-4 text-red-600" />
-              <span className="font-semibold text-red-600">{rejectedRequests}</span>
+              <span className="font-semibold text-red-600">{rejectedCount}</span>
             </div>
             <span className="text-xs">مرفوضة</span>
           </TabsTrigger>
         </TabsList>
 
-        {/* Requests List */}
+        {/* قائمة الطلبات */}
         <TabsContent value={statusFilter} className="mt-4 space-y-4">
           {filteredRequests.length === 0 ? (
             <Card>
@@ -345,9 +301,6 @@ export default function IdentityVerificationPage() {
                 <FileText className="h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-lg font-medium text-muted-foreground">
                   {searchTerm ? 'لا توجد نتائج' : 'لا توجد طلبات'}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {searchTerm ? 'جرب البحث بكلمات مختلفة' : 'لم يتم تقديم أي طلبات حتى الآن'}
                 </p>
               </CardContent>
             </Card>
@@ -384,20 +337,17 @@ export default function IdentityVerificationPage() {
                         </span>
                       </div>
 
-                      {/* Information Comparison - Compact */}
+                      {/* مقارنة المعلومات */}
                       {request.full_name_on_id && (
                         <div className="mt-3 p-3 bg-muted/50 rounded-lg border">
-                          <h4 className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1">
-                            <Eye className="h-3 w-3" />
-                            مقارنة المعلومات
-                          </h4>
-                          <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">الحساب:</span>
+                          <h4 className="text-xs font-semibold text-foreground mb-2">مقارنة المعلومات</h4>
+                          <div className="grid sm:grid-cols-2 gap-2 text-xs">
+                            <div>
+                              <span className="text-muted-foreground">الاسم في الحساب: </span>
                               <span className="font-medium">{request.profiles?.full_name || 'غير محدد'}</span>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">البطاقة:</span>
+                            <div>
+                              <span className="text-muted-foreground">الاسم على البطاقة: </span>
                               <span className={`font-medium ${
                                 request.full_name_on_id === request.profiles?.full_name 
                                   ? 'text-green-600' 
@@ -406,76 +356,24 @@ export default function IdentityVerificationPage() {
                                 {request.full_name_on_id}
                               </span>
                             </div>
-                            {request.date_of_birth && (
-                              <>
-                                <span className="text-muted-foreground">تاريخ الميلاد:</span>
-                                <span className="font-medium">{new Date(request.date_of_birth).toLocaleDateString('ar-DZ')}</span>
-                              </>
-                            )}
-                            {request.place_of_birth && (
-                              <>
-                                <span className="text-muted-foreground">مكان الميلاد:</span>
-                                <span className="font-medium">{request.place_of_birth}</span>
-                              </>
-                            )}
                           </div>
-                          {request.address && (
-                            <div className="mt-2 pt-2 border-t text-xs">
-                              <span className="text-muted-foreground">العنوان: </span>
-                              <span className="font-medium">{request.address}</span>
-                            </div>
-                          )}
                         </div>
                       )}
 
-                      {/* Duplicate Warnings */}
+                      {/* تحذيرات التكرار */}
                       {request.duplicates && request.duplicates.length > 0 && (
-                        <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/30 border-2 border-red-500 rounded-lg space-y-2">
-                          <h4 className="text-sm font-bold text-red-800 dark:text-red-300 flex items-center gap-2">
+                        <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/30 border-2 border-red-500 rounded-lg">
+                          <h4 className="text-sm font-bold text-red-800 dark:text-red-300 flex items-center gap-2 mb-2">
                             <AlertCircle className="h-4 w-4" />
                             ⚠️ تحذير: تكرارات مكتشفة
                           </h4>
-                          {request.duplicates.map((duplicate, idx) => (
-                            <div key={idx} className="p-2 bg-red-100 dark:bg-red-900/20 rounded border border-red-300 dark:border-red-700">
-                              <p className="text-xs font-semibold text-red-900 dark:text-red-200 mb-1">
-                                {duplicate.type === 'national_id' && '🆔 رقم البطاقة الوطنية مستخدم من قبل'}
-                                {duplicate.type === 'name' && '👤 الاسم الكامل مستخدم من قبل'}
-                                {duplicate.type === 'front_image' && '📷 صورة الوجه الأمامي مستخدمة من قبل'}
-                                {duplicate.type === 'back_image' && '📷 صورة الوجه الخلفي مستخدمة من قبل'}
-                                <span className="mr-1 font-bold">({duplicate.count} حساب)</span>
-                              </p>
-                              <div className="space-y-1 mt-2">
-                                {duplicate.users.map((user, userIdx) => (
-                                  <div key={userIdx} className="text-xs text-red-800 dark:text-red-300 flex items-center justify-between bg-white/50 dark:bg-black/20 px-2 py-1 rounded">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium">{user.full_name || 'غير محدد'}</span>
-                                      {user.phone && (
-                                        <span className="text-red-600 dark:text-red-400">• {user.phone}</span>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xs">
-                                        {new Date(user.submitted_at).toLocaleDateString('ar-DZ')}
-                                      </span>
-                                      <Badge 
-                                        variant={
-                                          user.status === 'approved' ? 'default' : 
-                                          user.status === 'rejected' ? 'destructive' : 
-                                          'secondary'
-                                        }
-                                        className="text-xs"
-                                      >
-                                        {user.status === 'approved' && 'موافق'}
-                                        {user.status === 'rejected' && 'مرفوض'}
-                                        {user.status === 'pending' && 'معلق'}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                              <p className="text-xs text-red-700 dark:text-red-400 mt-2 font-medium">
-                                ⚠️ يرجى التحقق من أن هذا ليس حساباً مكرراً قبل الموافقة
-                              </p>
+                          {request.duplicates.map((duplicate: any, idx: number) => (
+                            <div key={idx} className="text-xs text-red-800 dark:text-red-300 mb-1">
+                              {duplicate.type === 'national_id' && '🆔 رقم البطاقة مستخدم من قبل'}
+                              {duplicate.type === 'name' && '👤 الاسم مستخدم من قبل'}
+                              {duplicate.type === 'front_image' && '📷 الصورة الأمامية مستخدمة من قبل'}
+                              {duplicate.type === 'back_image' && '📷 الصورة الخلفية مستخدمة من قبل'}
+                              <span className="mr-1 font-bold">({duplicate.count} حساب)</span>
                             </div>
                           ))}
                         </div>
@@ -484,67 +382,58 @@ export default function IdentityVerificationPage() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="pt-0">
-                  {/* Identity Documents with Preview */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-semibold flex items-center gap-1.5">
-                      <FileText className="h-4 w-4" />
-                      صور الهوية الوطنية
-                    </h4>
-                    
-                    {(request.national_id_front_image || request.national_id_back_image) ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {request.national_id_front_image && (
-                          <div className="space-y-2">
-                            <p className="text-xs font-medium text-muted-foreground">الوجه الأمامي</p>
-                            <div className="relative group">
-                              <img 
-                                src={getImageUrl(request.national_id_front_image) || ''} 
-                                alt="الوجه الأمامي"
-                                className="w-full h-32 object-cover rounded-lg border bg-muted cursor-pointer transition-transform group-hover:scale-[1.02]"
-                                onClick={() => handleImagePreview(request.national_id_front_image)}
-                                onError={(e) => handleImageError(e, request.national_id_front_image)}
-                              />
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
-                                <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                              </div>
+                <CardContent className="pt-0 space-y-4">
+                  {/* الصور المصغرة */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold">صور الهوية</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {request.national_id_front_image && (
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground">الوجه الأمامي</p>
+                          <div 
+                            className="relative group cursor-pointer"
+                            onClick={() => openImagePreview(request.national_id_front_image)}
+                          >
+                            <img 
+                              src={`https://zxnwixjdwimfblcwfkgo.supabase.co/storage/v1/object/public/identity-documents/${request.national_id_front_image}`}
+                              alt="الوجه الأمامي"
+                              className="w-full h-24 object-cover rounded-lg border"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
+                              <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100" />
                             </div>
                           </div>
-                        )}
-                        
-                        {request.national_id_back_image && (
-                          <div className="space-y-2">
-                            <p className="text-xs font-medium text-muted-foreground">الوجه الخلفي</p>
-                            <div className="relative group">
-                              <img 
-                                src={getImageUrl(request.national_id_back_image) || ''} 
-                                alt="الوجه الخلفي"
-                                className="w-full h-32 object-cover rounded-lg border bg-muted cursor-pointer transition-transform group-hover:scale-[1.02]"
-                                onClick={() => handleImagePreview(request.national_id_back_image)}
-                                onError={(e) => handleImageError(e, request.national_id_back_image)}
-                              />
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
-                                <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                              </div>
+                        </div>
+                      )}
+                      
+                      {request.national_id_back_image && (
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground">الوجه الخلفي</p>
+                          <div 
+                            className="relative group cursor-pointer"
+                            onClick={() => openImagePreview(request.national_id_back_image)}
+                          >
+                            <img 
+                              src={`https://zxnwixjdwimfblcwfkgo.supabase.co/storage/v1/object/public/identity-documents/${request.national_id_back_image}`}
+                              alt="الوجه الخلفي"
+                              className="w-full h-24 object-cover rounded-lg border"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
+                              <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100" />
                             </div>
                           </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 bg-muted/30 rounded-lg border border-dashed">
-                        <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">لم يتم رفع صور للهوية</p>
-                      </div>
-                    )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
-                  <Separator className="my-4" />
+                  <Separator />
 
-                  {/* Action Buttons */}
+                  {/* أزرار الإجراءات */}
                   {request.status === 'pending' && (
                     <div className="flex flex-col sm:flex-row gap-2">
                       <Button
-                        onClick={() => setRequestToReview(request)}
+                        onClick={() => setPreviewRequest(request)}
                         variant="outline"
                         className="flex-1"
                         size="sm"
@@ -554,9 +443,7 @@ export default function IdentityVerificationPage() {
                       </Button>
                       
                       <Button
-                        onClick={async () => {
-                          await handleApprove(request.id);
-                        }}
+                        onClick={() => handleApprove(request.id)}
                         disabled={processing}
                         className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                         size="sm"
@@ -581,9 +468,9 @@ export default function IdentityVerificationPage() {
                     </div>
                   )}
                   
-                  {/* Rejection Reason Display */}
+                  {/* عرض سبب الرفض */}
                   {request.status === 'rejected' && request.rejection_reason && (
-                    <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-900">
+                    <div className="p-3 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200">
                       <p className="text-xs font-semibold text-red-900 dark:text-red-300 mb-1">سبب الرفض:</p>
                       <p className="text-sm text-red-800 dark:text-red-400">{request.rejection_reason}</p>
                     </div>
@@ -595,14 +482,8 @@ export default function IdentityVerificationPage() {
         </TabsContent>
       </Tabs>
       
-      {/* Review Request Dialog */}
-      <Dialog open={!!requestToReview} onOpenChange={(open) => {
-        if (!open) {
-          setRequestToReview(null);
-          setPreviewImages({ front: null, back: null });
-          setImagesLoading(false);
-        }
-      }}>
+      {/* نافذة المعاينة الكاملة */}
+      <Dialog open={!!previewRequest} onOpenChange={(open) => !open && setPreviewRequest(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl flex items-center gap-2">
@@ -610,241 +491,198 @@ export default function IdentityVerificationPage() {
               معاينة طلب التحقق
             </DialogTitle>
             <DialogDescription>
-              مراجعة تفاصيل الطلب قبل اتخاذ القرار
+              مراجعة جميع تفاصيل الطلب قبل اتخاذ القرار
             </DialogDescription>
           </DialogHeader>
           
-          {requestToReview && (
+          {previewRequest && (
             <div className="space-y-6">
-              {/* User Information */}
+              {/* معلومات المستخدم */}
               <div className="space-y-3">
                 <h3 className="font-semibold text-lg border-b pb-2">معلومات المستخدم</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">الاسم الكامل</p>
-                    <p className="font-medium">{requestToReview.profiles?.full_name || 'غير محدد'}</p>
+                    <p className="font-medium">{previewRequest.profiles?.full_name || 'غير محدد'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">رقم الهاتف</p>
-                    <p className="font-medium">{requestToReview.profiles?.phone || 'غير محدد'}</p>
+                    <p className="font-medium">{previewRequest.profiles?.phone || 'غير محدد'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">البريد الإلكتروني</p>
-                    <p className="font-medium">{requestToReview.profiles?.email || 'غير محدد'}</p>
+                    <p className="font-medium">{previewRequest.profiles?.email || 'غير محدد'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">تاريخ تقديم الطلب</p>
-                    <p className="font-medium">{formatDate(requestToReview.submitted_at)}</p>
+                    <p className="font-medium">{formatDate(previewRequest.submitted_at)}</p>
                   </div>
                 </div>
               </div>
 
-              {/* ID Information */}
+              {/* معلومات الهوية */}
               <div className="space-y-3">
                 <h3 className="font-semibold text-lg border-b pb-2">معلومات الهوية الوطنية</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">رقم الهوية الوطنية</p>
-                    <p className="font-medium text-lg">{requestToReview.national_id}</p>
+                    <p className="text-sm text-muted-foreground">رقم الهوية</p>
+                    <p className="font-medium text-lg">{previewRequest.national_id}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">الاسم الكامل على البطاقة</p>
+                    <p className="text-sm text-muted-foreground">الاسم على البطاقة</p>
                     <p className={`font-medium ${
-                      requestToReview.full_name_on_id === requestToReview.profiles?.full_name 
+                      previewRequest.full_name_on_id === previewRequest.profiles?.full_name 
                         ? 'text-green-600' 
                         : 'text-red-600'
                     }`}>
-                      {requestToReview.full_name_on_id || 'غير محدد'}
+                      {previewRequest.full_name_on_id || 'غير محدد'}
                     </p>
                   </div>
-                  {requestToReview.date_of_birth && (
+                  {previewRequest.date_of_birth && (
                     <div>
                       <p className="text-sm text-muted-foreground">تاريخ الميلاد</p>
-                      <p className="font-medium">{new Date(requestToReview.date_of_birth).toLocaleDateString('ar-DZ')}</p>
+                      <p className="font-medium">{new Date(previewRequest.date_of_birth).toLocaleDateString('ar-DZ')}</p>
                     </div>
                   )}
-                  {requestToReview.place_of_birth && (
+                  {previewRequest.place_of_birth && (
                     <div>
                       <p className="text-sm text-muted-foreground">مكان الميلاد</p>
-                      <p className="font-medium">{requestToReview.place_of_birth}</p>
+                      <p className="font-medium">{previewRequest.place_of_birth}</p>
                     </div>
                   )}
-                  {requestToReview.address && (
+                  {previewRequest.address && (
                     <div className="md:col-span-2">
                       <p className="text-sm text-muted-foreground">العنوان</p>
-                      <p className="font-medium">{requestToReview.address}</p>
+                      <p className="font-medium">{previewRequest.address}</p>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Name Comparison Alert */}
-              {requestToReview.full_name_on_id && requestToReview.full_name_on_id !== requestToReview.profiles?.full_name && (
-                <div className="p-4 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-900">
+              {/* تنبيه عدم التطابق */}
+              {previewRequest.full_name_on_id && previewRequest.full_name_on_id !== previewRequest.profiles?.full_name && (
+                <div className="p-4 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
                     <div>
                       <p className="font-semibold text-yellow-900 dark:text-yellow-300">تنبيه: عدم تطابق الاسم</p>
                       <p className="text-sm text-yellow-800 dark:text-yellow-400 mt-1">
-                        الاسم في الحساب ({requestToReview.profiles?.full_name}) لا يطابق الاسم على البطاقة ({requestToReview.full_name_on_id})
+                        الاسم في الحساب لا يطابق الاسم على البطاقة
                       </p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* ID Images */}
+              {/* الصور الكاملة */}
               <div className="space-y-3">
                 <h3 className="font-semibold text-lg border-b pb-2">صور الهوية الوطنية</h3>
-                {imagesLoading ? (
-                  <div className="text-center py-8">
-                    <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground">جاري تحميل الصور...</p>
-                  </div>
-                ) : (requestToReview.national_id_front_image || requestToReview.national_id_back_image) ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {requestToReview.national_id_front_image && (
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">الوجه الأمامي</p>
-                        {previewImages.front ? (
-                          <div 
-                            className="relative group cursor-pointer"
-                            onClick={() => handleImagePreview(requestToReview.national_id_front_image)}
-                          >
-                            <img 
-                              src={previewImages.front} 
-                              alt="الوجه الأمامي"
-                              className="w-full h-48 object-cover rounded-lg border bg-muted transition-transform group-hover:scale-[1.02]"
-                              onError={(e) => {
-                                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE4IiBmaWxsPSIjOWNhM2FmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+2YTYpyDYqtmI2KzYryDYtdmI2LHYqTwvdGV4dD48L3N2Zz4=';
-                              }}
-                            />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
-                              <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="w-full h-48 flex items-center justify-center bg-muted/30 rounded-lg border border-dashed">
-                            <p className="text-sm text-muted-foreground">فشل تحميل الصورة</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    {requestToReview.national_id_back_image && (
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">الوجه الخلفي</p>
-                        {previewImages.back ? (
-                          <div 
-                            className="relative group cursor-pointer"
-                            onClick={() => handleImagePreview(requestToReview.national_id_back_image)}
-                          >
-                            <img 
-                              src={previewImages.back} 
-                              alt="الوجه الخلفي"
-                              className="w-full h-48 object-cover rounded-lg border bg-muted transition-transform group-hover:scale-[1.02]"
-                              onError={(e) => {
-                                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE4IiBmaWxsPSIjOWNhM2FmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+2YTYpyDYqtmI2KzYryDYtdmI2LHYqTwvdGV4dD48L3N2Zz4=';
-                              }}
-                            />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
-                              <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="w-full h-48 flex items-center justify-center bg-muted/30 rounded-lg border border-dashed">
-                            <p className="text-sm text-muted-foreground">فشل تحميل الصورة</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 bg-muted/30 rounded-lg border border-dashed">
-                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">لم يتم رفع صور للهوية</p>
-                  </div>
-                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {previewRequest.national_id_front_image && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">الوجه الأمامي</p>
+                      <img 
+                        src={`https://zxnwixjdwimfblcwfkgo.supabase.co/storage/v1/object/public/identity-documents/${previewRequest.national_id_front_image}`}
+                        alt="الوجه الأمامي"
+                        className="w-full h-64 object-cover rounded-lg border cursor-pointer"
+                        onClick={() => openImagePreview(previewRequest.national_id_front_image)}
+                      />
+                    </div>
+                  )}
+                  
+                  {previewRequest.national_id_back_image && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">الوجه الخلفي</p>
+                      <img 
+                        src={`https://zxnwixjdwimfblcwfkgo.supabase.co/storage/v1/object/public/identity-documents/${previewRequest.national_id_back_image}`}
+                        alt="الوجه الخلفي"
+                        className="w-full h-64 object-cover rounded-lg border cursor-pointer"
+                        onClick={() => openImagePreview(previewRequest.national_id_back_image)}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
-
-              {/* Action Buttons */}
-              <Separator />
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  onClick={async () => {
-                    await handleApprove(requestToReview.id);
-                    setRequestToReview(null);
-                  }}
-                  disabled={processing}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <CheckCircle className="w-4 h-4 ml-2" />
-                  الموافقة على الطلب
-                </Button>
-                
+            </div>
+          )}
+          
+          {/* أزرار الإجراءات في نافذة المعاينة */}
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setPreviewRequest(null)}
+            >
+              إغلاق
+            </Button>
+            
+            {previewRequest?.status === 'pending' && (
+              <>
                 <Button
                   variant="destructive"
                   onClick={() => {
-                    setSelectedRequest(requestToReview);
+                    setSelectedRequest(previewRequest);
                     setShowRejectDialog(true);
                   }}
-                  className="flex-1"
                   disabled={processing}
                 >
                   <XCircle className="w-4 h-4 ml-2" />
                   رفض الطلب
                 </Button>
-              </div>
-            </div>
-          )}
+                
+                <Button
+                  onClick={() => handleApprove(previewRequest.id)}
+                  disabled={processing}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="w-4 h-4 ml-2" />
+                  الموافقة على الطلب
+                </Button>
+              </>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Rejection Dialog - Separate from Review Dialog */}
-      <Dialog open={showRejectDialog} onOpenChange={(open) => {
-        setShowRejectDialog(open);
-        if (!open) {
-          setSelectedRequest(null);
-          setRejectionReason('');
-        }
-      }}>
-        <DialogContent className="max-w-md">
+      {/* نافذة الرفض */}
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>رفض طلب التحقق</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <XCircle className="h-5 w-5" />
+              رفض طلب التحقق
+            </DialogTitle>
             <DialogDescription>
-              يرجى إدخال سبب رفض طلب التحقق من الهوية لـ {selectedRequest?.profiles?.full_name}
+              يرجى إدخال سبب الرفض ليتمكن المستخدم من معرفة المشكلة وتصحيحها
             </DialogDescription>
           </DialogHeader>
-          <Textarea
-            placeholder="سبب الرفض (مثال: صورة الهوية غير واضحة، بيانات غير مطابقة، إلخ)"
-            value={rejectionReason}
-            onChange={(e) => setRejectionReason(e.target.value)}
-            className="mt-4"
-            rows={3}
-          />
-          <DialogFooter>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">سبب الرفض *</label>
+              <Textarea
+                placeholder="مثال: الصورة غير واضحة، البيانات غير مطابقة، إلخ..."
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter className="flex gap-2">
             <Button
               variant="outline"
               onClick={() => {
                 setShowRejectDialog(false);
-                setSelectedRequest(null);
                 setRejectionReason('');
               }}
               disabled={processing}
             >
               إلغاء
             </Button>
+            
             <Button
               variant="destructive"
-              onClick={async () => {
-                if (selectedRequest) {
-                  await handleReject(selectedRequest.id, rejectionReason);
-                  setShowRejectDialog(false);
-                  setRequestToReview(null);
-                  setSelectedRequest(null);
-                  setRejectionReason('');
-                }
-              }}
+              onClick={handleReject}
               disabled={processing || !rejectionReason.trim()}
             >
               {processing ? 'جاري الرفض...' : 'تأكيد الرفض'}
@@ -853,46 +691,19 @@ export default function IdentityVerificationPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Image Preview Dialog */}
-      <Dialog open={!!imagePreview} onOpenChange={() => {
-        setImagePreview(null);
-        setImageLoading(false);
-        setImageError(false);
-      }}>
-        <DialogContent className="max-w-4xl">
+      {/* نافذة معاينة الصورة المكبرة */}
+      <Dialog open={!!imagePreview} onOpenChange={(open) => !open && setImagePreview(null)}>
+        <DialogContent className="max-w-5xl">
           <DialogHeader>
             <DialogTitle>معاينة الصورة</DialogTitle>
           </DialogHeader>
-          <div className="relative min-h-[200px] flex items-center justify-center">
-            {imagePreview && !imageError && (
-              <>
-                {imageLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                  </div>
-                )}
-                <img 
-                  src={imagePreview} 
-                  alt="معاينة" 
-                  className="w-full h-auto max-h-[70vh] object-contain"
-                  onLoad={() => setImageLoading(false)}
-                  onLoadStart={() => setImageLoading(true)}
-                  onError={() => {
-                    setImageLoading(false);
-                    setImageError(true);
-                  }}
-                  style={{ display: imageLoading ? 'none' : 'block' }}
-                />
-              </>
-            )}
-            {imageError && (
-              <div className="text-center py-12">
-                <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-                <p className="text-lg font-medium text-foreground mb-2">فشل تحميل الصورة</p>
-                <p className="text-sm text-muted-foreground">يرجى المحاولة مرة أخرى</p>
-              </div>
-            )}
-          </div>
+          {imagePreview && (
+            <img 
+              src={imagePreview} 
+              alt="معاينة" 
+              className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
