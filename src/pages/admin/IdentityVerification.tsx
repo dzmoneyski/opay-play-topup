@@ -26,7 +26,6 @@ export default function IdentityVerificationPage() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
-  const [reviewDialogOpen, setReviewDialogOpen] = React.useState(false);
   const [requestToReview, setRequestToReview] = React.useState<any>(null);
   const [imageLoading, setImageLoading] = React.useState(false);
   const [imageError, setImageError] = React.useState(false);
@@ -47,7 +46,7 @@ export default function IdentityVerificationPage() {
   // Load images when review dialog opens
   React.useEffect(() => {
     const loadImages = async () => {
-      if (reviewDialogOpen && requestToReview) {
+      if (requestToReview) {
         setImagesLoading(true);
         const frontUrl = await getSignedImageUrl(requestToReview.national_id_front_image);
         const backUrl = await getSignedImageUrl(requestToReview.national_id_back_image);
@@ -56,7 +55,7 @@ export default function IdentityVerificationPage() {
       }
     };
     loadImages();
-  }, [reviewDialogOpen, requestToReview]);
+  }, [requestToReview]);
 
   const getImageUrl = (imagePath: string | null) => {
     if (!imagePath) return null;
@@ -547,7 +546,6 @@ export default function IdentityVerificationPage() {
                         onClick={() => {
                           console.log('Opening review dialog for:', request);
                           setRequestToReview(request);
-                          setTimeout(() => setReviewDialogOpen(true), 0);
                         }}
                         variant="outline"
                         className="flex-1"
@@ -622,8 +620,7 @@ export default function IdentityVerificationPage() {
       </Tabs>
       
       {/* Review Request Dialog */}
-      <Dialog open={reviewDialogOpen} onOpenChange={(open) => {
-        setReviewDialogOpen(open);
+      <Dialog open={!!requestToReview} onOpenChange={(open) => {
         if (!open) {
           setRequestToReview(null);
           setPreviewImages({ front: null, back: null });
@@ -641,14 +638,7 @@ export default function IdentityVerificationPage() {
             </DialogDescription>
           </DialogHeader>
           
-          {!requestToReview ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center space-y-3">
-                <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-muted-foreground">جاري تحميل البيانات...</p>
-              </div>
-            </div>
-          ) : (
+          {requestToReview && (
             <div className="space-y-6">
               {/* User Information */}
               <div className="space-y-3">
@@ -807,7 +797,7 @@ export default function IdentityVerificationPage() {
                 <Button
                   onClick={() => {
                     handleApprove(requestToReview.id);
-                    setReviewDialogOpen(false);
+                    setRequestToReview(null);
                   }}
                   disabled={processing}
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white"
@@ -846,7 +836,7 @@ export default function IdentityVerificationPage() {
                         variant="destructive"
                         onClick={() => {
                           handleReject(requestToReview.id, rejectionReason);
-                          setReviewDialogOpen(false);
+                          setRequestToReview(null);
                         }}
                         disabled={processing || !rejectionReason.trim()}
                       >
