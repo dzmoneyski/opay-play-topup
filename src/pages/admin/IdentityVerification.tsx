@@ -787,8 +787,9 @@ export default function IdentityVerificationPage() {
                   variant="destructive"
                   onClick={() => {
                     setSelectedRequest(requestToReview);
+                    // لا نغلق dialog المعاينة فوراً
+                    // سيتم إغلاقه بعد اكتمال عملية الرفض
                     setShowRejectDialog(true);
-                    setRequestToReview(null);
                   }}
                   className="flex-1"
                   disabled={processing}
@@ -829,6 +830,7 @@ export default function IdentityVerificationPage() {
               variant="outline"
               onClick={() => {
                 setShowRejectDialog(false);
+                setRequestToReview(null); // إغلاق dialog المعاينة عند الإلغاء
                 setSelectedRequest(null);
                 setRejectionReason('');
               }}
@@ -842,6 +844,7 @@ export default function IdentityVerificationPage() {
                 if (selectedRequest) {
                   await handleReject(selectedRequest.id, rejectionReason);
                   setShowRejectDialog(false);
+                  setRequestToReview(null); // إغلاق dialog المعاينة أيضاً
                   setSelectedRequest(null);
                   setRejectionReason('');
                 }
