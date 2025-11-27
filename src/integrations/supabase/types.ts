@@ -246,6 +246,93 @@ export type Database = {
           },
         ]
       }
+      card_delivery_orders: {
+        Row: {
+          address: string
+          admin_notes: string | null
+          card_amount: number
+          created_at: string
+          delivery_fee: number
+          delivery_notes: string | null
+          full_name: string
+          id: string
+          payment_status: string
+          phone: string
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          total_amount: number
+          tracking_number: string | null
+          updated_at: string
+          user_id: string
+          wilaya: string
+        }
+        Insert: {
+          address: string
+          admin_notes?: string | null
+          card_amount: number
+          created_at?: string
+          delivery_fee: number
+          delivery_notes?: string | null
+          full_name: string
+          id?: string
+          payment_status?: string
+          phone: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          total_amount: number
+          tracking_number?: string | null
+          updated_at?: string
+          user_id: string
+          wilaya: string
+        }
+        Update: {
+          address?: string
+          admin_notes?: string | null
+          card_amount?: number
+          created_at?: string
+          delivery_fee?: number
+          delivery_notes?: string | null
+          full_name?: string
+          id?: string
+          payment_status?: string
+          phone?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          total_amount?: number
+          tracking_number?: string | null
+          updated_at?: string
+          user_id?: string
+          wilaya?: string
+        }
+        Relationships: []
+      }
+      delivery_fee_settings: {
+        Row: {
+          created_at: string
+          default_fee: number
+          id: string
+          updated_at: string
+          wilaya_specific_fees: Json | null
+        }
+        Insert: {
+          created_at?: string
+          default_fee?: number
+          id?: string
+          updated_at?: string
+          wilaya_specific_fees?: Json | null
+        }
+        Update: {
+          created_at?: string
+          default_fee?: number
+          id?: string
+          updated_at?: string
+          wilaya_specific_fees?: Json | null
+        }
+        Relationships: []
+      }
       deposits: {
         Row: {
           admin_notes: string | null
@@ -1354,58 +1441,49 @@ export type Database = {
       }
       verification_requests: {
         Row: {
-          address: string | null
           created_at: string
           date_of_birth: string | null
-          full_name_on_id: string | null
+          full_name: string
           id: string
+          id_back_image: string
+          id_front_image: string
           national_id: string
-          national_id_back_image: string | null
-          national_id_front_image: string | null
-          place_of_birth: string | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
-          selfie_image: string | null
-          status: string | null
+          status: string
           submitted_at: string
           updated_at: string
           user_id: string
         }
         Insert: {
-          address?: string | null
           created_at?: string
           date_of_birth?: string | null
-          full_name_on_id?: string | null
+          full_name: string
           id?: string
+          id_back_image: string
+          id_front_image: string
           national_id: string
-          national_id_back_image?: string | null
-          national_id_front_image?: string | null
-          place_of_birth?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
-          selfie_image?: string | null
-          status?: string | null
+          status?: string
           submitted_at?: string
           updated_at?: string
           user_id: string
         }
         Update: {
-          address?: string | null
           created_at?: string
           date_of_birth?: string | null
-          full_name_on_id?: string | null
+          full_name?: string
           id?: string
+          id_back_image?: string
+          id_front_image?: string
           national_id?: string
-          national_id_back_image?: string | null
-          national_id_front_image?: string | null
-          place_of_birth?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
-          selfie_image?: string | null
-          status?: string | null
+          status?: string
           submitted_at?: string
           updated_at?: string
           user_id?: string
@@ -1531,6 +1609,7 @@ export type Database = {
         }
         Returns: Json
       }
+      approve_verification: { Args: { request_id: string }; Returns: undefined }
       approve_verification_request: {
         Args: { _admin_id: string; _request_id: string }
         Returns: undefined
@@ -1673,6 +1752,10 @@ export type Database = {
       reject_merchant_request: {
         Args: { _admin_id: string; _reason: string; _request_id: string }
         Returns: Json
+      }
+      reject_verification: {
+        Args: { reason: string; request_id: string }
+        Returns: undefined
       }
       reject_verification_request: {
         Args: { _admin_id: string; _reason: string; _request_id: string }

@@ -362,7 +362,7 @@ export default function IdentityVerificationPage() {
                       </div>
 
                       {/* Information Comparison - Compact */}
-                      {request.full_name_on_id && (
+                      {request.full_name && (
                         <div className="mt-3 p-3 bg-muted/50 rounded-lg border">
                           <h4 className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1">
                             <Eye className="h-3 w-3" />
@@ -376,11 +376,11 @@ export default function IdentityVerificationPage() {
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">البطاقة:</span>
                               <span className={`font-medium ${
-                                request.full_name_on_id === request.profiles?.full_name 
+                                request.full_name === request.profiles?.full_name 
                                   ? 'text-green-600' 
                                   : 'text-red-600'
                               }`}>
-                                {request.full_name_on_id}
+                                {request.full_name}
                               </span>
                             </div>
                             {request.date_of_birth && (
@@ -469,18 +469,18 @@ export default function IdentityVerificationPage() {
                       صور الهوية الوطنية
                     </h4>
                     
-                    {(request.national_id_front_image || request.national_id_back_image) ? (
+                    {(request.id_front_image || request.id_back_image) ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {request.national_id_front_image && (
+                        {request.id_front_image && (
                           <div className="space-y-2">
                             <p className="text-xs font-medium text-muted-foreground">الوجه الأمامي</p>
                             <div className="relative group">
                               <img 
-                                src={getImageUrl(request.national_id_front_image) || ''} 
+                                src={getImageUrl(request.id_front_image) || ''} 
                                 alt="الوجه الأمامي"
                                 className="w-full h-32 object-cover rounded-lg border bg-muted cursor-pointer transition-transform group-hover:scale-[1.02]"
-                                onClick={() => handleImagePreview(request.national_id_front_image)}
-                                onError={(e) => handleImageError(e, request.national_id_front_image)}
+                                onClick={() => handleImagePreview(request.id_front_image)}
+                                onError={(e) => handleImageError(e, request.id_front_image)}
                               />
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
                                 <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -489,16 +489,16 @@ export default function IdentityVerificationPage() {
                           </div>
                         )}
                         
-                        {request.national_id_back_image && (
+                        {request.id_back_image && (
                           <div className="space-y-2">
                             <p className="text-xs font-medium text-muted-foreground">الوجه الخلفي</p>
                             <div className="relative group">
                               <img 
-                                src={getImageUrl(request.national_id_back_image) || ''} 
+                                src={getImageUrl(request.id_back_image) || ''} 
                                 alt="الوجه الخلفي"
                                 className="w-full h-32 object-cover rounded-lg border bg-muted cursor-pointer transition-transform group-hover:scale-[1.02]"
-                                onClick={() => handleImagePreview(request.national_id_back_image)}
-                                onError={(e) => handleImageError(e, request.national_id_back_image)}
+                                onClick={() => handleImagePreview(request.id_back_image)}
+                                onError={(e) => handleImageError(e, request.id_back_image)}
                               />
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
                                 <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -646,11 +646,11 @@ export default function IdentityVerificationPage() {
                   <div>
                     <p className="text-sm text-muted-foreground">الاسم الكامل على البطاقة</p>
                     <p className={`font-medium ${
-                      requestToReview.full_name_on_id === requestToReview.profiles?.full_name 
+                      requestToReview.full_name === requestToReview.profiles?.full_name 
                         ? 'text-green-600' 
                         : 'text-red-600'
                     }`}>
-                      {requestToReview.full_name_on_id || 'غير محدد'}
+                      {requestToReview.full_name || 'غير محدد'}
                     </p>
                   </div>
                   {requestToReview.date_of_birth && (
@@ -675,14 +675,14 @@ export default function IdentityVerificationPage() {
               </div>
 
               {/* Name Comparison Alert */}
-              {requestToReview.full_name_on_id && requestToReview.full_name_on_id !== requestToReview.profiles?.full_name && (
+              {requestToReview.full_name && requestToReview.full_name !== requestToReview.profiles?.full_name && (
                 <div className="p-4 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-900">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
                     <div>
                       <p className="font-semibold text-yellow-900 dark:text-yellow-300">تنبيه: عدم تطابق الاسم</p>
                       <p className="text-sm text-yellow-800 dark:text-yellow-400 mt-1">
-                        الاسم في الحساب ({requestToReview.profiles?.full_name}) لا يطابق الاسم على البطاقة ({requestToReview.full_name_on_id})
+                        الاسم في الحساب ({requestToReview.profiles?.full_name}) لا يطابق الاسم على البطاقة ({requestToReview.full_name})
                       </p>
                     </div>
                   </div>
@@ -692,20 +692,20 @@ export default function IdentityVerificationPage() {
               {/* ID Images */}
               <div className="space-y-3">
                 <h3 className="font-semibold text-lg border-b pb-2">صور الهوية الوطنية</h3>
-                {(requestToReview.national_id_front_image || requestToReview.national_id_back_image) ? (
+                {(requestToReview.id_front_image || requestToReview.id_back_image) ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {requestToReview.national_id_front_image && (
+                    {requestToReview.id_front_image && (
                       <div className="space-y-2">
                         <p className="text-sm font-medium text-muted-foreground">الوجه الأمامي</p>
                         <div 
                           className="relative group cursor-pointer"
-                          onClick={() => handleImagePreview(requestToReview.national_id_front_image)}
+                          onClick={() => handleImagePreview(requestToReview.id_front_image)}
                         >
                           <img 
-                            src={getImageUrl(requestToReview.national_id_front_image) || ''} 
+                            src={getImageUrl(requestToReview.id_front_image) || ''} 
                             alt="الوجه الأمامي"
                             className="w-full h-48 object-cover rounded-lg border bg-muted transition-transform group-hover:scale-[1.02]"
-                            onError={(e) => handleImageError(e, requestToReview.national_id_front_image)}
+                            onError={(e) => handleImageError(e, requestToReview.id_front_image)}
                           />
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
                             <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -714,18 +714,18 @@ export default function IdentityVerificationPage() {
                       </div>
                     )}
                     
-                    {requestToReview.national_id_back_image && (
+                    {requestToReview.id_back_image && (
                       <div className="space-y-2">
                         <p className="text-sm font-medium text-muted-foreground">الوجه الخلفي</p>
                         <div 
                           className="relative group cursor-pointer"
-                          onClick={() => handleImagePreview(requestToReview.national_id_back_image)}
+                          onClick={() => handleImagePreview(requestToReview.id_back_image)}
                         >
                           <img 
-                            src={getImageUrl(requestToReview.national_id_back_image) || ''} 
+                            src={getImageUrl(requestToReview.id_back_image) || ''} 
                             alt="الوجه الخلفي"
                             className="w-full h-48 object-cover rounded-lg border bg-muted transition-transform group-hover:scale-[1.02]"
-                            onError={(e) => handleImageError(e, requestToReview.national_id_back_image)}
+                            onError={(e) => handleImageError(e, requestToReview.id_back_image)}
                           />
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
                             <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
