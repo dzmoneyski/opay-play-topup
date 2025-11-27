@@ -80,14 +80,15 @@ const UserTransactionsTab = ({ userId }: { userId: string }) => {
   React.useEffect(() => {
     const fetchUserTransactions = async () => {
       try {
-        // Fetch all transaction types for this user
+        // Fetch limited transaction types for this user (last 50 of each)
+        const limit = 50;
         const [deposits, withdrawals, transfers, giftCards, betting, gameTopups] = await Promise.all([
-          supabase.from('deposits').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-          supabase.from('withdrawals').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-          supabase.from('transfers').select('*, transaction_number').or(`sender_id.eq.${userId},recipient_id.eq.${userId}`).order('created_at', { ascending: false }),
+          supabase.from('deposits').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(limit),
+          supabase.from('withdrawals').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(limit),
+          supabase.from('transfers').select('*, transaction_number').or(`sender_id.eq.${userId},recipient_id.eq.${userId}`).order('created_at', { ascending: false }).limit(limit),
           supabase.rpc('get_user_gift_card_redemptions'),
-          supabase.from('betting_transactions').select('*, platform:game_platforms(name, name_ar)').eq('user_id', userId).order('created_at', { ascending: false }),
-          supabase.from('game_topup_orders').select('*, platform:game_platforms(name, name_ar)').eq('user_id', userId).order('created_at', { ascending: false })
+          supabase.from('betting_transactions').select('*, platform:game_platforms(name, name_ar)').eq('user_id', userId).order('created_at', { ascending: false }).limit(limit),
+          supabase.from('game_topup_orders').select('*, platform:game_platforms(name, name_ar)').eq('user_id', userId).order('created_at', { ascending: false }).limit(limit)
         ]);
 
         const allTransactions: TransactionHistoryItem[] = [];
@@ -958,39 +959,52 @@ export default function UsersPage() {
   const [users, setUsers] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [syncing, setSyncing] = React.useState(false);
+  const [page, setPage] = React.useState(1);
+  const [totalCount, setTotalCount] = React.useState(0);
+  const pageSize = 20;
 
-  // Fetch real user data
+  // Fetch real user data with pagination
   React.useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const { data: profiles, error } = await supabase
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize - 1;
+
+        // Fetch profiles with count and user_roles in single query
+        const { data: profiles, error, count } = await supabase
           .from('profiles')
           .select(`
-            *
-          `)
-          .order('created_at', { ascending: false });
+            *,
+            user_roles(role),
+            user_balances!inner(balance)
+          `, { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(from, to);
         
         if (error) throw error;
+        setTotalCount(count || 0);
 
-        // Get additional data for each user
+        // Fetch transaction counts in batches
         const usersWithStats = await Promise.all(
           (profiles || []).map(async (profile) => {
-            const [depositsRes, withdrawalsRes, transfersRes, balanceRes, roleRes] = await Promise.all([
-              supabase.from('deposits').select('id').eq('user_id', profile.user_id),
-              supabase.from('withdrawals').select('id').eq('user_id', profile.user_id),
-              supabase.from('transfers').select('id').or(`sender_id.eq.${profile.user_id},recipient_id.eq.${profile.user_id}`),
-              supabase.from('user_balances').select('balance').eq('user_id', profile.user_id).single(),
-              supabase.from('user_roles').select('role').eq('user_id', profile.user_id).single()
+            // Use count query instead of fetching all records
+            const [depositsCount, withdrawalsCount, transfersCount] = await Promise.all([
+              supabase.from('deposits').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
+              supabase.from('withdrawals').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
+              supabase.from('transfers').select('id', { count: 'exact', head: true }).or(`sender_id.eq.${profile.user_id},recipient_id.eq.${profile.user_id}`)
             ]);
+
+            const userBalances = profile.user_balances as any;
+            const balance = Array.isArray(userBalances) && userBalances.length > 0 
+              ? Number(userBalances[0]?.balance) || 0 
+              : 0;
 
             return {
               ...profile,
-              balance: Number(balanceRes.data?.balance) || 0,
-              user_roles: roleRes.data ? [roleRes.data] : [],
-              total_transactions: (depositsRes.data?.length || 0) + 
-                                (withdrawalsRes.data?.length || 0) + 
-                                (transfersRes.data?.length || 0)
+              balance,
+              user_roles: profile.user_roles || [],
+              total_transactions: (depositsCount.count || 0) + (withdrawalsCount.count || 0) + (transfersCount.count || 0)
             };
           })
         );
@@ -1004,7 +1018,7 @@ export default function UsersPage() {
     };
 
     fetchUsers();
-  }, []);
+  }, [page]);
 
   const handleSyncUsersData = async () => {
     if (!confirm('هل تريد تحديث بيانات جميع المستخدمين القدامى؟ سيتم جلب البريد الإلكتروني ورقم الهاتف من بيانات التسجيل.')) {
@@ -1030,16 +1044,20 @@ export default function UsersPage() {
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    const searchLower = searchTerm.toLowerCase();
-    const fullName = user.full_name || '';
-    const email = user.email || '';
-    const phone = user.phone || '';
+  const filteredUsers = React.useMemo(() => {
+    if (!searchTerm) return users;
     
-    return fullName.toLowerCase().includes(searchLower) ||
-           email.toLowerCase().includes(searchLower) ||
-           phone.includes(searchTerm);
-  });
+    const searchLower = searchTerm.toLowerCase();
+    return users.filter(user => {
+      const fullName = user.full_name || '';
+      const email = user.email || '';
+      const phone = user.phone || '';
+      
+      return fullName.toLowerCase().includes(searchLower) ||
+             email.toLowerCase().includes(searchLower) ||
+             phone.includes(searchTerm);
+    });
+  }, [users, searchTerm]);
 
   const totalUsers = users.length;
   const activeUsers = users.filter(u => u.is_account_activated).length;
@@ -1301,6 +1319,29 @@ export default function UsersPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Pagination Controls */}
+      {!searchTerm && totalCount > pageSize && (
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1 || loading}
+          >
+            السابق
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            صفحة {page} من {Math.ceil(totalCount / pageSize)} ({totalCount} مستخدم)
+          </span>
+          <Button
+            variant="outline"
+            onClick={() => setPage(p => p + 1)}
+            disabled={page >= Math.ceil(totalCount / pageSize) || loading}
+          >
+            التالي
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
