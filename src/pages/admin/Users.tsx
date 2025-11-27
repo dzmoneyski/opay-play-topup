@@ -971,39 +971,32 @@ export default function UsersPage() {
         const from = (page - 1) * pageSize;
         const to = from + pageSize - 1;
 
-        // Fetch profiles with count and user_roles in single query
+        // Fetch profiles with count
         const { data: profiles, error, count } = await supabase
           .from('profiles')
-          .select(`
-            *,
-            user_roles(role),
-            user_balances!inner(balance)
-          `, { count: 'exact' })
+          .select('*', { count: 'exact' })
           .order('created_at', { ascending: false })
           .range(from, to);
         
         if (error) throw error;
         setTotalCount(count || 0);
 
-        // Fetch transaction counts in batches
+        // Fetch additional data for each user
         const usersWithStats = await Promise.all(
           (profiles || []).map(async (profile) => {
-            // Use count query instead of fetching all records
-            const [depositsCount, withdrawalsCount, transfersCount] = await Promise.all([
+            // Fetch balance, roles, and transaction counts in parallel
+            const [balanceRes, roleRes, depositsCount, withdrawalsCount, transfersCount] = await Promise.all([
+              supabase.from('user_balances').select('balance').eq('user_id', profile.user_id).maybeSingle(),
+              supabase.from('user_roles').select('role').eq('user_id', profile.user_id).maybeSingle(),
               supabase.from('deposits').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
               supabase.from('withdrawals').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
               supabase.from('transfers').select('id', { count: 'exact', head: true }).or(`sender_id.eq.${profile.user_id},recipient_id.eq.${profile.user_id}`)
             ]);
 
-            const userBalances = profile.user_balances as any;
-            const balance = Array.isArray(userBalances) && userBalances.length > 0 
-              ? Number(userBalances[0]?.balance) || 0 
-              : 0;
-
             return {
               ...profile,
-              balance,
-              user_roles: profile.user_roles || [],
+              balance: Number(balanceRes.data?.balance) || 0,
+              user_roles: roleRes.data ? [roleRes.data] : [],
               total_transactions: (depositsCount.count || 0) + (withdrawalsCount.count || 0) + (transfersCount.count || 0)
             };
           })
