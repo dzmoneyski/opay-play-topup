@@ -16,12 +16,18 @@ export const useAdminDigitalCards = () => {
   const [cardTypes, setCardTypes] = useState<DigitalCardType[]>([]);
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 20;
   const { toast } = useToast();
 
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data, error, count } = await supabase
         .from('digital_card_orders')
         .select(`
           *,
@@ -30,10 +36,12 @@ export const useAdminDigitalCards = () => {
             phone,
             email
           )
-        `)
-        .order('created_at', { ascending: false });
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (error) throw error;
+      setTotalCount(count || 0);
       setOrders(data as OrderWithProfile[] || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -146,7 +154,7 @@ export const useAdminDigitalCards = () => {
   useEffect(() => {
     fetchOrders();
     fetchCardTypes();
-  }, []);
+  }, [page]);
 
   // Real-time subscription for new orders
   useEffect(() => {
@@ -154,14 +162,8 @@ export const useAdminDigitalCards = () => {
       .channel('admin-digital-card-orders')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'digital_card_orders'
-        },
-        () => {
-          fetchOrders();
-        }
+        { event: '*', schema: 'public', table: 'digital_card_orders' },
+        () => fetchOrders()
       )
       .subscribe();
 
@@ -177,6 +179,11 @@ export const useAdminDigitalCards = () => {
     processing,
     approveOrder,
     rejectOrder,
-    refetch: fetchOrders
+    refetch: fetchOrders,
+    page,
+    setPage,
+    totalCount,
+    pageSize,
+    totalPages: Math.ceil(totalCount / pageSize)
   };
 };
