@@ -42,6 +42,9 @@ export const useVerificationRequests = () => {
   const { user } = useAuth();
   const [requests, setRequests] = React.useState<VerificationRequest[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [page, setPage] = React.useState(1);
+  const [totalCount, setTotalCount] = React.useState(0);
+  const pageSize = 20;
 
   React.useEffect(() => {
     if (user) {
@@ -50,49 +53,57 @@ export const useVerificationRequests = () => {
       setRequests([]);
       setLoading(false);
     }
-  }, [user]);
+  }, [user, page]);
 
   const fetchVerificationRequests = async () => {
     if (!user) return;
 
     try {
-      // First get all verification requests
-      const { data: requestsData, error: requestsError } = await supabase
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      // Get verification requests with count
+      const { data: requestsData, error: requestsError, count } = await supabase
         .from('verification_requests')
-        .select('*')
-        .order('submitted_at', { ascending: false });
+        .select('*', { count: 'exact' })
+        .order('submitted_at', { ascending: false })
+        .range(from, to);
 
       if (requestsError) {
         console.error('Error fetching verification requests:', requestsError);
         return;
       }
 
-      // Then get profiles for each user_id
+      setTotalCount(count || 0);
+
+      // Get profiles for the current page
       const userIds = [...new Set(requestsData?.map(req => req.user_id) || [])];
-      const { data: profilesData, error: profilesError } = await supabase
+      const { data: profilesData } = await supabase
         .from('profiles')
         .select('user_id, full_name, phone')
         .in('user_id', userIds);
 
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-      }
-
-      // Check for duplicates for each request
-      const requestsWithProfilesAndDuplicates = await Promise.all(
+      // Only check duplicates for pending requests to reduce load
+      const requestsWithData = await Promise.all(
         (requestsData || []).map(async (request) => {
           const profile = profilesData?.find(p => p.user_id === request.user_id) || null;
-          const duplicates = await checkDuplicates(request, requestsData || []);
+          let duplicates = undefined;
+          
+          // Only check duplicates for pending requests
+          if (request.status === 'pending') {
+            const dups = await checkDuplicatesOptimized(request);
+            duplicates = dups.length > 0 ? dups : undefined;
+          }
           
           return {
             ...request,
             profiles: profile,
-            duplicates: duplicates.length > 0 ? duplicates : undefined
+            duplicates
           };
         })
       );
 
-      setRequests(requestsWithProfilesAndDuplicates as any);
+      setRequests(requestsWithData as any);
     } catch (error) {
       console.error('Error fetching verification requests:', error);
     } finally {
@@ -100,59 +111,86 @@ export const useVerificationRequests = () => {
     }
   };
 
-  const checkDuplicates = async (
-    currentRequest: any,
-    allRequests: any[]
+  const checkDuplicatesOptimized = async (
+    currentRequest: any
   ): Promise<DuplicateInfo[]> => {
     const duplicates: DuplicateInfo[] = [];
 
-    // Check for duplicate national_id
-    const nationalIdMatches = allRequests.filter(
-      req => req.id !== currentRequest.id && 
-             req.national_id === currentRequest.national_id
-    );
-    
-    if (nationalIdMatches.length > 0) {
-      const { data: profiles } = await supabase
+    try {
+      // Build OR conditions dynamically
+      const conditions: string[] = [];
+      if (currentRequest.national_id) {
+        conditions.push(`national_id.eq.${currentRequest.national_id}`);
+      }
+      if (currentRequest.full_name) {
+        conditions.push(`full_name.ilike.${currentRequest.full_name.trim()}`);
+      }
+      if (currentRequest.id_front_image) {
+        conditions.push(`id_front_image.eq.${currentRequest.id_front_image}`);
+      }
+      if (currentRequest.id_back_image) {
+        conditions.push(`id_back_image.eq.${currentRequest.id_back_image}`);
+      }
+
+      if (conditions.length === 0) return duplicates;
+
+      // Check all duplicates in a single query
+      const { data: matches, error } = await supabase
+        .from('verification_requests')
+        .select('id, user_id, national_id, full_name, id_front_image, id_back_image, submitted_at, status')
+        .neq('id', currentRequest.id)
+        .or(conditions.join(','));
+
+      if (error) {
+        console.error('Error checking duplicates:', error);
+        return duplicates;
+      }
+
+      if (!matches || matches.length === 0) return duplicates;
+
+      // Get profiles for duplicates
+      const userIds = [...new Set(matches.map(m => m.user_id))];
+      const { data: profilesData } = await supabase
         .from('profiles')
         .select('user_id, full_name, phone')
-        .in('user_id', nationalIdMatches.map(r => r.user_id));
+        .in('user_id', userIds);
 
-      duplicates.push({
-        type: 'national_id',
-        count: nationalIdMatches.length,
-        users: nationalIdMatches.map(req => {
-          const profile = profiles?.find(p => p.user_id === req.user_id);
-          return {
-            user_id: req.user_id,
-            full_name: profile?.full_name || null,
-            phone: profile?.phone || null,
-            submitted_at: req.submitted_at,
-            status: req.status
-          };
-        })
-      });
-    }
-
-    // Check for duplicate full_name
-    if (currentRequest.full_name) {
-      const nameMatches = allRequests.filter(
-        req => req.id !== currentRequest.id && 
-               req.full_name && 
-               req.full_name.toLowerCase().trim() === currentRequest.full_name.toLowerCase().trim()
+      // Group duplicates by type
+      const nationalIdMatches = matches.filter(m => m.national_id === currentRequest.national_id);
+      const nameMatches = matches.filter(m => 
+        m.full_name && currentRequest.full_name &&
+        m.full_name.toLowerCase().trim() === currentRequest.full_name.toLowerCase().trim()
       );
-      
-      if (nameMatches.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, full_name, phone')
-          .in('user_id', nameMatches.map(r => r.user_id));
+      const frontImageMatches = matches.filter(m => 
+        m.id_front_image && m.id_front_image === currentRequest.id_front_image
+      );
+      const backImageMatches = matches.filter(m => 
+        m.id_back_image && m.id_back_image === currentRequest.id_back_image
+      );
 
+      if (nationalIdMatches.length > 0) {
+        duplicates.push({
+          type: 'national_id',
+          count: nationalIdMatches.length,
+          users: nationalIdMatches.map(req => {
+            const profile = profilesData?.find(p => p.user_id === req.user_id);
+            return {
+              user_id: req.user_id,
+              full_name: profile?.full_name || null,
+              phone: profile?.phone || null,
+              submitted_at: req.submitted_at,
+              status: req.status
+            };
+          })
+        });
+      }
+
+      if (nameMatches.length > 0) {
         duplicates.push({
           type: 'name',
           count: nameMatches.length,
           users: nameMatches.map(req => {
-            const profile = profiles?.find(p => p.user_id === req.user_id);
+            const profile = profilesData?.find(p => p.user_id === req.user_id);
             return {
               user_id: req.user_id,
               full_name: profile?.full_name || null,
@@ -163,26 +201,13 @@ export const useVerificationRequests = () => {
           })
         });
       }
-    }
 
-    // Check for duplicate front image
-    if (currentRequest.id_front_image) {
-      const frontImageMatches = allRequests.filter(
-        req => req.id !== currentRequest.id && 
-               req.id_front_image === currentRequest.id_front_image
-      );
-      
       if (frontImageMatches.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, full_name, phone')
-          .in('user_id', frontImageMatches.map(r => r.user_id));
-
         duplicates.push({
           type: 'front_image',
           count: frontImageMatches.length,
           users: frontImageMatches.map(req => {
-            const profile = profiles?.find(p => p.user_id === req.user_id);
+            const profile = profilesData?.find(p => p.user_id === req.user_id);
             return {
               user_id: req.user_id,
               full_name: profile?.full_name || null,
@@ -193,26 +218,13 @@ export const useVerificationRequests = () => {
           })
         });
       }
-    }
 
-    // Check for duplicate back image
-    if (currentRequest.id_back_image) {
-      const backImageMatches = allRequests.filter(
-        req => req.id !== currentRequest.id && 
-               req.id_back_image === currentRequest.id_back_image
-      );
-      
       if (backImageMatches.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, full_name, phone')
-          .in('user_id', backImageMatches.map(r => r.user_id));
-
         duplicates.push({
           type: 'back_image',
           count: backImageMatches.length,
           users: backImageMatches.map(req => {
-            const profile = profiles?.find(p => p.user_id === req.user_id);
+            const profile = profilesData?.find(p => p.user_id === req.user_id);
             return {
               user_id: req.user_id,
               full_name: profile?.full_name || null,
@@ -223,10 +235,13 @@ export const useVerificationRequests = () => {
           })
         });
       }
+    } catch (error) {
+      console.error('Error in checkDuplicatesOptimized:', error);
     }
 
     return duplicates;
   };
+
 
   const approveRequest = async (requestId: string) => {
     if (!user) return { error: 'لم يتم تسجيل الدخول' };
@@ -274,6 +289,11 @@ export const useVerificationRequests = () => {
     loading,
     approveRequest,
     rejectRequest,
-    refetch: fetchVerificationRequests
+    refetch: fetchVerificationRequests,
+    page,
+    setPage,
+    totalCount,
+    pageSize,
+    totalPages: Math.ceil(totalCount / pageSize)
   };
 };

@@ -11,14 +11,23 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, CheckCircle, Clock, Eye, Shield, XCircle, Phone, Calendar, FileText, Search, ZoomIn } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, Eye, Shield, XCircle, Phone, Calendar, FileText, Search, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminAlertBanner } from '@/components/AdminAlertBanner';
 
 export default function IdentityVerificationPage() {
   const navigate = useNavigate();
   const { isAdmin, loading: rolesLoading } = useUserRoles();
-  const { requests, loading: requestsLoading, approveRequest, rejectRequest } = useVerificationRequests();
+  const { 
+    requests, 
+    loading: requestsLoading, 
+    approveRequest, 
+    rejectRequest,
+    page,
+    setPage,
+    totalCount,
+    totalPages
+  } = useVerificationRequests();
   const { toast } = useToast();
   const [selectedRequest, setSelectedRequest] = React.useState<any>(null);
   const [rejectionReason, setRejectionReason] = React.useState('');
@@ -478,6 +487,7 @@ export default function IdentityVerificationPage() {
                               <img 
                                 src={getImageUrl(request.id_front_image) || ''} 
                                 alt="الوجه الأمامي"
+                                loading="lazy"
                                 className="w-full h-32 object-cover rounded-lg border bg-muted cursor-pointer transition-transform group-hover:scale-[1.02]"
                                 onClick={() => handleImagePreview(request.id_front_image)}
                                 onError={(e) => handleImageError(e, request.id_front_image)}
@@ -496,6 +506,7 @@ export default function IdentityVerificationPage() {
                               <img 
                                 src={getImageUrl(request.id_back_image) || ''} 
                                 alt="الوجه الخلفي"
+                                loading="lazy"
                                 className="w-full h-32 object-cover rounded-lg border bg-muted cursor-pointer transition-transform group-hover:scale-[1.02]"
                                 onClick={() => handleImagePreview(request.id_back_image)}
                                 onError={(e) => handleImageError(e, request.id_back_image)}
@@ -596,6 +607,61 @@ export default function IdentityVerificationPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t pt-4">
+          <p className="text-sm text-muted-foreground">
+            عرض {((page - 1) * 20) + 1}-{Math.min(page * 20, totalCount)} من {totalCount} طلب
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              <ChevronRight className="h-4 w-4" />
+              السابق
+            </Button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (page <= 3) {
+                  pageNum = i + 1;
+                } else if (page >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = page - 2 + i;
+                }
+                
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={page === pageNum ? "default" : "outline"}
+                    size="sm"
+                    className="w-9"
+                    onClick={() => setPage(pageNum)}
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              التالي
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
       
       {/* Review Request Dialog */}
       <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
