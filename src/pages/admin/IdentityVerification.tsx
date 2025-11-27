@@ -151,8 +151,8 @@ export default function IdentityVerificationPage() {
     } else {
       toast({
         title: "✅ تم الموافقة على التحقق",
-        description: "⚠️ يجب تفعيل الحساب يدوياً في صفحة المستخدمين لتفعيل الإحالات",
-        duration: 6000,
+        description: "تم تفعيل الحساب واحتساب الإحالة تلقائياً",
+        duration: 5000,
       });
     }
     setProcessing(false);
