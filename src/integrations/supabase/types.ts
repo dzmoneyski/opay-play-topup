@@ -1546,6 +1546,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_approved_accounts_and_process_referrals: {
+        Args: { _admin_id?: string }
+        Returns: Json
+      }
       admin_activate_account: {
         Args: { _admin_id: string; _admin_notes?: string; _user_id: string }
         Returns: Json
