@@ -28,6 +28,9 @@ export interface AdminWithdrawal {
 export const useAdminWithdrawals = () => {
   const [withdrawals, setWithdrawals] = React.useState<AdminWithdrawal[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [page, setPage] = React.useState(1);
+  const [totalCount, setTotalCount] = React.useState(0);
+  const pageSize = 20;
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -36,13 +39,18 @@ export const useAdminWithdrawals = () => {
     
     setLoading(true);
     try {
-      // جلب بيانات السحب أولاً
-      const { data: withdrawalsData, error: withdrawalsError } = await supabase
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      // جلب بيانات السحب مع count
+      const { data: withdrawalsData, error: withdrawalsError, count } = await supabase
         .from('withdrawals')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (withdrawalsError) throw withdrawalsError;
+      setTotalCount(count || 0);
 
       if (!withdrawalsData || withdrawalsData.length === 0) {
         setWithdrawals([]);
@@ -81,7 +89,7 @@ export const useAdminWithdrawals = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user, toast, page]);
 
   const approveWithdrawal = React.useCallback(async (withdrawalId: string, notes?: string) => {
     if (!user) return;
@@ -145,7 +153,7 @@ export const useAdminWithdrawals = () => {
     fetchWithdrawals();
   }, [fetchWithdrawals]);
 
-  // إضافة اشتراك في الوقت الفعلي لتحديثات السحب
+  // Realtime subscription - only refetch on changes
   React.useEffect(() => {
     if (!user) return;
 
@@ -153,14 +161,8 @@ export const useAdminWithdrawals = () => {
       .channel('admin-withdrawal-changes')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'withdrawals'
-        },
-        () => {
-          fetchWithdrawals();
-        }
+        { event: '*', schema: 'public', table: 'withdrawals' },
+        () => fetchWithdrawals()
       )
       .subscribe();
 
@@ -174,6 +176,11 @@ export const useAdminWithdrawals = () => {
     loading,
     approveWithdrawal,
     rejectWithdrawal,
-    fetchWithdrawals
+    fetchWithdrawals,
+    page,
+    setPage,
+    totalCount,
+    pageSize,
+    totalPages: Math.ceil(totalCount / pageSize)
   };
 };

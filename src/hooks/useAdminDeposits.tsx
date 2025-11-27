@@ -25,6 +25,9 @@ export interface AdminDeposit {
 export const useAdminDeposits = () => {
   const [deposits, setDeposits] = React.useState<AdminDeposit[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [page, setPage] = React.useState(1);
+  const [totalCount, setTotalCount] = React.useState(0);
+  const pageSize = 20;
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -33,16 +36,26 @@ export const useAdminDeposits = () => {
     
     setLoading(true);
     try {
-      // First get all deposits
-      const { data: depositsData, error: depositsError } = await supabase
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      // Get deposits with count
+      const { data: depositsData, error: depositsError, count } = await supabase
         .from('deposits')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (depositsError) throw depositsError;
+      setTotalCount(count || 0);
 
-      // Then get profile data for each unique user_id
-      const userIds = [...new Set(depositsData?.map(d => d.user_id) || [])];
+      if (!depositsData || depositsData.length === 0) {
+        setDeposits([]);
+        return;
+      }
+
+      // Get profile data for unique user_ids
+      const userIds = [...new Set(depositsData.map(d => d.user_id))];
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, full_name, phone')
@@ -51,10 +64,10 @@ export const useAdminDeposits = () => {
       if (profilesError) throw profilesError;
 
       // Combine deposits with profile data
-      const depositsWithProfiles = depositsData?.map(deposit => ({
+      const depositsWithProfiles = depositsData.map(deposit => ({
         ...deposit,
         profiles: profilesData?.find(profile => profile.user_id === deposit.user_id) || null
-      })) || [];
+      }));
 
       setDeposits(depositsWithProfiles as any[]);
     } catch (error) {
@@ -67,11 +80,29 @@ export const useAdminDeposits = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user, toast, page]);
 
   React.useEffect(() => {
     fetchDeposits();
   }, [fetchDeposits]);
+
+  // Realtime subscription - only refetch on changes
+  React.useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('admin-deposits-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'deposits' },
+        () => fetchDeposits()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchDeposits]);
 
   const approveDeposit = async (depositId: string, notes?: string, adjustedAmount?: number) => {
     if (!user) return { success: false, error: "غير مصرح" };
@@ -179,6 +210,11 @@ export const useAdminDeposits = () => {
     loading,
     fetchDeposits,
     approveDeposit,
-    rejectDeposit
+    rejectDeposit,
+    page,
+    setPage,
+    totalCount,
+    pageSize,
+    totalPages: Math.ceil(totalCount / pageSize)
   };
 };

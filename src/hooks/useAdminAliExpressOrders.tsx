@@ -1,3 +1,4 @@
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -6,22 +7,30 @@ import { AliExpressOrder } from './useAliExpressOrders';
 export const useAdminAliExpressOrders = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [page, setPage] = React.useState(1);
+  const pageSize = 20;
 
-  const { data: orders, isLoading } = useQuery({
-    queryKey: ['admin-aliexpress-orders'],
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-aliexpress-orders', page],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data, error, count } = await supabase
         .from('aliexpress_orders')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (error) {
         console.error('Error fetching orders:', error);
         throw error;
       }
       
-      console.log('Fetched orders:', data);
-      return data as AliExpressOrder[];
+      return { 
+        orders: data as AliExpressOrder[], 
+        count: count || 0 
+      };
     },
   });
 
@@ -68,9 +77,14 @@ export const useAdminAliExpressOrders = () => {
   });
 
   return {
-    orders: orders || [],
+    orders: data?.orders || [],
     isLoading,
     updateOrderStatus: updateOrderStatus.mutate,
     isUpdating: updateOrderStatus.isPending,
+    page,
+    setPage,
+    totalCount: data?.count || 0,
+    pageSize,
+    totalPages: Math.ceil((data?.count || 0) / pageSize)
   };
 };

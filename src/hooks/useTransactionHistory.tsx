@@ -13,7 +13,7 @@ export interface TransactionHistoryItem {
   transaction_number?: string; // For transfers
 }
 
-export const useTransactionHistory = (limit?: number) => {
+export const useTransactionHistory = (limit: number = 50) => {
   const [transactions, setTransactions] = useState<TransactionHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -23,49 +23,52 @@ export const useTransactionHistory = (limit?: number) => {
 
     setLoading(true);
     try {
-      // Fetch deposits
-      const { data: deposits } = await supabase
-        .from('deposits')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      // Fetch transfers (sent and received)
-      const { data: transfers } = await supabase
-        .from('transfers')
-        .select('*, transaction_number')
-        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
-        .order('created_at', { ascending: false });
-
-      // Fetch withdrawals
-      const { data: withdrawals } = await supabase
-        .from('withdrawals')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      // Fetch gift cards using secure RPC
-      const { data: giftCards, error: giftCardsError } = await supabase
-        .rpc('get_user_gift_card_redemptions');
-
-      // Fetch betting transactions
-      const { data: bettingTransactions } = await supabase
-        .from('betting_transactions')
-        .select('*, platform:game_platforms(name, name_ar)')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      // Fetch game topup orders
-      const { data: gameTopups } = await supabase
-        .from('game_topup_orders')
-        .select('*, platform:game_platforms(name, name_ar)')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      // Fetch only limited number of recent transactions
+      const itemsPerType = Math.ceil(limit / 7);
+      
+      const [deposits, transfers, withdrawals, giftCards, bettingTransactions, gameTopups] = await Promise.all([
+        supabase
+          .from('deposits')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(itemsPerType),
+        
+        supabase
+          .from('transfers')
+          .select('*, transaction_number')
+          .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+          .order('created_at', { ascending: false })
+          .limit(itemsPerType),
+        
+        supabase
+          .from('withdrawals')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(itemsPerType),
+        
+        supabase.rpc('get_user_gift_card_redemptions').limit(itemsPerType),
+        
+        supabase
+          .from('betting_transactions')
+          .select('*, platform:game_platforms(name, name_ar)')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(itemsPerType),
+        
+        supabase
+          .from('game_topup_orders')
+          .select('*, platform:game_platforms(name, name_ar)')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(itemsPerType)
+      ]);
 
       const allTransactions: TransactionHistoryItem[] = [];
 
       // Process deposits
-      deposits?.forEach(deposit => {
+      deposits.data?.forEach(deposit => {
         allTransactions.push({
           id: deposit.id,
           type: 'deposit',
@@ -78,7 +81,7 @@ export const useTransactionHistory = (limit?: number) => {
       });
 
       // Process transfers
-      transfers?.forEach(transfer => {
+      transfers.data?.forEach(transfer => {
         const isSender = transfer.sender_id === user.id;
         allTransactions.push({
           id: transfer.id,
@@ -95,7 +98,7 @@ export const useTransactionHistory = (limit?: number) => {
       });
 
       // Process withdrawals
-      withdrawals?.forEach(withdrawal => {
+      withdrawals.data?.forEach(withdrawal => {
         allTransactions.push({
           id: withdrawal.id,
           type: 'withdrawal',
@@ -108,8 +111,8 @@ export const useTransactionHistory = (limit?: number) => {
       });
 
       // Process gift cards
-      if (giftCards && !giftCardsError) {
-        giftCards.forEach(card => {
+      if (giftCards.data && !giftCards.error) {
+        giftCards.data.forEach((card: any) => {
           allTransactions.push({
             id: card.id,
             type: 'gift_card',
@@ -123,7 +126,7 @@ export const useTransactionHistory = (limit?: number) => {
       }
 
       // Process betting transactions
-      bettingTransactions?.forEach(transaction => {
+      bettingTransactions.data?.forEach(transaction => {
         const platformName = (transaction as any).platform?.name_ar || 'منصة مراهنات';
         const typeText = transaction.transaction_type === 'deposit' ? 'إيداع' : 'سحب';
         allTransactions.push({
@@ -138,7 +141,7 @@ export const useTransactionHistory = (limit?: number) => {
       });
 
       // Process game topup orders
-      gameTopups?.forEach(order => {
+      gameTopups.data?.forEach(order => {
         const platformName = (order as any).platform?.name_ar || 'لعبة';
         allTransactions.push({
           id: order.id,
@@ -151,14 +154,12 @@ export const useTransactionHistory = (limit?: number) => {
         });
       });
 
-      // Sort by date (newest first)
+      // Sort by date and limit
       allTransactions.sort((a, b) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
-
-      // Apply limit if provided, otherwise show all
-      const limitedTransactions = limit ? allTransactions.slice(0, limit) : allTransactions;
-      setTransactions(limitedTransactions);
+      
+      setTransactions(allTransactions.slice(0, limit));
     } catch (error) {
       console.error('Error fetching transaction history:', error);
     } finally {
