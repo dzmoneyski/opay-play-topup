@@ -1,4 +1,4 @@
-import React, { useEffect, lazy, Suspense } from "react";
+import React, { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,59 +11,51 @@ import PublicRoute from "@/components/PublicRoute";
 import { PWAPermissionsPrompt } from "@/components/PWAPermissionsPrompt";
 import { PageTransition } from "@/components/PageTransition";
 import { ScrollToTop } from "@/components/ScrollToTop";
-
-// Lazy load heavy pages
-const Index = lazy(() => import("./pages/Index"));
-const Auth = lazy(() => import("./pages/Auth"));
-const AccountActivation = lazy(() => import("./pages/AccountActivation"));
-const AdminPanel = lazy(() => import("./pages/AdminPanel"));
-const VerifyIdentity = lazy(() => import("./pages/VerifyIdentity"));
-const Deposits = lazy(() => import("./pages/Deposits"));
-const Transfer = lazy(() => import("./pages/Transfer"));
-const Withdrawals = lazy(() => import("./pages/Withdrawals"));
-const Rewards = lazy(() => import("./pages/Rewards"));
-const Cards = lazy(() => import("./pages/Cards"));
-const CardDelivery = lazy(() => import("./pages/CardDelivery"));
-const GameTopup = lazy(() => import("./pages/GameTopup"));
-const P2P = lazy(() => import("./pages/P2P"));
-const BecomePartner = lazy(() => import("./pages/BecomePartner"));
-const MerchantDashboard = lazy(() => import("./pages/MerchantDashboard"));
-const Install = lazy(() => import("./pages/Install"));
-const Settings = lazy(() => import("./pages/Settings"));
-const Stores = lazy(() => import("./pages/Stores"));
-const Transactions = lazy(() => import("./pages/Transactions"));
-const Shop = lazy(() => import("./pages/Shop"));
-const AliExpress = lazy(() => import("./pages/AliExpress"));
-const AboutUs = lazy(() => import("./pages/AboutUs"));
-const Diaspora = lazy(() => import("./pages/Diaspora"));
-const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-
-// Loading component
-const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-  </div>
-);
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import AccountActivation from "./pages/AccountActivation";
+import AdminPanel from "./pages/AdminPanel";
+import IdentityVerificationPage from "./pages/IdentityVerificationPage";
+import Deposits from "./pages/Deposits";
+import Transfer from "./pages/Transfer";
+import Withdrawals from "./pages/Withdrawals";
+import Rewards from "./pages/Rewards";
+import Cards from "./pages/Cards";
+import GameTopup from "./pages/GameTopup";
+import P2P from "./pages/P2P";
+import BecomePartner from "./pages/BecomePartner";
+import MerchantDashboard from "./pages/MerchantDashboard";
+import Install from "./pages/Install";
+import Settings from "./pages/Settings";
+import Stores from "./pages/Stores";
+import Transactions from "./pages/Transactions";
+import Shop from "./pages/Shop";
+import AliExpress from "./pages/AliExpress";
+import AboutUs from "./pages/AboutUs";
+import Diaspora from "./pages/Diaspora";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      staleTime: 30000, // 30 seconds
-      gcTime: 5 * 60 * 1000, // 5 minutes
     },
   },
 });
 
-const AnimatedRoutes = () => {
-  const location = useLocation();
-  
+const App = () => {
   return (
-    <AnimatePresence mode="wait">
-      <Suspense fallback={<PageLoader />}>
-        <Routes location={location} key={location.pathname}>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <PWAPermissionsPrompt />
+          <BrowserRouter>
+            <ScrollToTop />
+            <Routes>
               <Route path="/" element={
                 <ProtectedRoute requireActivation={false}>
                   <Index />
@@ -106,17 +98,12 @@ const AnimatedRoutes = () => {
               } />
               <Route path="/identity-verification" element={
                 <ProtectedRoute requireActivation={false}>
-                  <VerifyIdentity />
+                  <IdentityVerificationPage />
                 </ProtectedRoute>
               } />
               <Route path="/cards" element={
                 <ProtectedRoute requireActivation={false}>
                   <Cards />
-                </ProtectedRoute>
-              } />
-              <Route path="/card-delivery" element={
-                <ProtectedRoute requireActivation={false}>
-                  <CardDelivery />
                 </ProtectedRoute>
               } />
               <Route path="/game-topup" element={
@@ -183,22 +170,6 @@ const AnimatedRoutes = () => {
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-      </Suspense>
-    </AnimatePresence>
-  );
-};
-
-const App = () => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <PWAPermissionsPrompt />
-          <BrowserRouter>
-            <ScrollToTop />
-            <AnimatedRoutes />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

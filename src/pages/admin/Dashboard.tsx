@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useVerification } from '@/hooks/useVerification';
+import { useVerificationRequests } from '@/hooks/useVerificationRequests';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Users, 
@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const { requests, loading } = useVerification();
+  const { requests, loading } = useVerificationRequests();
   const [totalUsers, setTotalUsers] = React.useState(0);
   const [userProfilesData, setUserProfilesData] = React.useState<any[]>([]);
   const [financialStats, setFinancialStats] = React.useState({

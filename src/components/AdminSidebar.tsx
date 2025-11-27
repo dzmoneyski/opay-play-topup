@@ -14,8 +14,7 @@ import {
   FileText,
   Wallet,
   Gamepad2,
-  ShoppingBag,
-  Truck
+  ShoppingBag
 } from 'lucide-react';
 import {
   Sidebar,
@@ -45,7 +44,6 @@ const transactionItems = [
 
 const serviceItems = [
   { title: "البطاقات الرقمية", url: "/admin/cards", icon: Gift },
-  { title: "توصيل البطاقات", url: "/admin/card-delivery", icon: Truck },
   { title: "إدارة الألعاب", url: "/admin/games", icon: Gamepad2 },
   { title: "إدارة المراهنات", url: "/admin/betting", icon: Gamepad2 },
   { title: "طلبات AliExpress", url: "/admin/aliexpress", icon: ShoppingBag },

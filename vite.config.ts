@@ -65,7 +65,7 @@ export default defineConfig(({ mode }) => ({
         clientsClaim: true
       },
       devOptions: {
-        enabled: false, // Disable in dev to prevent loading issues
+        enabled: true,
       },
       injectRegister: 'auto',
       strategies: 'injectManifest',

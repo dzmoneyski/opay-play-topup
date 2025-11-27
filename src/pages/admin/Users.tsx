@@ -37,11 +37,8 @@ import {
   Gamepad2,
   TrendingUp,
   Package,
-  CreditCard,
-  MessageCircle
+  CreditCard
 } from 'lucide-react';
-import TelegramIcon from '@/assets/telegram-logo.png';
-import { ExternalLink } from 'lucide-react';
 import { useTransactionHistory, TransactionHistoryItem } from '@/hooks/useTransactionHistory';
 import { toast } from 'sonner';
 
@@ -73,16 +70,15 @@ const getStatusBadgeVariant = (status: string) => {
 };
 
 // User Transactions Tab Component
-const UserTransactionsTab = ({ userId, isActive }: { userId: string; isActive: boolean }) => {
+const UserTransactionsTab = ({ userId }: { userId: string }) => {
+  // Create a temporary auth context for this user
+  const { transactions, loading } = useTransactionHistory();
+  
+  // Filter transactions for this specific user
   const [userTransactions, setUserTransactions] = React.useState<TransactionHistoryItem[]>([]);
-  const [loading, setLoading] = React.useState(false);
   
   React.useEffect(() => {
-    // Only fetch when tab is active
-    if (!isActive) return;
-    
     const fetchUserTransactions = async () => {
-      setLoading(true);
       try {
         // Fetch all transaction types for this user
         const [deposits, withdrawals, transfers, giftCards, betting, gameTopups] = await Promise.all([
@@ -188,13 +184,11 @@ const UserTransactionsTab = ({ userId, isActive }: { userId: string; isActive: b
         setUserTransactions(allTransactions);
       } catch (error) {
         console.error('Error fetching user transactions:', error);
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchUserTransactions();
-  }, [userId, isActive]);
+  }, [userId]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ar-DZ', {
@@ -233,23 +227,7 @@ const UserTransactionsTab = ({ userId, isActive }: { userId: string; isActive: b
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {loading ? (
-          <div className="space-y-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center gap-4 p-4 border rounded-lg animate-pulse">
-                <div className="w-10 h-10 rounded-full bg-muted" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-muted rounded w-1/3" />
-                  <div className="h-3 bg-muted rounded w-1/4" />
-                </div>
-                <div className="space-y-2">
-                  <div className="h-4 bg-muted rounded w-20" />
-                  <div className="h-5 bg-muted rounded w-16" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : userTransactions.length > 0 ? (
+        {userTransactions.length > 0 ? (
           <div className="space-y-2">
             {userTransactions.map((transaction, index) => (
               <div 
@@ -317,63 +295,37 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
   const [balanceAction, setBalanceAction] = React.useState({ type: '', amount: '', note: '' });
   const [processing, setProcessing] = React.useState(false);
   const [heldBalance, setHeldBalance] = React.useState(0);
-  const [loadingDetails, setLoadingDetails] = React.useState(true);
 
   React.useEffect(() => {
     const fetchUserDetails = async () => {
-      console.log('🔵 Starting to fetch user details for:', user.user_id);
-      setLoadingDetails(true);
       try {
-        // Fetch verification data only (most important)
-        console.log('🔵 Fetching verification data...');
-        const verificationData = await supabase
+        // Fetch verification request
+        const { data: verificationData } = await supabase
           .from('verification_requests')
           .select('*')
           .eq('user_id', user.user_id)
           .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .limit(1);
 
-        console.log('✅ Verification data received:', verificationData);
-        
-        if (verificationData.data) {
-          setVerificationRequest(verificationData.data);
+        if (verificationData?.[0]) {
+          setVerificationRequest(verificationData[0]);
         }
 
-        // Fetch held balance data (non-blocking)
-        console.log('🔵 Fetching held balance data...');
-        Promise.all([
-          supabase.from('game_topup_orders')
-            .select('amount')
-            .eq('user_id', user.user_id)
-            .eq('status', 'pending'),
-          supabase.from('betting_transactions')
-            .select('amount')
-            .eq('user_id', user.user_id)
-            .eq('transaction_type', 'deposit')
-            .eq('status', 'pending'),
-          supabase.from('withdrawals')
-            .select('amount')
-            .eq('user_id', user.user_id)
-            .in('status', ['pending', 'approved'])
-        ]).then(([gameOrders, bettingTransactions, withdrawals]) => {
-          const totalHeld = 
-            (gameOrders.data?.reduce((sum, o) => sum + Number(o.amount), 0) || 0) +
-            (bettingTransactions.data?.reduce((sum, t) => sum + Number(t.amount), 0) || 0) +
-            (withdrawals.data?.reduce((sum, w) => sum + Number(w.amount), 0) || 0);
+        // Calculate held balance from pending orders
+        const [gameOrders, bettingTransactions, withdrawals] = await Promise.all([
+          supabase.from('game_topup_orders').select('amount').eq('user_id', user.user_id).eq('status', 'pending'),
+          supabase.from('betting_transactions').select('amount').eq('user_id', user.user_id).eq('transaction_type', 'deposit').eq('status', 'pending'),
+          supabase.from('withdrawals').select('amount').eq('user_id', user.user_id).in('status', ['pending', 'approved'])
+        ]);
 
-          console.log('✅ Held balance calculated:', totalHeld);
-          setHeldBalance(totalHeld);
-        }).catch(err => {
-          console.error('❌ Error fetching held balance:', err);
-        });
+        const totalHeld = 
+          (gameOrders.data?.reduce((sum, o) => sum + Number(o.amount), 0) || 0) +
+          (bettingTransactions.data?.reduce((sum, t) => sum + Number(t.amount), 0) || 0) +
+          (withdrawals.data?.reduce((sum, w) => sum + Number(w.amount), 0) || 0);
 
+        setHeldBalance(totalHeld);
       } catch (error) {
-        console.error('❌ Error fetching user details:', error);
-      } finally {
-        // Set loading to false immediately after essential data loads
-        console.log('✅ Setting loadingDetails to false');
-        setLoadingDetails(false);
+        console.error('Error fetching user details:', error);
       }
     };
 
@@ -533,25 +485,8 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
     }).format(amount);
   };
 
-  console.log('🔍 UserDetailsModal - loadingDetails:', loadingDetails);
-  
-  if (loadingDetails) {
-    console.log('🔄 Showing loading state...');
-    return (
-      <div className="flex items-center justify-center min-h-[400px] bg-card">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent" />
-          <p className="text-lg font-medium text-card-foreground">جاري تحميل البيانات...</p>
-        </div>
-      </div>
-    );
-  }
-
-  console.log('✅ Rendering modal content');
-
   return (
     <div className="space-y-6">
-      
       {/* Tab Navigation */}
       <div className="border-b border-border">
         <div className="flex space-x-8 space-x-reverse">
@@ -594,33 +529,9 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
                   <span className="text-muted-foreground">الاسم الكامل:</span>
                   <span className="font-medium">{user.full_name || 'غير محدد'}</span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">رقم الهاتف:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{user.phone || 'غير محدد'}</span>
-                    {user.phone && (
-                      <div className="flex gap-1">
-                        <a
-                          href={`https://wa.me/${user.phone.replace(/[^0-9]/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-1.5 rounded-md hover:bg-green-100 transition-colors"
-                          title="واتساب"
-                        >
-                          <MessageCircle className="h-4 w-4 text-green-600" />
-                        </a>
-                        <a
-                          href={`https://t.me/${user.phone.replace(/[^0-9]/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-1.5 rounded-md hover:bg-blue-100 transition-colors"
-                          title="تلغرام"
-                        >
-                          <img src={TelegramIcon} alt="Telegram" className="h-4 w-4" />
-                        </a>
-                      </div>
-                    )}
-                  </div>
+                  <span className="font-medium">{user.phone || 'غير محدد'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">البريد الإلكتروني:</span>
@@ -889,7 +800,7 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
         )}
 
         {activeTab === 'transactions' && (
-          <UserTransactionsTab userId={user.user_id} isActive={activeTab === 'transactions'} />
+          <UserTransactionsTab userId={user.user_id} />
         )}
 
         {activeTab === 'actions' && (
@@ -1048,44 +959,41 @@ export default function UsersPage() {
   const [loading, setLoading] = React.useState(true);
   const [syncing, setSyncing] = React.useState(false);
 
-  // Fetch real user data - optimized
+  // Fetch real user data
   React.useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select(`
+            *
+          `)
+          .order('created_at', { ascending: false });
         
-        // Fetch all data in parallel for better performance
-        const [profilesRes, balancesRes, rolesRes, depositsRes, withdrawalsRes, transfersRes] = await Promise.all([
-          supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-          supabase.from('user_balances').select('user_id, balance'),
-          supabase.from('user_roles').select('user_id, role'),
-          supabase.from('deposits').select('user_id'),
-          supabase.from('withdrawals').select('user_id'),
-          supabase.from('transfers').select('sender_id, recipient_id')
-        ]);
-        
-        if (profilesRes.error) throw profilesRes.error;
+        if (error) throw error;
 
-        // Create lookup maps for O(1) access
-        const balanceMap = new Map((balancesRes.data || []).map(b => [b.user_id, Number(b.balance) || 0]));
-        const roleMap = new Map((rolesRes.data || []).map(r => [r.user_id, [r]]));
-        
-        // Count transactions per user
-        const transactionCount = new Map<string, number>();
-        (depositsRes.data || []).forEach(d => transactionCount.set(d.user_id, (transactionCount.get(d.user_id) || 0) + 1));
-        (withdrawalsRes.data || []).forEach(w => transactionCount.set(w.user_id, (transactionCount.get(w.user_id) || 0) + 1));
-        (transfersRes.data || []).forEach(t => {
-          transactionCount.set(t.sender_id, (transactionCount.get(t.sender_id) || 0) + 1);
-          transactionCount.set(t.recipient_id, (transactionCount.get(t.recipient_id) || 0) + 1);
-        });
+        // Get additional data for each user
+        const usersWithStats = await Promise.all(
+          (profiles || []).map(async (profile) => {
+            const [depositsRes, withdrawalsRes, transfersRes, balanceRes, roleRes] = await Promise.all([
+              supabase.from('deposits').select('id').eq('user_id', profile.user_id),
+              supabase.from('withdrawals').select('id').eq('user_id', profile.user_id),
+              supabase.from('transfers').select('id').or(`sender_id.eq.${profile.user_id},recipient_id.eq.${profile.user_id}`),
+              supabase.from('user_balances').select('balance').eq('user_id', profile.user_id).single(),
+              supabase.from('user_roles').select('role').eq('user_id', profile.user_id).single()
+            ]);
 
-        // Merge data efficiently
-        const usersWithStats = (profilesRes.data || []).map(profile => ({
-          ...profile,
-          balance: balanceMap.get(profile.user_id) || 0,
-          user_roles: roleMap.get(profile.user_id) || [],
-          total_transactions: transactionCount.get(profile.user_id) || 0
-        }));
+            return {
+              ...profile,
+              balance: Number(balanceRes.data?.balance) || 0,
+              user_roles: roleRes.data ? [roleRes.data] : [],
+              total_transactions: (depositsRes.data?.length || 0) + 
+                                (withdrawalsRes.data?.length || 0) + 
+                                (transfersRes.data?.length || 0)
+            };
+          })
+        );
 
         setUsers(usersWithStats);
       } catch (error) {
@@ -1308,33 +1216,9 @@ export default function UsersPage() {
                             <Mail className="h-3 w-3" />
                             {user.email || 'غير محدد'}
                           </span>
-                          <span className="flex items-center gap-1.5">
+                          <span className="flex items-center gap-1">
                             <Phone className="h-3 w-3" />
                             {user.phone || 'غير محدد'}
-                            {user.phone && (
-                              <>
-                                <a
-                                  href={`https://wa.me/${user.phone.replace(/[^0-9]/g, '')}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-1 rounded hover:bg-green-100 transition-colors"
-                                  title="واتساب"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <MessageCircle className="h-3.5 w-3.5 text-green-600" />
-                                </a>
-                                <a
-                                  href={`https://t.me/${user.phone.replace(/[^0-9]/g, '')}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-1 rounded hover:bg-blue-100 transition-colors"
-                                  title="تلغرام"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <img src={TelegramIcon} alt="Telegram" className="h-3.5 w-3.5" />
-                                </a>
-                              </>
-                            )}
                           </span>
                            <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
@@ -1374,13 +1258,13 @@ export default function UsersPage() {
                           عرض التفاصيل
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-card text-card-foreground">
+                      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
-                          <DialogTitle className="flex items-center gap-2 text-foreground">
+                          <DialogTitle className="flex items-center gap-2">
                             <User className="h-5 w-5" />
-                            تفاصيل المستخدم - {user.full_name || 'غير محدد'}
+                            تفاصيل المستخدم - {user.full_name}
                           </DialogTitle>
-                          <DialogDescription className="text-muted-foreground">
+                          <DialogDescription>
                             إدارة شاملة لحساب المستخدم والتحكم في جميع الخيارات
                           </DialogDescription>
                         </DialogHeader>

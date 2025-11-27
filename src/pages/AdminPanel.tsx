@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AdminNavbar } from '@/components/AdminNavbar';
 import { AdminAlertBanner } from '@/components/AdminAlertBanner';
 import AdminDashboard from '@/pages/admin/Dashboard';
-import VerifyUsers from '@/pages/admin/VerifyUsers';
+import IdentityVerificationPage from '@/pages/admin/IdentityVerification';
 import UsersPage from '@/pages/admin/Users';
 import DepositsPage from '@/pages/admin/Deposits';
 import WithdrawalsPage from '@/pages/admin/Withdrawals';
@@ -20,7 +20,6 @@ import AliExpressOrders from '@/pages/admin/AliExpressOrders';
 import DiasporaTransfers from '@/pages/admin/DiasporaTransfers';
 import SuspiciousReferralsPage from '@/pages/admin/SuspiciousReferrals';
 import FraudulentUsersPage from '@/pages/admin/FraudulentUsers';
-import CardDeliveryOrders from '@/pages/admin/CardDeliveryOrders';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -62,13 +61,12 @@ const AdminPanel = () => {
         
         <Routes>
           <Route index element={<AdminDashboard />} />
-          <Route path="identity-verification" element={<VerifyUsers />} />
+          <Route path="identity-verification" element={<IdentityVerificationPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="deposits" element={<DepositsPage />} />
           <Route path="withdrawals" element={<WithdrawalsPage />} />
           <Route path="transfers" element={<TransfersPage />} />
           <Route path="cards" element={<CardsPage />} />
-          <Route path="card-delivery" element={<CardDeliveryOrders />} />
           <Route path="digital-cards" element={<DigitalCardsPage />} />
           <Route path="games" element={<GameManagement />} />
           <Route path="betting" element={<BettingManagement />} />
