@@ -18,12 +18,12 @@ export interface VerificationRequest {
   id: string;
   user_id: string;
   national_id: string;
-  national_id_front_image: string | null;
-  national_id_back_image: string | null;
-  full_name_on_id: string | null;
+  id_front_image: string | null;
+  id_back_image: string | null;
+  full_name: string | null;
   date_of_birth: string | null;
-  place_of_birth: string | null;
-  address: string | null;
+  place_of_birth?: string | null;
+  address?: string | null;
   status: 'pending' | 'approved' | 'rejected';
   submitted_at: string;
   reviewed_at: string | null;
@@ -134,12 +134,12 @@ export const useVerificationRequests = () => {
       });
     }
 
-    // Check for duplicate full_name_on_id
-    if (currentRequest.full_name_on_id) {
+    // Check for duplicate full_name
+    if (currentRequest.full_name) {
       const nameMatches = allRequests.filter(
         req => req.id !== currentRequest.id && 
-               req.full_name_on_id && 
-               req.full_name_on_id.toLowerCase().trim() === currentRequest.full_name_on_id.toLowerCase().trim()
+               req.full_name && 
+               req.full_name.toLowerCase().trim() === currentRequest.full_name.toLowerCase().trim()
       );
       
       if (nameMatches.length > 0) {
@@ -166,10 +166,10 @@ export const useVerificationRequests = () => {
     }
 
     // Check for duplicate front image
-    if (currentRequest.national_id_front_image) {
+    if (currentRequest.id_front_image) {
       const frontImageMatches = allRequests.filter(
         req => req.id !== currentRequest.id && 
-               req.national_id_front_image === currentRequest.national_id_front_image
+               req.id_front_image === currentRequest.id_front_image
       );
       
       if (frontImageMatches.length > 0) {
@@ -196,10 +196,10 @@ export const useVerificationRequests = () => {
     }
 
     // Check for duplicate back image
-    if (currentRequest.national_id_back_image) {
+    if (currentRequest.id_back_image) {
       const backImageMatches = allRequests.filter(
         req => req.id !== currentRequest.id && 
-               req.national_id_back_image === currentRequest.national_id_back_image
+               req.id_back_image === currentRequest.id_back_image
       );
       
       if (backImageMatches.length > 0) {
