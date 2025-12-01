@@ -151,9 +151,13 @@ export default function WithdrawalsPage() {
       const fileExt = receiptFile.name.split('.').pop();
       const fileName = `withdrawal_receipt_${withdrawalId}_${Date.now()}.${fileExt}`;
       
-      const { error: uploadError } = await supabase.storage
-        .from('withdrawal-receipts')
-        .upload(fileName, receiptFile);
+      // Upload to deposit-receipts bucket (shared bucket for all receipts)
+      const { error: uploadError, data: uploadData } = await supabase.storage
+        .from('deposit-receipts')
+        .upload(fileName, receiptFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
