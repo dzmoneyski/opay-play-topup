@@ -18,7 +18,8 @@ import {
   ShoppingBag,
   Globe2,
   AlertTriangle,
-  Ban
+  Ban,
+  CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -300,6 +301,22 @@ export function AdminNavbar() {
                         <p className="text-sm font-medium">طلبات سحب جديدة</p>
                         <p className="text-xs text-muted-foreground">
                           {counts.pendingWithdrawals} طلب بانتظار المعالجة
+                        </p>
+                      </div>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+
+                {counts.pendingDigitalCards > 0 && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin/digital-cards" className="flex items-center gap-3 cursor-pointer">
+                      <div className="p-2 rounded-full bg-primary/10">
+                        <CreditCard className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">طلبات بطاقات رقمية جديدة</p>
+                        <p className="text-xs text-muted-foreground">
+                          {counts.pendingDigitalCards} طلب بانتظار المراجعة
                         </p>
                       </div>
                     </Link>
