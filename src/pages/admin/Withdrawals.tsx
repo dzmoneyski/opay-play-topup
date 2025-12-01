@@ -152,10 +152,13 @@ export default function WithdrawalsPage() {
       const fileName = `withdrawal_receipt_${withdrawalId}_${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
-        .from('deposit-receipts')
+        .from('withdrawal-receipts')
         .upload(fileName, receiptFile);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error(`فشل في رفع الإيصال: ${uploadError.message}`);
+      }
 
       // Approve withdrawal with receipt reference
       const receiptNotes = `تم رفع إيصال السحب: ${fileName}. ${approveNotes}`;
