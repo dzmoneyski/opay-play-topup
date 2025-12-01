@@ -971,12 +971,21 @@ export default function UsersPage() {
         const from = (page - 1) * pageSize;
         const to = from + pageSize - 1;
 
-        // Fetch profiles with count
-        const { data: profiles, error, count } = await supabase
+        let query = supabase
           .from('profiles')
           .select('*', { count: 'exact' })
-          .order('created_at', { ascending: false })
-          .range(from, to);
+          .order('created_at', { ascending: false });
+
+        // Add search filters if searchTerm exists
+        if (searchTerm) {
+          // Search in full_name, email, or phone across all records
+          query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
+        } else {
+          // Apply pagination only when not searching
+          query = query.range(from, to);
+        }
+
+        const { data: profiles, error, count } = await query;
         
         if (error) throw error;
         setTotalCount(count || 0);
@@ -1011,7 +1020,7 @@ export default function UsersPage() {
     };
 
     fetchUsers();
-  }, [page]);
+  }, [page, searchTerm]);
 
   const handleSyncUsersData = async () => {
     if (!confirm('هل تريد تحديث بيانات جميع المستخدمين القدامى؟ سيتم جلب البريد الإلكتروني ورقم الهاتف من بيانات التسجيل.')) {
@@ -1037,20 +1046,8 @@ export default function UsersPage() {
     }
   };
 
-  const filteredUsers = React.useMemo(() => {
-    if (!searchTerm) return users;
-    
-    const searchLower = searchTerm.toLowerCase();
-    return users.filter(user => {
-      const fullName = user.full_name || '';
-      const email = user.email || '';
-      const phone = user.phone || '';
-      
-      return fullName.toLowerCase().includes(searchLower) ||
-             email.toLowerCase().includes(searchLower) ||
-             phone.includes(searchTerm);
-    });
-  }, [users, searchTerm]);
+  // No need for client-side filtering since we're filtering in the database
+  const filteredUsers = users;
 
   const totalUsers = users.length;
   const activeUsers = users.filter(u => u.is_account_activated).length;
@@ -1187,7 +1184,10 @@ export default function UsersPage() {
               <Input
                 placeholder="البحث بالاسم، البريد الإلكتروني، أو رقم الهاتف..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1); // Reset to first page when searching
+                }}
                 className="pr-10"
               />
             </div>
