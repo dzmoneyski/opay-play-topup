@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +43,7 @@ import {
   Settings
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'sonner';
 
 const DigitalCards = () => {
   const { orders, cardTypes, loading, processing, approveOrder, rejectOrder, refetch } = useAdminDigitalCards();
@@ -219,6 +220,48 @@ const DigitalCards = () => {
   const pendingOrders = orders.filter(o => o.status === 'pending');
   const completedOrders = orders.filter(o => o.status === 'completed');
   const rejectedOrders = orders.filter(o => o.status === 'rejected');
+
+  // Real-time notifications for new orders
+  React.useEffect(() => {
+    const channel = supabase
+      .channel('digital-card-orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'digital_card_orders'
+        },
+        async (payload) => {
+          console.log('New digital card order received:', payload);
+          
+          // Fetch card type name and user info
+          const newOrder = payload.new as any;
+          const cardType = cardTypes.find(c => c.id === newOrder.card_type_id);
+          
+          // Fetch user profile
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, phone')
+            .eq('user_id', newOrder.user_id)
+            .single();
+          
+          // Show notification
+          toast.success('طلب بطاقة رقمية جديد', {
+            description: `${profile?.full_name || 'مستخدم'} طلب ${cardType?.name_ar || 'بطاقة رقمية'} بقيمة $${newOrder.amount_usd}`,
+            duration: 8000,
+          });
+          
+          // Refresh orders list
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [cardTypes, refetch]);
 
   return (
     <div className="p-6 space-y-6">
