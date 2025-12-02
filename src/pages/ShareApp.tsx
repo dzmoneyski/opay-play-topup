@@ -11,8 +11,8 @@ export default function ShareApp() {
   const [copied, setCopied] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  // رابط الموقع - يمكنك تغييره لرابط موقعك الفعلي
-  const appUrl = window.location.origin;
+  // رابط الموقع الرسمي
+  const appUrl = 'https://www.opaydz.com';
 
   useEffect(() => {
     generateQRCode();
