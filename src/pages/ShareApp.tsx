@@ -98,7 +98,7 @@ export default function ShareApp() {
                   <img 
                     src={qrCodeUrl} 
                     alt="QR Code للتطبيق" 
-                    className="w-64 h-64"
+                    className="w-64 h-64 rounded-2xl"
                   />
                 ) : (
                   <div className="w-64 h-64 bg-gray-100 animate-pulse rounded-lg" />
