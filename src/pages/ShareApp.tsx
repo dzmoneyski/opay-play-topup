@@ -12,7 +12,7 @@ export default function ShareApp() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   // رابط الموقع الرسمي
-  const appUrl = 'https://www.opaydz.com';
+  const appUrl = 'https://opaydz.com';
 
   useEffect(() => {
     generateQRCode();
