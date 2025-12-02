@@ -34,6 +34,7 @@ import AliExpress from "./pages/AliExpress";
 import AboutUs from "./pages/AboutUs";
 import Diaspora from "./pages/Diaspora";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import ShareApp from "./pages/ShareApp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -168,6 +169,7 @@ const App = () => {
                 </ProtectedRoute>
               } />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/share" element={<ShareApp />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
