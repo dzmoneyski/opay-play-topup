@@ -145,10 +145,10 @@ export default function CardsPage() {
       return;
     }
 
-    if (quantity > 100) {
+    if (quantity > 1000) {
       toast({
         title: "خطأ",
-        description: "لا يمكن إنشاء أكثر من 100 بطاقة في المرة الواحدة",
+        description: "لا يمكن إنشاء أكثر من 1000 بطاقة في المرة الواحدة",
         variant: "destructive",
       });
       return;
