@@ -123,18 +123,18 @@ export default function CardsPage() {
     return (10 - (sum % 10)) % 10;
   };
 
-  // Check if card code is unique
-  const isCodeUnique = async (code: string) => {
+  // Check which codes already exist in database (batch check)
+  const getExistingCodes = async (codes: string[]): Promise<Set<string>> => {
     const { data, error } = await supabase
       .from('gift_cards')
-      .select('id')
-      .eq('card_code', code)
-      .maybeSingle();
+      .select('card_code')
+      .in('card_code', codes);
     
-    return !data; // Returns true if no existing card found
+    if (error) throw error;
+    return new Set(data?.map(c => c.card_code) || []);
   };
 
-  // Generate gift cards
+  // Generate gift cards - OPTIMIZED for speed
   const generateGiftCards = async () => {
     if (amount <= 0 || quantity <= 0) {
       toast({
@@ -156,34 +156,41 @@ export default function CardsPage() {
 
     setGenerating(true);
     try {
-      const cards = [];
       const generatedCodes = new Set<string>();
       
-      // Generate unique codes
-      for (let i = 0; i < quantity; i++) {
-        let cardCode: string;
-        let attempts = 0;
-        const maxAttempts = 10;
-        
-        // Ensure uniqueness (both locally and in database)
-        do {
-          cardCode = generateSecureCardCode();
-          attempts++;
-          
-          if (attempts > maxAttempts) {
-            throw new Error('فشل في إنشاء كود فريد بعد محاولات متعددة');
-          }
-        } while (
-          generatedCodes.has(cardCode) || 
-          !(await isCodeUnique(cardCode))
-        );
-        
+      // Generate all codes locally first (very fast)
+      while (generatedCodes.size < quantity) {
+        const cardCode = generateSecureCardCode();
         generatedCodes.add(cardCode);
-        cards.push({
-          card_code: cardCode,
-          amount: amount,
-        });
       }
+      
+      // Check all codes at once in database (single query)
+      const existingCodes = await getExistingCodes(Array.from(generatedCodes));
+      
+      // Remove any existing codes and regenerate
+      for (const code of existingCodes) {
+        generatedCodes.delete(code);
+      }
+      
+      // Generate replacements for any duplicates found
+      let attempts = 0;
+      while (generatedCodes.size < quantity && attempts < 100) {
+        const cardCode = generateSecureCardCode();
+        if (!existingCodes.has(cardCode)) {
+          generatedCodes.add(cardCode);
+        }
+        attempts++;
+      }
+      
+      if (generatedCodes.size < quantity) {
+        throw new Error('فشل في إنشاء أكواد كافية');
+      }
+      
+      // Create cards array
+      const cards = Array.from(generatedCodes).map(code => ({
+        card_code: code,
+        amount: amount,
+      }));
 
       const { data, error } = await supabase
         .from('gift_cards')
