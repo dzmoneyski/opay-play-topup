@@ -282,7 +282,7 @@ export default function CardsPage() {
         <div style="
           position: absolute;
           top: 24px;
-          right: 24px;
+          right: 55px;
           text-align: right;
         ">
           <h1 style="
