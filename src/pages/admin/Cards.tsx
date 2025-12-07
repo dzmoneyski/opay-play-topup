@@ -488,44 +488,116 @@ export default function CardsPage() {
     return results.reduce((acc, { id, qr }) => ({ ...acc, [id]: qr }), {});
   };
 
-  // Draw front card directly on PDF (INSTANT - no html2canvas)
-  const drawFrontCard = (pdf: jsPDF, card: GiftCard, x: number, y: number, w: number, h: number) => {
-    // Purple background
-    pdf.setFillColor(99, 102, 241);
-    pdf.roundedRect(x, y, w, h, 3, 3, 'F');
+  // Cache for front card images (one per amount - HUGE optimization)
+  const frontCardImageCache = useRef<Record<number, string>>({});
+
+  // Render front card using ORIGINAL HTML design, cache per amount
+  const getFrontCardImage = async (amount: number): Promise<string> => {
+    if (frontCardImageCache.current[amount]) {
+      return frontCardImageCache.current[amount];
+    }
+
+    const cardHTML = `
+      <div style="
+        width: 340px;
+        height: 215px;
+        background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #EC4899 100%);
+        border-radius: 16px;
+        position: relative;
+        color: white;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(79, 70, 229, 0.3);
+      ">
+        <div style="
+          position: absolute;
+          inset: 0;
+          background-image: 
+            radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
+            radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 0%, transparent 50%);
+        "></div>
+        
+        <div style="
+          position: absolute;
+          top: 24px;
+          left: 24px;
+          width: 40px;
+          height: 30px;
+          background: linear-gradient(145deg, #FFD700, #FFA500);
+          border-radius: 6px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        "></div>
+        
+        <div style="
+          position: absolute;
+          top: 24px;
+          right: 55px;
+          text-align: right;
+        ">
+          <h1 style="
+            margin: 0;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+          ">OpaY</h1>
+          <p style="
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+            font-weight: 500;
+          ">بطاقة شحن رقمية</p>
+        </div>
+        
+        <div style="
+          position: absolute;
+          left: 24px;
+          right: 24px;
+          top: 50%;
+          transform: translateY(-50%);
+          text-align: center;
+        ">
+          <p style="
+            margin: 0;
+            font-size: 48px;
+            font-weight: 900;
+            line-height: 1;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.4);
+          ">${amount.toFixed(2)} دج</p>
+        </div>
+        
+        <div style="
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+          border-radius: 16px;
+        "></div>
+      </div>
+    `;
+
+    const tempContainer = document.createElement('div');
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.top = '-9999px';
+    tempContainer.style.left = '-9999px';
+    tempContainer.innerHTML = cardHTML;
+    document.body.appendChild(tempContainer);
+
+    const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
+      width: 340,
+      height: 215,
+      scale: 2,
+      backgroundColor: null,
+      useCORS: true,
+      logging: false
+    });
     
-    // Darker bottom for depth
-    pdf.setFillColor(79, 70, 229);
-    pdf.rect(x, y + h * 0.6, w, h * 0.4, 'F');
-    
-    // Chip
-    pdf.setFillColor(251, 191, 36);
-    pdf.roundedRect(x + 6, y + 8, 12, 9, 1.5, 1.5, 'F');
-    pdf.setFillColor(245, 158, 11);
-    pdf.rect(x + 6, y + 11, 12, 3, 'F');
-    
-    // OpaY Logo
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(18);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('OpaY', x + w - 8, y + 12, { align: 'right' });
-    
-    pdf.setFontSize(7);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text('Digital Recharge Card', x + w - 8, y + 17, { align: 'right' });
-    
-    // Amount
-    pdf.setFontSize(26);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(`${card.amount.toLocaleString()} DA`, x + w / 2, y + h / 2 + 4, { align: 'center' });
-    
-    // Line
-    pdf.setDrawColor(255, 255, 255);
-    pdf.setLineWidth(0.3);
-    pdf.line(x + 10, y + h - 10, x + w - 10, y + h - 10);
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    frontCardImageCache.current[amount] = imgData;
+    document.body.removeChild(tempContainer);
+    return imgData;
   };
 
-  // Draw back card directly on PDF (INSTANT - no html2canvas)
+  // Draw back card directly on PDF (fast - no caching needed, each is unique)
   const drawBackCard = (pdf: jsPDF, card: GiftCard, x: number, y: number, w: number, h: number, qrDataURL: string) => {
     const pricing = calculatePricing(card.amount);
     
@@ -625,7 +697,15 @@ export default function CardsPage() {
         day: 'numeric' 
       })}`, pdf.internal.pageSize.width / 2, 75, { align: 'center' });
 
-      // Process front sides - DIRECT DRAW (INSTANT)
+      // Pre-render front card images per unique amount (CACHED)
+      setExportStatus('جاري تحضير التصميم...');
+      const uniqueAmountsToExport = [...new Set(cardsToExport.map(c => c.amount))];
+      const frontImages: Record<number, string> = {};
+      for (const amount of uniqueAmountsToExport) {
+        frontImages[amount] = await getFrontCardImage(amount);
+      }
+
+      // Process front sides - use cached images (INSTANT)
       setExportStatus('جاري إنشاء الوجه الأمامي...');
       for (let i = 0; i < cardsToExport.length; i++) {
         const card = cardsToExport[i];
@@ -644,7 +724,8 @@ export default function CardsPage() {
         const x = margin + col * (cardWidth + spacing);
         const y = 25 + row * (cardHeight + spacing);
         
-        drawFrontCard(pdf, card, x, y, cardWidth, cardHeight);
+        // Use cached front image (same for all cards with same amount)
+        pdf.addImage(frontImages[card.amount], 'JPEG', x, y, cardWidth, cardHeight, '', 'FAST');
         setExportProgress(Math.round(((i + 1) / totalSteps) * 100));
       }
 
