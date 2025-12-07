@@ -471,7 +471,74 @@ export default function CardsPage() {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [exportCardsCount, setExportCardsCount] = useState(100);
 
-  // Export unused gift cards to PDF - OPTIMIZED with batching
+  // Draw front card directly on PDF (NO html2canvas - 10x faster)
+  const drawFrontCard = (pdf: jsPDF, card: GiftCard, x: number, y: number, width: number, height: number) => {
+    // Draw gradient background (purple to pink)
+    pdf.setFillColor(79, 70, 229); // Primary purple
+    pdf.roundedRect(x, y, width, height, 3, 3, 'F');
+    
+    // Draw chip (golden rectangle)
+    pdf.setFillColor(255, 215, 0);
+    pdf.roundedRect(x + 5, y + 5, 10, 7, 1, 1, 'F');
+    
+    // OpaY logo text
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('OpaY', x + width - 5, y + 10, { align: 'right' });
+    
+    // Subtitle
+    pdf.setFontSize(7);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Digital Top-up Card', x + width - 5, y + 15, { align: 'right' });
+    
+    // Amount (centered, large)
+    pdf.setFontSize(22);
+    pdf.setFont('helvetica', 'bold');
+    const amountText = `${card.amount.toLocaleString('ar-DZ')} DA`;
+    pdf.text(amountText, x + width / 2, y + height / 2 + 3, { align: 'center' });
+  };
+
+  // Draw back card directly on PDF (NO html2canvas - 10x faster)
+  const drawBackCard = async (pdf: jsPDF, card: GiftCard, x: number, y: number, width: number, height: number) => {
+    const pricing = calculatePricing(card.amount);
+    
+    // Dark background
+    pdf.setFillColor(31, 41, 55);
+    pdf.roundedRect(x, y, width, height, 3, 3, 'F');
+    
+    // Magnetic strip
+    pdf.setFillColor(0, 0, 0);
+    pdf.rect(x, y + 8, width, 10, 'F');
+    
+    // Price on strip
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(`${pricing.customerPrice} DA`, x + width / 2, y + 15, { align: 'center' });
+    
+    // QR Code
+    const qrDataURL = await QRCode.toDataURL(card.card_code, { width: 150, margin: 1 });
+    pdf.addImage(qrDataURL, 'PNG', x + width - 28, y + 22, 23, 23);
+    
+    // Card code box
+    pdf.setFillColor(55, 65, 81);
+    pdf.roundedRect(x + 5, y + 28, width - 35, 12, 2, 2, 'F');
+    
+    // Card code text
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(9);
+    pdf.setFont('courier', 'normal');
+    const formattedCode = formatCardCode(card.card_code);
+    pdf.text(formattedCode, x + 5 + (width - 35) / 2, y + 35, { align: 'center' });
+    
+    // Footer
+    pdf.setFontSize(6);
+    pdf.setTextColor(156, 163, 175);
+    pdf.text('OpaY Algeria', x + width / 2, y + height - 3, { align: 'center' });
+  };
+
+  // Export unused gift cards to PDF - ULTRA FAST (no html2canvas)
   const exportToPDF = async () => {
     const unusedCards = giftCards.filter(card => !card.is_used);
     
@@ -496,10 +563,6 @@ export default function CardsPage() {
     setExportStatus('جاري التحضير...');
     
     try {
-      // Load QR codes first
-      setExportStatus('جاري إنشاء رموز QR...');
-      await loadQRCodes(cardsToExport);
-
       const pdf = new jsPDF('landscape', 'mm', 'a4');
       const cardWidth = 85.6;
       const cardHeight = 53.98;
@@ -513,6 +576,7 @@ export default function CardsPage() {
       // Add cover page
       pdf.setFontSize(28);
       pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 0, 0);
       pdf.text('OpaY Gift Cards Collection', pdf.internal.pageSize.width / 2, 40, { align: 'center' });
       
       pdf.setFontSize(14);
@@ -524,7 +588,7 @@ export default function CardsPage() {
         day: 'numeric' 
       })}`, pdf.internal.pageSize.width / 2, 75, { align: 'center' });
 
-      // Process front sides
+      // Process front sides - DIRECT DRAW (super fast)
       setExportStatus('جاري إنشاء الوجه الأمامي...');
       for (let i = 0; i < cardsToExport.length; i++) {
         const card = cardsToExport[i];
@@ -534,6 +598,7 @@ export default function CardsPage() {
           pdf.addPage('landscape');
           pdf.setFontSize(12);
           pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(0, 0, 0);
           pdf.text(`Gift Cards - Front Side (Page ${Math.floor(i / cardsPerPage) + 1})`, margin, 15);
         }
         
@@ -542,40 +607,16 @@ export default function CardsPage() {
         const x = margin + col * (cardWidth + spacing);
         const y = 25 + row * (cardHeight + spacing);
         
-        const tempContainer = document.createElement('div');
-        tempContainer.style.position = 'absolute';
-        tempContainer.style.top = '-9999px';
-        tempContainer.style.left = '-9999px';
-        tempContainer.innerHTML = createFrontCardHTML(card);
-        document.body.appendChild(tempContainer);
-        
-        try {
-          const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
-            width: 340,
-            height: 215,
-            scale: 2,
-            backgroundColor: null,
-            useCORS: true,
-            allowTaint: true,
-            logging: false
-          });
-          
-          const imgData = canvas.toDataURL('image/jpeg', 0.85);
-          pdf.addImage(imgData, 'JPEG', x, y, cardWidth, cardHeight, '', 'FAST');
-        } catch (error) {
-          console.warn('Failed to render card:', error);
-        }
-        
-        document.body.removeChild(tempContainer);
+        drawFrontCard(pdf, card, x, y, cardWidth, cardHeight);
         setExportProgress(Math.round(((i + 1) / totalSteps) * 100));
         
-        // Allow UI to update every 5 cards
-        if (i % 5 === 0) {
-          await new Promise(resolve => setTimeout(resolve, 10));
+        // Allow UI to update every 50 cards (much less frequent since it's fast now)
+        if (i % 50 === 0) {
+          await new Promise(resolve => setTimeout(resolve, 1));
         }
       }
 
-      // Process back sides
+      // Process back sides - DIRECT DRAW (super fast)
       setExportStatus('جاري إنشاء الوجه الخلفي...');
       for (let i = 0; i < cardsToExport.length; i++) {
         const card = cardsToExport[i];
@@ -585,6 +626,7 @@ export default function CardsPage() {
           pdf.addPage('landscape');
           pdf.setFontSize(12);
           pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(0, 0, 0);
           pdf.text(`Gift Cards - Back Side (Page ${Math.floor(i / cardsPerPage) + 1})`, margin, 15);
         }
         
@@ -593,35 +635,11 @@ export default function CardsPage() {
         const x = margin + col * (cardWidth + spacing);
         const y = 25 + row * (cardHeight + spacing);
         
-        const tempContainer = document.createElement('div');
-        tempContainer.style.position = 'absolute';
-        tempContainer.style.top = '-9999px';
-        tempContainer.style.left = '-9999px';
-        tempContainer.innerHTML = createBackCardHTML(card);
-        document.body.appendChild(tempContainer);
-        
-        try {
-          const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
-            width: 340,
-            height: 215,
-            scale: 2,
-            backgroundColor: null,
-            useCORS: true,
-            allowTaint: true,
-            logging: false
-          });
-          
-          const imgData = canvas.toDataURL('image/jpeg', 0.85);
-          pdf.addImage(imgData, 'JPEG', x, y, cardWidth, cardHeight, '', 'FAST');
-        } catch (error) {
-          console.warn('Failed to render card:', error);
-        }
-        
-        document.body.removeChild(tempContainer);
+        await drawBackCard(pdf, card, x, y, cardWidth, cardHeight);
         setExportProgress(Math.round(((cardsToExport.length + i + 1) / totalSteps) * 100));
         
-        if (i % 5 === 0) {
-          await new Promise(resolve => setTimeout(resolve, 10));
+        if (i % 50 === 0) {
+          await new Promise(resolve => setTimeout(resolve, 1));
         }
       }
 
