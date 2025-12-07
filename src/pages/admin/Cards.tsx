@@ -465,11 +465,11 @@ export default function CardsPage() {
     `;
   };
 
-  // Export unused gift cards to PDF - SIMPLE & FAST method
+  // Export unused gift cards to PDF with ultra-professional design
   const exportToPDF = async () => {
     setExportingPDF(true);
     try {
-      let unusedCards = giftCards.filter(card => !card.is_used);
+      const unusedCards = giftCards.filter(card => !card.is_used);
       
       if (unusedCards.length === 0) {
         toast({
@@ -477,155 +477,146 @@ export default function CardsPage() {
           description: "جميع البطاقات مستخدمة أو لا توجد بطاقات",
           variant: "destructive",
         });
-        setExportingPDF(false);
         return;
       }
 
-      // Limit to 50 cards max
-      const maxCards = 50;
-      if (unusedCards.length > maxCards) {
-        toast({
-          title: "تنبيه",
-          description: `سيتم تصدير أول ${maxCards} بطاقة فقط`,
-        });
-        unusedCards = unusedCards.slice(0, maxCards);
-      }
-
-      toast({
-        title: "جاري التصدير...",
-        description: `تصدير ${unusedCards.length} بطاقة`,
-      });
-
-      const pdf = new jsPDF('landscape', 'mm', 'a4');
-      const pageWidth = pdf.internal.pageSize.width;
-      const pageHeight = pdf.internal.pageSize.height;
-      
-      // Card dimensions
-      const cardWidth = 85;
-      const cardHeight = 54;
-      const margin = 15;
-      const spacing = 8;
-      const cardsPerRow = 3;
-      const rowsPerPage = 3;
+      const pdf = new jsPDF('landscape', 'mm', 'a4'); // Landscape for better card layout
+      const cardWidth = 85.6; // Standard credit card width in mm
+      const cardHeight = 53.98; // Standard credit card height in mm
+      const margin = 20;
+      const spacing = 10;
+      const cardsPerRow = 3; // 3 cards per row in landscape
+      const rowsPerPage = 3; // 3 rows per page
       const cardsPerPage = cardsPerRow * rowsPerPage;
 
-      // Cover page
-      pdf.setFillColor(16, 185, 129);
-      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
-      
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(32);
+      // Add cover page
+      pdf.setFontSize(28);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('OpaY Gift Cards', pageWidth / 2, 60, { align: 'center' });
-      
-      pdf.setFontSize(18);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`${unusedCards.length} Cards`, pageWidth / 2, 85, { align: 'center' });
+      pdf.text('OpaY Gift Cards Collection', pdf.internal.pageSize.width / 2, 40, { align: 'center' });
       
       pdf.setFontSize(14);
-      pdf.text(new Date().toLocaleDateString('en-US', { 
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Total Cards: ${unusedCards.length}`, pdf.internal.pageSize.width / 2, 60, { align: 'center' });
+      pdf.text(`Generated: ${new Date().toLocaleDateString('ar-DZ', { 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric' 
-      }), pageWidth / 2, 105, { align: 'center' });
+      })}`, pdf.internal.pageSize.width / 2, 75, { align: 'center' });
+      
+      pdf.setFontSize(10);
+      pdf.text('Each card includes front design with QR code and back with security features', pdf.internal.pageSize.width / 2, 95, { align: 'center' });
 
-      // Generate QR codes
-      const qrDataUrls: Record<string, string> = {};
-      for (const card of unusedCards) {
-        qrDataUrls[card.id] = await QRCode.toDataURL(card.card_code, {
-          width: 200,
-          margin: 1,
-          color: { dark: '#000000', light: '#FFFFFF' }
-        });
-      }
-
-      // Draw cards
       for (let i = 0; i < unusedCards.length; i++) {
         const card = unusedCards[i];
-        const pageIndex = Math.floor(i / cardsPerPage);
-        const cardIndexOnPage = i % cardsPerPage;
+        const cardIndex = i % cardsPerPage;
         
-        // Add new page if needed
-        if (cardIndexOnPage === 0) {
+        // Add new page for every new batch (front sides)
+        if (cardIndex === 0) {
           pdf.addPage('landscape');
+          // Add page header
+          pdf.setFontSize(12);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`Gift Cards - Front Side (Page ${Math.floor(i / cardsPerPage) + 1})`, margin, 15);
         }
         
-        const row = Math.floor(cardIndexOnPage / cardsPerRow);
-        const col = cardIndexOnPage % cardsPerRow;
+        // Calculate position
+        const row = Math.floor(cardIndex / cardsPerRow);
+        const col = cardIndex % cardsPerRow;
         const x = margin + col * (cardWidth + spacing);
-        const y = margin + row * (cardHeight + spacing);
+        const y = 25 + row * (cardHeight + spacing);
         
-        const pricing = calculatePricing(card.amount);
-        const formattedCode = formatCardCode(card.card_code);
+        // Create and render front card
+        const tempContainer = document.createElement('div');
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.top = '-9999px';
+        tempContainer.style.left = '-9999px';
+        tempContainer.innerHTML = createFrontCardHTML(card);
+        document.body.appendChild(tempContainer);
         
-        // Card background
-        pdf.setFillColor(16, 185, 129);
-        pdf.roundedRect(x, y, cardWidth, cardHeight, 4, 4, 'F');
-        
-        // Header bar
-        pdf.setFillColor(5, 150, 105);
-        pdf.rect(x, y, cardWidth, 12, 'F');
-        
-        // OpaY text
-        pdf.setTextColor(255, 255, 255);
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('OpaY', x + 5, y + 8);
-        
-        // Amount
-        pdf.setFontSize(8);
-        pdf.text(`${card.amount} DA`, x + cardWidth - 5, y + 8, { align: 'right' });
-        
-        // Price info bar
-        pdf.setFillColor(30, 30, 30);
-        pdf.rect(x, y + 14, cardWidth, 10, 'F');
-        
-        pdf.setTextColor(255, 255, 255);
-        pdf.setFontSize(9);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(`${pricing.customerPrice} DA`, x + cardWidth / 2, y + 21, { align: 'center' });
-        
-        // QR Code
-        const qrSize = 22;
-        const qrX = x + cardWidth - qrSize - 5;
-        const qrY = y + 26;
-        
-        // White background for QR
-        pdf.setFillColor(255, 255, 255);
-        pdf.roundedRect(qrX - 2, qrY - 2, qrSize + 4, qrSize + 4, 2, 2, 'F');
-        
-        // Add QR code image
         try {
-          pdf.addImage(qrDataUrls[card.id], 'PNG', qrX, qrY, qrSize, qrSize);
-        } catch (e) {
-          console.warn('QR error:', e);
+          const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
+            width: 340,
+            height: 215,
+            scale: 3, // Higher scale for better quality
+            backgroundColor: null,
+            useCORS: true,
+            allowTaint: true,
+            logging: false
+          });
+          
+          const imgData = canvas.toDataURL('image/png', 1.0);
+          pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight, '', 'FAST');
+          
+        } catch (error) {
+          console.warn('Failed to render front card:', error);
         }
         
-        // Card code
-        pdf.setTextColor(255, 255, 255);
-        pdf.setFontSize(8);
-        pdf.setFont('courier', 'bold');
-        pdf.text(formattedCode, x + 5, y + 38);
-        
-        // Footer
-        pdf.setFontSize(6);
-        pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(255, 255, 255);
-        pdf.text('OpaY Algeria', x + cardWidth / 2, y + cardHeight - 3, { align: 'center' });
+        document.body.removeChild(tempContainer);
       }
 
+      // Add back sides
+      for (let i = 0; i < unusedCards.length; i++) {
+        const card = unusedCards[i];
+        const cardIndex = i % cardsPerPage;
+        
+        // Add new page for every new batch (back sides)
+        if (cardIndex === 0) {
+          pdf.addPage('landscape');
+          // Add page header
+          pdf.setFontSize(12);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`Gift Cards - Back Side (Page ${Math.floor(i / cardsPerPage) + 1})`, margin, 15);
+        }
+        
+        // Calculate position
+        const row = Math.floor(cardIndex / cardsPerRow);
+        const col = cardIndex % cardsPerRow;
+        const x = margin + col * (cardWidth + spacing);
+        const y = 25 + row * (cardHeight + spacing);
+        
+        // Create and render back card
+        const tempContainer = document.createElement('div');
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.top = '-9999px';
+        tempContainer.style.left = '-9999px';
+        tempContainer.innerHTML = createBackCardHTML(card);
+        document.body.appendChild(tempContainer);
+        
+        try {
+          const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
+            width: 340,
+            height: 215,
+            scale: 3, // Higher scale for better quality
+            backgroundColor: null,
+            useCORS: true,
+            allowTaint: true,
+            logging: false
+          });
+          
+          const imgData = canvas.toDataURL('image/png', 1.0);
+          pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight, '', 'FAST');
+          
+        } catch (error) {
+          console.warn('Failed to render back card:', error);
+        }
+        
+        document.body.removeChild(tempContainer);
+      }
+
+      // Save with professional filename
       const timestamp = new Date().toISOString().split('T')[0];
-      pdf.save(`OpaY_Cards_${timestamp}.pdf`);
+      const fileName = `OpaY_Gift_Cards_Professional_${timestamp}.pdf`;
+      pdf.save(fileName);
       
       toast({
         title: "تم التصدير بنجاح",
-        description: `تم تصدير ${unusedCards.length} بطاقة`,
+        description: `تم تصدير ${unusedCards.length} بطاقة احترافية مع الوجه الأمامي والخلفي`,
       });
     } catch (error) {
       console.error('Error exporting to PDF:', error);
       toast({
         title: "خطأ في التصدير",
-        description: "فشل في تصدير البطاقات",
+        description: "فشل في تصدير البطاقات إلى PDF",
         variant: "destructive",
       });
     } finally {
