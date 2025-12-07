@@ -467,35 +467,38 @@ export default function CardsPage() {
 
   // Export state for progress
   const [exportProgress, setExportProgress] = useState(0);
+  const [exportStatus, setExportStatus] = useState('');
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportCardsCount, setExportCardsCount] = useState(100);
 
   // Export unused gift cards to PDF - OPTIMIZED with batching
   const exportToPDF = async () => {
+    const unusedCards = giftCards.filter(card => !card.is_used);
+    
+    if (unusedCards.length === 0) {
+      toast({
+        title: "لا توجد بطاقات للتصدير",
+        description: "جميع البطاقات مستخدمة أو لا توجد بطاقات",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setShowExportDialog(true);
+  };
+
+  const startExport = async () => {
+    const unusedCards = giftCards.filter(card => !card.is_used);
+    const cardsToExport = unusedCards.slice(0, exportCardsCount);
+    
     setExportingPDF(true);
     setExportProgress(0);
+    setExportStatus('جاري التحضير...');
     
     try {
-      const unusedCards = giftCards.filter(card => !card.is_used);
-      
-      if (unusedCards.length === 0) {
-        toast({
-          title: "لا توجد بطاقات للتصدير",
-          description: "جميع البطاقات مستخدمة أو لا توجد بطاقات",
-          variant: "destructive",
-        });
-        setExportingPDF(false);
-        return;
-      }
-
-      // Limit export to 100 cards at a time to prevent browser freeze
-      const maxCardsToExport = 100;
-      const cardsToExport = unusedCards.slice(0, maxCardsToExport);
-      
-      if (unusedCards.length > maxCardsToExport) {
-        toast({
-          title: "تنبيه",
-          description: `سيتم تصدير أول ${maxCardsToExport} بطاقة فقط لتجنب تجميد المتصفح`,
-        });
-      }
+      // Load QR codes first
+      setExportStatus('جاري إنشاء رموز QR...');
+      await loadQRCodes(cardsToExport);
 
       const pdf = new jsPDF('landscape', 'mm', 'a4');
       const cardWidth = 85.6;
@@ -505,7 +508,7 @@ export default function CardsPage() {
       const cardsPerRow = 3;
       const rowsPerPage = 3;
       const cardsPerPage = cardsPerRow * rowsPerPage;
-      const totalSteps = cardsToExport.length * 2; // Front + Back
+      const totalSteps = cardsToExport.length * 2;
 
       // Add cover page
       pdf.setFontSize(28);
@@ -521,72 +524,109 @@ export default function CardsPage() {
         day: 'numeric' 
       })}`, pdf.internal.pageSize.width / 2, 75, { align: 'center' });
 
-      // Process cards in batches with setTimeout to keep UI responsive
-      const processBatch = async (startIndex: number, isFront: boolean): Promise<void> => {
-        const batchSize = 5; // Process 5 cards at a time
-        const endIndex = Math.min(startIndex + batchSize, cardsToExport.length);
-        
-        for (let i = startIndex; i < endIndex; i++) {
-          const card = cardsToExport[i];
-          const cardIndex = i % cardsPerPage;
-          
-          if (cardIndex === 0) {
-            pdf.addPage('landscape');
-            pdf.setFontSize(12);
-            pdf.setFont('helvetica', 'bold');
-            pdf.text(`Gift Cards - ${isFront ? 'Front' : 'Back'} Side (Page ${Math.floor(i / cardsPerPage) + 1})`, margin, 15);
-          }
-          
-          const row = Math.floor(cardIndex / cardsPerRow);
-          const col = cardIndex % cardsPerRow;
-          const x = margin + col * (cardWidth + spacing);
-          const y = 25 + row * (cardHeight + spacing);
-          
-          const tempContainer = document.createElement('div');
-          tempContainer.style.position = 'absolute';
-          tempContainer.style.top = '-9999px';
-          tempContainer.style.left = '-9999px';
-          tempContainer.innerHTML = isFront ? createFrontCardHTML(card) : createBackCardHTML(card);
-          document.body.appendChild(tempContainer);
-          
-          try {
-            const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
-              width: 340,
-              height: 215,
-              scale: 2, // Reduced scale for faster processing
-              backgroundColor: null,
-              useCORS: true,
-              allowTaint: true,
-              logging: false
-            });
-            
-            const imgData = canvas.toDataURL('image/jpeg', 0.85); // Use JPEG for smaller size
-            pdf.addImage(imgData, 'JPEG', x, y, cardWidth, cardHeight, '', 'FAST');
-          } catch (error) {
-            console.warn('Failed to render card:', error);
-          }
-          
-          document.body.removeChild(tempContainer);
-          
-          // Update progress
-          const completedSteps = isFront ? i + 1 : cardsToExport.length + i + 1;
-          setExportProgress(Math.round((completedSteps / totalSteps) * 100));
-        }
-        
-        // Continue with next batch if there are more cards
-        if (endIndex < cardsToExport.length) {
-          await new Promise(resolve => setTimeout(resolve, 10)); // Small delay to keep UI responsive
-          await processBatch(endIndex, isFront);
-        }
-      };
-
       // Process front sides
-      await processBatch(0, true);
-      
+      setExportStatus('جاري إنشاء الوجه الأمامي...');
+      for (let i = 0; i < cardsToExport.length; i++) {
+        const card = cardsToExport[i];
+        const cardIndex = i % cardsPerPage;
+        
+        if (cardIndex === 0) {
+          pdf.addPage('landscape');
+          pdf.setFontSize(12);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`Gift Cards - Front Side (Page ${Math.floor(i / cardsPerPage) + 1})`, margin, 15);
+        }
+        
+        const row = Math.floor(cardIndex / cardsPerRow);
+        const col = cardIndex % cardsPerRow;
+        const x = margin + col * (cardWidth + spacing);
+        const y = 25 + row * (cardHeight + spacing);
+        
+        const tempContainer = document.createElement('div');
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.top = '-9999px';
+        tempContainer.style.left = '-9999px';
+        tempContainer.innerHTML = createFrontCardHTML(card);
+        document.body.appendChild(tempContainer);
+        
+        try {
+          const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
+            width: 340,
+            height: 215,
+            scale: 2,
+            backgroundColor: null,
+            useCORS: true,
+            allowTaint: true,
+            logging: false
+          });
+          
+          const imgData = canvas.toDataURL('image/jpeg', 0.85);
+          pdf.addImage(imgData, 'JPEG', x, y, cardWidth, cardHeight, '', 'FAST');
+        } catch (error) {
+          console.warn('Failed to render card:', error);
+        }
+        
+        document.body.removeChild(tempContainer);
+        setExportProgress(Math.round(((i + 1) / totalSteps) * 100));
+        
+        // Allow UI to update every 5 cards
+        if (i % 5 === 0) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+      }
+
       // Process back sides
-      await processBatch(0, false);
+      setExportStatus('جاري إنشاء الوجه الخلفي...');
+      for (let i = 0; i < cardsToExport.length; i++) {
+        const card = cardsToExport[i];
+        const cardIndex = i % cardsPerPage;
+        
+        if (cardIndex === 0) {
+          pdf.addPage('landscape');
+          pdf.setFontSize(12);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`Gift Cards - Back Side (Page ${Math.floor(i / cardsPerPage) + 1})`, margin, 15);
+        }
+        
+        const row = Math.floor(cardIndex / cardsPerRow);
+        const col = cardIndex % cardsPerRow;
+        const x = margin + col * (cardWidth + spacing);
+        const y = 25 + row * (cardHeight + spacing);
+        
+        const tempContainer = document.createElement('div');
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.top = '-9999px';
+        tempContainer.style.left = '-9999px';
+        tempContainer.innerHTML = createBackCardHTML(card);
+        document.body.appendChild(tempContainer);
+        
+        try {
+          const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
+            width: 340,
+            height: 215,
+            scale: 2,
+            backgroundColor: null,
+            useCORS: true,
+            allowTaint: true,
+            logging: false
+          });
+          
+          const imgData = canvas.toDataURL('image/jpeg', 0.85);
+          pdf.addImage(imgData, 'JPEG', x, y, cardWidth, cardHeight, '', 'FAST');
+        } catch (error) {
+          console.warn('Failed to render card:', error);
+        }
+        
+        document.body.removeChild(tempContainer);
+        setExportProgress(Math.round(((cardsToExport.length + i + 1) / totalSteps) * 100));
+        
+        if (i % 5 === 0) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+      }
 
       // Save PDF
+      setExportStatus('جاري حفظ الملف...');
       const timestamp = new Date().toISOString().split('T')[0];
       pdf.save(`OpaY_Gift_Cards_${timestamp}.pdf`);
       
@@ -594,6 +634,8 @@ export default function CardsPage() {
         title: "تم التصدير بنجاح",
         description: `تم تصدير ${cardsToExport.length} بطاقة`,
       });
+      
+      setShowExportDialog(false);
     } catch (error) {
       console.error('Error exporting to PDF:', error);
       toast({
@@ -604,6 +646,7 @@ export default function CardsPage() {
     } finally {
       setExportingPDF(false);
       setExportProgress(0);
+      setExportStatus('');
     }
   };
 
@@ -818,24 +861,14 @@ export default function CardsPage() {
             <Download className="w-4 h-4 mr-2" />
             تصدير CSV
           </Button>
-          <div className="flex items-center gap-2">
-            <Button 
-              onClick={exportToPDF} 
-              variant="outline"
-              disabled={exportingPDF || giftCards.filter(c => !c.is_used).length === 0}
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              {exportingPDF ? `${exportProgress}%` : 'تصدير PDF'}
-            </Button>
-            {exportingPDF && (
-              <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-primary transition-all duration-300" 
-                  style={{ width: `${exportProgress}%` }}
-                />
-              </div>
-            )}
-          </div>
+          <Button 
+            onClick={exportToPDF} 
+            variant="outline"
+            disabled={giftCards.filter(c => !c.is_used).length === 0}
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            تصدير PDF ({giftCards.filter(c => !c.is_used).length})
+          </Button>
           <Dialog open={showGenerateDialog} onOpenChange={setShowGenerateDialog}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-primary">
@@ -1188,6 +1221,89 @@ export default function CardsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Export PDF Dialog */}
+      <Dialog open={showExportDialog} onOpenChange={(open) => !exportingPDF && setShowExportDialog(open)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-right">تصدير البطاقات إلى PDF</DialogTitle>
+            <DialogDescription className="text-right">
+              {!exportingPDF 
+                ? 'اختر عدد البطاقات التي تريد تصديرها'
+                : 'جاري التصدير، يرجى الانتظار...'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          {!exportingPDF ? (
+            <div className="space-y-4">
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-right">
+                <div className="flex justify-between">
+                  <span className="font-bold text-primary">{giftCards.filter(c => !c.is_used).length}</span>
+                  <span className="text-muted-foreground">البطاقات المتاحة</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-bold">{giftCards.filter(c => c.is_used).length}</span>
+                  <span className="text-muted-foreground">البطاقات المستخدمة</span>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="exportCount" className="text-right block">عدد البطاقات للتصدير</Label>
+                <Input
+                  id="exportCount"
+                  type="number"
+                  value={exportCardsCount}
+                  onChange={(e) => setExportCardsCount(Math.min(Number(e.target.value), giftCards.filter(c => !c.is_used).length))}
+                  min="1"
+                  max={giftCards.filter(c => !c.is_used).length}
+                  className="text-center"
+                />
+                <p className="text-xs text-muted-foreground text-right">
+                  الحد الأقصى الموصى به: 100 بطاقة لتجنب بطء المتصفح
+                </p>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-right">
+                <p className="text-sm text-amber-800">
+                  ⚠️ تصدير عدد كبير من البطاقات قد يستغرق وقتاً طويلاً
+                </p>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setShowExportDialog(false)}>
+                  إلغاء
+                </Button>
+                <Button onClick={startExport} className="bg-gradient-primary">
+                  <FileText className="w-4 h-4 mr-2" />
+                  بدء التصدير
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="text-center py-4">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                  <FileText className="w-8 h-8 text-primary animate-pulse" />
+                </div>
+                <p className="text-lg font-semibold text-foreground">{exportStatus}</p>
+                <p className="text-3xl font-bold text-primary mt-2">{exportProgress}%</p>
+              </div>
+              
+              <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-300 ease-out" 
+                  style={{ width: `${exportProgress}%` }}
+                />
+              </div>
+              
+              <p className="text-xs text-muted-foreground text-center">
+                لا تغلق هذه النافذة حتى اكتمال التصدير
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
