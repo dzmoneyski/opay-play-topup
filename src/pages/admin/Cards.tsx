@@ -465,7 +465,7 @@ export default function CardsPage() {
     `;
   };
 
-  // Export unused gift cards to PDF - OPTIMIZED for speed
+  // Export unused gift cards to PDF - SIMPLE & FAST method
   const exportToPDF = async () => {
     setExportingPDF(true);
     try {
@@ -477,219 +477,145 @@ export default function CardsPage() {
           description: "جميع البطاقات مستخدمة أو لا توجد بطاقات",
           variant: "destructive",
         });
+        setExportingPDF(false);
         return;
       }
 
-      // Limit to 50 cards max for performance
+      // Limit to 50 cards max
       const maxCards = 50;
       if (unusedCards.length > maxCards) {
         toast({
           title: "تنبيه",
-          description: `سيتم تصدير أول ${maxCards} بطاقة فقط للأداء الأفضل`,
+          description: `سيتم تصدير أول ${maxCards} بطاقة فقط`,
         });
         unusedCards = unusedCards.slice(0, maxCards);
       }
 
-      // Pre-generate all QR codes FIRST (faster than on-demand)
-      const cardQRCodes: Record<string, string> = {};
+      toast({
+        title: "جاري التصدير...",
+        description: `تصدير ${unusedCards.length} بطاقة`,
+      });
+
+      const pdf = new jsPDF('landscape', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.width;
+      const pageHeight = pdf.internal.pageSize.height;
+      
+      // Card dimensions
+      const cardWidth = 85;
+      const cardHeight = 54;
+      const margin = 15;
+      const spacing = 8;
+      const cardsPerRow = 3;
+      const rowsPerPage = 3;
+      const cardsPerPage = cardsPerRow * rowsPerPage;
+
+      // Cover page
+      pdf.setFillColor(16, 185, 129);
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+      
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(32);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('OpaY Gift Cards', pageWidth / 2, 60, { align: 'center' });
+      
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`${unusedCards.length} Cards`, pageWidth / 2, 85, { align: 'center' });
+      
+      pdf.setFontSize(14);
+      pdf.text(new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      }), pageWidth / 2, 105, { align: 'center' });
+
+      // Generate QR codes
+      const qrDataUrls: Record<string, string> = {};
       for (const card of unusedCards) {
-        cardQRCodes[card.id] = await QRCode.toDataURL(card.card_code, {
-          width: 150,
+        qrDataUrls[card.id] = await QRCode.toDataURL(card.card_code, {
+          width: 200,
           margin: 1,
           color: { dark: '#000000', light: '#FFFFFF' }
         });
       }
 
-      const pdf = new jsPDF('landscape', 'mm', 'a4');
-      const cardWidth = 85.6;
-      const cardHeight = 53.98;
-      const margin = 20;
-      const spacing = 10;
-      const cardsPerRow = 3;
-      const batchSize = 9;
-
-      // Add cover page
-      pdf.setFontSize(28);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('OpaY Gift Cards Collection', pdf.internal.pageSize.width / 2, 40, { align: 'center' });
-      
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Total Cards: ${unusedCards.length}`, pdf.internal.pageSize.width / 2, 60, { align: 'center' });
-      pdf.text(`Generated: ${new Date().toLocaleDateString('ar-DZ', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      })}`, pdf.internal.pageSize.width / 2, 75, { align: 'center' });
-
-      // Helper to create back card with inline QR
-      const createBackCardWithQR = (card: GiftCard, qrDataUrl: string) => {
+      // Draw cards
+      for (let i = 0; i < unusedCards.length; i++) {
+        const card = unusedCards[i];
+        const pageIndex = Math.floor(i / cardsPerPage);
+        const cardIndexOnPage = i % cardsPerPage;
+        
+        // Add new page if needed
+        if (cardIndexOnPage === 0) {
+          pdf.addPage('landscape');
+        }
+        
+        const row = Math.floor(cardIndexOnPage / cardsPerRow);
+        const col = cardIndexOnPage % cardsPerRow;
+        const x = margin + col * (cardWidth + spacing);
+        const y = margin + row * (cardHeight + spacing);
+        
         const pricing = calculatePricing(card.amount);
-        const formattedCardCode = formatCardCode(card.card_code);
+        const formattedCode = formatCardCode(card.card_code);
         
-        return `
-          <div style="
-            width: 340px;
-            height: 215px;
-            background: linear-gradient(135deg, #1F2937 0%, #374151 50%, #4B5563 100%);
-            border-radius: 16px;
-            position: relative;
-            color: white;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            overflow: hidden;
-          ">
-            <div style="
-              position: absolute;
-              top: 40px;
-              left: 0;
-              right: 0;
-              height: 40px;
-              background: linear-gradient(90deg, #000000 0%, #1a1a1a 100%);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            ">
-              <div style="
-                color: #ffffff;
-                font-size: 18px;
-                font-weight: 800;
-                text-align: center;
-                direction: rtl;
-              ">بيع: ${pricing.customerPrice} دج</div>
-            </div>
-            
-            <div style="
-              position: absolute;
-              right: 24px;
-              top: 90px;
-              width: 100px;
-              height: 100px;
-              background: white;
-              border-radius: 12px;
-              padding: 8px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            ">
-              <img src="${qrDataUrl}" style="width: 84px; height: 84px; border-radius: 4px;" />
-            </div>
-            
-            <div style="
-              position: absolute;
-              bottom: 60px;
-              left: 24px;
-              right: 140px;
-            ">
-              <p style="
-                margin: 0;
-                font-size: 16px;
-                font-family: 'Courier New', monospace;
-                letter-spacing: 2px;
-                font-weight: 600;
-                background: rgba(255,255,255,0.1);
-                padding: 12px;
-                border-radius: 8px;
-                text-align: center;
-              ">${formattedCardCode}</p>
-            </div>
-            
-            <div style="
-              position: absolute;
-              bottom: 20px;
-              left: 24px;
-              right: 24px;
-              text-align: center;
-              font-size: 10px;
-              opacity: 0.7;
-            ">
-              <span>OpaY Algeria</span>
-            </div>
-          </div>
-        `;
-      };
-
-      // Render front sides
-      for (let batch = 0; batch < Math.ceil(unusedCards.length / batchSize); batch++) {
-        pdf.addPage('landscape');
-        pdf.setFontSize(12);
+        // Card background
+        pdf.setFillColor(16, 185, 129);
+        pdf.roundedRect(x, y, cardWidth, cardHeight, 4, 4, 'F');
+        
+        // Header bar
+        pdf.setFillColor(5, 150, 105);
+        pdf.rect(x, y, cardWidth, 12, 'F');
+        
+        // OpaY text
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(10);
         pdf.setFont('helvetica', 'bold');
-        pdf.text(`Gift Cards - Front Side (Page ${batch + 1})`, margin, 15);
+        pdf.text('OpaY', x + 5, y + 8);
         
-        const startIdx = batch * batchSize;
-        const endIdx = Math.min(startIdx + batchSize, unusedCards.length);
+        // Amount
+        pdf.setFontSize(8);
+        pdf.text(`${card.amount} DA`, x + cardWidth - 5, y + 8, { align: 'right' });
         
-        for (let i = startIdx; i < endIdx; i++) {
-          const card = unusedCards[i];
-          const cardIndex = i % batchSize;
-          const row = Math.floor(cardIndex / cardsPerRow);
-          const col = cardIndex % cardsPerRow;
-          const x = margin + col * (cardWidth + spacing);
-          const y = 25 + row * (cardHeight + spacing);
-          
-          const tempContainer = document.createElement('div');
-          tempContainer.style.cssText = 'position:absolute;top:-9999px;left:-9999px;';
-          tempContainer.innerHTML = createFrontCardHTML(card);
-          document.body.appendChild(tempContainer);
-          
-          try {
-            const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
-              width: 340,
-              height: 215,
-              scale: 1.5,
-              backgroundColor: null,
-              logging: false
-            });
-            pdf.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', x, y, cardWidth, cardHeight, '', 'FAST');
-          } catch (error) {
-            console.warn('Failed to render front card:', error);
-          }
-          
-          document.body.removeChild(tempContainer);
-        }
-      }
-
-      // Render back sides
-      for (let batch = 0; batch < Math.ceil(unusedCards.length / batchSize); batch++) {
-        pdf.addPage('landscape');
-        pdf.setFontSize(12);
+        // Price info bar
+        pdf.setFillColor(30, 30, 30);
+        pdf.rect(x, y + 14, cardWidth, 10, 'F');
+        
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(9);
         pdf.setFont('helvetica', 'bold');
-        pdf.text(`Gift Cards - Back Side (Page ${batch + 1})`, margin, 15);
+        pdf.text(`${pricing.customerPrice} DA`, x + cardWidth / 2, y + 21, { align: 'center' });
         
-        const startIdx = batch * batchSize;
-        const endIdx = Math.min(startIdx + batchSize, unusedCards.length);
+        // QR Code
+        const qrSize = 22;
+        const qrX = x + cardWidth - qrSize - 5;
+        const qrY = y + 26;
         
-        for (let i = startIdx; i < endIdx; i++) {
-          const card = unusedCards[i];
-          const cardIndex = i % batchSize;
-          const row = Math.floor(cardIndex / cardsPerRow);
-          const col = cardIndex % cardsPerRow;
-          const x = margin + col * (cardWidth + spacing);
-          const y = 25 + row * (cardHeight + spacing);
-          
-          const tempContainer = document.createElement('div');
-          tempContainer.style.cssText = 'position:absolute;top:-9999px;left:-9999px;';
-          tempContainer.innerHTML = createBackCardWithQR(card, cardQRCodes[card.id]);
-          document.body.appendChild(tempContainer);
-          
-          try {
-            const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
-              width: 340,
-              height: 215,
-              scale: 1.5,
-              backgroundColor: null,
-              logging: false
-            });
-            pdf.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', x, y, cardWidth, cardHeight, '', 'FAST');
-          } catch (error) {
-            console.warn('Failed to render back card:', error);
-          }
-          
-          document.body.removeChild(tempContainer);
+        // White background for QR
+        pdf.setFillColor(255, 255, 255);
+        pdf.roundedRect(qrX - 2, qrY - 2, qrSize + 4, qrSize + 4, 2, 2, 'F');
+        
+        // Add QR code image
+        try {
+          pdf.addImage(qrDataUrls[card.id], 'PNG', qrX, qrY, qrSize, qrSize);
+        } catch (e) {
+          console.warn('QR error:', e);
         }
+        
+        // Card code
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(8);
+        pdf.setFont('courier', 'bold');
+        pdf.text(formattedCode, x + 5, y + 38);
+        
+        // Footer
+        pdf.setFontSize(6);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(255, 255, 255);
+        pdf.text('OpaY Algeria', x + cardWidth / 2, y + cardHeight - 3, { align: 'center' });
       }
 
       const timestamp = new Date().toISOString().split('T')[0];
-      pdf.save(`OpaY_Gift_Cards_${timestamp}.pdf`);
+      pdf.save(`OpaY_Cards_${timestamp}.pdf`);
       
       toast({
         title: "تم التصدير بنجاح",
@@ -699,7 +625,7 @@ export default function CardsPage() {
       console.error('Error exporting to PDF:', error);
       toast({
         title: "خطأ في التصدير",
-        description: "فشل في تصدير البطاقات إلى PDF",
+        description: "فشل في تصدير البطاقات",
         variant: "destructive",
       });
     } finally {
