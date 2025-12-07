@@ -490,14 +490,23 @@ export default function CardsPage() {
         unusedCards = unusedCards.slice(0, maxCards);
       }
 
+      // Pre-generate all QR codes FIRST (faster than on-demand)
+      const cardQRCodes: Record<string, string> = {};
+      for (const card of unusedCards) {
+        cardQRCodes[card.id] = await QRCode.toDataURL(card.card_code, {
+          width: 150,
+          margin: 1,
+          color: { dark: '#000000', light: '#FFFFFF' }
+        });
+      }
+
       const pdf = new jsPDF('landscape', 'mm', 'a4');
       const cardWidth = 85.6;
       const cardHeight = 53.98;
       const margin = 20;
       const spacing = 10;
       const cardsPerRow = 3;
-      const rowsPerPage = 3;
-      const cardsPerPage = cardsPerRow * rowsPerPage;
+      const batchSize = 9;
 
       // Add cover page
       pdf.setFontSize(28);
@@ -513,9 +522,92 @@ export default function CardsPage() {
         day: 'numeric' 
       })}`, pdf.internal.pageSize.width / 2, 75, { align: 'center' });
 
-      // Process cards in batches for better performance
-      const batchSize = 9; // One page at a time
-      
+      // Helper to create back card with inline QR
+      const createBackCardWithQR = (card: GiftCard, qrDataUrl: string) => {
+        const pricing = calculatePricing(card.amount);
+        const formattedCardCode = formatCardCode(card.card_code);
+        
+        return `
+          <div style="
+            width: 340px;
+            height: 215px;
+            background: linear-gradient(135deg, #1F2937 0%, #374151 50%, #4B5563 100%);
+            border-radius: 16px;
+            position: relative;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+          ">
+            <div style="
+              position: absolute;
+              top: 40px;
+              left: 0;
+              right: 0;
+              height: 40px;
+              background: linear-gradient(90deg, #000000 0%, #1a1a1a 100%);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <div style="
+                color: #ffffff;
+                font-size: 18px;
+                font-weight: 800;
+                text-align: center;
+                direction: rtl;
+              ">بيع: ${pricing.customerPrice} دج</div>
+            </div>
+            
+            <div style="
+              position: absolute;
+              right: 24px;
+              top: 90px;
+              width: 100px;
+              height: 100px;
+              background: white;
+              border-radius: 12px;
+              padding: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <img src="${qrDataUrl}" style="width: 84px; height: 84px; border-radius: 4px;" />
+            </div>
+            
+            <div style="
+              position: absolute;
+              bottom: 60px;
+              left: 24px;
+              right: 140px;
+            ">
+              <p style="
+                margin: 0;
+                font-size: 16px;
+                font-family: 'Courier New', monospace;
+                letter-spacing: 2px;
+                font-weight: 600;
+                background: rgba(255,255,255,0.1);
+                padding: 12px;
+                border-radius: 8px;
+                text-align: center;
+              ">${formattedCardCode}</p>
+            </div>
+            
+            <div style="
+              position: absolute;
+              bottom: 20px;
+              left: 24px;
+              right: 24px;
+              text-align: center;
+              font-size: 10px;
+              opacity: 0.7;
+            ">
+              <span>OpaY Algeria</span>
+            </div>
+          </div>
+        `;
+      };
+
       // Render front sides
       for (let batch = 0; batch < Math.ceil(unusedCards.length / batchSize); batch++) {
         pdf.addPage('landscape');
@@ -543,7 +635,7 @@ export default function CardsPage() {
             const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
               width: 340,
               height: 215,
-              scale: 1.5, // Reduced scale for faster rendering
+              scale: 1.5,
               backgroundColor: null,
               logging: false
             });
@@ -576,7 +668,7 @@ export default function CardsPage() {
           
           const tempContainer = document.createElement('div');
           tempContainer.style.cssText = 'position:absolute;top:-9999px;left:-9999px;';
-          tempContainer.innerHTML = createBackCardHTML(card);
+          tempContainer.innerHTML = createBackCardWithQR(card, cardQRCodes[card.id]);
           document.body.appendChild(tempContainer);
           
           try {
