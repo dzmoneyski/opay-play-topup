@@ -691,11 +691,15 @@ export default function CardsPage() {
       const pdf = new jsPDF('landscape', 'mm', 'a4');
       const cardWidth = 85.6;
       const cardHeight = 53.98;
-      const margin = 20;
-      const spacing = 10;
+      const pageWidth = pdf.internal.pageSize.width;
+      const spacing = 8;
       const cardsPerRow = 3;
       const rowsPerPage = 3;
       const cardsPerPage = cardsPerRow * rowsPerPage;
+      
+      // حساب المسافة الجانبية لتوسيط البطاقات في الصفحة
+      const totalCardsWidth = cardsPerRow * cardWidth + (cardsPerRow - 1) * spacing;
+      const horizontalMargin = (pageWidth - totalCardsWidth) / 2;
 
       // === PAGE 1: SINGLE FRONT CARD IMAGE ===
       setExportStatus('جاري تحضير الواجهة الأمامية...');
@@ -741,7 +745,7 @@ export default function CardsPage() {
         
         const row = Math.floor(cardIndex / cardsPerRow);
         const col = cardIndex % cardsPerRow;
-        const x = margin + col * (cardWidth + spacing);
+        const x = horizontalMargin + col * (cardWidth + spacing);
         const y = 25 + row * (cardHeight + spacing);
         
         drawBackCard(pdf, card, x, y, cardWidth, cardHeight, allQRCodes[card.id]);
