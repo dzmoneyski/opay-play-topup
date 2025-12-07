@@ -586,12 +586,13 @@ export default function CardsPage() {
       width: 340,
       height: 215,
       scale: 2,
-      backgroundColor: null,
+      backgroundColor: 'transparent',
       useCORS: true,
-      logging: false
+      logging: false,
+      removeContainer: false
     });
     
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const imgData = canvas.toDataURL('image/png');
     frontCardImageCache.current[amount] = imgData;
     document.body.removeChild(tempContainer);
     return imgData;
@@ -657,12 +658,27 @@ export default function CardsPage() {
   };
 
   const startExport = async () => {
-    // Filter by selected amount if not 'all'
-    let unusedCards = giftCards.filter(card => !card.is_used);
-    if (selectedExportAmount !== 'all') {
-      unusedCards = unusedCards.filter(card => card.amount === selectedExportAmount);
+    // Must select a specific amount (not 'all')
+    if (selectedExportAmount === 'all') {
+      toast({
+        title: "اختر قيمة محددة",
+        description: "يجب اختيار قيمة بطاقة محددة للتصدير",
+        variant: "destructive",
+      });
+      return;
     }
+
+    const unusedCards = giftCards.filter(card => !card.is_used && card.amount === selectedExportAmount);
     const cardsToExport = unusedCards.slice(0, exportCardsCount);
+    
+    if (cardsToExport.length === 0) {
+      toast({
+        title: "لا توجد بطاقات",
+        description: "لا توجد بطاقات غير مستخدمة بهذه القيمة",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setExportingPDF(true);
     setExportProgress(0);
@@ -680,33 +696,35 @@ export default function CardsPage() {
       const cardsPerRow = 3;
       const rowsPerPage = 3;
       const cardsPerPage = cardsPerRow * rowsPerPage;
-      const totalSteps = cardsToExport.length * 2;
 
-      // Add cover page
-      pdf.setFontSize(28);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(0, 0, 0);
-      pdf.text('OpaY Gift Cards Collection', pdf.internal.pageSize.width / 2, 40, { align: 'center' });
+      // === PAGE 1: SINGLE FRONT CARD IMAGE ===
+      setExportStatus('جاري تحضير الواجهة الأمامية...');
+      setExportProgress(10);
       
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Total Cards: ${cardsToExport.length}`, pdf.internal.pageSize.width / 2, 60, { align: 'center' });
-      pdf.text(`Generated: ${new Date().toLocaleDateString('ar-DZ', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      })}`, pdf.internal.pageSize.width / 2, 75, { align: 'center' });
+      // Render front card once
+      const frontImage = await getFrontCardImage(selectedExportAmount);
+      
+      // Title
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(79, 70, 229);
+      pdf.text(`الواجهة الأمامية - ${selectedExportAmount} دج`, pdf.internal.pageSize.width / 2, 20, { align: 'center' });
+      
+      pdf.setFontSize(12);
+      pdf.setTextColor(107, 114, 128);
+      pdf.text(`اطبع هذه الصفحة ${cardsToExport.length} مرة للوجه الأمامي`, pdf.internal.pageSize.width / 2, 30, { align: 'center' });
+      
+      // Center the single front card
+      const centerX = (pdf.internal.pageSize.width - cardWidth) / 2;
+      const centerY = 50;
+      
+      pdf.addImage(frontImage, 'PNG', centerX, centerY, cardWidth, cardHeight);
+      
+      setExportProgress(30);
 
-      // Pre-render front card images per unique amount (CACHED)
-      setExportStatus('جاري تحضير التصميم...');
-      const uniqueAmountsToExport = [...new Set(cardsToExport.map(c => c.amount))];
-      const frontImages: Record<number, string> = {};
-      for (const amount of uniqueAmountsToExport) {
-        frontImages[amount] = await getFrontCardImage(amount);
-      }
-
-      // Process front sides - use cached images (INSTANT)
-      setExportStatus('جاري إنشاء الوجه الأمامي...');
+      // === PAGES 2+: BACK CARDS (each unique with QR code) ===
+      setExportStatus('جاري إنشاء الخلفيات...');
+      
       for (let i = 0; i < cardsToExport.length; i++) {
         const card = cardsToExport[i];
         const cardIndex = i % cardsPerPage;
@@ -715,32 +733,10 @@ export default function CardsPage() {
           pdf.addPage('landscape');
           pdf.setFontSize(12);
           pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(0, 0, 0);
-          pdf.text(`Gift Cards - Front Side (Page ${Math.floor(i / cardsPerPage) + 1})`, margin, 15);
-        }
-        
-        const row = Math.floor(cardIndex / cardsPerRow);
-        const col = cardIndex % cardsPerRow;
-        const x = margin + col * (cardWidth + spacing);
-        const y = 25 + row * (cardHeight + spacing);
-        
-        // Use cached front image (same for all cards with same amount)
-        pdf.addImage(frontImages[card.amount], 'JPEG', x, y, cardWidth, cardHeight, '', 'FAST');
-        setExportProgress(Math.round(((i + 1) / totalSteps) * 100));
-      }
-
-      // Process back sides - DIRECT DRAW (INSTANT)
-      setExportStatus('جاري إنشاء الوجه الخلفي...');
-      for (let i = 0; i < cardsToExport.length; i++) {
-        const card = cardsToExport[i];
-        const cardIndex = i % cardsPerPage;
-        
-        if (cardIndex === 0) {
-          pdf.addPage('landscape');
-          pdf.setFontSize(12);
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(0, 0, 0);
-          pdf.text(`Gift Cards - Back Side (Page ${Math.floor(i / cardsPerPage) + 1})`, margin, 15);
+          pdf.setTextColor(55, 65, 81);
+          const pageNum = Math.floor(i / cardsPerPage) + 1;
+          const totalPages = Math.ceil(cardsToExport.length / cardsPerPage);
+          pdf.text(`الخلفيات - صفحة ${pageNum} من ${totalPages}`, pdf.internal.pageSize.width / 2, 15, { align: 'center' });
         }
         
         const row = Math.floor(cardIndex / cardsPerRow);
@@ -749,17 +745,17 @@ export default function CardsPage() {
         const y = 25 + row * (cardHeight + spacing);
         
         drawBackCard(pdf, card, x, y, cardWidth, cardHeight, allQRCodes[card.id]);
-        setExportProgress(Math.round(((cardsToExport.length + i + 1) / totalSteps) * 100));
+        setExportProgress(30 + Math.round(((i + 1) / cardsToExport.length) * 70));
       }
 
       // Save PDF
       setExportStatus('جاري حفظ الملف...');
       const timestamp = new Date().toISOString().split('T')[0];
-      pdf.save(`OpaY_Gift_Cards_${timestamp}.pdf`);
+      pdf.save(`OpaY_Cards_${selectedExportAmount}DA_${cardsToExport.length}_${timestamp}.pdf`);
       
       toast({
         title: "تم التصدير بنجاح",
-        description: `تم تصدير ${cardsToExport.length} بطاقة`,
+        description: `صفحة واجهة واحدة + ${Math.ceil(cardsToExport.length / cardsPerPage)} صفحات خلفيات`,
       });
       
       setShowExportDialog(false);
@@ -1364,75 +1360,70 @@ export default function CardsPage() {
           
           {!exportingPDF ? (
             <div className="space-y-4">
-              {/* Amount Filter - NEW */}
+              {/* Amount Selection - REQUIRED */}
               <div className="space-y-2">
-                <Label className="text-right block font-semibold">اختر قيمة البطاقات</Label>
+                <Label className="text-right block font-semibold">اختر قيمة البطاقات *</Label>
                 <select
                   value={selectedExportAmount}
                   onChange={(e) => setSelectedExportAmount(e.target.value === 'all' ? 'all' : Number(e.target.value))}
                   className="w-full px-3 py-2 border border-input rounded-md bg-background text-right"
                 >
-                  <option value="all">جميع القيم ({giftCards.filter(c => !c.is_used).length} بطاقة)</option>
+                  <option value="all" disabled>-- اختر قيمة --</option>
                   {uniqueAmounts.map(amount => {
                     const count = giftCards.filter(c => !c.is_used && c.amount === amount).length;
                     return (
                       <option key={amount} value={amount}>
-                        {amount.toLocaleString()} دج ({count} بطاقة)
+                        {amount.toLocaleString()} دج ({count} بطاقة متاحة)
                       </option>
                     );
                   })}
                 </select>
-                <p className="text-xs text-green-600 text-right font-medium">
-                  ✓ تصدير قيمة واحدة أسرع بكثير ومنظم للطباعة
-                </p>
               </div>
 
-              <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-right">
-                <div className="flex justify-between">
-                  <span className="font-bold text-primary">
-                    {selectedExportAmount === 'all' 
-                      ? giftCards.filter(c => !c.is_used).length
-                      : giftCards.filter(c => !c.is_used && c.amount === selectedExportAmount).length
-                    }
-                  </span>
-                  <span className="text-muted-foreground">البطاقات المتاحة للتصدير</span>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="exportCount" className="text-right block">عدد البطاقات للتصدير</Label>
-                <Input
-                  id="exportCount"
-                  type="number"
-                  value={exportCardsCount}
-                  onChange={(e) => {
-                    const max = selectedExportAmount === 'all' 
-                      ? giftCards.filter(c => !c.is_used).length
-                      : giftCards.filter(c => !c.is_used && c.amount === selectedExportAmount).length;
-                    setExportCardsCount(Math.min(Number(e.target.value), max));
-                  }}
-                  min="1"
-                  max={selectedExportAmount === 'all' 
-                    ? giftCards.filter(c => !c.is_used).length
-                    : giftCards.filter(c => !c.is_used && c.amount === selectedExportAmount).length
-                  }
-                  className="text-center"
-                />
-              </div>
-
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-right">
-                <p className="text-sm text-green-800">
-                  ✓ التصدير سريع جداً - بدون html2canvas
-                </p>
-              </div>
+              {selectedExportAmount !== 'all' && (
+                <>
+                  <div className="bg-primary/10 rounded-lg p-4 text-right space-y-2">
+                    <p className="font-bold text-primary">آلية التصدير:</p>
+                    <p className="text-sm text-muted-foreground">
+                      📄 <strong>صفحة 1:</strong> صورة واحدة للواجهة الأمامية (تُطبع عدة مرات)
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      📄 <strong>الصفحات التالية:</strong> الخلفيات (كل بطاقة بكود QR فريد)
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="exportCount" className="text-right block">عدد البطاقات</Label>
+                    <Input
+                      id="exportCount"
+                      type="number"
+                      value={exportCardsCount}
+                      onChange={(e) => {
+                        const max = giftCards.filter(c => !c.is_used && c.amount === selectedExportAmount).length;
+                        setExportCardsCount(Math.min(Number(e.target.value), max));
+                      }}
+                      min="1"
+                      max={giftCards.filter(c => !c.is_used && c.amount === selectedExportAmount).length}
+                      className="text-center"
+                    />
+                    <p className="text-xs text-muted-foreground text-right">
+                      الحد الأقصى: {giftCards.filter(c => !c.is_used && c.amount === selectedExportAmount).length} بطاقة
+                    </p>
+                  </div>
+                </>
+              )}
 
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => setShowExportDialog(false)}>
                   إلغاء
                 </Button>
-                <Button onClick={startExport} className="bg-gradient-primary">
+                <Button 
+                  onClick={startExport} 
+                  className="bg-gradient-primary"
+                  disabled={selectedExportAmount === 'all'}
+                >
                   <FileText className="w-4 h-4 mr-2" />
-                  بدء التصدير
+                  تصدير PDF
                 </Button>
               </div>
             </div>
