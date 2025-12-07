@@ -701,28 +701,38 @@ export default function CardsPage() {
       const totalCardsWidth = cardsPerRow * cardWidth + (cardsPerRow - 1) * spacing;
       const horizontalMargin = (pageWidth - totalCardsWidth) / 2;
 
-      // === PAGE 1: SINGLE FRONT CARD IMAGE ===
-      setExportStatus('جاري تحضير الواجهة الأمامية...');
+      // === FRONT PAGES: 9 front cards per page (matching back pages layout) ===
+      setExportStatus('جاري تحضير الواجهات الأمامية...');
       setExportProgress(10);
       
-      // Render front card once
+      // Render front card once (will be reused)
       const frontImage = await getFrontCardImage(selectedExportAmount);
       
-      // Title
-      pdf.setFontSize(20);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(79, 70, 229);
-      pdf.text(`الواجهة الأمامية - ${selectedExportAmount} دج`, pdf.internal.pageSize.width / 2, 20, { align: 'center' });
+      // Calculate number of front pages needed
+      const frontPagesNeeded = Math.ceil(cardsToExport.length / cardsPerPage);
       
-      pdf.setFontSize(12);
-      pdf.setTextColor(107, 114, 128);
-      pdf.text(`اطبع هذه الصفحة ${cardsToExport.length} مرة للوجه الأمامي`, pdf.internal.pageSize.width / 2, 30, { align: 'center' });
-      
-      // Center the single front card
-      const centerX = (pdf.internal.pageSize.width - cardWidth) / 2;
-      const centerY = 50;
-      
-      pdf.addImage(frontImage, 'PNG', centerX, centerY, cardWidth, cardHeight);
+      for (let pageIndex = 0; pageIndex < frontPagesNeeded; pageIndex++) {
+        if (pageIndex > 0) {
+          pdf.addPage('landscape');
+        }
+        
+        // Title
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(79, 70, 229);
+        pdf.text(`الواجهات الأمامية - ${selectedExportAmount} دج - صفحة ${pageIndex + 1} من ${frontPagesNeeded}`, pdf.internal.pageSize.width / 2, 15, { align: 'center' });
+        
+        // Draw 9 front cards on this page (3x3 grid)
+        const cardsOnThisPage = Math.min(cardsPerPage, cardsToExport.length - pageIndex * cardsPerPage);
+        for (let i = 0; i < cardsOnThisPage; i++) {
+          const row = Math.floor(i / cardsPerRow);
+          const col = i % cardsPerRow;
+          const x = horizontalMargin + col * (cardWidth + spacing);
+          const y = 25 + row * (cardHeight + spacing);
+          
+          pdf.addImage(frontImage, 'PNG', x, y, cardWidth, cardHeight);
+        }
+      }
       
       setExportProgress(30);
 
