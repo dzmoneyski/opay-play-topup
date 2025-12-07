@@ -471,143 +471,94 @@ export default function CardsPage() {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [exportCardsCount, setExportCardsCount] = useState(100);
 
-  // Cache for rendered front card images (same design for same amount)
-  const frontCardCache = useRef<Record<number, string>>({});
-
-  // Render front card to cached image (only once per amount - FAST)
-  const getFrontCardImage = async (card: GiftCard): Promise<string> => {
-    if (frontCardCache.current[card.amount]) {
-      return frontCardCache.current[card.amount];
-    }
-
-    const tempContainer = document.createElement('div');
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.top = '-9999px';
-    tempContainer.style.left = '-9999px';
-    tempContainer.innerHTML = createFrontCardHTML(card);
-    document.body.appendChild(tempContainer);
-
-    const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
-      width: 340,
-      height: 215,
-      scale: 2,
-      backgroundColor: null,
-      useCORS: true,
-      logging: false
+  // Pre-generate all QR codes in parallel (FAST)
+  const generateAllQRCodes = async (cards: GiftCard[]): Promise<Record<string, string>> => {
+    const qrPromises = cards.map(async (card) => {
+      const qr = await QRCode.toDataURL(card.card_code, { width: 120, margin: 1 });
+      return { id: card.id, qr };
     });
-    
-    const imgData = canvas.toDataURL('image/jpeg', 0.9);
-    frontCardCache.current[card.amount] = imgData;
-    document.body.removeChild(tempContainer);
-    return imgData;
+    const results = await Promise.all(qrPromises);
+    return results.reduce((acc, { id, qr }) => ({ ...acc, [id]: qr }), {});
   };
 
-  // Render back card with unique QR code
-  const getBackCardImage = async (card: GiftCard): Promise<string> => {
-    const qrCode = await QRCode.toDataURL(card.card_code, { width: 200, margin: 2 });
+  // Draw front card directly on PDF (INSTANT - no html2canvas)
+  const drawFrontCard = (pdf: jsPDF, card: GiftCard, x: number, y: number, w: number, h: number) => {
+    // Purple background
+    pdf.setFillColor(99, 102, 241);
+    pdf.roundedRect(x, y, w, h, 3, 3, 'F');
+    
+    // Darker bottom for depth
+    pdf.setFillColor(79, 70, 229);
+    pdf.rect(x, y + h * 0.6, w, h * 0.4, 'F');
+    
+    // Chip
+    pdf.setFillColor(251, 191, 36);
+    pdf.roundedRect(x + 6, y + 8, 12, 9, 1.5, 1.5, 'F');
+    pdf.setFillColor(245, 158, 11);
+    pdf.rect(x + 6, y + 11, 12, 3, 'F');
+    
+    // OpaY Logo
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(18);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('OpaY', x + w - 8, y + 12, { align: 'right' });
+    
+    pdf.setFontSize(7);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Digital Recharge Card', x + w - 8, y + 17, { align: 'right' });
+    
+    // Amount
+    pdf.setFontSize(26);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(`${card.amount.toLocaleString()} DA`, x + w / 2, y + h / 2 + 4, { align: 'center' });
+    
+    // Line
+    pdf.setDrawColor(255, 255, 255);
+    pdf.setLineWidth(0.3);
+    pdf.line(x + 10, y + h - 10, x + w - 10, y + h - 10);
+  };
+
+  // Draw back card directly on PDF (INSTANT - no html2canvas)
+  const drawBackCard = (pdf: jsPDF, card: GiftCard, x: number, y: number, w: number, h: number, qrDataURL: string) => {
     const pricing = calculatePricing(card.amount);
-    const formattedCardCode = formatCardCode(card.card_code);
     
-    const backHTML = `
-      <div style="
-        width: 340px;
-        height: 215px;
-        background: linear-gradient(135deg, #1F2937 0%, #374151 50%, #4B5563 100%);
-        border-radius: 16px;
-        position: relative;
-        color: white;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        overflow: hidden;
-        box-shadow: 0 20px 40px rgba(31, 41, 55, 0.3);
-      ">
-        <div style="
-          position: absolute;
-          top: 40px;
-          left: 0;
-          right: 0;
-          height: 40px;
-          background: linear-gradient(90deg, #000000 0%, #1a1a1a 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        ">
-          <div style="
-            color: #ffffff;
-            font-size: 18px;
-            font-weight: 800;
-            text-align: center;
-            direction: rtl;
-          ">بيع: ${pricing.customerPrice} دج</div>
-        </div>
-        
-        <div style="
-          position: absolute;
-          right: 24px;
-          top: 90px;
-          width: 100px;
-          height: 100px;
-          background: white;
-          border-radius: 12px;
-          padding: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        ">
-          <img src="${qrCode}" style="width: 84px; height: 84px; border-radius: 4px;" />
-        </div>
-        
-        <div style="
-          position: absolute;
-          bottom: 60px;
-          left: 24px;
-          right: 140px;
-        ">
-          <p style="
-            margin: 0;
-            font-size: 16px;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 2px;
-            font-weight: 600;
-            background: rgba(255,255,255,0.1);
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-          ">${formattedCardCode}</p>
-        </div>
-        
-        <div style="
-          position: absolute;
-          bottom: 20px;
-          left: 24px;
-          right: 24px;
-          text-align: center;
-          font-size: 10px;
-          opacity: 0.7;
-        ">
-          <span>OpaY Algeria</span>
-        </div>
-      </div>
-    `;
-
-    const tempContainer = document.createElement('div');
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.top = '-9999px';
-    tempContainer.style.left = '-9999px';
-    tempContainer.innerHTML = backHTML;
-    document.body.appendChild(tempContainer);
-
-    const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
-      width: 340,
-      height: 215,
-      scale: 2,
-      backgroundColor: null,
-      useCORS: true,
-      logging: false
-    });
+    // Dark background
+    pdf.setFillColor(55, 65, 81);
+    pdf.roundedRect(x, y, w, h, 3, 3, 'F');
     
-    const imgData = canvas.toDataURL('image/jpeg', 0.9);
-    document.body.removeChild(tempContainer);
-    return imgData;
+    // Magnetic strip
+    pdf.setFillColor(17, 24, 39);
+    pdf.rect(x, y + 10, w, 12, 'F');
+    
+    // Price
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(`${pricing.customerPrice} DA`, x + w / 2, y + 18, { align: 'center' });
+    
+    // QR background
+    pdf.setFillColor(255, 255, 255);
+    pdf.roundedRect(x + w - 30, y + 26, 25, 25, 2, 2, 'F');
+    
+    // QR Code
+    try {
+      pdf.addImage(qrDataURL, 'PNG', x + w - 28, y + 28, 21, 21);
+    } catch (e) { /* ignore */ }
+    
+    // Code box
+    pdf.setFillColor(75, 85, 99);
+    pdf.roundedRect(x + 5, y + 30, w - 40, 14, 2, 2, 'F');
+    
+    // Code text
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(10);
+    pdf.setFont('courier', 'bold');
+    pdf.text(formatCardCode(card.card_code), x + 5 + (w - 40) / 2, y + 39, { align: 'center' });
+    
+    // Footer
+    pdf.setFontSize(6);
+    pdf.setTextColor(156, 163, 175);
+    pdf.text('OpaY Algeria', x + w / 2, y + h - 4, { align: 'center' });
   };
 
   // Export unused gift cards to PDF - ULTRA FAST (no html2canvas)
@@ -632,9 +583,12 @@ export default function CardsPage() {
     
     setExportingPDF(true);
     setExportProgress(0);
-    setExportStatus('جاري التحضير...');
+    setExportStatus('جاري إنشاء رموز QR...');
     
     try {
+      // Pre-generate ALL QR codes in parallel (FAST)
+      const allQRCodes = await generateAllQRCodes(cardsToExport);
+      
       const pdf = new jsPDF('landscape', 'mm', 'a4');
       const cardWidth = 85.6;
       const cardHeight = 53.98;
@@ -660,7 +614,7 @@ export default function CardsPage() {
         day: 'numeric' 
       })}`, pdf.internal.pageSize.width / 2, 75, { align: 'center' });
 
-      // Process front sides - DIRECT DRAW (super fast)
+      // Process front sides - DIRECT DRAW (INSTANT)
       setExportStatus('جاري إنشاء الوجه الأمامي...');
       for (let i = 0; i < cardsToExport.length; i++) {
         const card = cardsToExport[i];
@@ -679,18 +633,11 @@ export default function CardsPage() {
         const x = margin + col * (cardWidth + spacing);
         const y = 25 + row * (cardHeight + spacing);
         
-        // Use cached front card image (same for all cards with same amount)
-        const frontImg = await getFrontCardImage(card);
-        pdf.addImage(frontImg, 'JPEG', x, y, cardWidth, cardHeight, '', 'FAST');
+        drawFrontCard(pdf, card, x, y, cardWidth, cardHeight);
         setExportProgress(Math.round(((i + 1) / totalSteps) * 100));
-        
-        // Allow UI to update every 10 cards
-        if (i % 10 === 0) {
-          await new Promise(resolve => setTimeout(resolve, 5));
-        }
       }
 
-      // Process back sides - DIRECT DRAW (super fast)
+      // Process back sides - DIRECT DRAW (INSTANT)
       setExportStatus('جاري إنشاء الوجه الخلفي...');
       for (let i = 0; i < cardsToExport.length; i++) {
         const card = cardsToExport[i];
@@ -709,14 +656,8 @@ export default function CardsPage() {
         const x = margin + col * (cardWidth + spacing);
         const y = 25 + row * (cardHeight + spacing);
         
-        // Generate unique back card image (with QR code)
-        const backImg = await getBackCardImage(card);
-        pdf.addImage(backImg, 'JPEG', x, y, cardWidth, cardHeight, '', 'FAST');
+        drawBackCard(pdf, card, x, y, cardWidth, cardHeight, allQRCodes[card.id]);
         setExportProgress(Math.round(((cardsToExport.length + i + 1) / totalSteps) * 100));
-        
-        if (i % 10 === 0) {
-          await new Promise(resolve => setTimeout(resolve, 5));
-        }
       }
 
       // Save PDF
