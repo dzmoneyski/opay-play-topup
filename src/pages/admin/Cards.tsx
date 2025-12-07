@@ -465,9 +465,14 @@ export default function CardsPage() {
     `;
   };
 
-  // Export unused gift cards to PDF with ultra-professional design
+  // Export state for progress
+  const [exportProgress, setExportProgress] = useState(0);
+
+  // Export unused gift cards to PDF - OPTIMIZED with batching
   const exportToPDF = async () => {
     setExportingPDF(true);
+    setExportProgress(0);
+    
     try {
       const unusedCards = giftCards.filter(card => !card.is_used);
       
@@ -477,17 +482,30 @@ export default function CardsPage() {
           description: "جميع البطاقات مستخدمة أو لا توجد بطاقات",
           variant: "destructive",
         });
+        setExportingPDF(false);
         return;
       }
 
-      const pdf = new jsPDF('landscape', 'mm', 'a4'); // Landscape for better card layout
-      const cardWidth = 85.6; // Standard credit card width in mm
-      const cardHeight = 53.98; // Standard credit card height in mm
+      // Limit export to 100 cards at a time to prevent browser freeze
+      const maxCardsToExport = 100;
+      const cardsToExport = unusedCards.slice(0, maxCardsToExport);
+      
+      if (unusedCards.length > maxCardsToExport) {
+        toast({
+          title: "تنبيه",
+          description: `سيتم تصدير أول ${maxCardsToExport} بطاقة فقط لتجنب تجميد المتصفح`,
+        });
+      }
+
+      const pdf = new jsPDF('landscape', 'mm', 'a4');
+      const cardWidth = 85.6;
+      const cardHeight = 53.98;
       const margin = 20;
       const spacing = 10;
-      const cardsPerRow = 3; // 3 cards per row in landscape
-      const rowsPerPage = 3; // 3 rows per page
+      const cardsPerRow = 3;
+      const rowsPerPage = 3;
       const cardsPerPage = cardsPerRow * rowsPerPage;
+      const totalSteps = cardsToExport.length * 2; // Front + Back
 
       // Add cover page
       pdf.setFontSize(28);
@@ -496,121 +514,85 @@ export default function CardsPage() {
       
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'normal');
-      pdf.text(`Total Cards: ${unusedCards.length}`, pdf.internal.pageSize.width / 2, 60, { align: 'center' });
+      pdf.text(`Total Cards: ${cardsToExport.length}`, pdf.internal.pageSize.width / 2, 60, { align: 'center' });
       pdf.text(`Generated: ${new Date().toLocaleDateString('ar-DZ', { 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric' 
       })}`, pdf.internal.pageSize.width / 2, 75, { align: 'center' });
+
+      // Process cards in batches with setTimeout to keep UI responsive
+      const processBatch = async (startIndex: number, isFront: boolean): Promise<void> => {
+        const batchSize = 5; // Process 5 cards at a time
+        const endIndex = Math.min(startIndex + batchSize, cardsToExport.length);
+        
+        for (let i = startIndex; i < endIndex; i++) {
+          const card = cardsToExport[i];
+          const cardIndex = i % cardsPerPage;
+          
+          if (cardIndex === 0) {
+            pdf.addPage('landscape');
+            pdf.setFontSize(12);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text(`Gift Cards - ${isFront ? 'Front' : 'Back'} Side (Page ${Math.floor(i / cardsPerPage) + 1})`, margin, 15);
+          }
+          
+          const row = Math.floor(cardIndex / cardsPerRow);
+          const col = cardIndex % cardsPerRow;
+          const x = margin + col * (cardWidth + spacing);
+          const y = 25 + row * (cardHeight + spacing);
+          
+          const tempContainer = document.createElement('div');
+          tempContainer.style.position = 'absolute';
+          tempContainer.style.top = '-9999px';
+          tempContainer.style.left = '-9999px';
+          tempContainer.innerHTML = isFront ? createFrontCardHTML(card) : createBackCardHTML(card);
+          document.body.appendChild(tempContainer);
+          
+          try {
+            const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
+              width: 340,
+              height: 215,
+              scale: 2, // Reduced scale for faster processing
+              backgroundColor: null,
+              useCORS: true,
+              allowTaint: true,
+              logging: false
+            });
+            
+            const imgData = canvas.toDataURL('image/jpeg', 0.85); // Use JPEG for smaller size
+            pdf.addImage(imgData, 'JPEG', x, y, cardWidth, cardHeight, '', 'FAST');
+          } catch (error) {
+            console.warn('Failed to render card:', error);
+          }
+          
+          document.body.removeChild(tempContainer);
+          
+          // Update progress
+          const completedSteps = isFront ? i + 1 : cardsToExport.length + i + 1;
+          setExportProgress(Math.round((completedSteps / totalSteps) * 100));
+        }
+        
+        // Continue with next batch if there are more cards
+        if (endIndex < cardsToExport.length) {
+          await new Promise(resolve => setTimeout(resolve, 10)); // Small delay to keep UI responsive
+          await processBatch(endIndex, isFront);
+        }
+      };
+
+      // Process front sides
+      await processBatch(0, true);
       
-      pdf.setFontSize(10);
-      pdf.text('Each card includes front design with QR code and back with security features', pdf.internal.pageSize.width / 2, 95, { align: 'center' });
+      // Process back sides
+      await processBatch(0, false);
 
-      for (let i = 0; i < unusedCards.length; i++) {
-        const card = unusedCards[i];
-        const cardIndex = i % cardsPerPage;
-        
-        // Add new page for every new batch (front sides)
-        if (cardIndex === 0) {
-          pdf.addPage('landscape');
-          // Add page header
-          pdf.setFontSize(12);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text(`Gift Cards - Front Side (Page ${Math.floor(i / cardsPerPage) + 1})`, margin, 15);
-        }
-        
-        // Calculate position
-        const row = Math.floor(cardIndex / cardsPerRow);
-        const col = cardIndex % cardsPerRow;
-        const x = margin + col * (cardWidth + spacing);
-        const y = 25 + row * (cardHeight + spacing);
-        
-        // Create and render front card
-        const tempContainer = document.createElement('div');
-        tempContainer.style.position = 'absolute';
-        tempContainer.style.top = '-9999px';
-        tempContainer.style.left = '-9999px';
-        tempContainer.innerHTML = createFrontCardHTML(card);
-        document.body.appendChild(tempContainer);
-        
-        try {
-          const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
-            width: 340,
-            height: 215,
-            scale: 3, // Higher scale for better quality
-            backgroundColor: null,
-            useCORS: true,
-            allowTaint: true,
-            logging: false
-          });
-          
-          const imgData = canvas.toDataURL('image/png', 1.0);
-          pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight, '', 'FAST');
-          
-        } catch (error) {
-          console.warn('Failed to render front card:', error);
-        }
-        
-        document.body.removeChild(tempContainer);
-      }
-
-      // Add back sides
-      for (let i = 0; i < unusedCards.length; i++) {
-        const card = unusedCards[i];
-        const cardIndex = i % cardsPerPage;
-        
-        // Add new page for every new batch (back sides)
-        if (cardIndex === 0) {
-          pdf.addPage('landscape');
-          // Add page header
-          pdf.setFontSize(12);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text(`Gift Cards - Back Side (Page ${Math.floor(i / cardsPerPage) + 1})`, margin, 15);
-        }
-        
-        // Calculate position
-        const row = Math.floor(cardIndex / cardsPerRow);
-        const col = cardIndex % cardsPerRow;
-        const x = margin + col * (cardWidth + spacing);
-        const y = 25 + row * (cardHeight + spacing);
-        
-        // Create and render back card
-        const tempContainer = document.createElement('div');
-        tempContainer.style.position = 'absolute';
-        tempContainer.style.top = '-9999px';
-        tempContainer.style.left = '-9999px';
-        tempContainer.innerHTML = createBackCardHTML(card);
-        document.body.appendChild(tempContainer);
-        
-        try {
-          const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
-            width: 340,
-            height: 215,
-            scale: 3, // Higher scale for better quality
-            backgroundColor: null,
-            useCORS: true,
-            allowTaint: true,
-            logging: false
-          });
-          
-          const imgData = canvas.toDataURL('image/png', 1.0);
-          pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight, '', 'FAST');
-          
-        } catch (error) {
-          console.warn('Failed to render back card:', error);
-        }
-        
-        document.body.removeChild(tempContainer);
-      }
-
-      // Save with professional filename
+      // Save PDF
       const timestamp = new Date().toISOString().split('T')[0];
-      const fileName = `OpaY_Gift_Cards_Professional_${timestamp}.pdf`;
-      pdf.save(fileName);
+      pdf.save(`OpaY_Gift_Cards_${timestamp}.pdf`);
       
       toast({
         title: "تم التصدير بنجاح",
-        description: `تم تصدير ${unusedCards.length} بطاقة احترافية مع الوجه الأمامي والخلفي`,
+        description: `تم تصدير ${cardsToExport.length} بطاقة`,
       });
     } catch (error) {
       console.error('Error exporting to PDF:', error);
@@ -621,6 +603,7 @@ export default function CardsPage() {
       });
     } finally {
       setExportingPDF(false);
+      setExportProgress(0);
     }
   };
 
@@ -835,14 +818,24 @@ export default function CardsPage() {
             <Download className="w-4 h-4 mr-2" />
             تصدير CSV
           </Button>
-          <Button 
-            onClick={exportToPDF} 
-            variant="outline"
-            disabled={exportingPDF || giftCards.filter(c => !c.is_used).length === 0}
-          >
-            <FileText className="w-4 h-4 mr-2" />
-            {exportingPDF ? 'جاري التصدير...' : 'تصدير PDF'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={exportToPDF} 
+              variant="outline"
+              disabled={exportingPDF || giftCards.filter(c => !c.is_used).length === 0}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              {exportingPDF ? `${exportProgress}%` : 'تصدير PDF'}
+            </Button>
+            {exportingPDF && (
+              <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-300" 
+                  style={{ width: `${exportProgress}%` }}
+                />
+              </div>
+            )}
+          </div>
           <Dialog open={showGenerateDialog} onOpenChange={setShowGenerateDialog}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-primary">
