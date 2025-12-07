@@ -705,14 +705,15 @@ export default function CardsPage() {
       setExportStatus('جاري تحضير الواجهات الأمامية...');
       setExportProgress(10);
       
-      // Render front card once (will be reused)
-      const frontImage = await getFrontCardImage(selectedExportAmount);
+      // Render front card once (will be reused) - selectedExportAmount is guaranteed to be number here
+      const exportAmount = selectedExportAmount as number;
+      const frontImage = await getFrontCardImage(exportAmount);
       
       // Title
       pdf.setFontSize(12);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(79, 70, 229);
-      pdf.text(`الواجهات الأمامية - ${selectedExportAmount} دج`, pdf.internal.pageSize.width / 2, 15, { align: 'center' });
+      pdf.text(`الواجهات الأمامية - ${exportAmount} دج`, pdf.internal.pageSize.width / 2, 15, { align: 'center' });
       
       // Draw 9 front cards on first page (3x3 grid)
       for (let i = 0; i < cardsPerPage; i++) {
@@ -755,7 +756,7 @@ export default function CardsPage() {
       // Save PDF
       setExportStatus('جاري حفظ الملف...');
       const timestamp = new Date().toISOString().split('T')[0];
-      pdf.save(`OpaY_Cards_${selectedExportAmount}DA_${cardsToExport.length}_${timestamp}.pdf`);
+      pdf.save(`OpaY_Cards_${exportAmount}DA_${cardsToExport.length}_${timestamp}.pdf`);
       
       toast({
         title: "تم التصدير بنجاح",
