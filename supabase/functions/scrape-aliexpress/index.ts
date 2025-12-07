@@ -80,7 +80,17 @@ serve(async (req) => {
 
     console.log('Scraping AliExpress URL:', url);
 
-    if (!url || !/aliexpress\.com\//i.test(url)) {
+    // Validate URL format and ensure it's a legitimate AliExpress domain
+    let isValidAliExpressUrl = false;
+    try {
+      const urlObj = new URL(url);
+      const validHosts = ['aliexpress.com', 'www.aliexpress.com', 'm.aliexpress.com', 'ar.aliexpress.com'];
+      isValidAliExpressUrl = validHosts.some(h => urlObj.hostname === h || urlObj.hostname.endsWith('.' + h));
+    } catch {
+      isValidAliExpressUrl = false;
+    }
+
+    if (!url || !isValidAliExpressUrl) {
       return new Response(
         JSON.stringify({ images: [], error: 'رابط AliExpress غير صحيح' } satisfies ScrapeResponse),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
