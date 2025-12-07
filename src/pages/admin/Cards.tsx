@@ -470,6 +470,13 @@ export default function CardsPage() {
   const [exportStatus, setExportStatus] = useState('');
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [exportCardsCount, setExportCardsCount] = useState(100);
+  const [selectedExportAmount, setSelectedExportAmount] = useState<number | 'all'>('all');
+
+  // Get unique card amounts for export filter
+  const uniqueAmounts = React.useMemo(() => {
+    const amounts = new Set(giftCards.filter(c => !c.is_used).map(c => c.amount));
+    return Array.from(amounts).sort((a, b) => a - b);
+  }, [giftCards]);
 
   // Pre-generate all QR codes in parallel (FAST)
   const generateAllQRCodes = async (cards: GiftCard[]): Promise<Record<string, string>> => {
@@ -578,7 +585,11 @@ export default function CardsPage() {
   };
 
   const startExport = async () => {
-    const unusedCards = giftCards.filter(card => !card.is_used);
+    // Filter by selected amount if not 'all'
+    let unusedCards = giftCards.filter(card => !card.is_used);
+    if (selectedExportAmount !== 'all') {
+      unusedCards = unusedCards.filter(card => card.amount === selectedExportAmount);
+    }
     const cardsToExport = unusedCards.slice(0, exportCardsCount);
     
     setExportingPDF(true);
@@ -1272,14 +1283,38 @@ export default function CardsPage() {
           
           {!exportingPDF ? (
             <div className="space-y-4">
+              {/* Amount Filter - NEW */}
+              <div className="space-y-2">
+                <Label className="text-right block font-semibold">اختر قيمة البطاقات</Label>
+                <select
+                  value={selectedExportAmount}
+                  onChange={(e) => setSelectedExportAmount(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-right"
+                >
+                  <option value="all">جميع القيم ({giftCards.filter(c => !c.is_used).length} بطاقة)</option>
+                  {uniqueAmounts.map(amount => {
+                    const count = giftCards.filter(c => !c.is_used && c.amount === amount).length;
+                    return (
+                      <option key={amount} value={amount}>
+                        {amount.toLocaleString()} دج ({count} بطاقة)
+                      </option>
+                    );
+                  })}
+                </select>
+                <p className="text-xs text-green-600 text-right font-medium">
+                  ✓ تصدير قيمة واحدة أسرع بكثير ومنظم للطباعة
+                </p>
+              </div>
+
               <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-right">
                 <div className="flex justify-between">
-                  <span className="font-bold text-primary">{giftCards.filter(c => !c.is_used).length}</span>
-                  <span className="text-muted-foreground">البطاقات المتاحة</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-bold">{giftCards.filter(c => c.is_used).length}</span>
-                  <span className="text-muted-foreground">البطاقات المستخدمة</span>
+                  <span className="font-bold text-primary">
+                    {selectedExportAmount === 'all' 
+                      ? giftCards.filter(c => !c.is_used).length
+                      : giftCards.filter(c => !c.is_used && c.amount === selectedExportAmount).length
+                    }
+                  </span>
+                  <span className="text-muted-foreground">البطاقات المتاحة للتصدير</span>
                 </div>
               </div>
               
@@ -1289,19 +1324,24 @@ export default function CardsPage() {
                   id="exportCount"
                   type="number"
                   value={exportCardsCount}
-                  onChange={(e) => setExportCardsCount(Math.min(Number(e.target.value), giftCards.filter(c => !c.is_used).length))}
+                  onChange={(e) => {
+                    const max = selectedExportAmount === 'all' 
+                      ? giftCards.filter(c => !c.is_used).length
+                      : giftCards.filter(c => !c.is_used && c.amount === selectedExportAmount).length;
+                    setExportCardsCount(Math.min(Number(e.target.value), max));
+                  }}
                   min="1"
-                  max={giftCards.filter(c => !c.is_used).length}
+                  max={selectedExportAmount === 'all' 
+                    ? giftCards.filter(c => !c.is_used).length
+                    : giftCards.filter(c => !c.is_used && c.amount === selectedExportAmount).length
+                  }
                   className="text-center"
                 />
-                <p className="text-xs text-muted-foreground text-right">
-                  الحد الأقصى الموصى به: 100 بطاقة لتجنب بطء المتصفح
-                </p>
               </div>
 
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-right">
-                <p className="text-sm text-amber-800">
-                  ⚠️ تصدير عدد كبير من البطاقات قد يستغرق وقتاً طويلاً
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-right">
+                <p className="text-sm text-green-800">
+                  ✓ التصدير سريع جداً - بدون html2canvas
                 </p>
               </div>
 
