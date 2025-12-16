@@ -158,8 +158,9 @@ export default function Withdrawals() {
 
     setSubmitting(true);
     try {
+      // إرسال المبلغ الأصلي فقط - الـ backend سيحسب الرسوم
       await createWithdrawal({
-        amount: totalDeducted,
+        amount: withdrawalAmount,
         withdrawal_method: selectedMethod,
         account_number: formData.account_number || undefined,
         account_holder_name: formData.account_holder_name || undefined,
