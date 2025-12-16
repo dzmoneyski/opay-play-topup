@@ -1,8 +1,35 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// Restrict CORS to specific origins for security
+const getAllowedOrigins = (): string[] => {
+  // Add your production domain(s) here
+  const productionOrigins = [
+    'https://zxnwixjdwimfblcwfkgo.lovableproject.com',
+    'https://preview--zxnwixjdwimfblcwfkgo.lovable.app',
+  ];
+  
+  // Allow localhost for development
+  const devOrigins = [
+    'http://localhost:8080',
+    'http://localhost:3000',
+    'http://127.0.0.1:8080',
+  ];
+  
+  return [...productionOrigins, ...devOrigins];
+};
+
+const getCorsHeaders = (origin: string | null): Record<string, string> => {
+  const allowedOrigins = getAllowedOrigins();
+  const allowedOrigin = origin && allowedOrigins.some(o => origin.startsWith(o.replace(/:\d+$/, ''))) 
+    ? origin 
+    : allowedOrigins[0];
+  
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
 };
 
 interface ScrapeRequest {
@@ -29,11 +56,9 @@ function extractRunParamsImages(html: string): string[] {
   const match = html.match(runParamsRegex);
   if (match) {
     try {
-      // Some pages include trailing semicolons/comments after JSON; slice to last closing brace
       const jsonRaw = match[1];
       const jsonText = jsonRaw.trim().replace(/;$/, '');
       const data = JSON.parse(jsonText);
-      // Common AliExpress structures
       const candidates: any[] = [];
       if (data.imageModule?.imagePathList) candidates.push(...data.imageModule.imagePathList);
       if (data.images) candidates.push(...data.images);
@@ -43,7 +68,6 @@ function extractRunParamsImages(html: string): string[] {
       }
     } catch (e) {
       console.log('Failed to parse window.runParams JSON:', e);
-      // Fallback: regex array extractor
       const listMatch = html.match(/imagePathList"\s*:\s*\[(.*?)\]/s);
       if (listMatch) {
         const urls = listMatch[1].match(/"(https?:[^"\]]+?)"/g) || [];
@@ -71,11 +95,46 @@ function extractAliCdnImages(html: string): string[] {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Verify user is authenticated
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.log('Missing authorization header');
+      return new Response(
+        JSON.stringify({ images: [], error: 'غير مصرح - يرجى تسجيل الدخول' } satisfies ScrapeResponse),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify the JWT token
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: { Authorization: authHeader },
+      },
+    });
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      console.log('Authentication failed:', authError?.message);
+      return new Response(
+        JSON.stringify({ images: [], error: 'جلسة غير صالحة - يرجى إعادة تسجيل الدخول' } satisfies ScrapeResponse),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Authenticated user:', user.id);
+
     const { url }: ScrapeRequest = await req.json();
 
     console.log('Scraping AliExpress URL:', url);
