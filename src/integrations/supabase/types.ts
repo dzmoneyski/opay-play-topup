@@ -1652,6 +1652,17 @@ export type Database = {
         Returns: boolean
       }
       cleanup_expired_verification_codes: { Args: never; Returns: undefined }
+      create_withdrawal: {
+        Args: {
+          _account_holder_name?: string
+          _account_number?: string
+          _amount: number
+          _cash_location?: string
+          _notes?: string
+          _withdrawal_method: string
+        }
+        Returns: Json
+      }
       deduct_balance: {
         Args: { _amount: number; _user_id: string }
         Returns: undefined
