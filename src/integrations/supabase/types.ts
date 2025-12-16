@@ -1568,16 +1568,16 @@ export type Database = {
       }
       approve_deposit:
         | {
+            Args: { _admin_id: string; _deposit_id: string; _notes?: string }
+            Returns: undefined
+          }
+        | {
             Args: {
               _adjusted_amount?: number
               _admin_id: string
               _deposit_id: string
               _notes?: string
             }
-            Returns: undefined
-          }
-        | {
-            Args: { _admin_id: string; _deposit_id: string; _notes?: string }
             Returns: undefined
           }
       approve_diaspora_transfer: {
