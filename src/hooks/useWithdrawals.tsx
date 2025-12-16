@@ -54,21 +54,28 @@ export const useWithdrawals = () => {
   }) => {
     if (!user) throw new Error('User not authenticated');
 
-    const { data, error } = await supabase
-      .from('withdrawals')
-      .insert({
-        user_id: user.id,
-        ...withdrawalData
-      })
-      .select()
-      .single();
+    // استخدام الدالة الآمنة التي تتحقق من الرصيد في الـ backend
+    const { data, error } = await supabase.rpc('create_withdrawal', {
+      _amount: withdrawalData.amount,
+      _withdrawal_method: withdrawalData.withdrawal_method,
+      _account_number: withdrawalData.account_number || null,
+      _account_holder_name: withdrawalData.account_holder_name || null,
+      _cash_location: withdrawalData.cash_location || null,
+      _notes: withdrawalData.notes || null
+    });
 
     if (error) throw error;
+    
+    // التحقق من نتيجة الدالة
+    const result = data as { success: boolean; error?: string; withdrawal_id?: string };
+    if (!result.success) {
+      throw new Error(result.error || 'فشل في إنشاء طلب السحب');
+    }
     
     // إعادة تحديث قائمة السحب
     await fetchWithdrawals();
     
-    return data;
+    return result;
   }, [user, fetchWithdrawals]);
 
   React.useEffect(() => {
