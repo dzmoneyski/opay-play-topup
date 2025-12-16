@@ -7,6 +7,10 @@ export interface AdminWithdrawal {
   id: string;
   user_id: string;
   amount: number;
+  fee_amount: number;
+  net_amount: number;
+  fee_percentage: number;
+  fee_fixed: number;
   withdrawal_method: string;
   account_number?: string;
   account_holder_name?: string;

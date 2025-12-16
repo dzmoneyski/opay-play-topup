@@ -1498,7 +1498,11 @@ export type Database = {
           amount: number
           cash_location: string | null
           created_at: string
+          fee_amount: number | null
+          fee_fixed: number | null
+          fee_percentage: number | null
           id: string
+          net_amount: number | null
           notes: string | null
           processed_at: string | null
           processed_by: string | null
@@ -1514,7 +1518,11 @@ export type Database = {
           amount: number
           cash_location?: string | null
           created_at?: string
+          fee_amount?: number | null
+          fee_fixed?: number | null
+          fee_percentage?: number | null
           id?: string
+          net_amount?: number | null
           notes?: string | null
           processed_at?: string | null
           processed_by?: string | null
@@ -1530,7 +1538,11 @@ export type Database = {
           amount?: number
           cash_location?: string | null
           created_at?: string
+          fee_amount?: number | null
+          fee_fixed?: number | null
+          fee_percentage?: number | null
           id?: string
+          net_amount?: number | null
           notes?: string | null
           processed_at?: string | null
           processed_by?: string | null

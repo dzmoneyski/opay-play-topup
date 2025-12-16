@@ -347,9 +347,24 @@ export default function WithdrawalsPage() {
                           <ArrowUpFromLine className="h-5 w-5" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-foreground">
-                            {formatCurrency(withdrawal.amount)}
-                          </h3>
+                          {/* عرض المبلغ للإرسال بوضوح */}
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-foreground text-lg">
+                              💰 للإرسال: {formatCurrency(withdrawal.amount)}
+                            </h3>
+                          </div>
+                          {/* عرض الرسوم إن وجدت */}
+                          {(withdrawal.fee_amount > 0) && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="text-orange-600 font-medium">
+                                الرسوم: {formatCurrency(withdrawal.fee_amount)}
+                              </span>
+                              <span className="text-muted-foreground">|</span>
+                              <span className="text-blue-600 font-medium">
+                                إجمالي الخصم: {formatCurrency(withdrawal.amount + withdrawal.fee_amount)}
+                              </span>
+                            </div>
+                          )}
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <User className="h-3 w-3" />
