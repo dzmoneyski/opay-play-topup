@@ -25,6 +25,13 @@ import { ar } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useProfile } from '@/hooks/useProfile';
+import DOMPurify from 'dompurify';
+
+// Helper to escape user data for safe HTML insertion
+const escapeHtml = (str: string | null | undefined): string => {
+  if (!str) return 'غير متوفر';
+  return DOMPurify.sanitize(str, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+};
 
 const Transactions = () => {
   const navigate = useNavigate();
@@ -106,8 +113,8 @@ const Transactions = () => {
             <div style="color:#6b7280;font-size:14px">${new Date().toLocaleString('ar-DZ')}</div>
           </div>
           <div style="text-align:left">
-            <div>الاسم: <strong style="color:#111827">${profile?.full_name || 'غير متوفر'}</strong></div>
-            <div>الهاتف: <strong style="color:#111827">${profile?.phone || 'غير متوفر'}</strong></div>
+            <div>الاسم: <strong style="color:#111827">${escapeHtml(profile?.full_name)}</strong></div>
+            <div>الهاتف: <strong style="color:#111827">${escapeHtml(profile?.phone)}</strong></div>
           </div>
         </div>
       `;
@@ -117,10 +124,10 @@ const Transactions = () => {
         const amount = `${getAmountPrefix(t.type)}${Number(t.amount).toLocaleString('ar-DZ')} دج`;
         return `
           <tr>
-            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${date}</td>
-            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${t.description}</td>
-            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${amount}</td>
-            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${t.status}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${escapeHtml(date)}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${escapeHtml(t.description)}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${escapeHtml(amount)}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${escapeHtml(t.status)}</td>
           </tr>
         `;
       }).join('');
@@ -180,15 +187,15 @@ const Transactions = () => {
           </span>
         </div>
         <div style="margin-bottom:16px;color:#6b7280">
-          <div>اسم صاحب الحساب: <strong style="color:#111827">${profile?.full_name || 'غير متوفر'}</strong></div>
-          <div>رقم الهاتف: <strong style="color:#111827">${profile?.phone || 'غير متوفر'}</strong></div>
+          <div>اسم صاحب الحساب: <strong style="color:#111827">${escapeHtml(profile?.full_name)}</strong></div>
+          <div>رقم الهاتف: <strong style="color:#111827">${escapeHtml(profile?.phone)}</strong></div>
         </div>
         <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0" />
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:14px">
-          <div>النوع: <strong>${transaction.description}</strong></div>
-          <div>الحالة: <strong>${transaction.status}</strong></div>
-          <div>المبلغ: <strong>${amountText}</strong></div>
-          <div>التاريخ والوقت: <strong>${dateText}</strong></div>
+          <div>النوع: <strong>${escapeHtml(transaction.description)}</strong></div>
+          <div>الحالة: <strong>${escapeHtml(transaction.status)}</strong></div>
+          <div>المبلغ: <strong>${escapeHtml(amountText)}</strong></div>
+          <div>التاريخ والوقت: <strong>${escapeHtml(dateText)}</strong></div>
         </div>
       </div>
     `;
