@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import QRCode from 'qrcode';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import DOMPurify from 'dompurify';
 import { 
   Gift, 
   Search, 
@@ -29,6 +30,13 @@ import {
   Edit,
   FileText
 } from 'lucide-react';
+
+// Helper to escape content for safe HTML insertion
+const escapeHtml = (str: string | number | null | undefined): string => {
+  if (str === null || str === undefined) return '';
+  const strValue = String(str);
+  return DOMPurify.sanitize(strValue, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+};
 
 interface GiftCard {
   id: string;
