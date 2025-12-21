@@ -19,7 +19,7 @@ import IdentityVerificationPage from "./pages/IdentityVerificationPage";
 import Deposits from "./pages/Deposits";
 import Transfer from "./pages/Transfer";
 import Withdrawals from "./pages/Withdrawals";
-import Rewards from "./pages/Rewards";
+
 import Cards from "./pages/Cards";
 import GameTopup from "./pages/GameTopup";
 import P2P from "./pages/P2P";
@@ -120,11 +120,6 @@ const App = () => {
               <Route path="/become-partner" element={
                 <ProtectedRoute requireActivation={false}>
                   <BecomePartner />
-                </ProtectedRoute>
-              } />
-              <Route path="/rewards" element={
-                <ProtectedRoute requireActivation={false}>
-                  <Rewards />
                 </ProtectedRoute>
               } />
               <Route path="/merchant" element={

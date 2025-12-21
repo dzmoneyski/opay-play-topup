@@ -17,7 +17,7 @@ import {
   Wallet,
   ShoppingBag,
   Globe2,
-  AlertTriangle,
+  
   Ban,
   CreditCard
 } from 'lucide-react';
@@ -39,7 +39,7 @@ const mainItems = [
   { title: "طلبات التحقق", url: "/admin/identity-verification", icon: Shield, notificationKey: 'pendingVerifications' },
   { title: "المستخدمين", url: "/admin/users", icon: Users },
   { title: "إدارة التجار", url: "/admin/merchants", icon: Users },
-  { title: "الإحالات المشبوهة", url: "/admin/suspicious-referrals", icon: AlertTriangle },
+  
   { title: "المستخدمون المحتالون", url: "/admin/fraudulent-users", icon: Ban },
 ];
 
