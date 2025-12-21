@@ -4,7 +4,7 @@ import { useAuth } from './useAuth';
 
 export interface TransactionHistoryItem {
   id: string;
-  type: 'deposit' | 'withdrawal' | 'transfer_sent' | 'transfer_received' | 'gift_card' | 'betting' | 'game_topup';
+  type: 'deposit' | 'withdrawal' | 'transfer_sent' | 'transfer_received' | 'gift_card' | 'betting' | 'game_topup' | 'digital_card';
   description: string;
   amount: number;
   status: string;

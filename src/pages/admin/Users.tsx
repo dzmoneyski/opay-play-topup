@@ -52,6 +52,7 @@ const getTransactionIcon = (type: string) => {
     case 'gift_card': return <Gift className="h-4 w-4" />;
     case 'betting': return <TrendingUp className="h-4 w-4" />;
     case 'game_topup': return <Gamepad2 className="h-4 w-4" />;
+    case 'digital_card': return <CreditCard className="h-4 w-4" />;
     default: return <Package className="h-4 w-4" />;
   }
 };
@@ -82,13 +83,16 @@ const UserTransactionsTab = ({ userId }: { userId: string }) => {
       try {
         // Fetch limited transaction types for this user (last 50 of each)
         const limit = 50;
-        const [deposits, withdrawals, transfers, giftCards, betting, gameTopups] = await Promise.all([
+        const [deposits, withdrawals, transfers, giftCards, betting, gameTopups, digitalCards] = await Promise.all([
           supabase.from('deposits').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(limit),
           supabase.from('withdrawals').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(limit),
           supabase.from('transfers').select('*, transaction_number').or(`sender_id.eq.${userId},recipient_id.eq.${userId}`).order('created_at', { ascending: false }).limit(limit),
-          supabase.rpc('get_user_gift_card_redemptions'),
+          // جلب بطاقات الهدايا المفعلة من هذا المستخدم مباشرة
+          supabase.from('gift_cards').select('id, amount, used_at, card_code').eq('used_by', userId).eq('is_used', true).order('used_at', { ascending: false }).limit(limit),
           supabase.from('betting_transactions').select('*, platform:game_platforms(name, name_ar)').eq('user_id', userId).order('created_at', { ascending: false }).limit(limit),
-          supabase.from('game_topup_orders').select('*, platform:game_platforms(name, name_ar)').eq('user_id', userId).order('created_at', { ascending: false }).limit(limit)
+          supabase.from('game_topup_orders').select('*, platform:game_platforms(name, name_ar)').eq('user_id', userId).order('created_at', { ascending: false }).limit(limit),
+          // جلب طلبات البطاقات الرقمية
+          supabase.from('digital_card_orders').select('*, card_type:digital_card_types(name, name_ar)').eq('user_id', userId).order('created_at', { ascending: false }).limit(limit)
         ]);
 
         const allTransactions: TransactionHistoryItem[] = [];
@@ -134,21 +138,35 @@ const UserTransactionsTab = ({ userId }: { userId: string }) => {
           });
         });
 
-        // Process gift cards - filter for this user
+        // Process gift cards - الآن نجلب البطاقات مباشرة للمستخدم المحدد
         if (giftCards.data) {
-          giftCards.data
-            .filter((card: any) => card.used_by === userId)
-            .forEach((card: any) => {
-              allTransactions.push({
-                id: card.id,
-                type: 'gift_card',
-                description: `تفعيل بطاقة OpaY`,
-                amount: Number(card.amount),
-                status: 'completed',
-                created_at: card.used_at || card.created_at,
-                icon_type: 'gift'
-              });
+          giftCards.data.forEach((card: any) => {
+            allTransactions.push({
+              id: card.id,
+              type: 'gift_card',
+              description: `تفعيل بطاقة OpaY`,
+              amount: Number(card.amount),
+              status: 'completed',
+              created_at: card.used_at,
+              icon_type: 'gift'
             });
+          });
+        }
+
+        // Process digital card orders
+        if (digitalCards.data) {
+          digitalCards.data.forEach((order: any) => {
+            const cardName = order.card_type?.name_ar || 'بطاقة رقمية';
+            allTransactions.push({
+              id: order.id,
+              type: 'digital_card',
+              description: `طلب ${cardName} ($${order.amount_usd})`,
+              amount: -Number(order.total_dzd),
+              status: order.status,
+              created_at: order.created_at,
+              icon_type: 'card'
+            });
+          });
         }
 
         // Process betting transactions
