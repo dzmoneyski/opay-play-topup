@@ -18,7 +18,8 @@ import {
   ChevronDown,
   ChevronUp,
   ShoppingBag,
-  Package
+  Package,
+  CreditCard
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -53,6 +54,8 @@ const Transactions = () => {
       case 'betting':
       case 'game_topup':
         return <Gamepad2 className="h-5 w-5" />;
+      case 'digital_card':
+        return <CreditCard className="h-5 w-5" />;
       default:
         return <FileText className="h-5 w-5" />;
     }
@@ -71,18 +74,18 @@ const Transactions = () => {
   };
 
   const getAmountColor = (type: string) => {
-    if (type === 'deposit' || type === 'transfer_received') {
+    if (type === 'deposit' || type === 'transfer_received' || type === 'gift_card') {
       return 'text-green-600';
-    } else if (type === 'withdrawal' || type === 'transfer_sent' || type === 'betting' || type === 'game_topup') {
+    } else if (type === 'withdrawal' || type === 'transfer_sent' || type === 'betting' || type === 'game_topup' || type === 'digital_card') {
       return 'text-red-600';
     }
     return 'text-foreground';
   };
 
   const getAmountPrefix = (type: string) => {
-    if (type === 'deposit' || type === 'transfer_received') {
+    if (type === 'deposit' || type === 'transfer_received' || type === 'gift_card') {
       return '+';
-    } else if (type === 'withdrawal' || type === 'transfer_sent' || type === 'betting' || type === 'game_topup') {
+    } else if (type === 'withdrawal' || type === 'transfer_sent' || type === 'betting' || type === 'game_topup' || type === 'digital_card') {
       return '-';
     }
     return '';

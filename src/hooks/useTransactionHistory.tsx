@@ -24,9 +24,9 @@ export const useTransactionHistory = (limit: number = 50) => {
     setLoading(true);
     try {
       // Fetch only limited number of recent transactions
-      const itemsPerType = Math.ceil(limit / 7);
+      const itemsPerType = Math.ceil(limit / 8);
       
-      const [deposits, transfers, withdrawals, giftCards, bettingTransactions, gameTopups] = await Promise.all([
+      const [deposits, transfers, withdrawals, giftCards, bettingTransactions, gameTopups, digitalCards] = await Promise.all([
         supabase
           .from('deposits')
           .select('*')
@@ -48,7 +48,14 @@ export const useTransactionHistory = (limit: number = 50) => {
           .order('created_at', { ascending: false })
           .limit(itemsPerType),
         
-        supabase.rpc('get_user_gift_card_redemptions').limit(itemsPerType),
+        // جلب بطاقات الهدايا مباشرة للمستخدم الحالي
+        supabase
+          .from('gift_cards')
+          .select('id, amount, used_at, card_code')
+          .eq('used_by', user.id)
+          .eq('is_used', true)
+          .order('used_at', { ascending: false })
+          .limit(itemsPerType),
         
         supabase
           .from('betting_transactions')
@@ -60,6 +67,14 @@ export const useTransactionHistory = (limit: number = 50) => {
         supabase
           .from('game_topup_orders')
           .select('*, platform:game_platforms(name, name_ar)')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(itemsPerType),
+        
+        // جلب طلبات البطاقات الرقمية
+        supabase
+          .from('digital_card_orders')
+          .select('*, card_type:digital_card_types(name, name_ar)')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(itemsPerType)
@@ -151,6 +166,20 @@ export const useTransactionHistory = (limit: number = 50) => {
           status: order.status,
           created_at: order.created_at,
           icon_type: 'game'
+        });
+      });
+
+      // Process digital card orders
+      digitalCards.data?.forEach(order => {
+        const cardName = (order as any).card_type?.name_ar || 'بطاقة رقمية';
+        allTransactions.push({
+          id: order.id,
+          type: 'digital_card',
+          description: `طلب ${cardName} ($${order.amount_usd})`,
+          amount: -Number(order.total_dzd),
+          status: order.status,
+          created_at: order.created_at,
+          icon_type: 'card'
         });
       });
 
