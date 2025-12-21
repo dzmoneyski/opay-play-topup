@@ -28,7 +28,8 @@ import {
 export default function AdminDashboard() {
   const { requests, loading } = useVerificationRequests();
   const [totalUsers, setTotalUsers] = React.useState(0);
-  const [userProfilesData, setUserProfilesData] = React.useState<any[]>([]);
+  const [activeUsers, setActiveUsers] = React.useState(0);
+  const [phoneVerifiedUsers, setPhoneVerifiedUsers] = React.useState(0);
   const [financialStats, setFinancialStats] = React.useState({
     totalDeposits: 0,
     totalWithdrawals: 0,
@@ -69,15 +70,23 @@ export default function AdminDashboard() {
   React.useEffect(() => {
     const fetchAllData = async () => {
       try {
-        // Fetch user profiles
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*');
-        
-        if (!profilesError && profiles) {
-          setTotalUsers(profiles.length);
-          setUserProfilesData(profiles);
-        }
+        // Fetch user counts (avoid 1000-row limit)
+        const [totalRes, activeRes, phoneRes] = await Promise.all([
+          supabase.from('profiles').select('id', { count: 'exact', head: true }),
+          supabase
+            .from('profiles')
+            .select('id', { count: 'exact', head: true })
+            .eq('is_account_activated', true),
+          supabase
+            .from('profiles')
+            .select('id', { count: 'exact', head: true })
+            .eq('is_phone_verified', true),
+        ]);
+
+        if (!totalRes.error) setTotalUsers(totalRes.count ?? 0);
+        if (!activeRes.error) setActiveUsers(activeRes.count ?? 0);
+        if (!phoneRes.error) setPhoneVerifiedUsers(phoneRes.count ?? 0);
+
 
         // Fetch financial data
         const [
@@ -193,8 +202,6 @@ export default function AdminDashboard() {
     }
   }, [loading]);
 
-  const activeUsers = userProfilesData.filter(profile => profile.is_account_activated).length;
-  const phoneVerifiedUsers = userProfilesData.filter(profile => profile.is_phone_verified).length;
 
   const StatsCard = ({ 
     title, 
