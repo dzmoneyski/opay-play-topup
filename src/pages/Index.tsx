@@ -121,10 +121,6 @@ const Index = () => {
       return;
     }
 
-    if (service.action === 'rewards') {
-      navigate('/rewards');
-      return;
-    }
 
     if (service.action === 'buy-cards') {
       navigate('/shop');
@@ -205,13 +201,6 @@ const Index = () => {
       action: "game-topup"
     },
     {
-      icon: <Gift className="h-6 w-6" />,
-      title: "المكافآت",
-      subtitle: "الإحالات والجوائز",
-      gradient: "bg-gradient-gold",
-      action: "rewards"
-    },
-    {
       icon: <ShoppingBag className="h-6 w-6" />,
       title: "شراء بطاقات",
       subtitle: "Google Play، Steam، Netflix",
@@ -248,10 +237,10 @@ const Index = () => {
       action: "disabled"
     },
     { 
-      icon: <Gift className="h-5 w-5" />, 
-      title: "المكافآت", 
-      desc: "الإحالات والجوائز",
-      action: "rewards"
+      icon: <CreditCard className="h-5 w-5" />, 
+      title: "البطاقات", 
+      desc: "فعّل بطاقتك",
+      action: "cards"
     },
     { 
       icon: <MapPin className="h-5 w-5" />, 
@@ -272,8 +261,8 @@ const Index = () => {
       return;
     }
     
-    if (action === 'rewards') {
-      navigate('/rewards');
+    if (action === 'cards') {
+      navigate('/cards');
       return;
     }
     

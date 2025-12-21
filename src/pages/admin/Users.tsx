@@ -415,12 +415,6 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
           return;
         }
 
-        // Show warning if user is part of referral system
-        if (result.has_referral && result.referrer_name) {
-          toast.warning(`⚠️ تحذير: إحالة نشطة - هذا المستخدم تمت إحالته من قبل: ${result.referrer_name}. سيحصل المُحيل على 100 دج عند التفعيل.`, {
-            duration: 8000,
-          });
-        }
 
         toast.success(result.message || 'تم تفعيل الحساب');
       } else {
