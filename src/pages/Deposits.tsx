@@ -11,7 +11,7 @@ import { useBalance } from '@/hooks/useBalance';
 import { useToast } from '@/hooks/use-toast';
 import { useFeeSettings } from '@/hooks/useFeeSettings';
 import { calculateFee, formatCurrency } from '@/lib/feeCalculator';
-import { usePaymentWallets } from '@/hooks/usePaymentWallets';
+import { usePaymentWallets, isCCPAccount } from '@/hooks/usePaymentWallets';
 import { 
   CreditCard,
   Upload,
@@ -543,7 +543,7 @@ export default function Deposits() {
                 </div>
               </div>
               <CardContent className="p-8 lg:p-10">
-                {wallets?.ccp ? (
+                {wallets?.ccp && (typeof wallets.ccp === 'string' ? wallets.ccp : isCCPAccount(wallets.ccp)) ? (
                   <div className="space-y-8">
                     {/* CCP Account Information */}
                     <div className="relative">
@@ -555,29 +555,74 @@ export default function Deposits() {
                           </div>
                           <h3 className="font-bold text-foreground text-xl">حساب CCP للإيداع</h3>
                         </div>
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white/50 dark:bg-black/20 rounded-2xl">
-                          <span className="text-2xl font-bold font-mono text-foreground">
-                            {wallets.ccp}
-                          </span>
-                          <Button
-                            variant="outline"
-                            size="lg"
-                            onClick={() => handleCopy(wallets.ccp)}
-                            className="hover:bg-gradient-secondary hover:text-white hover:border-secondary/50 transition-all hover:scale-105 rounded-2xl px-8 border-2 font-bold"
-                          >
-                            {copied ? (
-                              <>
-                                <Check className="h-5 w-5 ml-2" />
-                                تم النسخ
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="h-5 w-5 ml-2" />
-                                نسخ الرقم
-                              </>
-                            )}
-                          </Button>
-                        </div>
+                        
+                        {isCCPAccount(wallets.ccp) ? (
+                          <div className="space-y-4">
+                            {/* Account Number & Key */}
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white/50 dark:bg-black/20 rounded-2xl">
+                              <div className="text-center sm:text-right">
+                                <p className="text-sm text-muted-foreground mb-1">رقم الحساب / المفتاح</p>
+                                <span className="text-2xl font-bold font-mono text-foreground">
+                                  {wallets.ccp.accountNumber} / {wallets.ccp.key}
+                                </span>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={() => handleCopy(`${wallets.ccp && isCCPAccount(wallets.ccp) ? wallets.ccp.accountNumber : ''} / ${wallets.ccp && isCCPAccount(wallets.ccp) ? wallets.ccp.key : ''}`)}
+                                className="hover:bg-gradient-secondary hover:text-white hover:border-secondary/50 transition-all hover:scale-105 rounded-2xl px-8 border-2 font-bold"
+                              >
+                                {copied ? (
+                                  <>
+                                    <Check className="h-5 w-5 ml-2" />
+                                    تم النسخ
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="h-5 w-5 ml-2" />
+                                    نسخ الرقم
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                            
+                            {/* Holder Name & Location */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="p-4 bg-white/50 dark:bg-black/20 rounded-xl">
+                                <p className="text-sm text-muted-foreground mb-1">اسم صاحب الحساب</p>
+                                <p className="font-bold text-foreground text-lg">{wallets.ccp.holderName}</p>
+                              </div>
+                              <div className="p-4 bg-white/50 dark:bg-black/20 rounded-xl">
+                                <p className="text-sm text-muted-foreground mb-1">الولاية</p>
+                                <p className="font-bold text-foreground text-lg">{wallets.ccp.location}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white/50 dark:bg-black/20 rounded-2xl">
+                            <span className="text-2xl font-bold font-mono text-foreground">
+                              {wallets.ccp as string}
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="lg"
+                              onClick={() => handleCopy(wallets.ccp as string)}
+                              className="hover:bg-gradient-secondary hover:text-white hover:border-secondary/50 transition-all hover:scale-105 rounded-2xl px-8 border-2 font-bold"
+                            >
+                              {copied ? (
+                                <>
+                                  <Check className="h-5 w-5 ml-2" />
+                                  تم النسخ
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-5 w-5 ml-2" />
+                                  نسخ الرقم
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
 
