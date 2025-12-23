@@ -11,6 +11,7 @@ import { useBalance } from '@/hooks/useBalance';
 import { useWithdrawals } from '@/hooks/useWithdrawals';
 import { useToast } from '@/hooks/use-toast';
 import { useFeeSettings } from '@/hooks/useFeeSettings';
+import { useWithdrawalMethodSettings } from '@/hooks/useWithdrawalMethodSettings';
 import { calculateFee, formatCurrency } from '@/lib/feeCalculator';
 import { 
   ArrowUpRight,
@@ -22,7 +23,9 @@ import {
   CheckCircle,
   XCircle,
   Wallet,
-  Receipt
+  Receipt,
+  Ban,
+  AlertTriangle
 } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 
@@ -54,6 +57,7 @@ export default function Withdrawals() {
   const { withdrawals, loading, createWithdrawal } = useWithdrawals();
   const { toast } = useToast();
   const { feeSettings } = useFeeSettings();
+  const { settings: withdrawalMethodSettings, isMethodEnabled, getDisabledReason } = useWithdrawalMethodSettings();
 
   const [selectedMethod, setSelectedMethod] = React.useState<string>('opay');
   const [formData, setFormData] = React.useState({
@@ -72,6 +76,16 @@ export default function Withdrawals() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // التحقق من أن الطريقة المختارة مفعّلة
+    if (!isMethodEnabled(selectedMethod)) {
+      toast({
+        title: "طريقة السحب غير متاحة",
+        description: getDisabledReason(selectedMethod) || "هذه الطريقة معطلة حالياً",
+        variant: "destructive"
+      });
+      return;
+    }
     
     if (!formData.amount) {
       toast({
@@ -287,56 +301,86 @@ export default function Withdrawals() {
 
         {/* Withdrawal Method Selection */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-          {Object.entries(WithdrawalMethods).map(([key, method]) => (
-            <button
-              key={key}
-              onClick={() => setSelectedMethod(key)}
-              className={`group relative p-6 rounded-2xl border-2 transition-all duration-300 ${
-                selectedMethod === key
-                  ? 'border-primary bg-white shadow-xl scale-105'
-                  : 'border-white/30 bg-white/10 backdrop-blur-sm hover:border-white/50 hover:bg-white/20'
-              }`}
-            >
-              <div className="flex flex-col items-center gap-4">
-                {method.logo ? (
-                  <div className="relative w-24 h-24 flex items-center justify-center">
-                    <div className={`absolute inset-0 rounded-2xl transition-opacity ${
-                      selectedMethod === key ? 'bg-primary/10 opacity-100' : 'opacity-0 group-hover:opacity-50'
-                    }`}></div>
-                    <div className="relative w-20 h-20 flex items-center justify-center p-2 bg-white rounded-xl shadow-sm">
-                      <img 
-                        src={method.logo} 
-                        alt={method.name} 
-                        className="w-full h-full object-contain"
-                      />
+          {Object.entries(WithdrawalMethods).map(([key, method]) => {
+            const isEnabled = isMethodEnabled(key);
+            const disabledReason = getDisabledReason(key);
+            
+            return (
+              <button
+                key={key}
+                onClick={() => isEnabled && setSelectedMethod(key)}
+                disabled={!isEnabled}
+                className={`group relative p-6 rounded-2xl border-2 transition-all duration-300 ${
+                  !isEnabled
+                    ? 'border-destructive/30 bg-destructive/10 cursor-not-allowed opacity-70'
+                    : selectedMethod === key
+                      ? 'border-primary bg-white shadow-xl scale-105'
+                      : 'border-white/30 bg-white/10 backdrop-blur-sm hover:border-white/50 hover:bg-white/20'
+                }`}
+              >
+                <div className="flex flex-col items-center gap-4">
+                  {method.logo ? (
+                    <div className="relative w-24 h-24 flex items-center justify-center">
+                      <div className={`absolute inset-0 rounded-2xl transition-opacity ${
+                        !isEnabled 
+                          ? 'bg-destructive/10 opacity-100'
+                          : selectedMethod === key 
+                            ? 'bg-primary/10 opacity-100' 
+                            : 'opacity-0 group-hover:opacity-50'
+                      }`}></div>
+                      <div className={`relative w-20 h-20 flex items-center justify-center p-2 bg-white rounded-xl shadow-sm ${!isEnabled ? 'grayscale' : ''}`}>
+                        <img 
+                          src={method.logo} 
+                          alt={method.name} 
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
                     </div>
+                  ) : method.icon && (
+                    <div className={`relative w-24 h-24 flex items-center justify-center p-4 rounded-2xl transition-all ${
+                      !isEnabled
+                        ? 'bg-destructive/20'
+                        : selectedMethod === key 
+                          ? 'bg-gradient-primary' 
+                          : 'bg-white/10 group-hover:bg-white/20'
+                    }`}>
+                      <method.icon className={`h-12 w-12 ${
+                        !isEnabled
+                          ? 'text-destructive/70'
+                          : selectedMethod === key 
+                            ? 'text-white' 
+                            : 'text-white/70 group-hover:text-white'
+                      }`} />
+                    </div>
+                  )}
+                  <div className="text-center">
+                    <p className={`text-sm font-medium transition-colors ${
+                      !isEnabled
+                        ? 'text-destructive'
+                        : selectedMethod === key 
+                          ? 'text-primary' 
+                          : 'text-white group-hover:text-white'
+                    }`}>
+                      {method.name}
+                    </p>
+                    {!isEnabled && disabledReason && (
+                      <p className="text-xs text-destructive/80 mt-1">{disabledReason}</p>
+                    )}
                   </div>
-                ) : method.icon && (
-                  <div className={`relative w-24 h-24 flex items-center justify-center p-4 rounded-2xl transition-all ${
-                    selectedMethod === key 
-                      ? 'bg-gradient-primary' 
-                      : 'bg-white/10 group-hover:bg-white/20'
-                  }`}>
-                    <method.icon className={`h-12 w-12 ${
-                      selectedMethod === key ? 'text-white' : 'text-white/70 group-hover:text-white'
-                    }`} />
+                </div>
+                {!isEnabled && (
+                  <div className="absolute -top-2 -right-2">
+                    <Ban className="w-6 h-6 text-destructive bg-white rounded-full" />
                   </div>
                 )}
-                <div className="text-center">
-                  <p className={`text-sm font-medium transition-colors ${
-                    selectedMethod === key ? 'text-primary' : 'text-white group-hover:text-white'
-                  }`}>
-                    {method.name}
-                  </p>
-                </div>
-              </div>
-              {selectedMethod === key && (
-                <div className="absolute -top-2 -right-2">
-                  <CheckCircle className="w-6 h-6 text-primary fill-white" />
-                </div>
-              )}
-            </button>
-          ))}
+                {isEnabled && selectedMethod === key && (
+                  <div className="absolute -top-2 -right-2">
+                    <CheckCircle className="w-6 h-6 text-primary fill-white" />
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         <Tabs value={selectedMethod} onValueChange={setSelectedMethod} className="space-y-6">

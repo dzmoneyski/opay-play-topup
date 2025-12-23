@@ -23,7 +23,10 @@ import {
   Calculator,
   AlertCircle,
   Calendar,
-  Globe2
+  Globe2,
+  Wallet,
+  Ban,
+  CheckCircle
 } from 'lucide-react';
 
 interface FeeConfig {
@@ -106,6 +109,21 @@ export default function SettingsPage() {
     baridimob: '0551234567',
     ccp: '1234567890123',
     edahabiya: '0987654321'
+  });
+
+  // إعدادات طرق السحب
+  interface WithdrawalMethodSetting {
+    enabled: boolean;
+    disabled_reason: string;
+  }
+  
+  const [withdrawalMethodSettings, setWithdrawalMethodSettings] = React.useState<Record<string, WithdrawalMethodSetting>>({
+    opay: { enabled: true, disabled_reason: '' },
+    barid_bank: { enabled: true, disabled_reason: '' },
+    ccp: { enabled: true, disabled_reason: '' },
+    albaraka: { enabled: false, disabled_reason: 'قريباً' },
+    badr: { enabled: false, disabled_reason: 'قريباً' },
+    cash: { enabled: true, disabled_reason: '' }
   });
 
   const [diasporaSettings, setDiasporaSettings] = React.useState({
@@ -276,6 +294,29 @@ export default function SettingsPage() {
     loadDiasporaSettings();
   }, []);
 
+  // Load withdrawal method settings
+  React.useEffect(() => {
+    const loadWithdrawalMethodSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('platform_settings')
+          .select('setting_value')
+          .eq('setting_key', 'withdrawal_methods')
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data?.setting_value) {
+          setWithdrawalMethodSettings(data.setting_value as any);
+        }
+      } catch (error) {
+        console.error('Error loading withdrawal method settings:', error);
+      }
+    };
+
+    loadWithdrawalMethodSettings();
+  }, []);
+
   const handleInputChange = (key: string, value: any) => {
     setSettings(prev => ({
       ...prev,
@@ -370,6 +411,49 @@ export default function SettingsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSaveWithdrawalMethodSettings = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('platform_settings')
+        .upsert({
+          setting_key: 'withdrawal_methods',
+          setting_value: withdrawalMethodSettings as any,
+          description: 'إعدادات طرق السحب (تفعيل/تعطيل مع السبب)'
+        }, { onConflict: 'setting_key' });
+      
+      if (error) throw error;
+
+      console.log('Withdrawal method settings saved successfully');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error('Error saving withdrawal method settings:', error);
+      alert('خطأ في حفظ إعدادات طرق السحب');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleWithdrawalMethodChange = (method: string, field: 'enabled' | 'disabled_reason', value: boolean | string) => {
+    setWithdrawalMethodSettings(prev => ({
+      ...prev,
+      [method]: {
+        ...prev[method],
+        [field]: value
+      }
+    }));
+  };
+
+  const withdrawalMethodsLabels: Record<string, string> = {
+    opay: 'OPay',
+    barid_bank: 'بريد الجزائر',
+    ccp: 'CCP',
+    albaraka: 'بنك البركة',
+    badr: 'بنك البدر',
+    cash: 'السحب بدون بطاقة'
   };
 
   const formatCurrency = (amount: number) => {
@@ -816,6 +900,83 @@ export default function SettingsPage() {
                 <>
                   <Save className="h-4 w-4 mr-2" />
                   حفظ إعدادات المحافظ
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Withdrawal Methods Management */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Wallet className="h-5 w-5" />
+              إدارة طرق السحب
+            </CardTitle>
+            <CardDescription>
+              تفعيل أو تعطيل طرق السحب مع إمكانية كتابة سبب التعطيل
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {Object.entries(withdrawalMethodSettings).map(([method, settings]) => (
+                <div 
+                  key={method} 
+                  className={`p-4 rounded-lg border-2 transition-all ${
+                    settings.enabled 
+                      ? 'border-green-500/30 bg-green-500/5' 
+                      : 'border-destructive/30 bg-destructive/5'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      {settings.enabled ? (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <Ban className="h-5 w-5 text-destructive" />
+                      )}
+                      <span className="font-medium">{withdrawalMethodsLabels[method]}</span>
+                    </div>
+                    <Switch
+                      checked={settings.enabled}
+                      onCheckedChange={(checked) => handleWithdrawalMethodChange(method, 'enabled', checked)}
+                    />
+                  </div>
+                  
+                  <Badge variant={settings.enabled ? "default" : "destructive"} className="mb-3">
+                    {settings.enabled ? 'مفعّل' : 'معطّل'}
+                  </Badge>
+                  
+                  {!settings.enabled && (
+                    <div className="space-y-2 mt-3">
+                      <Label className="text-sm">سبب التعطيل</Label>
+                      <Textarea
+                        value={settings.disabled_reason}
+                        onChange={(e) => handleWithdrawalMethodChange(method, 'disabled_reason', e.target.value)}
+                        placeholder="أدخل سبب تعطيل هذه الطريقة..."
+                        rows={2}
+                        className="text-sm"
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <Button 
+              onClick={handleSaveWithdrawalMethodSettings} 
+              disabled={saving}
+              className="w-full mt-6"
+            >
+              {saving ? (
+                <>
+                  <Clock className="h-4 w-4 mr-2 animate-spin" />
+                  جاري الحفظ...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  حفظ إعدادات طرق السحب
                 </>
               )}
             </Button>
