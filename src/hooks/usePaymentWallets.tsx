@@ -2,11 +2,23 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+export interface CCPAccount {
+  accountNumber: string;
+  key: string;
+  holderName: string;
+  location: string;
+}
+
 export interface PaymentWallets {
   baridimob: string;
-  ccp: string;
+  ccp: string | CCPAccount;
   edahabiya: string;
 }
+
+// Helper to check if CCP is an object with details
+export const isCCPAccount = (ccp: string | CCPAccount): ccp is CCPAccount => {
+  return typeof ccp === 'object' && ccp !== null && 'accountNumber' in ccp;
+};
 
 export const usePaymentWallets = () => {
   const [wallets, setWallets] = useState<PaymentWallets | null>(null);
@@ -28,7 +40,7 @@ export const usePaymentWallets = () => {
         setWallets(data.setting_value as unknown as PaymentWallets);
       } else {
         // إذا لم توجد بيانات، استخدم القيم الافتراضية
-        const defaultWallets = {
+        const defaultWallets: PaymentWallets = {
           baridimob: '',
           ccp: '',
           edahabiya: ''
@@ -38,7 +50,7 @@ export const usePaymentWallets = () => {
     } catch (error) {
       console.error('Error fetching payment wallets:', error);
       // لا تظهر toast error للمستخدمين العاديين
-      const defaultWallets = {
+      const defaultWallets: PaymentWallets = {
         baridimob: '',
         ccp: '',
         edahabiya: ''
