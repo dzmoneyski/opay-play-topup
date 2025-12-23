@@ -83,10 +83,6 @@ export default function AdminDashboard() {
             .eq('is_phone_verified', true),
         ]);
 
-        console.log('Total users response:', totalRes.count, totalRes.error);
-        console.log('Active users response:', activeRes.count, activeRes.error);
-        console.log('Phone verified response:', phoneRes.count, phoneRes.error);
-
         if (!totalRes.error) setTotalUsers(totalRes.count ?? 0);
         if (!activeRes.error) setActiveUsers(activeRes.count ?? 0);
         if (!phoneRes.error) setPhoneVerifiedUsers(phoneRes.count ?? 0);
