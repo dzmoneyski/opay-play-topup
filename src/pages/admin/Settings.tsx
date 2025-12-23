@@ -242,12 +242,31 @@ export default function SettingsPage() {
           .from('platform_settings')
           .select('setting_value')
           .eq('setting_key', 'diaspora_settings')
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
 
         if (data?.setting_value) {
-          setDiasporaSettings(data.setting_value as any);
+          const dbSettings = data.setting_value as any;
+          
+          // Convert bank_accounts array format to individual account format
+          if (dbSettings.bank_accounts && Array.isArray(dbSettings.bank_accounts)) {
+            const findAccount = (name: string) => 
+              dbSettings.bank_accounts.find((acc: any) => 
+                acc.name?.toLowerCase() === name.toLowerCase()
+              ) || { account_name: '', account_number: '', bic: '', currency: '' };
+            
+            setDiasporaSettings({
+              enabled: dbSettings.enabled ?? true,
+              default_exchange_rate: dbSettings.default_exchange_rate ?? 280,
+              revolut: findAccount('revolut'),
+              wise: findAccount('wise'),
+              paysera: findAccount('paysera')
+            });
+          } else if (dbSettings.revolut && dbSettings.wise && dbSettings.paysera) {
+            // Already in the expected format
+            setDiasporaSettings(dbSettings);
+          }
         }
       } catch (error) {
         console.error('Error loading diaspora settings:', error);
