@@ -538,21 +538,175 @@ export default function Deposits() {
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-foreground mb-1">إيداع عبر CCP</h2>
-                    <p className="text-muted-foreground">قريباً - خدمة CCP قيد التطوير</p>
+                    <p className="text-muted-foreground">{wallets?.ccp ? 'قم بتحويل المبلغ إلى حساب CCP المحدد' : 'قريباً - خدمة CCP قيد التطوير'}</p>
                   </div>
                 </div>
               </div>
               <CardContent className="p-8 lg:p-10">
-                <div className="text-center py-16">
-                  <div className="relative inline-block mb-6">
-                    <div className="absolute inset-0 bg-muted/30 rounded-full blur-md"></div>
-                    <div className="relative w-24 h-24 rounded-full bg-muted/30 flex items-center justify-center">
-                      <Clock className="h-12 w-12 text-muted-foreground/50" />
+                {wallets?.ccp ? (
+                  <div className="space-y-8">
+                    {/* CCP Account Information */}
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-secondary rounded-3xl blur-lg opacity-20"></div>
+                      <div className="relative p-8 bg-gradient-to-br from-secondary/10 to-accent/10 rounded-3xl border-2 border-secondary/20">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="p-3 rounded-2xl bg-gradient-secondary">
+                            <Receipt className="h-6 w-6 text-white" />
+                          </div>
+                          <h3 className="font-bold text-foreground text-xl">حساب CCP للإيداع</h3>
+                        </div>
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white/50 dark:bg-black/20 rounded-2xl">
+                          <span className="text-2xl font-bold font-mono text-foreground">
+                            {wallets.ccp}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="lg"
+                            onClick={() => handleCopy(wallets.ccp)}
+                            className="hover:bg-gradient-secondary hover:text-white hover:border-secondary/50 transition-all hover:scale-105 rounded-2xl px-8 border-2 font-bold"
+                          >
+                            {copied ? (
+                              <>
+                                <Check className="h-5 w-5 ml-2" />
+                                تم النسخ
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-5 w-5 ml-2" />
+                                نسخ الرقم
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
                     </div>
+
+                    <Separator className="bg-border/50" />
+
+                    {/* Deposit Form */}
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                          <Label htmlFor="ccp-amount" className="text-foreground font-semibold text-base flex items-center gap-2">
+                            <div className="p-1.5 rounded-lg bg-secondary/10">
+                              <Banknote className="h-4 w-4 text-secondary" />
+                            </div>
+                            المبلغ المرسل (دج)
+                          </Label>
+                          <Input
+                            id="ccp-amount"
+                            type="number"
+                            placeholder="مثال: 5000"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            className="h-14 text-lg rounded-xl border-2 focus:border-secondary"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <Label htmlFor="ccp-transactionId" className="text-foreground font-semibold text-base flex items-center gap-2">
+                            <div className="p-1.5 rounded-lg bg-secondary/10">
+                              <Receipt className="h-4 w-4 text-secondary" />
+                            </div>
+                            رقم العملية / المرجع
+                          </Label>
+                          <Input
+                            id="ccp-transactionId"
+                            type="text"
+                            placeholder="رقم التحويل أو المرجع"
+                            value={transactionId}
+                            onChange={(e) => setTransactionId(e.target.value)}
+                            className="h-14 text-lg rounded-xl border-2 focus:border-secondary"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      {/* Fee Display */}
+                      {depositAmount > 0 && (
+                        <div className="p-6 bg-secondary/5 rounded-2xl border border-secondary/20">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-muted-foreground">المبلغ المرسل</span>
+                            <span className="font-bold text-foreground">{depositAmount.toFixed(2)} دج</span>
+                          </div>
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-muted-foreground">الرسوم ({depositFee.fee_percentage}%)</span>
+                            <span className="font-bold text-destructive">-{depositFee.fee_amount.toFixed(2)} دج</span>
+                          </div>
+                          <Separator className="my-3" />
+                          <div className="flex items-center justify-between">
+                            <span className="text-foreground font-bold text-lg">المبلغ المضاف للرصيد</span>
+                            <span className="font-bold text-secondary text-xl">{netAmount.toFixed(2)} دج</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Receipt Upload */}
+                      <div className="space-y-3">
+                        <Label className="text-foreground font-semibold text-base flex items-center gap-2">
+                          <div className="p-1.5 rounded-lg bg-secondary/10">
+                            <Upload className="h-4 w-4 text-secondary" />
+                          </div>
+                          صورة الوصل / الإيصال
+                        </Label>
+                        <div className="relative">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            required
+                          />
+                          <div className={`p-8 border-2 border-dashed rounded-2xl text-center transition-all ${
+                            receiptFile ? 'border-secondary bg-secondary/5' : 'border-border hover:border-secondary/50'
+                          }`}>
+                            {receiptFile ? (
+                              <div className="flex items-center justify-center gap-3">
+                                <CheckCircle className="h-6 w-6 text-secondary" />
+                                <span className="font-medium text-foreground">{receiptFile.name}</span>
+                              </div>
+                            ) : (
+                              <>
+                                <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                                <p className="text-muted-foreground font-medium">اضغط لرفع صورة الإيصال</p>
+                                <p className="text-xs text-muted-foreground/70 mt-1">PNG, JPG حتى 5MB</p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        className="w-full bg-gradient-secondary hover:opacity-90 text-white font-bold py-5 text-lg rounded-2xl"
+                        disabled={submitting || loading}
+                      >
+                        {submitting ? (
+                          <>
+                            <Clock className="h-5 w-5 animate-spin ml-2" />
+                            جاري الإرسال...
+                          </>
+                        ) : (
+                          <>
+                            إرسال طلب الإيداع
+                            <ArrowRight className="h-5 w-5 mr-2" />
+                          </>
+                        )}
+                      </Button>
+                    </form>
                   </div>
-                  <h3 className="text-xl font-bold text-foreground mb-2">قريباً</h3>
-                  <p className="text-muted-foreground">هذه الخدمة ستكون متاحة قريباً</p>
-                </div>
+                ) : (
+                  <div className="text-center py-16">
+                    <div className="relative inline-block mb-6">
+                      <div className="absolute inset-0 bg-muted/30 rounded-full blur-md"></div>
+                      <div className="relative w-24 h-24 rounded-full bg-muted/30 flex items-center justify-center">
+                        <Clock className="h-12 w-12 text-muted-foreground/50" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground mb-2">قريباً</h3>
+                    <p className="text-muted-foreground">هذه الخدمة ستكون متاحة قريباً</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -569,21 +723,175 @@ export default function Deposits() {
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-foreground mb-1">إيداع عبر Edahabiya</h2>
-                    <p className="text-muted-foreground">قريباً - خدمة Edahabiya قيد التطوير</p>
+                    <p className="text-muted-foreground">{wallets?.edahabiya ? 'قم بتحويل المبلغ إلى حساب الذهبية المحدد' : 'قريباً - خدمة Edahabiya قيد التطوير'}</p>
                   </div>
                 </div>
               </div>
               <CardContent className="p-8 lg:p-10">
-                <div className="text-center py-16">
-                  <div className="relative inline-block mb-6">
-                    <div className="absolute inset-0 bg-muted/30 rounded-full blur-md"></div>
-                    <div className="relative w-24 h-24 rounded-full bg-muted/30 flex items-center justify-center">
-                      <Clock className="h-12 w-12 text-muted-foreground/50" />
+                {wallets?.edahabiya ? (
+                  <div className="space-y-8">
+                    {/* Edahabiya Account Information */}
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-gold rounded-3xl blur-lg opacity-20"></div>
+                      <div className="relative p-8 bg-gradient-to-br from-accent/10 to-primary/10 rounded-3xl border-2 border-accent/20">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="p-3 rounded-2xl bg-gradient-gold">
+                            <CreditCard className="h-6 w-6 text-white" />
+                          </div>
+                          <h3 className="font-bold text-foreground text-xl">حساب الذهبية للإيداع</h3>
+                        </div>
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white/50 dark:bg-black/20 rounded-2xl">
+                          <span className="text-2xl font-bold font-mono text-foreground">
+                            {wallets.edahabiya}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="lg"
+                            onClick={() => handleCopy(wallets.edahabiya)}
+                            className="hover:bg-gradient-gold hover:text-white hover:border-accent/50 transition-all hover:scale-105 rounded-2xl px-8 border-2 font-bold"
+                          >
+                            {copied ? (
+                              <>
+                                <Check className="h-5 w-5 ml-2" />
+                                تم النسخ
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-5 w-5 ml-2" />
+                                نسخ الرقم
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
                     </div>
+
+                    <Separator className="bg-border/50" />
+
+                    {/* Deposit Form */}
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                          <Label htmlFor="edahabiya-amount" className="text-foreground font-semibold text-base flex items-center gap-2">
+                            <div className="p-1.5 rounded-lg bg-accent/10">
+                              <Banknote className="h-4 w-4 text-accent" />
+                            </div>
+                            المبلغ المرسل (دج)
+                          </Label>
+                          <Input
+                            id="edahabiya-amount"
+                            type="number"
+                            placeholder="مثال: 5000"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            className="h-14 text-lg rounded-xl border-2 focus:border-accent"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <Label htmlFor="edahabiya-transactionId" className="text-foreground font-semibold text-base flex items-center gap-2">
+                            <div className="p-1.5 rounded-lg bg-accent/10">
+                              <Receipt className="h-4 w-4 text-accent" />
+                            </div>
+                            رقم العملية / المرجع
+                          </Label>
+                          <Input
+                            id="edahabiya-transactionId"
+                            type="text"
+                            placeholder="رقم التحويل أو المرجع"
+                            value={transactionId}
+                            onChange={(e) => setTransactionId(e.target.value)}
+                            className="h-14 text-lg rounded-xl border-2 focus:border-accent"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      {/* Fee Display */}
+                      {depositAmount > 0 && (
+                        <div className="p-6 bg-accent/5 rounded-2xl border border-accent/20">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-muted-foreground">المبلغ المرسل</span>
+                            <span className="font-bold text-foreground">{depositAmount.toFixed(2)} دج</span>
+                          </div>
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-muted-foreground">الرسوم ({depositFee.fee_percentage}%)</span>
+                            <span className="font-bold text-destructive">-{depositFee.fee_amount.toFixed(2)} دج</span>
+                          </div>
+                          <Separator className="my-3" />
+                          <div className="flex items-center justify-between">
+                            <span className="text-foreground font-bold text-lg">المبلغ المضاف للرصيد</span>
+                            <span className="font-bold text-accent text-xl">{netAmount.toFixed(2)} دج</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Receipt Upload */}
+                      <div className="space-y-3">
+                        <Label className="text-foreground font-semibold text-base flex items-center gap-2">
+                          <div className="p-1.5 rounded-lg bg-accent/10">
+                            <Upload className="h-4 w-4 text-accent" />
+                          </div>
+                          صورة الوصل / الإيصال
+                        </Label>
+                        <div className="relative">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            required
+                          />
+                          <div className={`p-8 border-2 border-dashed rounded-2xl text-center transition-all ${
+                            receiptFile ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
+                          }`}>
+                            {receiptFile ? (
+                              <div className="flex items-center justify-center gap-3">
+                                <CheckCircle className="h-6 w-6 text-accent" />
+                                <span className="font-medium text-foreground">{receiptFile.name}</span>
+                              </div>
+                            ) : (
+                              <>
+                                <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                                <p className="text-muted-foreground font-medium">اضغط لرفع صورة الإيصال</p>
+                                <p className="text-xs text-muted-foreground/70 mt-1">PNG, JPG حتى 5MB</p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        className="w-full bg-gradient-gold hover:opacity-90 text-white font-bold py-5 text-lg rounded-2xl"
+                        disabled={submitting || loading}
+                      >
+                        {submitting ? (
+                          <>
+                            <Clock className="h-5 w-5 animate-spin ml-2" />
+                            جاري الإرسال...
+                          </>
+                        ) : (
+                          <>
+                            إرسال طلب الإيداع
+                            <ArrowRight className="h-5 w-5 mr-2" />
+                          </>
+                        )}
+                      </Button>
+                    </form>
                   </div>
-                  <h3 className="text-xl font-bold text-foreground mb-2">قريباً</h3>
-                  <p className="text-muted-foreground">هذه الخدمة ستكون متاحة قريباً</p>
-                </div>
+                ) : (
+                  <div className="text-center py-16">
+                    <div className="relative inline-block mb-6">
+                      <div className="absolute inset-0 bg-muted/30 rounded-full blur-md"></div>
+                      <div className="relative w-24 h-24 rounded-full bg-muted/30 flex items-center justify-center">
+                        <Clock className="h-12 w-12 text-muted-foreground/50" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground mb-2">قريباً</h3>
+                    <p className="text-muted-foreground">هذه الخدمة ستكون متاحة قريباً</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
