@@ -9,6 +9,9 @@ export interface Store {
   wilaya: string | null;
   city: string | null;
   street_address: string | null;
+  map_url: string | null;
+  store_image: string | null;
+  store_phone: string | null;
   is_active: boolean;
 }
 
@@ -22,7 +25,7 @@ export const useStores = () => {
     try {
       let query = supabase
         .from('merchants')
-        .select('id, business_name, phone, address, wilaya, city, street_address, is_active')
+        .select('id, business_name, phone, address, wilaya, city, street_address, map_url, store_image, store_phone, is_active')
         .eq('is_active', true)
         .not('wilaya', 'is', null);
 
