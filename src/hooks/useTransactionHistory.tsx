@@ -183,10 +183,12 @@ export const useTransactionHistory = (limit: number = 50) => {
         });
       });
 
-      // Sort by date and limit
-      allTransactions.sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
+      // Sort by date descending (newest first) - ensure proper timestamp comparison
+      allTransactions.sort((a, b) => {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+        return dateB - dateA; // Descending: newest first
+      });
       
       setTransactions(allTransactions.slice(0, limit));
     } catch (error) {
