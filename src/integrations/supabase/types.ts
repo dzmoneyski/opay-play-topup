@@ -912,6 +912,7 @@ export type Database = {
           balance: number
           business_name: string
           business_type: string
+          city: string | null
           commission_rate: number
           created_at: string
           id: string
@@ -919,15 +920,18 @@ export type Database = {
           merchant_code: string
           merchant_tier: string
           phone: string
+          street_address: string | null
           total_earnings: number
           updated_at: string
           user_id: string
+          wilaya: string | null
         }
         Insert: {
           address: string
           balance?: number
           business_name: string
           business_type: string
+          city?: string | null
           commission_rate?: number
           created_at?: string
           id?: string
@@ -935,15 +939,18 @@ export type Database = {
           merchant_code: string
           merchant_tier?: string
           phone: string
+          street_address?: string | null
           total_earnings?: number
           updated_at?: string
           user_id: string
+          wilaya?: string | null
         }
         Update: {
           address?: string
           balance?: number
           business_name?: string
           business_type?: string
+          city?: string | null
           commission_rate?: number
           created_at?: string
           id?: string
@@ -951,9 +958,11 @@ export type Database = {
           merchant_code?: string
           merchant_tier?: string
           phone?: string
+          street_address?: string | null
           total_earnings?: number
           updated_at?: string
           user_id?: string
+          wilaya?: string | null
         }
         Relationships: []
       }
