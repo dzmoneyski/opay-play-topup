@@ -19,8 +19,6 @@ import DigitalCardsPage from '@/pages/admin/DigitalCards';
 import AliExpressOrders from '@/pages/admin/AliExpressOrders';
 import DiasporaTransfers from '@/pages/admin/DiasporaTransfers';
 
-import FraudulentUsersPage from '@/pages/admin/FraudulentUsers';
-
 const AdminPanel = () => {
   const navigate = useNavigate();
   const { isAdmin, loading } = useUserRoles();
@@ -73,8 +71,6 @@ const AdminPanel = () => {
           <Route path="merchants" element={<MerchantManagement />} />
           <Route path="aliexpress" element={<AliExpressOrders />} />
           <Route path="diaspora" element={<DiasporaTransfers />} />
-          
-          <Route path="fraudulent-users" element={<FraudulentUsersPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>

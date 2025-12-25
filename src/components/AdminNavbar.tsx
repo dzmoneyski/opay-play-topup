@@ -17,8 +17,6 @@ import {
   Wallet,
   ShoppingBag,
   Globe2,
-  
-  Ban,
   CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,8 +37,6 @@ const mainItems = [
   { title: "طلبات التحقق", url: "/admin/identity-verification", icon: Shield, notificationKey: 'pendingVerifications' },
   { title: "المستخدمين", url: "/admin/users", icon: Users },
   { title: "إدارة التجار", url: "/admin/merchants", icon: Users },
-  
-  { title: "المستخدمون المحتالون", url: "/admin/fraudulent-users", icon: Ban },
 ];
 
 const transactionItems = [
