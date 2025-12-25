@@ -447,12 +447,12 @@ export default function WithdrawalsPage() {
                               <DialogHeader>
                                 <DialogTitle>موافقة على طلب السحب</DialogTitle>
                                 <DialogDescription>
-                                  يرجى رفع صورة إيصال السحب لإرسالها للمستخدم
+                                  هل أنت متأكد من الموافقة على هذا الطلب؟
                                 </DialogDescription>
                               </DialogHeader>
                               <div className="space-y-4">
                                 <div>
-                                  <Label htmlFor="receipt-upload">صورة إيصال السحب *</Label>
+                                  <Label htmlFor="receipt-upload">صورة إيصال السحب (اختياري)</Label>
                                   <Input
                                     id="receipt-upload"
                                     type="file"
@@ -461,7 +461,7 @@ export default function WithdrawalsPage() {
                                     className="mt-1"
                                   />
                                   <p className="text-sm text-muted-foreground mt-1">
-                                    الرجاء رفع صورة إيصال السحب كدليل للمستخدم
+                                    يمكنك رفع صورة الإيصال إن وجدت
                                   </p>
                                 </div>
                                 <div>
@@ -476,17 +476,17 @@ export default function WithdrawalsPage() {
                                 <div className="flex gap-2">
                                   <Button 
                                     onClick={() => handleApprove(selectedWithdrawal?.id)}
-                                    disabled={actionLoading || !receiptFile}
+                                    disabled={actionLoading}
                                     className="bg-green-600 hover:bg-green-700 flex-1"
                                   >
                                     {actionLoading ? (
                                       <>
                                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                        جاري الرفع...
+                                        جاري المعالجة...
                                       </>
                                     ) : (
                                       <>
-                                        <Upload className="h-4 w-4 mr-2" />
+                                        <CheckCircle className="h-4 w-4 mr-2" />
                                         تأكيد الموافقة
                                       </>
                                     )}
