@@ -515,7 +515,7 @@ const Transactions = () => {
                           </p>
                           <div className="flex items-center gap-2 mt-1">
                             <p className="text-sm text-muted-foreground">
-                              {format(new Date(transaction.created_at), 'dd MMM yyyy - hh:mm a', { locale: ar })}
+                              {format(new Date(transaction.created_at), 'dd/MM/yyyy - HH:mm:ss', { locale: ar })}
                             </p>
                             {getStatusBadge(transaction.status)}
                           </div>
