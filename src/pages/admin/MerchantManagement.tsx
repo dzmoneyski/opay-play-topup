@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -19,7 +20,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { CheckCircle2, XCircle, Store, TrendingUp, Users, RefreshCw } from 'lucide-react';
+import { CheckCircle2, XCircle, Store, TrendingUp, Users, RefreshCw, MapPin, Edit2, Save } from 'lucide-react';
+import { ALGERIA_WILAYAS } from '@/hooks/useStores';
 
 const MerchantManagement = () => {
   const { user } = useAuth();
@@ -29,6 +31,12 @@ const MerchantManagement = () => {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [commissionRate, setCommissionRate] = useState('2.00');
+  const [editingMerchant, setEditingMerchant] = useState<string | null>(null);
+  const [locationData, setLocationData] = useState<{
+    wilaya: string;
+    city: string;
+    street_address: string;
+  }>({ wilaya: '', city: '', street_address: '' });
 
   useEffect(() => {
     fetchData();
@@ -148,6 +156,37 @@ const MerchantManagement = () => {
       console.error('Error rejecting request:', error);
       toast.error(error.message || 'حدث خطأ');
     }
+  };
+
+  const handleUpdateLocation = async (merchantId: string) => {
+    try {
+      const { error } = await supabase
+        .from('merchants')
+        .update({
+          wilaya: locationData.wilaya || null,
+          city: locationData.city || null,
+          street_address: locationData.street_address || null
+        })
+        .eq('id', merchantId);
+
+      if (error) throw error;
+
+      toast.success('تم تحديث الموقع بنجاح');
+      setEditingMerchant(null);
+      fetchData();
+    } catch (error: any) {
+      console.error('Error updating location:', error);
+      toast.error('فشل تحديث الموقع');
+    }
+  };
+
+  const startEditingLocation = (merchant: any) => {
+    setEditingMerchant(merchant.id);
+    setLocationData({
+      wilaya: merchant.wilaya || '',
+      city: merchant.city || '',
+      street_address: merchant.street_address || ''
+    });
   };
 
   const statusColors = {
@@ -416,6 +455,90 @@ const MerchantManagement = () => {
                           </p>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Location Section */}
+                    <div className="border-t pt-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-base flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          موقع المتجر
+                        </h4>
+                        {editingMerchant !== merchant.id ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => startEditingLocation(merchant)}
+                          >
+                            <Edit2 className="h-4 w-4 ml-1" />
+                            تعديل الموقع
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => handleUpdateLocation(merchant.id)}
+                          >
+                            <Save className="h-4 w-4 ml-1" />
+                            حفظ
+                          </Button>
+                        )}
+                      </div>
+                      
+                      {editingMerchant === merchant.id ? (
+                        <div className="grid md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="text-xs text-muted-foreground">الولاية</label>
+                            <Select 
+                              value={locationData.wilaya} 
+                              onValueChange={(v) => setLocationData(prev => ({ ...prev, wilaya: v }))}
+                            >
+                              <SelectTrigger className="mt-1">
+                                <SelectValue placeholder="اختر الولاية" />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-[300px]">
+                                {ALGERIA_WILAYAS.map((w) => (
+                                  <SelectItem key={w.code} value={w.name}>
+                                    {w.code} - {w.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="text-xs text-muted-foreground">المدينة/البلدية</label>
+                            <Input
+                              value={locationData.city}
+                              onChange={(e) => setLocationData(prev => ({ ...prev, city: e.target.value }))}
+                              placeholder="مثال: باب الزوار"
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-muted-foreground">العنوان التفصيلي</label>
+                            <Input
+                              value={locationData.street_address}
+                              onChange={(e) => setLocationData(prev => ({ ...prev, street_address: e.target.value }))}
+                              placeholder="مثال: شارع محمد بوضياف، رقم 15"
+                              className="mt-1"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid md:grid-cols-3 gap-4">
+                          <div className="bg-muted/50 p-3 rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-1">الولاية</p>
+                            <p className="font-medium">{merchant.wilaya || 'غير محدد'}</p>
+                          </div>
+                          <div className="bg-muted/50 p-3 rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-1">المدينة</p>
+                            <p className="font-medium">{merchant.city || 'غير محدد'}</p>
+                          </div>
+                          <div className="bg-muted/50 p-3 rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-1">العنوان</p>
+                            <p className="font-medium">{merchant.street_address || 'غير محدد'}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Quick Actions */}
