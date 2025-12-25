@@ -5,7 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { 
   ArrowRight, 
   Download, 
@@ -17,16 +28,17 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
-  ShoppingBag,
-  Package,
-  CreditCard
+  CreditCard,
+  CalendarIcon,
+  Loader2
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { ar } from 'date-fns/locale';
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { ar, fr } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useProfile } from '@/hooks/useProfile';
 import DOMPurify from 'dompurify';
+import { cn } from '@/lib/utils';
 
 // Helper to escape user data for safe HTML insertion
 const escapeHtml = (str: string | null | undefined): string => {
@@ -36,10 +48,14 @@ const escapeHtml = (str: string | null | undefined): string => {
 
 const Transactions = () => {
   const navigate = useNavigate();
-  const { transactions, loading } = useTransactionHistory(); // No limit = show all
+  const { transactions, loading } = useTransactionHistory();
   const { profile } = useProfile();
   const [expandedTransaction, setExpandedTransaction] = useState<string | null>(null);
-
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportLanguage, setExportLanguage] = useState<'ar' | 'fr'>('ar');
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [exporting, setExporting] = useState(false);
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'deposit':
@@ -91,81 +107,147 @@ const Transactions = () => {
     return '';
   };
 
+  // Translation helpers
+  const t = (arText: string, frText: string) => exportLanguage === 'ar' ? arText : frText;
+  const getLocale = () => exportLanguage === 'ar' ? ar : fr;
+
+  // Status translations
+  const getStatusText = (status: string) => {
+    const statusMap: Record<string, { ar: string; fr: string }> = {
+      completed: { ar: 'مكتمل', fr: 'Terminé' },
+      pending: { ar: 'قيد المعالجة', fr: 'En attente' },
+      rejected: { ar: 'مرفوض', fr: 'Rejeté' },
+      approved: { ar: 'موافق عليه', fr: 'Approuvé' },
+    };
+    return statusMap[status]?.[exportLanguage] || status;
+  };
+
+  // Type translations
+  const getTypeText = (description: string) => {
+    const typeMap: Record<string, { ar: string; fr: string }> = {
+      'إيداع': { ar: 'إيداع', fr: 'Dépôt' },
+      'سحب': { ar: 'سحب', fr: 'Retrait' },
+      'تحويل مرسل': { ar: 'تحويل مرسل', fr: 'Transfert envoyé' },
+      'تحويل مستلم': { ar: 'تحويل مستلم', fr: 'Transfert reçu' },
+      'بطاقة هدية': { ar: 'بطاقة هدية', fr: 'Carte cadeau' },
+      'شحن ألعاب': { ar: 'شحن ألعاب', fr: 'Recharge jeux' },
+      'إيداع مراهنات': { ar: 'إيداع مراهنات', fr: 'Dépôt paris' },
+      'بطاقة رقمية': { ar: 'بطاقة رقمية', fr: 'Carte numérique' },
+    };
+    return typeMap[description]?.[exportLanguage] || description;
+  };
+
+  // Filter transactions by date range
+  const getFilteredTransactions = () => {
+    if (!dateFrom && !dateTo) return transactions;
+    
+    return transactions.filter(t => {
+      const txDate = new Date(t.created_at);
+      if (dateFrom && dateTo) {
+        return isWithinInterval(txDate, { start: startOfDay(dateFrom), end: endOfDay(dateTo) });
+      } else if (dateFrom) {
+        return txDate >= startOfDay(dateFrom);
+      } else if (dateTo) {
+        return txDate <= endOfDay(dateTo);
+      }
+      return true;
+    });
+  };
+
   const generatePDF = async () => {
-    // Build an Arabic/RTL-friendly receipt using HTML then convert it to PDF per page
-    const perPage = 18;
-    const pages = Math.max(1, Math.ceil(transactions.length / perPage));
+    setExporting(true);
+    try {
+      const filteredTransactions = getFilteredTransactions();
+      const isArabic = exportLanguage === 'ar';
+      const perPage = 18;
+      const pages = Math.max(1, Math.ceil(filteredTransactions.length / perPage));
 
-    const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdf = new jsPDF('p', 'mm', 'a4');
 
-    for (let p = 0; p < pages; p++) {
-      const slice = transactions.slice(p * perPage, (p + 1) * perPage);
+      for (let p = 0; p < pages; p++) {
+        const slice = filteredTransactions.slice(p * perPage, (p + 1) * perPage);
 
-      const container = document.createElement('div');
-      container.dir = 'rtl';
-      container.style.width = '794px'; // A4 width at ~96dpi
-      container.style.padding = '32px';
-      container.style.background = '#ffffff';
-      container.style.color = '#111827';
-      container.style.fontFamily = "'Tajawal','Cairo','Noto Naskh Arabic','Segoe UI', Tahoma, Arial, sans-serif";
+        const container = document.createElement('div');
+        container.dir = isArabic ? 'rtl' : 'ltr';
+        container.style.width = '794px';
+        container.style.padding = '32px';
+        container.style.background = '#ffffff';
+        container.style.color = '#111827';
+        container.style.fontFamily = isArabic 
+          ? "'Tajawal','Cairo','Noto Naskh Arabic','Segoe UI', Tahoma, Arial, sans-serif"
+          : "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif";
 
-      const headerHtml = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <div>
-            <h2 style="margin:0;font-size:22px">كشف الحساب</h2>
-            <div style="color:#6b7280;font-size:14px">${new Date().toLocaleString('ar-DZ')}</div>
+        const dateRangeText = dateFrom && dateTo 
+          ? `${format(dateFrom, 'dd/MM/yyyy')} - ${format(dateTo, 'dd/MM/yyyy')}`
+          : dateFrom 
+            ? `${t('من', 'À partir du')} ${format(dateFrom, 'dd/MM/yyyy')}`
+            : dateTo 
+              ? `${t('حتى', "Jusqu'au")} ${format(dateTo, 'dd/MM/yyyy')}`
+              : t('جميع المعاملات', 'Toutes les transactions');
+
+        const headerHtml = `
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div>
+              <h2 style="margin:0;font-size:22px">${t('كشف الحساب', 'Relevé de compte')}</h2>
+              <div style="color:#6b7280;font-size:14px">${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: getLocale() })}</div>
+              <div style="color:#6b7280;font-size:12px;margin-top:4px">${dateRangeText}</div>
+            </div>
+            <div style="text-align:${isArabic ? 'left' : 'right'}">
+              <div>${t('الاسم', 'Nom')}: <strong style="color:#111827">${escapeHtml(profile?.full_name)}</strong></div>
+              <div>${t('الهاتف', 'Téléphone')}: <strong style="color:#111827">${escapeHtml(profile?.phone)}</strong></div>
+            </div>
           </div>
-          <div style="text-align:left">
-            <div>الاسم: <strong style="color:#111827">${escapeHtml(profile?.full_name)}</strong></div>
-            <div>الهاتف: <strong style="color:#111827">${escapeHtml(profile?.phone)}</strong></div>
-          </div>
-        </div>
-      `;
-
-      const rows = slice.map((t) => {
-        const date = new Date(t.created_at).toLocaleString('ar-DZ');
-        const amount = `${getAmountPrefix(t.type)}${Number(t.amount).toLocaleString('ar-DZ')} دج`;
-        return `
-          <tr>
-            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${escapeHtml(date)}</td>
-            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${escapeHtml(t.description)}</td>
-            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${escapeHtml(amount)}</td>
-            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${escapeHtml(t.status)}</td>
-          </tr>
         `;
-      }).join('');
 
-      container.innerHTML = `
-        ${headerHtml}
-        <table style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead>
-            <tr style="background:#F3F4F6">
-              <th style="text-align:right;padding:10px 12px;border-bottom:1px solid #e5e7eb">التاريخ</th>
-              <th style="text-align:right;padding:10px 12px;border-bottom:1px solid #e5e7eb">النوع</th>
-              <th style="text-align:right;padding:10px 12px;border-bottom:1px solid #e5e7eb">المبلغ</th>
-              <th style="text-align:right;padding:10px 12px;border-bottom:1px solid #e5e7eb">الحالة</th>
+        const rows = slice.map((tx) => {
+          const date = format(new Date(tx.created_at), 'dd/MM/yyyy HH:mm', { locale: getLocale() });
+          const amount = `${getAmountPrefix(tx.type)}${Number(tx.amount).toLocaleString(isArabic ? 'ar-DZ' : 'fr-FR')} ${t('دج', 'DZD')}`;
+          return `
+            <tr>
+              <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${escapeHtml(date)}</td>
+              <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${escapeHtml(getTypeText(tx.description))}</td>
+              <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${escapeHtml(amount)}</td>
+              <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${escapeHtml(getStatusText(tx.status))}</td>
             </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-        <div style="margin-top:12px;color:#6b7280;font-size:12px">صفحة ${p + 1} من ${pages}</div>
-      `;
+          `;
+        }).join('');
 
-      document.body.appendChild(container);
-      await new Promise((r) => requestAnimationFrame(() => r(null)));
+        const textAlign = isArabic ? 'right' : 'left';
+        container.innerHTML = `
+          ${headerHtml}
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr style="background:#F3F4F6">
+                <th style="text-align:${textAlign};padding:10px 12px;border-bottom:1px solid #e5e7eb">${t('التاريخ', 'Date')}</th>
+                <th style="text-align:${textAlign};padding:10px 12px;border-bottom:1px solid #e5e7eb">${t('النوع', 'Type')}</th>
+                <th style="text-align:${textAlign};padding:10px 12px;border-bottom:1px solid #e5e7eb">${t('المبلغ', 'Montant')}</th>
+                <th style="text-align:${textAlign};padding:10px 12px;border-bottom:1px solid #e5e7eb">${t('الحالة', 'Statut')}</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <div style="margin-top:12px;color:#6b7280;font-size:12px">${t('صفحة', 'Page')} ${p + 1} ${t('من', 'sur')} ${pages}</div>
+        `;
 
-      const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-      const img = canvas.toDataURL('image/png');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        document.body.appendChild(container);
+        await new Promise((r) => requestAnimationFrame(() => r(null)));
 
-      if (p > 0) pdf.addPage();
-      pdf.addImage(img, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const img = canvas.toDataURL('image/png');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      document.body.removeChild(container);
+        if (p > 0) pdf.addPage();
+        pdf.addImage(img, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+        document.body.removeChild(container);
+      }
+
+      pdf.save(`statement-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      setExportDialogOpen(false);
+    } finally {
+      setExporting(false);
     }
-
-    pdf.save(`statement-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
   const generateSingleTransactionPDF = async (transaction: any) => {
@@ -239,13 +321,139 @@ const Transactions = () => {
             </div>
           </div>
           
-          <Button
-            onClick={generatePDF}
-            className="bg-gradient-primary hover:opacity-90 text-white shadow-glow"
-          >
-            <Download className="h-4 w-4 ml-2" />
-            تصدير PDF
-          </Button>
+          <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-primary hover:opacity-90 text-white shadow-glow">
+                <Download className="h-4 w-4 ml-2" />
+                تصدير PDF
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md" dir="rtl">
+              <DialogHeader>
+                <DialogTitle>تصدير كشف الحساب</DialogTitle>
+                <DialogDescription>
+                  اختر التاريخ واللغة للتصدير
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-6 py-4">
+                {/* Language Selection */}
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">اللغة</Label>
+                  <RadioGroup
+                    value={exportLanguage}
+                    onValueChange={(v) => setExportLanguage(v as 'ar' | 'fr')}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <RadioGroupItem value="ar" id="lang-ar" />
+                      <Label htmlFor="lang-ar" className="cursor-pointer">العربية</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <RadioGroupItem value="fr" id="lang-fr" />
+                      <Label htmlFor="lang-fr" className="cursor-pointer">Français</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {/* Date Range Selection */}
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">الفترة الزمنية</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label className="text-sm text-muted-foreground">من تاريخ</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-right font-normal",
+                              !dateFrom && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="ml-2 h-4 w-4" />
+                            {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "اختر التاريخ"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={dateFrom}
+                            onSelect={setDateFrom}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm text-muted-foreground">إلى تاريخ</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-right font-normal",
+                              !dateTo && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="ml-2 h-4 w-4" />
+                            {dateTo ? format(dateTo, "dd/MM/yyyy") : "اختر التاريخ"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={dateTo}
+                            onSelect={setDateTo}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    اترك الحقول فارغة لتصدير جميع المعاملات
+                  </p>
+                </div>
+
+                {/* Preview count */}
+                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    عدد المعاملات: <span className="font-bold text-foreground">{getFilteredTransactions().length}</span>
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                  <Button
+                    onClick={generatePDF}
+                    disabled={exporting || getFilteredTransactions().length === 0}
+                    className="flex-1 bg-gradient-primary hover:opacity-90"
+                  >
+                    {exporting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                        جاري التصدير...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4 ml-2" />
+                        تصدير
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setDateFrom(undefined);
+                      setDateTo(undefined);
+                    }}
+                  >
+                    مسح التاريخ
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Transactions List */}
