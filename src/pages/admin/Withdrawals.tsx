@@ -136,37 +136,32 @@ export default function WithdrawalsPage() {
   };
 
   const handleApprove = async (withdrawalId: string) => {
-    if (!receiptFile) {
-      toast({
-        title: "خطأ",
-        description: "يرجى رفع صورة إيصال السحب",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setActionLoading(true);
     try {
-      // Upload receipt image
-      const fileExt = receiptFile.name.split('.').pop();
-      const fileName = `withdrawal_receipt_${withdrawalId}_${Date.now()}.${fileExt}`;
+      let finalNotes = approveNotes;
       
-      // Upload to deposit-receipts bucket (shared bucket for all receipts)
-      const { error: uploadError, data: uploadData } = await supabase.storage
-        .from('deposit-receipts')
-        .upload(fileName, receiptFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      // Upload receipt if provided (optional)
+      if (receiptFile) {
+        const fileExt = receiptFile.name.split('.').pop();
+        const fileName = `withdrawal_receipt_${withdrawalId}_${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('deposit-receipts')
+          .upload(fileName, receiptFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error(`فشل في رفع الإيصال: ${uploadError.message}`);
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw new Error(`فشل في رفع الإيصال: ${uploadError.message}`);
+        }
+        
+        finalNotes = `تم رفع إيصال السحب: ${fileName}. ${approveNotes}`;
       }
 
-      // Approve withdrawal with receipt reference
-      const receiptNotes = `تم رفع إيصال السحب: ${fileName}. ${approveNotes}`;
-      await approveWithdrawal(withdrawalId, receiptNotes);
+      // Approve withdrawal
+      await approveWithdrawal(withdrawalId, finalNotes || undefined);
       
       // Reset form
       setApproveNotes('');
@@ -175,13 +170,13 @@ export default function WithdrawalsPage() {
       
       toast({
         title: "تم قبول طلب السحب",
-        description: "تم رفع إيصال السحب بنجاح"
+        description: receiptFile ? "تم رفع إيصال السحب بنجاح" : "تم قبول الطلب بنجاح"
       });
     } catch (error) {
       console.error('Error approving withdrawal:', error);
       toast({
         title: "خطأ",
-        description: "فشل في رفع الإيصال أو قبول الطلب",
+        description: "فشل في قبول الطلب",
         variant: "destructive"
       });
     } finally {
