@@ -13,6 +13,12 @@ const Stores = () => {
   const whatsappUrl = `https://wa.me/${companyWhatsApp}?text=${whatsappMessage}`;
 
   const openInMaps = (store: typeof stores[0]) => {
+    // إذا كان هناك رابط خريطة مباشر، استخدمه
+    if (store.map_url) {
+      window.open(store.map_url, '_blank');
+      return;
+    }
+    // وإلا ابحث عن العنوان في Google Maps
     const address = [store.street_address, store.city, store.wilaya]
       .filter(Boolean)
       .join(', ');
@@ -20,7 +26,9 @@ const Stores = () => {
     window.open(mapsUrl, '_blank');
   };
 
-  const callStore = (phone: string) => {
+  const callStore = (store: typeof stores[0]) => {
+    // استخدم رقم المتجر إذا وجد، وإلا رقم التاجر
+    const phone = store.store_phone || store.phone;
     window.location.href = `tel:${phone}`;
   };
 
@@ -84,7 +92,20 @@ const Stores = () => {
                 تم العثور على {stores.length} متجر
               </p>
               {stores.map((store) => (
-                <Card key={store.id} className="hover:shadow-lg transition-shadow">
+                <Card key={store.id} className="hover:shadow-lg transition-shadow overflow-hidden">
+                  {/* Store Image */}
+                  {store.store_image && (
+                    <div className="w-full h-40 overflow-hidden">
+                      <img 
+                        src={store.store_image} 
+                        alt={store.business_name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                   <CardContent className="pt-6">
                     <div className="space-y-4">
                       {/* Store Info */}
@@ -100,6 +121,12 @@ const Stores = () => {
                               .join(' - ')}
                           </span>
                         </div>
+                        {(store.store_phone || store.phone) && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                            <Phone className="w-4 h-4" />
+                            <span dir="ltr">{store.store_phone || store.phone}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Actions */}
@@ -107,7 +134,7 @@ const Stores = () => {
                         <Button
                           variant="outline"
                           className="flex-1 gap-2"
-                          onClick={() => callStore(store.phone)}
+                          onClick={() => callStore(store)}
                         >
                           <Phone className="w-4 h-4" />
                           اتصال

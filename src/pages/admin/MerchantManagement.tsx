@@ -36,7 +36,10 @@ const MerchantManagement = () => {
     wilaya: string;
     city: string;
     street_address: string;
-  }>({ wilaya: '', city: '', street_address: '' });
+    map_url: string;
+    store_image: string;
+    store_phone: string;
+  }>({ wilaya: '', city: '', street_address: '', map_url: '', store_image: '', store_phone: '' });
 
   useEffect(() => {
     fetchData();
@@ -165,18 +168,21 @@ const MerchantManagement = () => {
         .update({
           wilaya: locationData.wilaya || null,
           city: locationData.city || null,
-          street_address: locationData.street_address || null
+          street_address: locationData.street_address || null,
+          map_url: locationData.map_url || null,
+          store_image: locationData.store_image || null,
+          store_phone: locationData.store_phone || null
         })
         .eq('id', merchantId);
 
       if (error) throw error;
 
-      toast.success('تم تحديث الموقع بنجاح');
+      toast.success('تم تحديث بيانات المتجر بنجاح');
       setEditingMerchant(null);
       fetchData();
     } catch (error: any) {
       console.error('Error updating location:', error);
-      toast.error('فشل تحديث الموقع');
+      toast.error('فشل تحديث البيانات');
     }
   };
 
@@ -185,7 +191,10 @@ const MerchantManagement = () => {
     setLocationData({
       wilaya: merchant.wilaya || '',
       city: merchant.city || '',
-      street_address: merchant.street_address || ''
+      street_address: merchant.street_address || '',
+      map_url: merchant.map_url || '',
+      store_image: merchant.store_image || '',
+      store_phone: merchant.store_phone || ''
     });
   };
 
@@ -485,57 +494,119 @@ const MerchantManagement = () => {
                       </div>
                       
                       {editingMerchant === merchant.id ? (
-                        <div className="grid md:grid-cols-3 gap-4">
-                          <div>
-                            <label className="text-xs text-muted-foreground">الولاية</label>
-                            <Select 
-                              value={locationData.wilaya} 
-                              onValueChange={(v) => setLocationData(prev => ({ ...prev, wilaya: v }))}
-                            >
-                              <SelectTrigger className="mt-1">
-                                <SelectValue placeholder="اختر الولاية" />
-                              </SelectTrigger>
-                              <SelectContent className="max-h-[300px]">
-                                {ALGERIA_WILAYAS.map((w) => (
-                                  <SelectItem key={w.code} value={w.name}>
-                                    {w.code} - {w.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                        <div className="space-y-4">
+                          <div className="grid md:grid-cols-3 gap-4">
+                            <div>
+                              <label className="text-xs text-muted-foreground">الولاية</label>
+                              <Select 
+                                value={locationData.wilaya} 
+                                onValueChange={(v) => setLocationData(prev => ({ ...prev, wilaya: v }))}
+                              >
+                                <SelectTrigger className="mt-1">
+                                  <SelectValue placeholder="اختر الولاية" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[300px]">
+                                  {ALGERIA_WILAYAS.map((w) => (
+                                    <SelectItem key={w.code} value={w.name}>
+                                      {w.code} - {w.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="text-xs text-muted-foreground">المدينة/البلدية</label>
+                              <Input
+                                value={locationData.city}
+                                onChange={(e) => setLocationData(prev => ({ ...prev, city: e.target.value }))}
+                                placeholder="مثال: باب الزوار"
+                                className="mt-1"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-muted-foreground">العنوان التفصيلي</label>
+                              <Input
+                                value={locationData.street_address}
+                                onChange={(e) => setLocationData(prev => ({ ...prev, street_address: e.target.value }))}
+                                placeholder="مثال: شارع محمد بوضياف، رقم 15"
+                                className="mt-1"
+                              />
+                            </div>
                           </div>
-                          <div>
-                            <label className="text-xs text-muted-foreground">المدينة/البلدية</label>
-                            <Input
-                              value={locationData.city}
-                              onChange={(e) => setLocationData(prev => ({ ...prev, city: e.target.value }))}
-                              placeholder="مثال: باب الزوار"
-                              className="mt-1"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs text-muted-foreground">العنوان التفصيلي</label>
-                            <Input
-                              value={locationData.street_address}
-                              onChange={(e) => setLocationData(prev => ({ ...prev, street_address: e.target.value }))}
-                              placeholder="مثال: شارع محمد بوضياف، رقم 15"
-                              className="mt-1"
-                            />
+                          <div className="grid md:grid-cols-3 gap-4">
+                            <div>
+                              <label className="text-xs text-muted-foreground">رقم هاتف المتجر</label>
+                              <Input
+                                value={locationData.store_phone}
+                                onChange={(e) => setLocationData(prev => ({ ...prev, store_phone: e.target.value }))}
+                                placeholder="مثال: 0555123456"
+                                className="mt-1"
+                                dir="ltr"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-muted-foreground">رابط خرائط Google</label>
+                              <Input
+                                value={locationData.map_url}
+                                onChange={(e) => setLocationData(prev => ({ ...prev, map_url: e.target.value }))}
+                                placeholder="الصق رابط الموقع من Google Maps"
+                                className="mt-1"
+                                dir="ltr"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-muted-foreground">رابط صورة المتجر</label>
+                              <Input
+                                value={locationData.store_image}
+                                onChange={(e) => setLocationData(prev => ({ ...prev, store_image: e.target.value }))}
+                                placeholder="رابط الصورة (URL)"
+                                className="mt-1"
+                                dir="ltr"
+                              />
+                            </div>
                           </div>
                         </div>
                       ) : (
-                        <div className="grid md:grid-cols-3 gap-4">
-                          <div className="bg-muted/50 p-3 rounded-lg">
-                            <p className="text-xs text-muted-foreground mb-1">الولاية</p>
-                            <p className="font-medium">{merchant.wilaya || 'غير محدد'}</p>
+                        <div className="space-y-4">
+                          <div className="grid md:grid-cols-3 gap-4">
+                            <div className="bg-muted/50 p-3 rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">الولاية</p>
+                              <p className="font-medium">{merchant.wilaya || 'غير محدد'}</p>
+                            </div>
+                            <div className="bg-muted/50 p-3 rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">المدينة</p>
+                              <p className="font-medium">{merchant.city || 'غير محدد'}</p>
+                            </div>
+                            <div className="bg-muted/50 p-3 rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">العنوان</p>
+                              <p className="font-medium">{merchant.street_address || 'غير محدد'}</p>
+                            </div>
                           </div>
-                          <div className="bg-muted/50 p-3 rounded-lg">
-                            <p className="text-xs text-muted-foreground mb-1">المدينة</p>
-                            <p className="font-medium">{merchant.city || 'غير محدد'}</p>
-                          </div>
-                          <div className="bg-muted/50 p-3 rounded-lg">
-                            <p className="text-xs text-muted-foreground mb-1">العنوان</p>
-                            <p className="font-medium">{merchant.street_address || 'غير محدد'}</p>
+                          <div className="grid md:grid-cols-3 gap-4">
+                            <div className="bg-muted/50 p-3 rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">هاتف المتجر</p>
+                              <p className="font-medium font-mono" dir="ltr">{merchant.store_phone || 'غير محدد'}</p>
+                            </div>
+                            <div className="bg-muted/50 p-3 rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">رابط الخريطة</p>
+                              {merchant.map_url ? (
+                                <a href={merchant.map_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm">
+                                  فتح في الخريطة
+                                </a>
+                              ) : (
+                                <p className="font-medium">غير محدد</p>
+                              )}
+                            </div>
+                            <div className="bg-muted/50 p-3 rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">صورة المتجر</p>
+                              {merchant.store_image ? (
+                                <a href={merchant.store_image} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm">
+                                  عرض الصورة
+                                </a>
+                              ) : (
+                                <p className="font-medium">غير محدد</p>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}

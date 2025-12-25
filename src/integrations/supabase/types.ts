@@ -917,9 +917,12 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          map_url: string | null
           merchant_code: string
           merchant_tier: string
           phone: string
+          store_image: string | null
+          store_phone: string | null
           street_address: string | null
           total_earnings: number
           updated_at: string
@@ -936,9 +939,12 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          map_url?: string | null
           merchant_code: string
           merchant_tier?: string
           phone: string
+          store_image?: string | null
+          store_phone?: string | null
           street_address?: string | null
           total_earnings?: number
           updated_at?: string
@@ -955,9 +961,12 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          map_url?: string | null
           merchant_code?: string
           merchant_tier?: string
           phone?: string
+          store_image?: string | null
+          store_phone?: string | null
           street_address?: string | null
           total_earnings?: number
           updated_at?: string
