@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -13,40 +13,36 @@ export interface TransactionHistoryItem {
   transaction_number?: string; // For transfers
 }
 
-export const useTransactionHistory = (limit: number = 50) => {
+export const useTransactionHistory = (limit?: number) => {
   const [transactions, setTransactions] = useState<TransactionHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
   const { user } = useAuth();
 
-  const fetchTransactionHistory = async () => {
+  const fetchTransactionHistory = useCallback(async () => {
     if (!user) return;
 
     setLoading(true);
     try {
-      // Fetch only limited number of recent transactions
-      const itemsPerType = Math.ceil(limit / 8);
-      
+      // Fetch ALL transactions from each table
       const [deposits, transfers, withdrawals, giftCards, bettingTransactions, gameTopups, digitalCards] = await Promise.all([
         supabase
           .from('deposits')
           .select('*')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(itemsPerType),
+          .order('created_at', { ascending: false }),
         
         supabase
           .from('transfers')
           .select('*, transaction_number')
           .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
-          .order('created_at', { ascending: false })
-          .limit(itemsPerType),
+          .order('created_at', { ascending: false }),
         
         supabase
           .from('withdrawals')
           .select('*')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(itemsPerType),
+          .order('created_at', { ascending: false }),
         
         // جلب بطاقات الهدايا مباشرة للمستخدم الحالي
         supabase
@@ -54,22 +50,19 @@ export const useTransactionHistory = (limit: number = 50) => {
           .select('id, amount, used_at, card_code')
           .eq('used_by', user.id)
           .eq('is_used', true)
-          .order('used_at', { ascending: false })
-          .limit(itemsPerType),
+          .order('used_at', { ascending: false }),
         
         supabase
           .from('betting_transactions')
           .select('*, platform:game_platforms(name, name_ar)')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(itemsPerType),
+          .order('created_at', { ascending: false }),
         
         supabase
           .from('game_topup_orders')
           .select('*, platform:game_platforms(name, name_ar)')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(itemsPerType),
+          .order('created_at', { ascending: false }),
         
         // جلب طلبات البطاقات الرقمية
         supabase
@@ -77,7 +70,6 @@ export const useTransactionHistory = (limit: number = 50) => {
           .select('*, card_type:digital_card_types(name, name_ar)')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-          .limit(itemsPerType)
       ]);
 
       const allTransactions: TransactionHistoryItem[] = [];
@@ -190,17 +182,19 @@ export const useTransactionHistory = (limit: number = 50) => {
         return dateB - dateA; // Descending: newest first
       });
       
-      setTransactions(allTransactions.slice(0, limit));
+      setTotalCount(allTransactions.length);
+      // Apply limit if provided
+      setTransactions(limit ? allTransactions.slice(0, limit) : allTransactions);
     } catch (error) {
       console.error('Error fetching transaction history:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchTransactionHistory();
-  }, [user]);
+  }, [fetchTransactionHistory]);
 
-  return { transactions, loading, refetch: fetchTransactionHistory };
+  return { transactions, loading, totalCount, refetch: fetchTransactionHistory };
 };
