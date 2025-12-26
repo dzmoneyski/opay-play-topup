@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTransactionHistory } from '@/hooks/useTransactionHistory';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 import { 
   ArrowRight, 
   Download, 
@@ -46,9 +55,11 @@ const escapeHtml = (str: string | null | undefined): string => {
   return DOMPurify.sanitize(str, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
 };
 
+const ITEMS_PER_PAGE = 10;
+
 const Transactions = () => {
   const navigate = useNavigate();
-  const { transactions, loading } = useTransactionHistory();
+  const { transactions, loading, totalCount } = useTransactionHistory();
   const { profile } = useProfile();
   const [expandedTransaction, setExpandedTransaction] = useState<string | null>(null);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
@@ -56,6 +67,8 @@ const Transactions = () => {
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [exporting, setExporting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'deposit':
@@ -152,6 +165,60 @@ const Transactions = () => {
       }
       return true;
     });
+  };
+
+  // Pagination logic
+  const totalPages = Math.ceil(transactions.length / ITEMS_PER_PAGE);
+  
+  const paginatedTransactions = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return transactions.slice(startIndex, endIndex);
+  }, [transactions, currentPage]);
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pages: (number | 'ellipsis')[] = [];
+    
+    if (totalPages <= 7) {
+      // Show all pages if 7 or less
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always show first page
+      pages.push(1);
+      
+      if (currentPage > 3) {
+        pages.push('ellipsis');
+      }
+      
+      // Show pages around current page
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      
+      if (currentPage < totalPages - 2) {
+        pages.push('ellipsis');
+      }
+      
+      // Always show last page
+      pages.push(totalPages);
+    }
+    
+    return pages;
+  };
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      setExpandedTransaction(null); // Close any expanded transaction
+      // Scroll to top of transactions list
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const generatePDF = async () => {
@@ -463,7 +530,7 @@ const Transactions = () => {
               <div className="p-2 rounded-xl bg-gradient-primary">
                 <FileText className="h-5 w-5 text-white" />
               </div>
-              سجل المعاملات ({transactions.length})
+              سجل المعاملات ({totalCount})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -491,111 +558,162 @@ const Transactions = () => {
                 <p className="text-sm">ابدأ باستخدام التطبيق لرؤية معاملاتك هنا</p>
               </div>
             ) : (
-              transactions.map((transaction) => (
-                <div key={transaction.id} className="space-y-2">
-                  <div 
-                    className="group p-4 rounded-xl bg-muted/50 hover:bg-gradient-primary/5 transition-all duration-300 hover:shadow-soft border border-transparent hover:border-primary/10 cursor-pointer"
-                    onClick={() => setExpandedTransaction(
-                      expandedTransaction === transaction.id ? null : transaction.id
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="p-3 rounded-xl bg-gradient-primary text-white group-hover:scale-110 transition-transform">
-                          {getTransactionIcon(transaction.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground group-hover:text-primary transition-colors truncate">
-                            {transaction.description}
-                            {transaction.transaction_number && (
-                              <span className="text-xs text-muted-foreground mr-2">
-                                #{transaction.transaction_number}
-                              </span>
-                            )}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <p className="text-sm text-muted-foreground">
-                              {format(new Date(transaction.created_at), 'dd/MM/yyyy - HH:mm:ss', { locale: ar })}
+              <>
+                {paginatedTransactions.map((transaction) => (
+                  <div key={transaction.id} className="space-y-2">
+                    <div 
+                      className="group p-4 rounded-xl bg-muted/50 hover:bg-gradient-primary/5 transition-all duration-300 hover:shadow-soft border border-transparent hover:border-primary/10 cursor-pointer"
+                      onClick={() => setExpandedTransaction(
+                        expandedTransaction === transaction.id ? null : transaction.id
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="p-3 rounded-xl bg-gradient-primary text-white group-hover:scale-110 transition-transform">
+                            {getTransactionIcon(transaction.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                              {transaction.description}
+                              {transaction.transaction_number && (
+                                <span className="text-xs text-muted-foreground mr-2">
+                                  #{transaction.transaction_number}
+                                </span>
+                              )}
                             </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <p className="text-sm text-muted-foreground">
+                                {format(new Date(transaction.created_at), 'dd/MM/yyyy - HH:mm:ss', { locale: ar })}
+                              </p>
+                              {getStatusBadge(transaction.status)}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <p className={`text-lg font-bold ${getAmountColor(transaction.type)}`}>
+                            {getAmountPrefix(transaction.type)}{Math.abs(transaction.amount).toLocaleString('ar-DZ')} دج
+                          </p>
+                          {expandedTransaction === transaction.id ? (
+                            <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Transaction Details */}
+                    {expandedTransaction === transaction.id && (
+                      <div className="p-4 rounded-xl bg-muted/30 border border-border/50 space-y-3 animate-in slide-in-from-top-2">
+                        <h4 className="font-semibold text-foreground mb-3">تفاصيل المعاملة</h4>
+                        <Separator />
+                        
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          {transaction.transaction_number && (
+                            <div className="col-span-2">
+                              <p className="text-muted-foreground mb-1">رقم المعاملة</p>
+                              <p className="font-mono font-bold text-primary text-lg">
+                                #{transaction.transaction_number}
+                              </p>
+                            </div>
+                          )}
+                          
+                          <div>
+                            <p className="text-muted-foreground mb-1">معرف المعاملة</p>
+                            <p className="font-mono font-medium text-foreground">
+                              {transaction.id.slice(0, 8).toUpperCase()}
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <p className="text-muted-foreground mb-1">النوع</p>
+                            <p className="font-medium text-foreground">{transaction.description}</p>
+                          </div>
+                          
+                          <div>
+                            <p className="text-muted-foreground mb-1">المبلغ</p>
+                            <p className={`font-bold ${getAmountColor(transaction.type)}`}>
+                              {getAmountPrefix(transaction.type)}{Math.abs(transaction.amount).toLocaleString('ar-DZ')} دج
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <p className="text-muted-foreground mb-1">الحالة</p>
                             {getStatusBadge(transaction.status)}
                           </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <p className={`text-lg font-bold ${getAmountColor(transaction.type)}`}>
-                          {getAmountPrefix(transaction.type)}{transaction.amount.toLocaleString('ar-DZ')} دج
-                        </p>
-                        {expandedTransaction === transaction.id ? (
-                          <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                        ) : (
-                          <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Transaction Details */}
-                  {expandedTransaction === transaction.id && (
-                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50 space-y-3 animate-in slide-in-from-top-2">
-                      <h4 className="font-semibold text-foreground mb-3">تفاصيل المعاملة</h4>
-                      <Separator />
-                      
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        {transaction.transaction_number && (
+                          
                           <div className="col-span-2">
-                            <p className="text-muted-foreground mb-1">رقم المعاملة</p>
-                            <p className="font-mono font-bold text-primary text-lg">
-                              #{transaction.transaction_number}
+                            <p className="text-muted-foreground mb-1">التاريخ والوقت</p>
+                            <p className="font-medium text-foreground">
+                              {format(new Date(transaction.created_at), 'EEEE, dd MMMM yyyy - hh:mm:ss a', { locale: ar })}
                             </p>
                           </div>
-                        )}
-                        
-                        <div>
-                          <p className="text-muted-foreground mb-1">معرف المعاملة</p>
-                          <p className="font-mono font-medium text-foreground">
-                            {transaction.id.slice(0, 8).toUpperCase()}
-                          </p>
                         </div>
                         
-                        <div>
-                          <p className="text-muted-foreground mb-1">النوع</p>
-                          <p className="font-medium text-foreground">{transaction.description}</p>
-                        </div>
+                        <Separator className="my-4" />
                         
-                        <div>
-                          <p className="text-muted-foreground mb-1">المبلغ</p>
-                          <p className={`font-bold ${getAmountColor(transaction.type)}`}>
-                            {getAmountPrefix(transaction.type)}{transaction.amount.toLocaleString('ar-DZ')} دج
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <p className="text-muted-foreground mb-1">الحالة</p>
-                          {getStatusBadge(transaction.status)}
-                        </div>
-                        
-                        <div className="col-span-2">
-                          <p className="text-muted-foreground mb-1">التاريخ والوقت</p>
-                          <p className="font-medium text-foreground">
-                            {format(new Date(transaction.created_at), 'EEEE, dd MMMM yyyy - hh:mm:ss a', { locale: ar })}
-                          </p>
-                        </div>
+                        <Button
+                          onClick={() => generateSingleTransactionPDF(transaction)}
+                          className="w-full"
+                          variant="outline"
+                        >
+                          <Download className="ml-2 h-4 w-4" />
+                          تحميل إيصال PDF
+                        </Button>
                       </div>
-                      
-                      <Separator className="my-4" />
-                      
-                      <Button
-                        onClick={() => generateSingleTransactionPDF(transaction)}
-                        className="w-full"
-                        variant="outline"
-                      >
-                        <Download className="ml-2 h-4 w-4" />
-                        تحميل إيصال PDF
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))
+                    )}
+                  </div>
+                ))}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="pt-6">
+                    <Pagination dir="ltr">
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            className={cn(
+                              "cursor-pointer",
+                              currentPage === 1 && "pointer-events-none opacity-50"
+                            )}
+                          />
+                        </PaginationItem>
+                        
+                        {getPageNumbers().map((page, index) => (
+                          <PaginationItem key={index}>
+                            {page === 'ellipsis' ? (
+                              <PaginationEllipsis />
+                            ) : (
+                              <PaginationLink
+                                onClick={() => handlePageChange(page)}
+                                isActive={currentPage === page}
+                                className="cursor-pointer"
+                              >
+                                {page}
+                              </PaginationLink>
+                            )}
+                          </PaginationItem>
+                        ))}
+                        
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            className={cn(
+                              "cursor-pointer",
+                              currentPage === totalPages && "pointer-events-none opacity-50"
+                            )}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                    
+                    <p className="text-center text-sm text-muted-foreground mt-3">
+                      صفحة {currentPage} من {totalPages} • إجمالي {totalCount} معاملة
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
