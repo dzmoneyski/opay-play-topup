@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -39,7 +40,9 @@ import {
   ChevronUp,
   CreditCard,
   CalendarIcon,
-  Loader2
+  Loader2,
+  Search,
+  X
 } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { ar, fr } from 'date-fns/locale';
@@ -67,6 +70,7 @@ const Transactions = () => {
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [exporting, setExporting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
   const getTransactionIcon = (type: string) => {
@@ -167,14 +171,30 @@ const Transactions = () => {
     });
   };
 
+  // Search/Filter transactions
+  const filteredTransactions = useMemo(() => {
+    if (!searchQuery.trim()) return transactions;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return transactions.filter(t => {
+      // Search by transaction ID
+      if (t.id.toLowerCase().includes(query)) return true;
+      // Search by transaction number (for transfers)
+      if (t.transaction_number?.toLowerCase().includes(query)) return true;
+      // Search by phone number in description
+      if (t.description.includes(query)) return true;
+      return false;
+    });
+  }, [transactions, searchQuery]);
+
   // Pagination logic
-  const totalPages = Math.ceil(transactions.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
   
   const paginatedTransactions = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    return transactions.slice(startIndex, endIndex);
-  }, [transactions, currentPage]);
+    return filteredTransactions.slice(startIndex, endIndex);
+  }, [filteredTransactions, currentPage]);
 
   // Generate page numbers for pagination
   const getPageNumbers = () => {
@@ -530,8 +550,33 @@ const Transactions = () => {
               <div className="p-2 rounded-xl bg-gradient-primary">
                 <FileText className="h-5 w-5 text-white" />
               </div>
-              سجل المعاملات ({totalCount})
+              سجل المعاملات ({filteredTransactions.length})
             </CardTitle>
+            
+            {/* Search Filter */}
+            <div className="mt-4 relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="البحث بمعرف المعاملة أو رقم المعاملة أو رقم الهاتف..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1); // Reset to first page on search
+                }}
+                className="pr-10 pl-10"
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute left-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {loading ? (
