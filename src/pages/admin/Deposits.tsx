@@ -36,6 +36,10 @@ export default function DepositsPage() {
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
   const [dateFrom, setDateFrom] = React.useState('');
   const [dateTo, setDateTo] = React.useState('');
+  const [amountMin, setAmountMin] = React.useState('');
+  const [amountMax, setAmountMax] = React.useState('');
+  const [timeFrom, setTimeFrom] = React.useState('');
+  const [timeTo, setTimeTo] = React.useState('');
 
   const getImageUrl = (imagePath: string | null) => {
     if (!imagePath) return null;
@@ -145,9 +149,37 @@ export default function DepositsPage() {
         if (depositDate > toDate) return false;
       }
       
+      // Amount min filter
+      if (amountMin && deposit.amount < Number(amountMin)) {
+        return false;
+      }
+      
+      // Amount max filter
+      if (amountMax && deposit.amount > Number(amountMax)) {
+        return false;
+      }
+      
+      // Time from filter
+      if (timeFrom) {
+        const depositDate = new Date(deposit.created_at);
+        const [hours, minutes] = timeFrom.split(':').map(Number);
+        const depositMinutes = depositDate.getHours() * 60 + depositDate.getMinutes();
+        const filterMinutes = hours * 60 + minutes;
+        if (depositMinutes < filterMinutes) return false;
+      }
+      
+      // Time to filter
+      if (timeTo) {
+        const depositDate = new Date(deposit.created_at);
+        const [hours, minutes] = timeTo.split(':').map(Number);
+        const depositMinutes = depositDate.getHours() * 60 + depositDate.getMinutes();
+        const filterMinutes = hours * 60 + minutes;
+        if (depositMinutes > filterMinutes) return false;
+      }
+      
       return true;
     });
-  }, [deposits, searchQuery, statusFilter, dateFrom, dateTo]);
+  }, [deposits, searchQuery, statusFilter, dateFrom, dateTo, amountMin, amountMax, timeFrom, timeTo]);
 
   const pendingDeposits = filteredDeposits.filter(d => d.status === 'pending');
   const approvedDeposits = deposits.filter(d => d.status === 'approved').length;
@@ -158,9 +190,13 @@ export default function DepositsPage() {
     setStatusFilter('all');
     setDateFrom('');
     setDateTo('');
+    setAmountMin('');
+    setAmountMax('');
+    setTimeFrom('');
+    setTimeTo('');
   };
   
-  const hasActiveFilters = searchQuery || statusFilter !== 'all' || dateFrom || dateTo;
+  const hasActiveFilters = searchQuery || statusFilter !== 'all' || dateFrom || dateTo || amountMin || amountMax || timeFrom || timeTo;
 
   if (loading) {
     return (
@@ -279,6 +315,51 @@ export default function DepositsPage() {
                 placeholder="إلى تاريخ"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          {/* Second Row: Amount & Time Filters */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-4">
+            {/* Amount Min */}
+            <div>
+              <Input
+                type="number"
+                placeholder="الحد الأدنى للمبلغ"
+                value={amountMin}
+                onChange={(e) => setAmountMin(e.target.value)}
+                min={0}
+              />
+            </div>
+            
+            {/* Amount Max */}
+            <div>
+              <Input
+                type="number"
+                placeholder="الحد الأقصى للمبلغ"
+                value={amountMax}
+                onChange={(e) => setAmountMax(e.target.value)}
+                min={0}
+              />
+            </div>
+            
+            {/* Time From */}
+            <div>
+              <Input
+                type="time"
+                placeholder="من ساعة"
+                value={timeFrom}
+                onChange={(e) => setTimeFrom(e.target.value)}
+              />
+            </div>
+            
+            {/* Time To */}
+            <div>
+              <Input
+                type="time"
+                placeholder="إلى ساعة"
+                value={timeTo}
+                onChange={(e) => setTimeTo(e.target.value)}
               />
             </div>
           </div>
