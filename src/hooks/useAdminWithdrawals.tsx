@@ -38,20 +38,24 @@ export const useAdminWithdrawals = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const fetchWithdrawals = React.useCallback(async () => {
+  const fetchWithdrawals = React.useCallback(async (fetchAll: boolean = false) => {
     if (!user) return;
     
     setLoading(true);
     try {
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-
-      // جلب بيانات السحب مع count
-      const { data: withdrawalsData, error: withdrawalsError, count } = await supabase
+      let query = supabase
         .from('withdrawals')
         .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(from, to);
+        .order('created_at', { ascending: false });
+
+      // إذا لم يكن جلب الكل، نستخدم التصفح
+      if (!fetchAll) {
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize - 1;
+        query = query.range(from, to);
+      }
+
+      const { data: withdrawalsData, error: withdrawalsError, count } = await query;
 
       if (withdrawalsError) throw withdrawalsError;
       setTotalCount(count || 0);
