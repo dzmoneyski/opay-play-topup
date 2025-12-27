@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAdminDeposits } from '@/hooks/useAdminDeposits';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -17,7 +18,9 @@ import {
   Calendar,
   Banknote,
   Receipt,
-  Eye
+  Search,
+  Filter,
+  X
 } from 'lucide-react';
 
 export default function DepositsPage() {
@@ -27,6 +30,12 @@ export default function DepositsPage() {
   const [approvalNotes, setApprovalNotes] = React.useState('');
   const [adjustedAmount, setAdjustedAmount] = React.useState('');
   const [processing, setProcessing] = React.useState(false);
+  
+  // Search & Filter states
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState<string>('all');
+  const [dateFrom, setDateFrom] = React.useState('');
+  const [dateTo, setDateTo] = React.useState('');
 
   const getImageUrl = (imagePath: string | null) => {
     if (!imagePath) return null;
@@ -101,9 +110,57 @@ export default function DepositsPage() {
     }).format(amount);
   };
 
-  const pendingDeposits = deposits.filter(d => d.status === 'pending');
+  // Filter deposits based on search and filters
+  const filteredDeposits = React.useMemo(() => {
+    return deposits.filter(deposit => {
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matchesName = deposit.profiles?.full_name?.toLowerCase().includes(query);
+        const matchesPhone = deposit.profiles?.phone?.includes(query);
+        const matchesTransactionId = deposit.transaction_id?.toLowerCase().includes(query);
+        if (!matchesName && !matchesPhone && !matchesTransactionId) {
+          return false;
+        }
+      }
+      
+      // Status filter
+      if (statusFilter !== 'all' && deposit.status !== statusFilter) {
+        return false;
+      }
+      
+      // Date from filter
+      if (dateFrom) {
+        const depositDate = new Date(deposit.created_at);
+        const fromDate = new Date(dateFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        if (depositDate < fromDate) return false;
+      }
+      
+      // Date to filter
+      if (dateTo) {
+        const depositDate = new Date(deposit.created_at);
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        if (depositDate > toDate) return false;
+      }
+      
+      return true;
+    });
+  }, [deposits, searchQuery, statusFilter, dateFrom, dateTo]);
+
+  const pendingDeposits = filteredDeposits.filter(d => d.status === 'pending');
   const approvedDeposits = deposits.filter(d => d.status === 'approved').length;
   const rejectedDeposits = deposits.filter(d => d.status === 'rejected').length;
+  
+  const clearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setDateFrom('');
+    setDateTo('');
+  };
+  
+  const hasActiveFilters = searchQuery || statusFilter !== 'all' || dateFrom || dateTo;
 
   if (loading) {
     return (
@@ -143,7 +200,7 @@ export default function DepositsPage() {
             <Clock className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{pendingDeposits.length}</div>
+            <div className="text-2xl font-bold text-yellow-600">{deposits.filter(d => d.status === 'pending').length}</div>
             <p className="text-xs text-muted-foreground">تحتاج مراجعة</p>
           </CardContent>
         </Card>
@@ -170,6 +227,76 @@ export default function DepositsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Search & Filter Section */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            البحث والفلترة
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="بحث بالاسم، الهاتف، أو معرف المعاملة..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pr-10"
+              />
+            </div>
+            
+            {/* Status Filter */}
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="الحالة" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">جميع الحالات</SelectItem>
+                <SelectItem value="pending">قيد المراجعة</SelectItem>
+                <SelectItem value="approved">مقبولة</SelectItem>
+                <SelectItem value="rejected">مرفوضة</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {/* Date From */}
+            <div>
+              <Input
+                type="date"
+                placeholder="من تاريخ"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+              />
+            </div>
+            
+            {/* Date To */}
+            <div>
+              <Input
+                type="date"
+                placeholder="إلى تاريخ"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          {/* Active Filters & Clear */}
+          {hasActiveFilters && (
+            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                عرض {filteredDeposits.length} من أصل {deposits.length} طلب
+              </div>
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                <X className="h-4 w-4 ml-1" />
+                مسح الفلاتر
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Pending Deposits */}
       {pendingDeposits.length > 0 && (
@@ -353,20 +480,25 @@ export default function DepositsPage() {
           <CardTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5" />
             تاريخ جميع الطلبات
+            {hasActiveFilters && (
+              <Badge variant="secondary" className="mr-2">
+                {filteredDeposits.length} نتيجة
+              </Badge>
+            )}
           </CardTitle>
           <CardDescription>
             جميع طلبات الإيداع في النظام
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {deposits.length === 0 ? (
+          {filteredDeposits.length === 0 ? (
             <div className="text-center py-8">
               <ArrowDownToLine className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">لا توجد طلبات إيداع</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {deposits.map((deposit) => (
+              {filteredDeposits.map((deposit) => (
                 <div key={deposit.id} className={`border rounded-lg p-4 ${
                   deposit.status === 'pending' ? 'border-l-4 border-l-yellow-500' : 
                   deposit.status === 'approved' ? 'border-l-4 border-l-green-500' : 
