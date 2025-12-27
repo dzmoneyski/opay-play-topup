@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 
 export default function WithdrawalsPage() {
-  const { withdrawals, loading, approveWithdrawal, rejectWithdrawal } = useAdminWithdrawals();
+  const { withdrawals, loading, approveWithdrawal, rejectWithdrawal, fetchWithdrawals } = useAdminWithdrawals();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedStatus, setSelectedStatus] = React.useState('all');
@@ -38,6 +38,15 @@ export default function WithdrawalsPage() {
   const [actionLoading, setActionLoading] = React.useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = React.useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
+
+  // جلب جميع البيانات عند البحث
+  React.useEffect(() => {
+    if (searchTerm.trim()) {
+      fetchWithdrawals(true); // جلب الكل
+    } else {
+      fetchWithdrawals(false); // جلب مع التصفح
+    }
+  }, [searchTerm]);
 
   const filteredWithdrawals = withdrawals.filter(withdrawal => {
     const query = searchTerm.trim().toLowerCase();
