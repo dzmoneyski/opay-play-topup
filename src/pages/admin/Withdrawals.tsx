@@ -40,10 +40,27 @@ export default function WithdrawalsPage() {
   const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
 
   const filteredWithdrawals = withdrawals.filter(withdrawal => {
+    const query = searchTerm.trim().toLowerCase();
+    
+    // إذا لم يكن هناك نص بحث
+    if (!query) {
+      return selectedStatus === 'all' || withdrawal.status === selectedStatus;
+    }
+    
+    // البحث في جميع الحقول
     const matchesSearch = 
-      withdrawal.user_profile?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      withdrawal.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      withdrawal.user_profile?.phone?.includes(searchTerm);
+      // البحث بالاسم
+      withdrawal.user_profile?.full_name?.toLowerCase().includes(query) ||
+      // البحث بمعرف الطلب
+      withdrawal.id.toLowerCase().includes(query) ||
+      // البحث برقم الهاتف (مع تنظيف الأرقام)
+      withdrawal.user_profile?.phone?.replace(/\s/g, '').includes(query.replace(/\s/g, '')) ||
+      // البحث برقم الحساب
+      withdrawal.account_number?.toLowerCase().includes(query) ||
+      // البحث باسم صاحب الحساب
+      withdrawal.account_holder_name?.toLowerCase().includes(query) ||
+      // البحث بموقع الاستلام النقدي
+      withdrawal.cash_location?.toLowerCase().includes(query);
     
     const matchesStatus = selectedStatus === 'all' || withdrawal.status === selectedStatus;
     
