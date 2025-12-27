@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 export default function DepositsPage() {
-  const { deposits, loading, approveDeposit, rejectDeposit } = useAdminDeposits();
+  const { deposits, loading, approveDeposit, rejectDeposit, fetchDeposits } = useAdminDeposits();
   const [selectedDeposit, setSelectedDeposit] = React.useState<any>(null);
   const [rejectionReason, setRejectionReason] = React.useState('');
   const [approvalNotes, setApprovalNotes] = React.useState('');
@@ -40,6 +40,17 @@ export default function DepositsPage() {
   const [amountMax, setAmountMax] = React.useState('');
   const [timeFrom, setTimeFrom] = React.useState('');
   const [timeTo, setTimeTo] = React.useState('');
+
+  // جلب جميع البيانات عند البحث أو الفلترة
+  const hasActiveFilters = searchQuery.trim() || statusFilter !== 'all' || dateFrom || dateTo || amountMin || amountMax || timeFrom || timeTo;
+  
+  React.useEffect(() => {
+    if (hasActiveFilters) {
+      fetchDeposits(true); // جلب الكل
+    } else {
+      fetchDeposits(false); // جلب مع التصفح
+    }
+  }, [searchQuery, statusFilter, dateFrom, dateTo, amountMin, amountMax, timeFrom, timeTo]);
 
   const getImageUrl = (imagePath: string | null) => {
     if (!imagePath) return null;
@@ -196,7 +207,7 @@ export default function DepositsPage() {
     setTimeTo('');
   };
   
-  const hasActiveFilters = searchQuery || statusFilter !== 'all' || dateFrom || dateTo || amountMin || amountMax || timeFrom || timeTo;
+  // تم نقل hasActiveFilters لأعلى للاستخدام في useEffect
 
   if (loading) {
     return (

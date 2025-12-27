@@ -31,20 +31,24 @@ export const useAdminDeposits = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const fetchDeposits = React.useCallback(async () => {
+  const fetchDeposits = React.useCallback(async (fetchAll: boolean = false) => {
     if (!user) return;
     
     setLoading(true);
     try {
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-
-      // Get deposits with count
-      const { data: depositsData, error: depositsError, count } = await supabase
+      let query = supabase
         .from('deposits')
         .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(from, to);
+        .order('created_at', { ascending: false });
+
+      // إذا لم يكن جلب الكل، نستخدم التصفح
+      if (!fetchAll) {
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize - 1;
+        query = query.range(from, to);
+      }
+
+      const { data: depositsData, error: depositsError, count } = await query;
 
       if (depositsError) throw depositsError;
       setTotalCount(count || 0);
