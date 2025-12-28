@@ -28,37 +28,40 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
-
-const mainItems = [
-  { title: "لوحة التحكم", url: "/admin", icon: LayoutDashboard, exact: true },
-  { title: "طلبات التحقق", url: "/admin/identity-verification", icon: Shield },
-  { title: "المستخدمين", url: "/admin/users", icon: Users },
-  { title: "إدارة التجار", url: "/admin/merchants", icon: Users },
-];
-
-const transactionItems = [
-  { title: "عمليات الإيداع", url: "/admin/deposits", icon: ArrowDownToLine },
-  { title: "عمليات السحب", url: "/admin/withdrawals", icon: ArrowUpFromLine },
-  { title: "التحويلات", url: "/admin/transfers", icon: Send },
-];
-
-const serviceItems = [
-  { title: "البطاقات الرقمية", url: "/admin/cards", icon: Gift },
-  { title: "إدارة الألعاب", url: "/admin/games", icon: Gamepad2 },
-  { title: "إدارة المراهنات", url: "/admin/betting", icon: Gamepad2 },
-  { title: "طلبات AliExpress", url: "/admin/aliexpress", icon: ShoppingBag },
-  { title: "التقارير", url: "/admin/reports", icon: BarChart3 },
-  { title: "سجل العمليات", url: "/admin/logs", icon: FileText },
-];
-
-const systemItems = [
-  { title: "إعدادات النظام", url: "/admin/settings", icon: Settings },
-];
+import { Badge } from '@/components/ui/badge';
+import { useAdminNotifications } from '@/hooks/useAdminNotifications';
 
 export function AdminSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
+  const { counts } = useAdminNotifications();
+
+  const mainItems = [
+    { title: "لوحة التحكم", url: "/admin", icon: LayoutDashboard, exact: true, badge: 0 },
+    { title: "طلبات التحقق", url: "/admin/identity-verification", icon: Shield, badge: counts.pendingVerifications },
+    { title: "المستخدمين", url: "/admin/users", icon: Users, badge: 0 },
+    { title: "إدارة التجار", url: "/admin/merchants", icon: Users, badge: 0 },
+  ];
+
+  const transactionItems = [
+    { title: "عمليات الإيداع", url: "/admin/deposits", icon: ArrowDownToLine, badge: counts.pendingDeposits },
+    { title: "عمليات السحب", url: "/admin/withdrawals", icon: ArrowUpFromLine, badge: counts.pendingWithdrawals },
+    { title: "التحويلات", url: "/admin/transfers", icon: Send, badge: 0 },
+  ];
+
+  const serviceItems = [
+    { title: "البطاقات الرقمية", url: "/admin/cards", icon: Gift, badge: counts.pendingDigitalCards },
+    { title: "إدارة الألعاب", url: "/admin/games", icon: Gamepad2, badge: counts.pendingGames },
+    { title: "إدارة المراهنات", url: "/admin/betting", icon: Gamepad2, badge: counts.pendingBetting + counts.pendingBettingVerifications },
+    { title: "طلبات AliExpress", url: "/admin/aliexpress", icon: ShoppingBag, badge: 0 },
+    { title: "التقارير", url: "/admin/reports", icon: BarChart3, badge: 0 },
+    { title: "سجل العمليات", url: "/admin/logs", icon: FileText, badge: 0 },
+  ];
+
+  const systemItems = [
+    { title: "إعدادات النظام", url: "/admin/settings", icon: Settings, badge: 0 },
+  ];
 
   const isActive = (path: string, exact = false) => {
     if (exact) {
@@ -95,9 +98,22 @@ export function AdminSidebar() {
                   end={item.exact}
                   className={getNavCls(isActive(item.url, item.exact))}
                 >
-                  <div className="flex items-center px-2 md:px-3 py-2.5 md:py-2 rounded-lg w-full touch-manipulation active:scale-95 transition-transform">
-                    <item.icon className={`h-5 w-5 md:h-4 md:w-4 ${state === 'collapsed' ? 'mx-auto' : 'ml-2'}`} />
-                    {state !== 'collapsed' && <span className="mr-3 text-sm md:text-sm font-medium">{item.title}</span>}
+                  <div className="flex items-center justify-between px-2 md:px-3 py-2.5 md:py-2 rounded-lg w-full touch-manipulation active:scale-95 transition-transform">
+                    <div className="flex items-center">
+                      <item.icon className={`h-5 w-5 md:h-4 md:w-4 ${state === 'collapsed' ? 'mx-auto' : 'ml-2'}`} />
+                      {state !== 'collapsed' && <span className="mr-3 text-sm md:text-sm font-medium">{item.title}</span>}
+                    </div>
+                    {state !== 'collapsed' && item.badge > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="h-5 min-w-5 flex items-center justify-center text-xs px-1.5 animate-pulse"
+                      >
+                        {item.badge}
+                      </Badge>
+                    )}
+                    {state === 'collapsed' && item.badge > 0 && (
+                      <span className="absolute top-0 left-0 h-2 w-2 rounded-full bg-destructive animate-pulse" />
+                    )}
                   </div>
                 </NavLink>
               </SidebarMenuButton>
