@@ -363,9 +363,6 @@ export default function Withdrawals() {
                     }`}>
                       {method.name}
                     </p>
-                    {!isEnabled && disabledReason && (
-                      <p className="text-xs text-destructive/80 mt-1">{disabledReason}</p>
-                    )}
                   </div>
                 </div>
                 {!isEnabled && (
@@ -382,6 +379,30 @@ export default function Withdrawals() {
             );
           })}
         </div>
+
+        {/* إشعار سبب إغلاق طريقة السحب المختارة */}
+        {!isMethodEnabled(selectedMethod) && getDisabledReason(selectedMethod) && (
+          <Card className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-amber-100 dark:bg-amber-900/50 rounded-full shrink-0">
+                  <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-bold text-amber-800 dark:text-amber-300 text-lg">
+                    {WithdrawalMethods[selectedMethod]?.name} غير متاح حالياً
+                  </h3>
+                  <p className="text-amber-700 dark:text-amber-400 text-base leading-relaxed">
+                    {getDisabledReason(selectedMethod)}
+                  </p>
+                  <p className="text-amber-600 dark:text-amber-500 text-sm mt-3">
+                    نعتذر عن الإزعاج، نعمل جاهدين على تحسين خدماتنا. يرجى اختيار طريقة سحب أخرى متاحة أو المحاولة لاحقاً. 🙏
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Tabs value={selectedMethod} onValueChange={setSelectedMethod} className="space-y-6">
 
