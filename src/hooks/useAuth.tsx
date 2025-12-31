@@ -34,59 +34,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   React.useEffect(() => {
     let cancelled = false;
 
-    const setAuthState = (nextSession: Session | null) => {
+    const apply = (nextSession: Session | null) => {
       if (cancelled) return;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
       setLoading(false);
     };
 
-    const applySession = async (nextSession: Session | null) => {
-      try {
-        if (nextSession?.user) {
-          const { data: blockedUser, error: blockedError } = await supabase
-            .from('blocked_users')
-            .select('reason')
-            .eq('user_id', nextSession.user.id)
-            .maybeSingle();
-
-          if (blockedError) {
-            console.warn('Blocked user check failed:', blockedError);
-          }
-
-          if (blockedUser) {
-            await supabase.auth.signOut();
-            setAuthState(null);
-            return;
-          }
-        }
-
-        setAuthState(nextSession);
-      } catch (e) {
-        console.error('Auth session handling failed:', e);
-        setAuthState(null);
-      }
-    };
-
-    // Set up auth state listener FIRST
+    // IMPORTANT: keep this callback synchronous to avoid auth deadlocks
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
-      await applySession(nextSession);
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      apply(nextSession);
     });
 
-    // THEN check for existing session
-    (async () => {
-      try {
-        const {
-          data: { session: existingSession },
-        } = await supabase.auth.getSession();
-        await applySession(existingSession);
-      } catch (e) {
+    // Read existing session after subscribing
+    supabase.auth
+      .getSession()
+      .then(({ data }) => apply(data.session))
+      .catch((e) => {
         console.error('getSession failed:', e);
-        setAuthState(null);
-      }
-    })();
+        apply(null);
+      });
 
     // Failsafe: avoid being stuck on "جاري التحميل" forever
     const timeout = window.setTimeout(() => {
@@ -99,6 +68,51 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Separate effect for blocked-user check (do NOT call Supabase inside onAuthStateChange)
+  React.useEffect(() => {
+    if (!session?.user) return;
+
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        const { data: blockedUser, error } = await supabase
+          .from('blocked_users')
+          .select('reason')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (cancelled) return;
+
+        if (error) {
+          console.warn('Blocked user check failed:', error);
+          return;
+        }
+
+        if (blockedUser) {
+          await supabase.auth.signOut();
+          if (!cancelled) {
+            setSession(null);
+            setUser(null);
+            setLoading(false);
+          }
+        }
+      } catch (e) {
+        console.error('Blocked user check crashed:', e);
+      }
+    };
+
+    // Defer to avoid interfering with auth state transitions
+    const t = window.setTimeout(() => {
+      void run();
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [session?.user?.id]);
 
   // Cross-tab leader election to avoid hitting /token rate limits
   React.useEffect(() => {
