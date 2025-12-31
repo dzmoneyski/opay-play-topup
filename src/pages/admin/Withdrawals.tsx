@@ -138,6 +138,8 @@ export default function WithdrawalsPage() {
         return 'CCP';
       case 'cash':
         return 'سحب نقدي';
+      case 'merchant_transfer':
+        return 'تحويل تاجر';
       default:
         return method;
     }
@@ -411,11 +413,16 @@ export default function WithdrawalsPage() {
                             <span className="text-muted-foreground">موقع الاستلام: </span>
                             <span className="font-medium text-foreground">{withdrawal.cash_location}</span>
                           </div>
+                        ) : withdrawal.withdrawal_method === 'merchant_transfer' ? (
+                          <div>
+                            <span className="text-muted-foreground">النوع: </span>
+                            <span className="font-medium text-foreground">تحويل من رصيد التاجر</span>
+                          </div>
                         ) : (
                           <div>
                             <span className="text-muted-foreground">الحساب: </span>
                             <span className="font-medium text-foreground">
-                              {withdrawal.account_holder_name} - {withdrawal.account_number}
+                              {withdrawal.account_holder_name || 'غير محدد'} - {withdrawal.account_number || 'غير محدد'}
                             </span>
                           </div>
                         )}
