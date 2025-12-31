@@ -686,6 +686,33 @@ export type Database = {
         }
         Relationships: []
       }
+      fraud_attempts: {
+        Row: {
+          attempt_type: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: string | null
+          user_id: string | null
+        }
+        Insert: {
+          attempt_type: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          attempt_type?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       game_packages: {
         Row: {
           created_at: string
