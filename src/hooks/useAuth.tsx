@@ -32,55 +32,72 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          // التحقق من الحظر
-          const { data: blockedUser } = await supabase
+    let cancelled = false;
+
+    const setAuthState = (nextSession: Session | null) => {
+      if (cancelled) return;
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+      setLoading(false);
+    };
+
+    const applySession = async (nextSession: Session | null) => {
+      try {
+        if (nextSession?.user) {
+          const { data: blockedUser, error: blockedError } = await supabase
             .from('blocked_users')
             .select('reason')
-            .eq('user_id', session.user.id)
+            .eq('user_id', nextSession.user.id)
             .maybeSingle();
+
+          if (blockedError) {
+            console.warn('Blocked user check failed:', blockedError);
+          }
 
           if (blockedUser) {
             await supabase.auth.signOut();
-            setSession(null);
-            setUser(null);
-            setLoading(false);
+            setAuthState(null);
             return;
           }
         }
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        // التحقق من الحظر
-        const { data: blockedUser } = await supabase
-          .from('blocked_users')
-          .select('reason')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-
-        if (blockedUser) {
-          await supabase.auth.signOut();
-          setSession(null);
-          setUser(null);
-          setLoading(false);
-          return;
-        }
+        setAuthState(nextSession);
+      } catch (e) {
+        console.error('Auth session handling failed:', e);
+        setAuthState(null);
       }
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+    };
+
+    // Set up auth state listener FIRST
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+      await applySession(nextSession);
     });
 
-    return () => subscription.unsubscribe();
+    // THEN check for existing session
+    (async () => {
+      try {
+        const {
+          data: { session: existingSession },
+        } = await supabase.auth.getSession();
+        await applySession(existingSession);
+      } catch (e) {
+        console.error('getSession failed:', e);
+        setAuthState(null);
+      }
+    })();
+
+    // Failsafe: avoid being stuck on "جاري التحميل" forever
+    const timeout = window.setTimeout(() => {
+      if (!cancelled) setLoading(false);
+    }, 8000);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Cross-tab leader election to avoid hitting /token rate limits
