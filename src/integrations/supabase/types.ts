@@ -1736,6 +1736,10 @@ export type Database = {
         Args: { _admin_id: string; _ban_reason?: string; _user_id: string }
         Returns: Json
       }
+      block_fraudulent_users: {
+        Args: { _admin_id: string; _reason: string; _user_ids: string[] }
+        Returns: Json
+      }
       calculate_fee: {
         Args: { _amount: number; _fee_config: Json }
         Returns: Json

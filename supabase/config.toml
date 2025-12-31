@@ -2,3 +2,6 @@ project_id = "zxnwixjdwimfblcwfkgo"
 
 [functions.scrape-aliexpress]
 verify_jwt = false
+
+[functions.block-fraudulent-user]
+verify_jwt = false
