@@ -33,7 +33,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   React.useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        if (session?.user) {
+          // التحقق من الحظر
+          const { data: blockedUser } = await supabase
+            .from('blocked_users')
+            .select('reason')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          if (blockedUser) {
+            await supabase.auth.signOut();
+            setSession(null);
+            setUser(null);
+            setLoading(false);
+            return;
+          }
+        }
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -41,7 +57,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        // التحقق من الحظر
+        const { data: blockedUser } = await supabase
+          .from('blocked_users')
+          .select('reason')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (blockedUser) {
+          await supabase.auth.signOut();
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -162,6 +194,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
 
     if (!error && signInData?.user) {
+      // التحقق من الحظر
+      const { data: blockedUser } = await supabase
+        .from('blocked_users')
+        .select('reason')
+        .eq('user_id', signInData.user.id)
+        .maybeSingle();
+
+      if (blockedUser) {
+        // تسجيل الخروج فوراً
+        await supabase.auth.signOut();
+        return { error: { message: 'تم حظر حسابك نهائياً بسبب: ' + blockedUser.reason } };
+      }
       try {
         // 1) Read referral code from auth metadata or local storage
         const meta = (signInData.user.user_metadata || {}) as Record<string, any>;

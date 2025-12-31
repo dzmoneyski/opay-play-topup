@@ -246,6 +246,36 @@ export type Database = {
           },
         ]
       }
+      blocked_users: {
+        Row: {
+          blocked_at: string
+          blocked_by: string | null
+          email: string | null
+          id: string
+          phone: string | null
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          blocked_at?: string
+          blocked_by?: string | null
+          email?: string | null
+          id?: string
+          phone?: string | null
+          reason: string
+          user_id: string
+        }
+        Update: {
+          blocked_at?: string
+          blocked_by?: string | null
+          email?: string | null
+          id?: string
+          phone?: string | null
+          reason?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       card_delivery_orders: {
         Row: {
           address: string
