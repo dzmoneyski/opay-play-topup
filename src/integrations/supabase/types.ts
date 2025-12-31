@@ -246,32 +246,82 @@ export type Database = {
           },
         ]
       }
+      blocked_devices: {
+        Row: {
+          blocked_at: string
+          blocked_by: string | null
+          blocked_user_id: string | null
+          device_fingerprint: string | null
+          id: string
+          ip_address: string | null
+          reason: string
+          user_agent: string | null
+        }
+        Insert: {
+          blocked_at?: string
+          blocked_by?: string | null
+          blocked_user_id?: string | null
+          device_fingerprint?: string | null
+          id?: string
+          ip_address?: string | null
+          reason: string
+          user_agent?: string | null
+        }
+        Update: {
+          blocked_at?: string
+          blocked_by?: string | null
+          blocked_user_id?: string | null
+          device_fingerprint?: string | null
+          id?: string
+          ip_address?: string | null
+          reason?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocked_devices_blocked_user_id_fkey"
+            columns: ["blocked_user_id"]
+            isOneToOne: false
+            referencedRelation: "blocked_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocked_users: {
         Row: {
           blocked_at: string
           blocked_by: string | null
+          device_fingerprint: string | null
           email: string | null
           id: string
+          ip_address: string | null
           phone: string | null
           reason: string
+          user_agent: string | null
           user_id: string
         }
         Insert: {
           blocked_at?: string
           blocked_by?: string | null
+          device_fingerprint?: string | null
           email?: string | null
           id?: string
+          ip_address?: string | null
           phone?: string | null
           reason: string
+          user_agent?: string | null
           user_id: string
         }
         Update: {
           blocked_at?: string
           blocked_by?: string | null
+          device_fingerprint?: string | null
           email?: string | null
           id?: string
+          ip_address?: string | null
           phone?: string | null
           reason?: string
+          user_agent?: string | null
           user_id?: string
         }
         Relationships: []

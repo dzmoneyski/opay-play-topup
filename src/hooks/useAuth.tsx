@@ -1,6 +1,7 @@
 import React from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { getDeviceFingerprint } from './useDeviceFingerprint';
 
 interface AuthContextType {
   user: User | null;
@@ -161,6 +162,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const signUp = React.useCallback(async (email: string, password: string, fullName?: string, phone?: string, referralCode?: string) => {
+    // التحقق من حظر الجهاز قبل التسجيل
+    try {
+      const fingerprint = await getDeviceFingerprint();
+      const userAgent = navigator.userAgent;
+
+      // التحقق من الجهاز المحظور
+      const { data: blockedDevice } = await supabase
+        .from('blocked_devices')
+        .select('reason')
+        .or(`device_fingerprint.eq.${fingerprint},user_agent.eq.${userAgent}`)
+        .limit(1)
+        .maybeSingle();
+
+      if (blockedDevice) {
+        return { error: { message: 'تم حظر هذا الجهاز نهائياً. لا يمكنك إنشاء حساب جديد.' } };
+      }
+    } catch (e) {
+      console.warn('Device check failed:', e);
+    }
+
     const redirectUrl = `${window.location.origin}/`;
     
     const { error, data } = await supabase.auth.signUp({
@@ -188,6 +209,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const signIn = React.useCallback(async (email: string, password: string) => {
+    // التحقق من حظر الجهاز قبل تسجيل الدخول
+    try {
+      const fingerprint = await getDeviceFingerprint();
+      const userAgent = navigator.userAgent;
+
+      const { data: blockedDevice } = await supabase
+        .from('blocked_devices')
+        .select('reason')
+        .or(`device_fingerprint.eq.${fingerprint},user_agent.eq.${userAgent}`)
+        .limit(1)
+        .maybeSingle();
+
+      if (blockedDevice) {
+        return { error: { message: 'تم حظر هذا الجهاز نهائياً بسبب: ' + blockedDevice.reason } };
+      }
+    } catch (e) {
+      console.warn('Device check failed:', e);
+    }
+
     const { data: signInData, error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -202,6 +242,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .maybeSingle();
 
       if (blockedUser) {
+        // حفظ بصمة الجهاز للحظر المستقبلي
+        try {
+          const fingerprint = await getDeviceFingerprint();
+          await supabase.from('blocked_devices').insert({
+            device_fingerprint: fingerprint,
+            user_agent: navigator.userAgent,
+            reason: blockedUser.reason,
+            blocked_user_id: null
+          });
+        } catch {}
+        
         // تسجيل الخروج فوراً
         await supabase.auth.signOut();
         return { error: { message: 'تم حظر حسابك نهائياً بسبب: ' + blockedUser.reason } };
