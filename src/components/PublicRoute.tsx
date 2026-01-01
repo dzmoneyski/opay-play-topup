@@ -1,5 +1,5 @@
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 
 interface PublicRouteProps {
   children: React.ReactNode;
@@ -7,6 +7,11 @@ interface PublicRouteProps {
 
 const PublicRoute = ({ children }: PublicRouteProps) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
+
+  // Allow authenticated users to access /auth only for password recovery flow
+  const params = new URLSearchParams(location.search);
+  const isPasswordResetFlow = params.get('reset') === 'true';
 
   if (loading) {
     return (
@@ -19,7 +24,7 @@ const PublicRoute = ({ children }: PublicRouteProps) => {
     );
   }
 
-  if (user) {
+  if (user && !isPasswordResetFlow) {
     return <Navigate to="/" replace />;
   }
 
