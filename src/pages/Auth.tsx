@@ -40,8 +40,11 @@ const Auth = () => {
   const [forgotPasswordEmail, setForgotPasswordEmail] = React.useState('');
   const [isSendingReset, setIsSendingReset] = React.useState(false);
   
-  // Password reset states
-  const [isResetMode, setIsResetMode] = React.useState(false);
+  // Password reset states - check URL immediately on init
+  const [isResetMode, setIsResetMode] = React.useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('reset') === 'true';
+  });
   const [newPassword, setNewPassword] = React.useState('');
   const [confirmNewPassword, setConfirmNewPassword] = React.useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = React.useState(false);
