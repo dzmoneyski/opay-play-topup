@@ -39,6 +39,13 @@ const Auth = () => {
   const [showForgotPassword, setShowForgotPassword] = React.useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = React.useState('');
   const [isSendingReset, setIsSendingReset] = React.useState(false);
+  
+  // Password reset states
+  const [isResetMode, setIsResetMode] = React.useState(false);
+  const [newPassword, setNewPassword] = React.useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = React.useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = React.useState(false);
+  const [resetError, setResetError] = React.useState<string | null>(null);
 
   // Form states
   const [signInData, setSignInData] = React.useState({
@@ -55,9 +62,38 @@ const Auth = () => {
     referralCode: ''
   });
 
-  // Redirect if already authenticated
+  // Check for reset mode and errors in URL
   React.useEffect(() => {
-    if (user) {
+    const params = new URLSearchParams(window.location.search);
+    const hash = window.location.hash;
+    const isReset = params.get('reset') === 'true';
+    
+    // Check for errors in hash (e.g., #error=access_denied&error_code=otp_expired)
+    if (hash && hash.includes('error')) {
+      const hashParams = new URLSearchParams(hash.substring(1));
+      const errorCode = hashParams.get('error_code');
+      const errorDescription = hashParams.get('error_description');
+      
+      if (errorCode === 'otp_expired') {
+        setResetError('انتهت صلاحية رابط إعادة التعيين. يرجى طلب رابط جديد.');
+        toast({
+          title: "انتهت صلاحية الرابط",
+          description: "رابط إعادة تعيين كلمة المرور منتهي الصلاحية. يرجى طلب رابط جديد.",
+          variant: "destructive"
+        });
+      } else if (errorDescription) {
+        setResetError(decodeURIComponent(errorDescription.replace(/\+/g, ' ')));
+      }
+      // Clear the hash from URL
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    } else if (isReset) {
+      setIsResetMode(true);
+    }
+  }, [toast]);
+
+  // Redirect if already authenticated (but not in reset mode)
+  React.useEffect(() => {
+    if (user && !isResetMode) {
       navigate('/dashboard');
     }
 
@@ -68,7 +104,7 @@ const Auth = () => {
       setSignUpData(prev => ({ ...prev, referralCode: refCode }));
       setActiveTab('signup'); // Switch to signup mode
     }
-  }, [user, navigate]);
+  }, [user, navigate, isResetMode]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -218,6 +254,190 @@ const Auth = () => {
 
     setIsSendingReset(false);
   };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newPassword || !confirmNewPassword) {
+      toast({
+        title: "خطأ",
+        description: "يرجى ملء جميع الحقول",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      toast({
+        title: "خطأ",
+        description: "كلمة المرور وتأكيدها غير متطابقتين",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "كلمة المرور ضعيفة",
+        description: "يجب أن تحتوي كلمة المرور على 6 أحرف على الأقل",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تحديث كلمة المرور. يرجى المحاولة مرة أخرى",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "تم بنجاح",
+        description: "تم تحديث كلمة المرور بنجاح",
+      });
+      setIsResetMode(false);
+      setNewPassword('');
+      setConfirmNewPassword('');
+      // Clear URL params
+      window.history.replaceState(null, '', '/auth');
+      navigate('/dashboard');
+    }
+
+    setIsUpdatingPassword(false);
+  };
+
+  // Show password reset form
+  if (isResetMode && !resetError) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4" dir="rtl">
+        <div className="absolute inset-0 bg-gradient-glass"></div>
+        
+        <div className="w-full max-w-md relative z-10">
+          <div className="text-center mb-8 animate-slide-up">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 border border-primary/20 shadow-glow mb-6 animate-glow-pulse">
+              <KeyRound className="h-8 w-8 text-primary" />
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2">تعيين كلمة مرور جديدة</h1>
+            <p className="text-white/80">أدخل كلمة المرور الجديدة لحسابك</p>
+          </div>
+
+          <Card className="bg-gradient-glass backdrop-blur-xl border border-white/10 shadow-elevated animate-slide-up">
+            <CardContent className="pt-6">
+              <form onSubmit={handleUpdatePassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password" className="text-white/90">كلمة المرور الجديدة</Label>
+                  <div className="relative">
+                    <Lock className="absolute right-3 top-3 h-4 w-4 text-white/60" />
+                    <Input
+                      id="new-password"
+                      type="password"
+                      placeholder="أدخل كلمة المرور الجديدة"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-primary focus:bg-white/20"
+                      disabled={isUpdatingPassword}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-new-password" className="text-white/90">تأكيد كلمة المرور</Label>
+                  <div className="relative">
+                    <CheckCircle className="absolute right-3 top-3 h-4 w-4 text-white/60" />
+                    <Input
+                      id="confirm-new-password"
+                      type="password"
+                      placeholder="أعد إدخال كلمة المرور"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      className="pr-10 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-primary focus:bg-white/20"
+                      disabled={isUpdatingPassword}
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-primary hover:opacity-90 text-white font-semibold py-3 shadow-soft"
+                  disabled={isUpdatingPassword}
+                >
+                  {isUpdatingPassword ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                      جاري التحديث...
+                    </>
+                  ) : (
+                    <>
+                      تحديث كلمة المرور
+                      <ArrowRight className="mr-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error page if reset link expired
+  if (resetError) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4" dir="rtl">
+        <div className="absolute inset-0 bg-gradient-glass"></div>
+        
+        <div className="w-full max-w-md relative z-10">
+          <div className="text-center mb-8 animate-slide-up">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-destructive/20 border border-destructive/30 mb-6">
+              <AlertCircle className="h-8 w-8 text-destructive" />
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2">انتهت صلاحية الرابط</h1>
+            <p className="text-white/80">{resetError}</p>
+          </div>
+
+          <Card className="bg-gradient-glass backdrop-blur-xl border border-white/10 shadow-elevated animate-slide-up">
+            <CardContent className="pt-6 space-y-4">
+              <p className="text-white/70 text-center text-sm">
+                روابط إعادة تعيين كلمة المرور صالحة لمدة ساعة واحدة فقط. يرجى طلب رابط جديد.
+              </p>
+              
+              <Button 
+                onClick={() => {
+                  setResetError(null);
+                  setShowForgotPassword(true);
+                  window.history.replaceState(null, '', '/auth');
+                }}
+                className="w-full bg-gradient-primary hover:opacity-90 text-white font-semibold py-3"
+              >
+                <Mail className="h-4 w-4 ml-2" />
+                طلب رابط جديد
+              </Button>
+
+              <Button 
+                variant="ghost"
+                onClick={() => {
+                  setResetError(null);
+                  window.history.replaceState(null, '', '/auth');
+                }}
+                className="w-full text-white/70 hover:text-white hover:bg-white/10"
+              >
+                <ArrowLeft className="h-4 w-4 ml-2" />
+                العودة لتسجيل الدخول
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4" dir="rtl">
