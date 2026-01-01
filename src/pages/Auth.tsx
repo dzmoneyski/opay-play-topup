@@ -7,6 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   Mail, 
   Lock, 
@@ -15,7 +23,9 @@ import {
   CheckCircle,
   AlertCircle,
   ArrowLeft,
-  Phone
+  Phone,
+  KeyRound,
+  Loader2
 } from 'lucide-react';
 import opayGatewayLogo from '@/assets/opay-final-logo.png';
 
@@ -26,6 +36,9 @@ const Auth = () => {
   
   const [isLoading, setIsLoading] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState('signin');
+  const [showForgotPassword, setShowForgotPassword] = React.useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = React.useState('');
+  const [isSendingReset, setIsSendingReset] = React.useState(false);
 
   // Form states
   const [signInData, setSignInData] = React.useState({
@@ -172,6 +185,40 @@ const Auth = () => {
     setIsLoading(false);
   };
 
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال البريد الإلكتروني",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSendingReset(true);
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
+      redirectTo: `${window.location.origin}/auth?reset=true`,
+    });
+
+    if (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء إرسال رابط إعادة التعيين. يرجى المحاولة مرة أخرى",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "تم الإرسال بنجاح",
+        description: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني",
+      });
+      setShowForgotPassword(false);
+      setForgotPasswordEmail('');
+    }
+
+    setIsSendingReset(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4" dir="rtl">
       <div className="absolute inset-0 bg-gradient-glass"></div>
@@ -266,6 +313,19 @@ const Auth = () => {
                       </>
                     )}
                   </Button>
+
+                  {/* Forgot Password Link */}
+                  <div className="text-center pt-2">
+                    <Button
+                      type="button"
+                      variant="link"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="text-white/70 hover:text-white text-sm p-0 h-auto"
+                    >
+                      <KeyRound className="h-4 w-4 ml-1" />
+                      نسيت كلمة المرور؟
+                    </Button>
+                  </div>
                 </form>
               </TabsContent>
 
@@ -405,6 +465,57 @@ const Auth = () => {
           </Button>
         </div>
       </div>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent className="sm:max-w-md bg-background" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-primary" />
+              استعادة كلمة المرور
+            </DialogTitle>
+            <DialogDescription>
+              أدخل بريدك الإلكتروني وسنرسل لك رابط لإعادة تعيين كلمة المرور
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="reset-email">البريد الإلكتروني</Label>
+              <div className="relative">
+                <Mail className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="reset-email"
+                  type="email"
+                  placeholder="أدخل بريدك الإلكتروني"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  className="pr-10"
+                  disabled={isSendingReset}
+                />
+              </div>
+            </div>
+
+            <Button 
+              onClick={handleForgotPassword}
+              className="w-full"
+              disabled={isSendingReset}
+            >
+              {isSendingReset ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                  جاري الإرسال...
+                </>
+              ) : (
+                <>
+                  <Mail className="h-4 w-4 ml-2" />
+                  إرسال رابط الاستعادة
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
