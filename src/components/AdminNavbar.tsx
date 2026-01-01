@@ -17,7 +17,8 @@ import {
   Wallet,
   ShoppingBag,
   Globe2,
-  CreditCard
+  CreditCard,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -52,6 +53,7 @@ const serviceItems = [
   { title: "إدارة المراهنات", url: "/admin/betting", icon: Gamepad2, notificationKey: 'pendingBettingVerifications' },
   { title: "طلبات علي اكسبرس", url: "/admin/aliexpress", icon: ShoppingBag },
   { title: "طلبات الجالية", url: "/admin/diaspora", icon: Globe2 },
+  { title: "محاولات الاحتيال", url: "/admin/fraud-attempts", icon: AlertTriangle },
 ];
 
 export function AdminNavbar() {
