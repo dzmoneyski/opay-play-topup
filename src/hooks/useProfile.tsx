@@ -13,6 +13,7 @@ interface Profile {
   is_identity_verified: boolean;
   is_account_activated: boolean;
   identity_verification_status: 'pending' | 'verified' | 'rejected';
+  last_email_change_at: string | null;
 }
 
 interface VerificationRequest {
@@ -336,6 +337,69 @@ export const useProfile = () => {
     }
   };
 
+  const canChangeEmail = () => {
+    if (!profile?.last_email_change_at) return true;
+    const lastChange = new Date(profile.last_email_change_at);
+    const now = new Date();
+    const daysSinceChange = (now.getTime() - lastChange.getTime()) / (1000 * 60 * 60 * 24);
+    return daysSinceChange >= 30;
+  };
+
+  const getDaysUntilEmailChange = () => {
+    if (!profile?.last_email_change_at) return 0;
+    const lastChange = new Date(profile.last_email_change_at);
+    const now = new Date();
+    const daysSinceChange = (now.getTime() - lastChange.getTime()) / (1000 * 60 * 60 * 24);
+    return Math.max(0, Math.ceil(30 - daysSinceChange));
+  };
+
+  const changeEmail = async (newEmail: string) => {
+    if (!user) return { error: 'لم يتم تسجيل الدخول' };
+    
+    if (!canChangeEmail()) {
+      const daysLeft = getDaysUntilEmailChange();
+      return { error: `يمكنك تغيير البريد الإلكتروني بعد ${daysLeft} يوم` };
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      return { error: 'صيغة البريد الإلكتروني غير صحيحة' };
+    }
+
+    if (newEmail === user.email) {
+      return { error: 'البريد الإلكتروني الجديد مطابق للحالي' };
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        email: newEmail
+      });
+
+      if (error) {
+        if (error.message.includes('already registered')) {
+          return { error: 'هذا البريد الإلكتروني مستخدم بالفعل' };
+        }
+        return { error: error.message };
+      }
+
+      // Update last_email_change_at in profile
+      await supabase
+        .from('profiles')
+        .update({ last_email_change_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+
+      await fetchProfile();
+
+      return { 
+        success: true, 
+        message: 'تم إرسال رابط التأكيد إلى بريدك الإلكتروني الجديد. يرجى التحقق منه لإتمام التغيير.' 
+      };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'خطأ غير معروف' };
+    }
+  };
+
   return {
     profile,
     verificationRequest,
@@ -344,6 +408,9 @@ export const useProfile = () => {
     submitPhoneVerification,
     verifyPhoneCode,
     submitIdentityVerification,
-    refetch: fetchProfile
+    refetch: fetchProfile,
+    canChangeEmail,
+    getDaysUntilEmailChange,
+    changeEmail
   };
 };

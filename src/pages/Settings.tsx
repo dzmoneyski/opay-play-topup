@@ -8,21 +8,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, User, Phone, Mail, Shield, Bell, Lock, ChevronLeft, CheckCircle2, AlertCircle, Settings as SettingsIcon, Key, HelpCircle, FileText, LogOut } from "lucide-react";
+import { ArrowRight, User, Phone, Mail, Shield, Bell, Lock, ChevronLeft, CheckCircle2, AlertCircle, Settings as SettingsIcon, Key, HelpCircle, FileText, LogOut, Edit3, Calendar } from "lucide-react";
 import BackButton from "@/components/BackButton";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { profile, refetch } = useProfile();
+  const { profile, refetch, canChangeEmail, getDaysUntilEmailChange, changeEmail } = useProfile();
   const { toast } = useToast();
   
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  
+  // Email change state
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [emailChangeLoading, setEmailChangeLoading] = useState(false);
 
   // Update local state when profile loads
   useEffect(() => {
@@ -61,6 +74,47 @@ const Settings = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEmailChange = async () => {
+    if (!newEmail.trim()) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال البريد الإلكتروني الجديد",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setEmailChangeLoading(true);
+    try {
+      const result = await changeEmail(newEmail.trim());
+      
+      if (result.error) {
+        toast({
+          title: "خطأ",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "تم الإرسال",
+        description: result.message,
+      });
+      
+      setShowEmailDialog(false);
+      setNewEmail("");
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message || "حدث خطأ غير متوقع",
+        variant: "destructive",
+      });
+    } finally {
+      setEmailChangeLoading(false);
     }
   };
 
@@ -220,13 +274,34 @@ const Settings = () => {
                   id="email"
                   value={user?.email || ""}
                   disabled
-                  className="pr-10 bg-muted/50 border-white/10"
+                  className="pr-10 pl-20 bg-muted/50 border-white/10"
                 />
-                <CheckCircle2 className="absolute left-3 top-3 h-4 w-4 text-green-500" />
+                <div className="absolute left-3 top-2 flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  {canChangeEmail() ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs text-primary hover:text-primary/80"
+                      onClick={() => setShowEmailDialog(true)}
+                    >
+                      <Edit3 className="h-3 w-3 ml-1" />
+                      تغيير
+                    </Button>
+                  ) : null}
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                البريد الإلكتروني محمي ولا يمكن تغييره
-              </p>
+              {canChangeEmail() ? (
+                <p className="text-xs text-green-500 flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  يمكنك تغيير البريد الإلكتروني الآن
+                </p>
+              ) : (
+                <p className="text-xs text-yellow-500 flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  يمكنك تغيير البريد بعد {getDaysUntilEmailChange()} يوم
+                </p>
+              )}
             </div>
 
             <Button 
@@ -502,6 +577,77 @@ const Settings = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Email Change Dialog */}
+      <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-primary" />
+              تغيير البريد الإلكتروني
+            </DialogTitle>
+            <DialogDescription>
+              أدخل بريدك الإلكتروني الجديد. سيتم إرسال رابط تأكيد إليه.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="currentEmail">البريد الإلكتروني الحالي</Label>
+              <Input
+                id="currentEmail"
+                value={user?.email || ""}
+                disabled
+                className="bg-muted/50"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="newEmail">البريد الإلكتروني الجديد</Label>
+              <Input
+                id="newEmail"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="example@email.com"
+                className="bg-muted/50"
+              />
+            </div>
+            
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+              <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                ⚠️ ملاحظة: بعد التأكيد، لن تتمكن من تغيير البريد الإلكتروني مرة أخرى إلا بعد 30 يوم.
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowEmailDialog(false);
+                setNewEmail("");
+              }}
+            >
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleEmailChange}
+              disabled={emailChangeLoading || !newEmail.trim()}
+              className="bg-gradient-primary"
+            >
+              {emailChangeLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin ml-2"></div>
+                  جاري الإرسال...
+                </>
+              ) : (
+                "تأكيد التغيير"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
