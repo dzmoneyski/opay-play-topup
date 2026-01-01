@@ -1787,6 +1787,7 @@ export type Database = {
         Args: { _amount: number; _user_id: string }
         Returns: Json
       }
+      check_identity_verified: { Args: { _user_id: string }; Returns: Json }
       check_rate_limit: {
         Args: {
           _max_count: number
