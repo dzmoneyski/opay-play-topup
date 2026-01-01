@@ -1783,6 +1783,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: undefined
       }
+      check_daily_limit: {
+        Args: { _amount: number; _user_id: string }
+        Returns: Json
+      }
       check_rate_limit: {
         Args: {
           _max_count: number
@@ -1815,6 +1819,7 @@ export type Database = {
       generate_merchant_code: { Args: never; Returns: string }
       generate_transfer_transaction_number: { Args: never; Returns: string }
       generate_unique_referral_code: { Args: never; Returns: string }
+      get_user_daily_spending: { Args: { _user_id: string }; Returns: number }
       get_user_gift_card_redemptions: {
         Args: never
         Returns: {
@@ -1843,14 +1848,23 @@ export type Database = {
         Args: { _amount: number; _platform_id: string; _player_id: string }
         Returns: Json
       }
-      process_digital_card_order: {
-        Args: {
-          _account_id: string
-          _amount_usd: number
-          _card_type_id: string
-        }
-        Returns: Json
-      }
+      process_digital_card_order:
+        | {
+            Args: {
+              _account_id: string
+              _amount_usd: number
+              _card_type_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _account_id: string
+              _amount_usd: number
+              _card_type_id: string
+            }
+            Returns: Json
+          }
       process_game_topup_order: {
         Args: {
           _amount: number
