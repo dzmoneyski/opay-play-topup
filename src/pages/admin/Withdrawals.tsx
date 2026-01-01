@@ -23,11 +23,26 @@ import {
   X,
   Eye,
   Upload,
-  Loader2
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 
 export default function WithdrawalsPage() {
-  const { withdrawals, loading, approveWithdrawal, rejectWithdrawal, fetchWithdrawals } = useAdminWithdrawals();
+  const { 
+    withdrawals, 
+    loading, 
+    approveWithdrawal, 
+    rejectWithdrawal, 
+    fetchWithdrawals,
+    page,
+    setPage,
+    totalCount,
+    pageSize,
+    totalPages
+  } = useAdminWithdrawals();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedStatus, setSelectedStatus] = React.useState('all');
@@ -46,7 +61,7 @@ export default function WithdrawalsPage() {
     } else {
       fetchWithdrawals(false); // جلب مع التصفح
     }
-  }, [searchTerm]);
+  }, [searchTerm, page]);
 
   const filteredWithdrawals = withdrawals.filter(withdrawal => {
     const query = searchTerm.trim().toLowerCase();
@@ -687,6 +702,80 @@ export default function WithdrawalsPage() {
               <p className="text-muted-foreground">
                 لم يتم العثور على طلبات سحب تطابق معايير البحث
               </p>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {!searchTerm.trim() && totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                صفحة {page} من {totalPages} ({totalCount} طلب)
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(1)}
+                  disabled={page === 1 || loading}
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page - 1)}
+                  disabled={page === 1 || loading}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                  السابق
+                </Button>
+                
+                {/* Page numbers */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (page <= 3) {
+                      pageNum = i + 1;
+                    } else if (page >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = page - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={page === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setPage(pageNum)}
+                        disabled={loading}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page + 1)}
+                  disabled={page === totalPages || loading}
+                >
+                  التالي
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(totalPages)}
+                  disabled={page === totalPages || loading}
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
