@@ -1190,6 +1190,7 @@ export type Database = {
           is_account_activated: boolean | null
           is_identity_verified: boolean | null
           is_phone_verified: boolean | null
+          last_email_change_at: string | null
           national_id: string | null
           phone: string | null
           redeem_locked_until: string | null
@@ -1208,6 +1209,7 @@ export type Database = {
           is_account_activated?: boolean | null
           is_identity_verified?: boolean | null
           is_phone_verified?: boolean | null
+          last_email_change_at?: string | null
           national_id?: string | null
           phone?: string | null
           redeem_locked_until?: string | null
@@ -1226,6 +1228,7 @@ export type Database = {
           is_account_activated?: boolean | null
           is_identity_verified?: boolean | null
           is_phone_verified?: boolean | null
+          last_email_change_at?: string | null
           national_id?: string | null
           phone?: string | null
           redeem_locked_until?: string | null
