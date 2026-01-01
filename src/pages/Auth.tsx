@@ -238,15 +238,24 @@ const Auth = () => {
     });
 
     if (error) {
+      let errorMessage = "حدث خطأ أثناء إرسال رابط إعادة التعيين. يرجى المحاولة مرة أخرى";
+      
+      // Rate limit error
+      if (error.message.includes('rate_limit') || error.message.includes('after') || error.status === 429) {
+        errorMessage = "تم إرسال الرابط بالفعل! يرجى الانتظار قليلاً قبل طلب رابط جديد وتفقد صندوق الوارد أو مجلد الـ Spam";
+      } else if (error.message.includes('User not found')) {
+        errorMessage = "البريد الإلكتروني غير مسجل في النظام";
+      }
+      
       toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء إرسال رابط إعادة التعيين. يرجى المحاولة مرة أخرى",
+        title: "تنبيه",
+        description: errorMessage,
         variant: "destructive"
       });
     } else {
       toast({
         title: "تم الإرسال بنجاح",
-        description: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني",
+        description: "تم إرسال رابط إعادة تعيين كلمة المرور. تفقد بريدك الإلكتروني ومجلد الـ Spam",
       });
       setShowForgotPassword(false);
       setForgotPasswordEmail('');
