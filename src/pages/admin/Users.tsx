@@ -884,18 +884,28 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
                           onClick={async () => {
                             setProcessing(true);
                             try {
-                              const { data: currentUser } = await supabase.auth.getUser();
-                              if (!currentUser.user) throw new Error('غير مصرح');
+                              // استخدام Edge Function للحذف النهائي
+                              const response = await fetch(
+                                'https://zxnwixjdwimfblcwfkgo.supabase.co/functions/v1/delete-user',
+                                {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4bndpeGpkd2ltZmJsY3dma2dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5MTU3OTUsImV4cCI6MjA3MjQ5MTc5NX0.2vVXLq4Apkc28lB1UeIOI1Khw_-8UTCMdy6vEkffom4`
+                                  },
+                                  body: JSON.stringify({
+                                    user_id: user.user_id,
+                                    admin_secret: 'opay_admin_delete_2025'
+                                  })
+                                }
+                              );
 
-                              // استخدام الـ function الجديدة للحذف النهائي من auth.users
-                              const { data, error } = await supabase.rpc('admin_delete_user', {
-                                _target_user_id: user.user_id,
-                                _admin_id: currentUser.user.id
-                              });
+                              const result = await response.json();
 
-                              if (error) throw error;
+                              if (!result.success) {
+                                throw new Error(result.error || 'فشل في حذف المستخدم');
+                              }
 
-                              const result = data as { success: boolean; message: string };
                               alert(result.message);
                               onUpdate();
                             } catch (error: any) {
