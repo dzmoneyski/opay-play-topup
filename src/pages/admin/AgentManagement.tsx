@@ -193,6 +193,7 @@ const AgentManagement = () => {
           user_id: profile.user_id,
           can_manage_game_topups: newAgentForm.can_manage_game_topups,
           can_manage_betting: newAgentForm.can_manage_betting,
+          can_manage_phone_topups: newAgentForm.can_manage_phone_topups,
           can_view_orders: newAgentForm.can_view_orders,
           daily_limit: newAgentForm.daily_limit,
           notes: newAgentForm.notes || null
@@ -210,6 +211,7 @@ const AgentManagement = () => {
         phone: '',
         can_manage_game_topups: true,
         can_manage_betting: true,
+        can_manage_phone_topups: true,
         can_view_orders: true,
         daily_limit: 100000,
         notes: ''
