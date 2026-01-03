@@ -18,6 +18,8 @@ interface Merchant {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  wilaya?: string;
+  city?: string;
 }
 
 interface MerchantTransaction {
@@ -31,6 +33,27 @@ interface MerchantTransaction {
   status: string;
   notes: string | null;
   created_at: string;
+}
+
+interface TopupResult {
+  success: boolean;
+  error?: string;
+  message?: string;
+  amount?: number;
+  commission_amount?: number;
+  total_from_customer?: number;
+  customer_phone?: string;
+  new_balance?: number;
+  transaction_id?: string;
+}
+
+interface CommissionResult {
+  success: boolean;
+  error?: string;
+  amount?: number;
+  commission_rate?: number;
+  commission_amount?: number;
+  total_from_customer?: number;
 }
 
 export const useMerchant = () => {
@@ -50,7 +73,7 @@ export const useMerchant = () => {
     }
   }, [user]);
 
-  // Real-time subscription for merchant balance updates
+  // Real-time subscription for merchant updates
   useEffect(() => {
     if (!user) return;
 
@@ -122,81 +145,79 @@ export const useMerchant = () => {
     }
   };
 
-  const rechargeCustomer = async (customerPhone: string, amount: number) => {
+  // حساب العمولة قبل الشحن
+  const calculateCommission = async (amount: number): Promise<CommissionResult> => {
+    try {
+      const { data, error } = await supabase.rpc('calculate_merchant_commission', {
+        _amount: amount
+      });
+
+      if (error) throw error;
+      return data as unknown as CommissionResult;
+    } catch (error: any) {
+      console.error('Error calculating commission:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // شحن الزبون - النظام الجديد (يستخدم رصيد التاجر الشخصي)
+  const topupCustomer = async (customerPhone: string, amount: number): Promise<TopupResult> => {
     if (!merchant) {
       toast.error('لم يتم العثور على حساب التاجر');
-      return { success: false };
+      return { success: false, error: 'لم يتم العثور على حساب التاجر' };
     }
 
     try {
-      const { data, error } = await supabase.rpc('merchant_recharge_customer', {
+      const { data, error } = await supabase.rpc('merchant_topup_customer', {
         _customer_phone: customerPhone,
         _amount: amount
       });
 
       if (error) throw error;
 
-      const result = data as { success: boolean; error?: string; amount?: number; commission?: number; cost?: number };
+      const result = data as unknown as TopupResult;
 
       if (!result.success) {
         toast.error(result.error || 'فشلت العملية');
-        return { success: false };
+        return result;
       }
 
-      toast.success(`تم شحن ${result.amount} دج بنجاح! عمولتك: ${result.commission} دج`);
+      toast.success(
+        `تم شحن ${result.amount} دج بنجاح! عمولتك: ${result.commission_amount} دج`,
+        { duration: 5000 }
+      );
       
       // Refresh data
       await fetchMerchantData();
       await fetchTransactions();
 
-      return { success: true, data: result };
+      return result;
     } catch (error: any) {
-      console.error('Error recharging customer:', error);
+      console.error('Error topping up customer:', error);
       toast.error(error.message || 'حدث خطأ أثناء الشحن');
-      return { success: false };
+      return { success: false, error: error.message };
     }
   };
 
+  // الدالة القديمة (للتوافق مع الكود القديم) - تُعيد توجيه للدالة الجديدة
+  const rechargeCustomer = async (customerPhone: string, amount: number) => {
+    return topupCustomer(customerPhone, amount);
+  };
+
+  // هذه الدالة لم تعد مطلوبة لكن نحتفظ بها للتوافق
   const transferFromUserBalance = async (amount: number) => {
-    if (!merchant) {
-      toast.error('لم يتم العثور على حساب التاجر');
-      return { success: false };
-    }
-
-    try {
-      const { data, error } = await supabase.rpc('merchant_transfer_from_user_balance', {
-        _amount: amount
-      });
-
-      if (error) throw error;
-
-      const result = data as { success: boolean; error?: string; amount?: number; new_merchant_balance?: number };
-
-      if (!result.success) {
-        toast.error(result.error || 'فشلت العملية');
-        return { success: false };
-      }
-
-      toast.success(`تم تحويل ${result.amount} دج إلى حساب التاجر بنجاح!`);
-      
-      // Refresh data
-      await fetchMerchantData();
-      await fetchTransactions();
-
-      return { success: true, data: result };
-    } catch (error: any) {
-      console.error('Error transferring balance:', error);
-      toast.error(error.message || 'حدث خطأ أثناء التحويل');
-      return { success: false };
-    }
+    toast.info('في النظام الجديد، رصيدك الشخصي هو نفسه رصيد التاجر');
+    return { success: true };
   };
 
   return {
     merchant,
     transactions,
     loading,
-    rechargeCustomer,
-    transferFromUserBalance,
+    calculateCommission,
+    topupCustomer,
+    rechargeCustomer, // للتوافق مع الكود القديم
+    transferFromUserBalance, // للتوافق مع الكود القديم
     refreshData: () => {
       fetchMerchantData();
       fetchTransactions();

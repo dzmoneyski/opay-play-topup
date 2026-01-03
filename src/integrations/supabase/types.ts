@@ -1774,6 +1774,10 @@ export type Database = {
         Args: { _amount: number; _fee_config: Json }
         Returns: Json
       }
+      calculate_merchant_commission: {
+        Args: { _amount: number }
+        Returns: Json
+      }
       calculate_withdrawal_fee_percentage: {
         Args: { _active_referrals: number }
         Returns: number
@@ -1841,6 +1845,10 @@ export type Database = {
         Returns: boolean
       }
       merchant_recharge_customer: {
+        Args: { _amount: number; _customer_phone: string }
+        Returns: Json
+      }
+      merchant_topup_customer: {
         Args: { _amount: number; _customer_phone: string }
         Returns: Json
       }
