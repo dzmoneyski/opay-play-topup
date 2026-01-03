@@ -19,6 +19,7 @@ import DigitalCardsPage from '@/pages/admin/DigitalCards';
 import AliExpressOrders from '@/pages/admin/AliExpressOrders';
 import DiasporaTransfers from '@/pages/admin/DiasporaTransfers';
 import FraudAttempts from '@/pages/admin/FraudAttempts';
+import AgentManagement from '@/pages/admin/AgentManagement';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -70,6 +71,7 @@ const AdminPanel = () => {
           <Route path="games" element={<GameManagement />} />
           <Route path="betting" element={<BettingManagement />} />
           <Route path="merchants" element={<MerchantManagement />} />
+          <Route path="agents" element={<AgentManagement />} />
           <Route path="aliexpress" element={<AliExpressOrders />} />
           <Route path="diaspora" element={<DiasporaTransfers />} />
           <Route path="fraud-attempts" element={<FraudAttempts />} />

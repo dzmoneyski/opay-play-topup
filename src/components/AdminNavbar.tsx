@@ -38,6 +38,7 @@ const mainItems = [
   { title: "طلبات التحقق", url: "/admin/identity-verification", icon: Shield, notificationKey: 'pendingVerifications' },
   { title: "المستخدمين", url: "/admin/users", icon: Users },
   { title: "إدارة التجار", url: "/admin/merchants", icon: Users },
+  { title: "إدارة الوكلاء", url: "/admin/agents", icon: Users },
 ];
 
 const transactionItems = [
