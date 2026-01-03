@@ -36,6 +36,9 @@ import Diaspora from "./pages/Diaspora";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ShareApp from "./pages/ShareApp";
 import NotFound from "./pages/NotFound";
+import AgentDashboard from "./pages/agent/AgentDashboard";
+import AgentGameOrders from "./pages/agent/AgentGameOrders";
+import AgentBettingOrders from "./pages/agent/AgentBettingOrders";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -165,6 +168,24 @@ const App = () => {
               } />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/share" element={<ShareApp />} />
+              
+              {/* Agent Routes */}
+              <Route path="/agent" element={
+                <ProtectedRoute requireActivation={false}>
+                  <AgentDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/agent/game-orders" element={
+                <ProtectedRoute requireActivation={false}>
+                  <AgentGameOrders />
+                </ProtectedRoute>
+              } />
+              <Route path="/agent/betting-orders" element={
+                <ProtectedRoute requireActivation={false}>
+                  <AgentBettingOrders />
+                </ProtectedRoute>
+              } />
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface UserRole {
   id: string;
   user_id: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'agent';
   created_at: string;
 }
 
@@ -14,6 +14,7 @@ export const useUserRoles = () => {
   const [roles, setRoles] = React.useState<UserRole[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [isAdmin, setIsAdmin] = React.useState(false);
+  const [isAgent, setIsAgent] = React.useState(false);
 
   React.useEffect(() => {
     if (user) {
@@ -21,6 +22,7 @@ export const useUserRoles = () => {
     } else {
       setRoles([]);
       setIsAdmin(false);
+      setIsAgent(false);
       setLoading(false);
     }
   }, [user]);
@@ -41,7 +43,9 @@ export const useUserRoles = () => {
 
       setRoles(data as UserRole[]);
       const adminRole = data?.find(role => role.role === 'admin');
+      const agentRole = data?.find(role => role.role === 'agent');
       setIsAdmin(!!adminRole);
+      setIsAgent(!!agentRole);
     } catch (error) {
       console.error('Error fetching user roles:', error);
     } finally {
@@ -49,7 +53,7 @@ export const useUserRoles = () => {
     }
   };
 
-  const hasRole = (role: 'admin' | 'user') => {
+  const hasRole = (role: 'admin' | 'user' | 'agent') => {
     return roles.some(userRole => userRole.role === role);
   };
 
@@ -57,6 +61,7 @@ export const useUserRoles = () => {
     roles,
     loading,
     isAdmin,
+    isAgent,
     hasRole,
     refetch: fetchUserRoles
   };
