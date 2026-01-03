@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { useAgentPermissions } from "@/hooks/useAgentPermissions";
+import { useAgentPendingOrders } from "@/hooks/useAgentPendingOrders";
 import { useBalance } from "@/hooks/useBalance";
 import { useToast } from "@/hooks/use-toast";
 import { useTransactionHistory } from "@/hooks/useTransactionHistory";
@@ -56,6 +57,7 @@ const Index = () => {
   const { profile, loading: profileLoading } = useProfile();
 const { isAdmin, loading: rolesLoading } = useUserRoles();
   const { isAgent } = useAgentPermissions();
+  const { counts: agentPendingCounts } = useAgentPendingOrders();
   const { balance, loading: balanceLoading } = useBalance();
   const { transactions, loading: transactionsLoading } = useTransactionHistory(10); // Limit to 10 for dashboard
   const { toast } = useToast();
@@ -364,6 +366,14 @@ const { isAdmin, loading: rolesLoading } = useUserRoles();
                 {/* Agent Panel Access */}
                 {isAgent && !isAdmin && (
                   <div className="relative group">
+                    {/* شارة عدد الطلبات المعلقة */}
+                    {agentPendingCounts.total > 0 && (
+                      <div className="absolute -top-2 -right-2 z-50 pointer-events-none animate-pulse">
+                        <div className="bg-red-500 text-white min-w-5 h-5 flex items-center justify-center rounded-full shadow-[0_0_10px_rgba(239,68,68,0.8)] font-bold text-xs border-2 border-white px-1">
+                          {agentPendingCounts.total > 99 ? '99+' : agentPendingCounts.total}
+                        </div>
+                      </div>
+                    )}
                     <Button 
                       variant="ghost" 
                       size="sm"
