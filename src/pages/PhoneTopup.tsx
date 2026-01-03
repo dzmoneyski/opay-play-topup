@@ -94,7 +94,7 @@ const PhoneTopup = () => {
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">رصيدك الحالي</span>
-              <span className="text-2xl font-bold text-primary">{balance?.toLocaleString()} د.ج</span>
+              <span className="text-2xl font-bold text-primary">{balance?.balance?.toLocaleString() || 0} د.ج</span>
             </div>
           </CardContent>
         </Card>
