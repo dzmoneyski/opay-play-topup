@@ -73,6 +73,7 @@ export type Database = {
         Row: {
           can_manage_betting: boolean | null
           can_manage_game_topups: boolean | null
+          can_manage_phone_topups: boolean | null
           can_view_orders: boolean | null
           created_at: string | null
           created_by: string | null
@@ -85,6 +86,7 @@ export type Database = {
         Insert: {
           can_manage_betting?: boolean | null
           can_manage_game_topups?: boolean | null
+          can_manage_phone_topups?: boolean | null
           can_view_orders?: boolean | null
           created_at?: string | null
           created_by?: string | null
@@ -97,6 +99,7 @@ export type Database = {
         Update: {
           can_manage_betting?: boolean | null
           can_manage_game_topups?: boolean | null
+          can_manage_phone_topups?: boolean | null
           can_view_orders?: boolean | null
           created_at?: string | null
           created_by?: string | null
@@ -1121,6 +1124,101 @@ export type Database = {
         }
         Relationships: []
       }
+      phone_operators: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          max_amount: number
+          min_amount: number
+          name: string
+          name_ar: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          max_amount?: number
+          min_amount?: number
+          name: string
+          name_ar: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          max_amount?: number
+          min_amount?: number
+          name?: string
+          name_ar?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      phone_topup_orders: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          operator_id: string
+          phone_number: string
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          operator_id: string
+          phone_number: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          operator_id?: string
+          phone_number?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phone_topup_orders_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "phone_operators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       phone_verification_codes: {
         Row: {
           attempts: number
@@ -1796,6 +1894,10 @@ export type Database = {
         }
         Returns: Json
       }
+      approve_phone_topup_order: {
+        Args: { _admin_notes?: string; _order_id: string }
+        Returns: Json
+      }
       approve_verification: { Args: { request_id: string }; Returns: undefined }
       approve_verification_request: {
         Args: { _admin_id: string; _request_id: string }
@@ -1931,6 +2033,15 @@ export type Database = {
         }
         Returns: Json
       }
+      process_phone_topup_order: {
+        Args: {
+          _amount: number
+          _notes?: string
+          _operator_id: string
+          _phone_number: string
+        }
+        Returns: Json
+      }
       process_transfer: {
         Args: {
           amount_param: number
@@ -1977,6 +2088,10 @@ export type Database = {
       }
       reject_merchant_request: {
         Args: { _admin_id: string; _reason: string; _request_id: string }
+        Returns: Json
+      }
+      reject_phone_topup_order: {
+        Args: { _admin_notes?: string; _order_id: string }
         Returns: Json
       }
       reject_verification: {
