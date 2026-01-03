@@ -15,6 +15,7 @@ import mobilisLogo from '@/assets/mobilis-logo.png';
 import djezzyLogo from '@/assets/djezzy-logo.png';
 import ooredooLogo from '@/assets/ooredoo-logo.png';
 import idoomLogo from '@/assets/idoom-logo.webp';
+import lte4gLogo from '@/assets/4g-lte-logo.webp';
 
 interface PhoneOrder {
   id: string;
@@ -43,14 +44,16 @@ const operatorLogos: Record<string, string> = {
   'mobilis': mobilisLogo,
   'djezzy': djezzyLogo,
   'ooredoo': ooredooLogo,
-  'idoom-adsl': idoomLogo
+  'idoom-adsl': idoomLogo,
+  '4g-adsl': lte4gLogo
 };
 
 const operatorColors: Record<string, string> = {
   'mobilis': 'from-green-500 to-green-600',
   'djezzy': 'from-red-500 to-red-600',
   'ooredoo': 'from-purple-500 to-purple-600',
-  'idoom-adsl': 'from-blue-500 to-blue-600'
+  'idoom-adsl': 'from-blue-500 to-blue-600',
+  '4g-adsl': 'from-cyan-500 to-cyan-600'
 };
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
