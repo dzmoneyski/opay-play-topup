@@ -10,6 +10,7 @@ interface NotificationCounts {
   pendingBettingVerifications: number;
   pendingGames: number;
   pendingDigitalCards: number;
+  pendingPhoneTopups: number;
   fraudAttempts: number;
   fraudAttemptsToday: number;
   total: number;
@@ -24,6 +25,7 @@ export const useAdminNotifications = () => {
     pendingBettingVerifications: 0,
     pendingGames: 0,
     pendingDigitalCards: 0,
+    pendingPhoneTopups: 0,
     fraudAttempts: 0,
     fraudAttemptsToday: 0,
     total: 0
@@ -36,7 +38,7 @@ export const useAdminNotifications = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const [verifications, deposits, withdrawals, betting, bettingVerifications, games, digitalCards, fraudTotal, fraudToday] = await Promise.all([
+      const [verifications, deposits, withdrawals, betting, bettingVerifications, games, digitalCards, phoneTopups, fraudTotal, fraudToday] = await Promise.all([
         supabase
           .from('verification_requests')
           .select('id', { count: 'exact', head: true })
@@ -66,6 +68,10 @@ export const useAdminNotifications = () => {
           .select('id', { count: 'exact', head: true })
           .eq('status', 'pending'),
         supabase
+          .from('phone_topup_orders')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending'),
+        supabase
           .from('fraud_attempts')
           .select('id', { count: 'exact', head: true }),
         supabase
@@ -84,9 +90,10 @@ export const useAdminNotifications = () => {
         pendingBettingVerifications: bettingVerifications.count || 0,
         pendingGames: games.count || 0,
         pendingDigitalCards: digitalCards.count || 0,
+        pendingPhoneTopups: phoneTopups.count || 0,
         fraudAttempts: newFraudCount,
         fraudAttemptsToday: fraudToday.count || 0,
-        total: (verifications.count || 0) + (deposits.count || 0) + (withdrawals.count || 0) + (betting.count || 0) + (bettingVerifications.count || 0) + (games.count || 0) + (digitalCards.count || 0)
+        total: (verifications.count || 0) + (deposits.count || 0) + (withdrawals.count || 0) + (betting.count || 0) + (bettingVerifications.count || 0) + (games.count || 0) + (digitalCards.count || 0) + (phoneTopups.count || 0)
       };
 
       // Show urgent toast if new fraud attempt detected
@@ -140,6 +147,10 @@ export const useAdminNotifications = () => {
       supabase
         .channel('digital-cards-changes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'digital_card_orders' }, fetchCounts)
+        .subscribe(),
+      supabase
+        .channel('phone-topups-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'phone_topup_orders' }, fetchCounts)
         .subscribe(),
       supabase
         .channel('fraud-attempts-changes')
