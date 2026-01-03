@@ -22,7 +22,20 @@ export const useAgentPendingOrders = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchCounts = async () => {
-    if (!user || !isAgent) {
+    // Don't require isAgent to be true yet - permissions might still be loading
+    if (!user) {
+      setCounts({ gameTopups: 0, betting: 0, phoneTopups: 0, total: 0 });
+      setLoading(false);
+      return;
+    }
+
+    // Wait for permissions to load before deciding
+    if (permissionsLoading) {
+      return;
+    }
+
+    // If not an agent, set empty counts
+    if (!isAgent) {
       setCounts({ gameTopups: 0, betting: 0, phoneTopups: 0, total: 0 });
       setLoading(false);
       return;
@@ -33,6 +46,8 @@ export const useAgentPendingOrders = () => {
       let bettingCount = 0;
       let phoneTopupsCount = 0;
 
+      console.log('Agent permissions:', { canManageGameTopups, canManageBetting, canManagePhoneTopups });
+
       // Fetch pending game topup orders if agent has permission
       if (canManageGameTopups) {
         const { count, error } = await supabase
@@ -40,9 +55,10 @@ export const useAgentPendingOrders = () => {
           .select('*', { count: 'exact', head: true })
           .eq('status', 'pending');
         
-        if (!error && count) {
+        if (!error && count !== null) {
           gameTopupsCount = count;
         }
+        console.log('Game topups count:', count, error);
       }
 
       // Fetch pending betting transactions if agent has permission
@@ -52,9 +68,10 @@ export const useAgentPendingOrders = () => {
           .select('*', { count: 'exact', head: true })
           .eq('status', 'pending');
         
-        if (!error && count) {
+        if (!error && count !== null) {
           bettingCount = count;
         }
+        console.log('Betting count:', count, error);
       }
 
       // Fetch pending phone topup orders if agent has permission
@@ -64,12 +81,14 @@ export const useAgentPendingOrders = () => {
           .select('*', { count: 'exact', head: true })
           .eq('status', 'pending');
         
-        if (!error && count) {
+        if (!error && count !== null) {
           phoneTopupsCount = count;
         }
+        console.log('Phone topups count:', count, error);
       }
 
       const total = gameTopupsCount + bettingCount + phoneTopupsCount;
+      console.log('Total pending orders:', total);
 
       setCounts({
         gameTopups: gameTopupsCount,
