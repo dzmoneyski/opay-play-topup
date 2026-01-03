@@ -50,6 +50,31 @@ const AgentBettingOrders = () => {
     }
   }, [permLoading, isAgent, canManageBetting, navigate]);
 
+  // Real-time subscription for new orders
+  useEffect(() => {
+    if (canManageBetting) {
+      const channel = supabase
+        .channel('agent-betting-orders')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'betting_transactions'
+          },
+          () => {
+            toast.info('💰 طلب جديد - تم استلام طلب مراهنات جديد');
+            refetch();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [canManageBetting, refetch]);
+
   const handleAction = async () => {
     if (!selectedOrder || !actionType) return;
 

@@ -24,7 +24,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { UserPlus, Settings2, Trash2, Shield, Gamepad2, Eye, Loader2 } from 'lucide-react';
+import { UserPlus, Settings2, Trash2, Shield, Gamepad2, Eye, Loader2, Smartphone } from 'lucide-react';
 
 interface Agent {
   user_id: string;
@@ -239,6 +239,7 @@ const AgentManagement = () => {
         .update({
           can_manage_game_topups: editingAgent.permissions.can_manage_game_topups,
           can_manage_betting: editingAgent.permissions.can_manage_betting,
+          can_manage_phone_topups: editingAgent.permissions.can_manage_phone_topups,
           can_view_orders: editingAgent.permissions.can_view_orders,
           daily_limit: editingAgent.permissions.daily_limit,
           notes: editingAgent.permissions.notes,
@@ -372,6 +373,17 @@ const AgentManagement = () => {
 
                 <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <div className="flex items-center gap-2">
+                    <Smartphone className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm">إدارة شحن الهاتف</span>
+                  </div>
+                  <Switch
+                    checked={newAgentForm.can_manage_phone_topups}
+                    onCheckedChange={(checked) => setNewAgentForm(prev => ({ ...prev, can_manage_phone_topups: checked }))}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                  <div className="flex items-center gap-2">
                     <Eye className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">عرض جميع الطلبات</span>
                   </div>
@@ -454,6 +466,9 @@ const AgentManagement = () => {
                         {agent.permissions?.can_manage_betting && (
                           <Badge variant="secondary" className="text-xs">مراهنات</Badge>
                         )}
+                        {agent.permissions?.can_manage_phone_topups && (
+                          <Badge className="text-xs bg-blue-500">هاتف</Badge>
+                        )}
                         {agent.permissions?.can_view_orders && (
                           <Badge variant="outline" className="text-xs">عرض</Badge>
                         )}
@@ -528,6 +543,20 @@ const AgentManagement = () => {
                     onCheckedChange={(checked) => setEditingAgent(prev => prev ? {
                       ...prev,
                       permissions: prev.permissions ? { ...prev.permissions, can_manage_betting: checked } : null
+                    } : null)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm">إدارة شحن الهاتف</span>
+                  </div>
+                  <Switch
+                    checked={editingAgent.permissions.can_manage_phone_topups}
+                    onCheckedChange={(checked) => setEditingAgent(prev => prev ? {
+                      ...prev,
+                      permissions: prev.permissions ? { ...prev.permissions, can_manage_phone_topups: checked } : null
                     } : null)}
                   />
                 </div>

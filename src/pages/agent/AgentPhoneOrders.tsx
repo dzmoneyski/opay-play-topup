@@ -34,7 +34,8 @@ const operatorColors: Record<string, string> = {
   'mobilis': 'from-green-500 to-green-600',
   'djezzy': 'from-red-500 to-red-600',
   'ooredoo': 'from-purple-500 to-purple-600',
-  'idoom-adsl': 'from-blue-500 to-blue-600'
+  'idoom-adsl': 'from-blue-500 to-blue-600',
+  '4g-adsl': 'from-cyan-500 to-cyan-600'
 };
 
 const AgentPhoneOrders = () => {
@@ -58,6 +59,30 @@ const AgentPhoneOrders = () => {
   useEffect(() => {
     if (canManagePhoneTopups) {
       fetchOrders();
+      
+      // Real-time subscription for new orders
+      const channel = supabase
+        .channel('agent-phone-orders')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'phone_topup_orders'
+          },
+          () => {
+            toast({
+              title: '📱 طلب جديد',
+              description: 'تم استلام طلب شحن هاتف جديد',
+            });
+            fetchOrders();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [canManagePhoneTopups]);
 
