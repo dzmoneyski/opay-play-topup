@@ -32,6 +32,56 @@ export const usePhoneTopupOrders = () => {
   useEffect(() => {
     if (user) {
       fetchOrders();
+
+      // Real-time subscription for order updates
+      const channel = supabase
+        .channel('user-phone-topup-orders')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'phone_topup_orders',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            const newStatus = payload.new.status;
+            const oldStatus = payload.old?.status;
+            
+            if (newStatus !== oldStatus) {
+              if (newStatus === 'approved') {
+                toast({
+                  title: '✅ تم قبول طلب الشحن',
+                  description: `تم شحن ${payload.new.amount} د.ج بنجاح!`,
+                });
+              } else if (newStatus === 'rejected') {
+                toast({
+                  title: '❌ تم رفض طلب الشحن',
+                  description: payload.new.admin_notes || 'تم رفض طلبك',
+                  variant: 'destructive'
+                });
+              }
+            }
+            fetchOrders();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'phone_topup_orders',
+            filter: `user_id=eq.${user.id}`
+          },
+          () => {
+            fetchOrders();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [user]);
 
