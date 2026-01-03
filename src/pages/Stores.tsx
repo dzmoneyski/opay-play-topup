@@ -1,13 +1,16 @@
-import { Phone, MapPin, Store, Navigation, MessageCircle } from "lucide-react";
+import { useState } from "react";
+import { Phone, MapPin, Store, Navigation, MessageCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import BackButton from "@/components/BackButton";
 import { useStores, ALGERIA_WILAYAS } from "@/hooks/useStores";
 
 const Stores = () => {
   const { stores, loading, selectedWilaya, setSelectedWilaya } = useStores();
+  const [selectedImage, setSelectedImage] = useState<{ url: string; name: string } | null>(null);
   const companyWhatsApp = "+213553980661";
   const whatsappMessage = encodeURIComponent("مرحباً، أريد معرفة أقرب متجر إلي");
   const whatsappUrl = `https://wa.me/${companyWhatsApp}?text=${whatsappMessage}`;
@@ -95,11 +98,14 @@ const Stores = () => {
                 <Card key={store.id} className="hover:shadow-lg transition-shadow overflow-hidden">
                   {/* Store Image */}
                   {store.store_image && (
-                    <div className="w-full h-40 overflow-hidden">
+                    <div 
+                      className="w-full h-40 overflow-hidden cursor-pointer"
+                      onClick={() => setSelectedImage({ url: store.store_image!, name: store.business_name })}
+                    >
                       <img 
                         src={store.store_image} 
                         alt={store.business_name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = 'none';
                         }}
@@ -191,6 +197,30 @@ const Stores = () => {
           </Card>
         </div>
       </div>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden bg-black/95 border-none">
+          <button
+            onClick={() => setSelectedImage(null)}
+            className="absolute top-2 right-2 z-50 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          {selectedImage && (
+            <div className="w-full flex flex-col items-center">
+              <img 
+                src={selectedImage.url} 
+                alt={selectedImage.name}
+                className="w-full max-h-[80vh] object-contain"
+              />
+              <p className="text-white text-center py-3 font-medium">
+                {selectedImage.name}
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
