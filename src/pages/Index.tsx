@@ -236,7 +236,7 @@ const { isAdmin, loading: rolesLoading } = useUserRoles();
       icon: <Smartphone className="h-5 w-5" />, 
       title: "شحن هاتف", 
       desc: "رصيد الجوال",
-      action: "disabled"
+      action: "phone-topup"
     },
     { 
       icon: <CreditCard className="h-5 w-5" />, 
@@ -265,6 +265,11 @@ const { isAdmin, loading: rolesLoading } = useUserRoles();
     
     if (action === 'cards') {
       navigate('/cards');
+      return;
+    }
+
+    if (action === 'phone-topup') {
+      navigate('/phone-topup');
       return;
     }
     

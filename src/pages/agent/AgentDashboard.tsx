@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Gamepad2, CreditCard, Loader2, Shield } from 'lucide-react';
+import { Gamepad2, CreditCard, Loader2, Shield, Smartphone } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAgentPermissions } from '@/hooks/useAgentPermissions';
@@ -8,7 +8,7 @@ import BackButton from '@/components/BackButton';
 
 const AgentDashboard = () => {
   const navigate = useNavigate();
-  const { isAgent, permissions, loading, canManageGameTopups, canManageBetting } = useAgentPermissions();
+  const { isAgent, permissions, loading, canManageGameTopups, canManageBetting, canManagePhoneTopups } = useAgentPermissions();
 
   useEffect(() => {
     if (!loading && !isAgent) {
@@ -47,6 +47,15 @@ const AgentDashboard = () => {
       enabled: canManageBetting,
       color: 'bg-orange-500',
     },
+    {
+      title: 'طلبات شحن الهاتف',
+      titleEn: 'Phone Top-up Orders',
+      description: 'إدارة طلبات شحن الهاتف',
+      icon: Smartphone,
+      path: '/agent/phone-orders',
+      enabled: canManagePhoneTopups,
+      color: 'bg-blue-500',
+    },
   ];
 
   const enabledItems = menuItems.filter(item => item.enabled);
@@ -80,6 +89,9 @@ const AgentDashboard = () => {
               </Badge>
               <Badge variant={canManageBetting ? "default" : "secondary"}>
                 {canManageBetting ? '✓' : '✗'} المراهنات
+              </Badge>
+              <Badge variant={canManagePhoneTopups ? "default" : "secondary"}>
+                {canManagePhoneTopups ? '✓' : '✗'} شحن الهاتف
               </Badge>
             </div>
             {permissions?.daily_limit && (

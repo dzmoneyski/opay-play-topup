@@ -35,6 +35,7 @@ interface Agent {
     id: string;
     can_manage_game_topups: boolean;
     can_manage_betting: boolean;
+    can_manage_phone_topups: boolean;
     can_view_orders: boolean;
     daily_limit: number;
     notes: string | null;
@@ -45,6 +46,7 @@ interface NewAgentForm {
   phone: string;
   can_manage_game_topups: boolean;
   can_manage_betting: boolean;
+  can_manage_phone_topups: boolean;
   can_view_orders: boolean;
   daily_limit: number;
   notes: string;
@@ -62,6 +64,7 @@ const AgentManagement = () => {
     phone: '',
     can_manage_game_topups: true,
     can_manage_betting: true,
+    can_manage_phone_topups: true,
     can_view_orders: true,
     daily_limit: 100000,
     notes: ''

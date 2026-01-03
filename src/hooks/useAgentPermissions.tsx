@@ -7,6 +7,7 @@ interface AgentPermissions {
   user_id: string;
   can_manage_game_topups: boolean;
   can_manage_betting: boolean;
+  can_manage_phone_topups: boolean;
   can_view_orders: boolean;
   daily_limit: number;
   notes: string | null;
@@ -73,6 +74,7 @@ export const useAgentPermissions = () => {
 
   const canManageGameTopups = permissions?.can_manage_game_topups ?? false;
   const canManageBetting = permissions?.can_manage_betting ?? false;
+  const canManagePhoneTopups = permissions?.can_manage_phone_topups ?? false;
   const canViewOrders = permissions?.can_view_orders ?? false;
 
   return {
@@ -81,6 +83,7 @@ export const useAgentPermissions = () => {
     loading,
     canManageGameTopups,
     canManageBetting,
+    canManagePhoneTopups,
     canViewOrders,
     refetch: checkAgentStatus
   };

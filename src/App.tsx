@@ -39,6 +39,8 @@ import NotFound from "./pages/NotFound";
 import AgentDashboard from "./pages/agent/AgentDashboard";
 import AgentGameOrders from "./pages/agent/AgentGameOrders";
 import AgentBettingOrders from "./pages/agent/AgentBettingOrders";
+import AgentPhoneOrders from "./pages/agent/AgentPhoneOrders";
+import PhoneTopup from "./pages/PhoneTopup";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -183,6 +185,16 @@ const App = () => {
               <Route path="/agent/betting-orders" element={
                 <ProtectedRoute requireActivation={false}>
                   <AgentBettingOrders />
+                </ProtectedRoute>
+              } />
+              <Route path="/agent/phone-orders" element={
+                <ProtectedRoute requireActivation={false}>
+                  <AgentPhoneOrders />
+                </ProtectedRoute>
+              } />
+              <Route path="/phone-topup" element={
+                <ProtectedRoute>
+                  <PhoneTopup />
                 </ProtectedRoute>
               } />
               
