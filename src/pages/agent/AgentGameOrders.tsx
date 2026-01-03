@@ -12,6 +12,7 @@ import BackButton from '@/components/BackButton';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
 
 const AgentGameOrders = () => {
   const navigate = useNavigate();
@@ -30,6 +31,31 @@ const AgentGameOrders = () => {
       navigate('/agent');
     }
   }, [permLoading, isAgent, canManageGameTopups, navigate]);
+
+  // Real-time subscription for new orders
+  useEffect(() => {
+    if (canManageGameTopups) {
+      const channel = supabase
+        .channel('agent-game-orders')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'game_topup_orders'
+          },
+          () => {
+            toast.info('🎮 طلب جديد - تم استلام طلب شحن ألعاب جديد');
+            refetch();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [canManageGameTopups, refetch]);
 
   const pendingOrders = orders?.filter(o => o.status === 'pending') || [];
 
