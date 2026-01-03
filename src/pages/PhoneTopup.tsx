@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Smartphone, Loader2, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Smartphone, Loader2, Clock, CheckCircle, XCircle, CreditCard, Zap, Gift } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import BackButton from '@/components/BackButton';
 import { usePhoneOperators } from '@/hooks/usePhoneOperators';
 import { usePhoneTopupOrders } from '@/hooks/usePhoneTopupOrders';
 import { useBalance } from '@/hooks/useBalance';
+import { useToast } from '@/hooks/use-toast';
 
 // Import operator logos
 import mobilisLogo from '@/assets/mobilis-logo.png';
@@ -27,30 +28,104 @@ const operatorLogos: Record<string, string> = {
   '4g-adsl': lte4gLogo
 };
 
+// Phone prefixes for each operator
+const operatorPrefixes: Record<string, string[]> = {
+  'mobilis': ['06'],
+  'djezzy': ['07'],
+  'ooredoo': ['05'],
+  'idoom-adsl': [],
+  '4g-adsl': []
+};
+
+// Service types
+const serviceTypes = [
+  { id: 'flexy', name: 'فليكسي عادي', icon: Zap },
+  { id: 'cards', name: 'البطاقات', icon: CreditCard },
+  { id: 'offers', name: 'العروض', icon: Gift }
+];
+
 const PhoneTopup = () => {
   const { operators, loading: operatorsLoading } = usePhoneOperators();
   const { orders, loading: ordersLoading, createOrder } = usePhoneTopupOrders();
   const { balance } = useBalance();
+  const { toast } = useToast();
   
   const [selectedOperator, setSelectedOperator] = useState<string | null>(null);
+  const [selectedService, setSelectedService] = useState<string | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const selectedOp = operators.find(op => op.id === selectedOperator);
+  
+  // Check if operator requires phone validation (mobile operators)
+  const isMobileOperator = selectedOp && ['mobilis', 'djezzy', 'ooredoo'].includes(selectedOp.slug);
+
+  // Validate phone number based on operator
+  const validatePhoneNumber = (phone: string): boolean => {
+    if (!selectedOp) return false;
+    
+    // For ADSL operators, just check it's not empty
+    if (!isMobileOperator) {
+      return phone.length > 0;
+    }
+    
+    // For mobile operators, validate format
+    const cleaned = phone.replace(/\s/g, '');
+    
+    // Must be 10 digits and start with 0
+    if (!/^0\d{9}$/.test(cleaned)) {
+      setPhoneError('رقم الهاتف يجب أن يكون 10 أرقام ويبدأ بـ 0');
+      return false;
+    }
+    
+    // Check prefix matches operator
+    const prefix = cleaned.substring(0, 2);
+    const validPrefixes = operatorPrefixes[selectedOp.slug] || [];
+    
+    if (validPrefixes.length > 0 && !validPrefixes.includes(prefix)) {
+      const operatorName = selectedOp.name_ar;
+      setPhoneError(`رقم ${operatorName} يجب أن يبدأ بـ ${validPrefixes.join(' أو ')}`);
+      return false;
+    }
+    
+    setPhoneError('');
+    return true;
+  };
+
+  const handlePhoneChange = (value: string) => {
+    // Only allow numbers
+    const cleaned = value.replace(/[^\d]/g, '');
+    setPhoneNumber(cleaned);
+    
+    // Clear error while typing
+    if (phoneError) setPhoneError('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedOperator || !phoneNumber || !amount) return;
+    if (!selectedOperator || !phoneNumber || !amount || !selectedService) return;
+    
+    // Validate phone number
+    if (!validatePhoneNumber(phoneNumber)) {
+      return;
+    }
     
     setSubmitting(true);
-    const success = await createOrder(selectedOperator, phoneNumber, parseFloat(amount), notes);
+    // Include service type in notes
+    const serviceNote = serviceTypes.find(s => s.id === selectedService)?.name || '';
+    const fullNotes = notes ? `${serviceNote} - ${notes}` : serviceNote;
+    
+    const success = await createOrder(selectedOperator, phoneNumber, parseFloat(amount), fullNotes);
     if (success) {
       setPhoneNumber('');
       setAmount('');
       setNotes('');
       setSelectedOperator(null);
+      setSelectedService(null);
+      setPhoneError('');
     }
     setSubmitting(false);
   };
@@ -117,7 +192,12 @@ const PhoneTopup = () => {
                       ? 'ring-2 ring-primary border-primary' 
                       : 'hover:border-primary/50'
                   }`}
-                  onClick={() => setSelectedOperator(operator.id)}
+                  onClick={() => {
+                    setSelectedOperator(operator.id);
+                    setSelectedService(null);
+                    setPhoneNumber('');
+                    setPhoneError('');
+                  }}
                 >
                   <CardContent className="p-4 text-center">
                     {operatorLogos[operator.slug] ? (
@@ -145,71 +225,107 @@ const PhoneTopup = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">تفاصيل الشحن</CardTitle>
-                  <CardDescription>أدخل رقم الهاتف والمبلغ</CardDescription>
+                  <CardDescription>اختر الخدمة وأدخل البيانات</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Service Type Selection */}
                     <div className="space-y-2">
-                      <Label htmlFor="phone">رقم الهاتف</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="0xxxxxxxxx"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        className="text-left"
-                        dir="ltr"
-                        required
-                      />
+                      <Label>نوع الخدمة</Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {serviceTypes.map((service) => {
+                          const Icon = service.icon;
+                          return (
+                            <button
+                              key={service.id}
+                              type="button"
+                              onClick={() => setSelectedService(service.id)}
+                              className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${
+                                selectedService === service.id
+                                  ? 'border-primary bg-primary/10 text-primary'
+                                  : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                              }`}
+                            >
+                              <Icon className="w-5 h-5" />
+                              <span className="text-xs font-medium">{service.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="amount">المبلغ (د.ج)</Label>
-                      <Input
-                        id="amount"
-                        type="number"
-                        placeholder={`${selectedOp?.min_amount} - ${selectedOp?.max_amount}`}
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        min={selectedOp?.min_amount}
-                        max={selectedOp?.max_amount}
-                        required
-                      />
-                      {selectedOp && (
-                        <p className="text-xs text-muted-foreground">
-                          الحد: {selectedOp.min_amount} - {selectedOp.max_amount.toLocaleString()} د.ج
-                        </p>
-                      )}
-                    </div>
+                    {selectedService && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="phone">رقم الهاتف</Label>
+                          <Input
+                            id="phone"
+                            type="tel"
+                            placeholder={isMobileOperator ? "0xxxxxxxxx" : "رقم الخط أو المعرف"}
+                            value={phoneNumber}
+                            onChange={(e) => handlePhoneChange(e.target.value)}
+                            className={`text-left ${phoneError ? 'border-destructive' : ''}`}
+                            dir="ltr"
+                            maxLength={isMobileOperator ? 10 : 50}
+                            required
+                          />
+                          {phoneError && (
+                            <p className="text-xs text-destructive">{phoneError}</p>
+                          )}
+                          {isMobileOperator && !phoneError && phoneNumber.length === 10 && (
+                            <p className="text-xs text-green-600">✓ رقم صحيح</p>
+                          )}
+                        </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="notes">ملاحظات (اختياري)</Label>
-                      <Input
-                        id="notes"
-                        placeholder="أي تفاصيل إضافية..."
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                      />
-                    </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="amount">المبلغ (د.ج)</Label>
+                          <Input
+                            id="amount"
+                            type="number"
+                            placeholder={`${selectedOp?.min_amount} - ${selectedOp?.max_amount}`}
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            min={selectedOp?.min_amount}
+                            max={selectedOp?.max_amount}
+                            required
+                          />
+                          {selectedOp && (
+                            <p className="text-xs text-muted-foreground">
+                              الحد: {selectedOp.min_amount} - {selectedOp.max_amount.toLocaleString()} د.ج
+                            </p>
+                          )}
+                        </div>
 
-                    <Button 
-                      type="submit" 
-                      className="w-full" 
-                      size="lg"
-                      disabled={submitting || !phoneNumber || !amount}
-                    >
-                      {submitting ? (
-                        <>
-                          <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                          جاري الإرسال...
-                        </>
-                      ) : (
-                        <>
-                          <Smartphone className="w-4 h-4 ml-2" />
-                          شحن {amount ? `${parseFloat(amount).toLocaleString()} د.ج` : ''}
-                        </>
-                      )}
-                    </Button>
+                        <div className="space-y-2">
+                          <Label htmlFor="notes">ملاحظات (اختياري)</Label>
+                          <Input
+                            id="notes"
+                            placeholder="أي تفاصيل إضافية..."
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                          />
+                        </div>
+
+                        <Button 
+                          type="submit" 
+                          className="w-full" 
+                          size="lg"
+                          disabled={submitting || !phoneNumber || !amount || !selectedService || !!phoneError}
+                        >
+                          {submitting ? (
+                            <>
+                              <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                              جاري الإرسال...
+                            </>
+                          ) : (
+                            <>
+                              <Smartphone className="w-4 h-4 ml-2" />
+                              شحن {amount ? `${parseFloat(amount).toLocaleString()} د.ج` : ''}
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    )}
                   </form>
                 </CardContent>
               </Card>
@@ -259,6 +375,11 @@ const PhoneTopup = () => {
                         </span>
                         <span className="font-bold text-primary">{order.amount.toLocaleString()} د.ج</span>
                       </div>
+                      {order.notes && (
+                        <p className="text-xs text-muted-foreground mt-1 bg-muted/50 px-2 py-1 rounded">
+                          {order.notes}
+                        </p>
+                      )}
                       {order.admin_notes && order.status === 'rejected' && (
                         <p className="text-sm text-destructive mt-2 bg-destructive/10 p-2 rounded">
                           {order.admin_notes}
