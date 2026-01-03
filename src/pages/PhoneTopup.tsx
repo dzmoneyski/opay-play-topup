@@ -16,13 +16,15 @@ import mobilisLogo from '@/assets/mobilis-logo.png';
 import djezzyLogo from '@/assets/djezzy-logo.png';
 import ooredooLogo from '@/assets/ooredoo-logo.png';
 import idoomLogo from '@/assets/idoom-logo.webp';
+import lte4gLogo from '@/assets/4g-lte-logo.webp';
 
 // Operator logos mapping
 const operatorLogos: Record<string, string> = {
   'mobilis': mobilisLogo,
   'djezzy': djezzyLogo,
   'ooredoo': ooredooLogo,
-  'idoom-adsl': idoomLogo
+  'idoom-adsl': idoomLogo,
+  '4g-adsl': lte4gLogo
 };
 
 const PhoneTopup = () => {
