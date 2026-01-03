@@ -4,11 +4,13 @@ import { Gamepad2, CreditCard, Loader2, Shield, Smartphone } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAgentPermissions } from '@/hooks/useAgentPermissions';
+import { useAgentPendingOrders } from '@/hooks/useAgentPendingOrders';
 import BackButton from '@/components/BackButton';
 
 const AgentDashboard = () => {
   const navigate = useNavigate();
   const { isAgent, permissions, loading, canManageGameTopups, canManageBetting, canManagePhoneTopups } = useAgentPermissions();
+  const { counts: pendingCounts } = useAgentPendingOrders();
 
   useEffect(() => {
     if (!loading && !isAgent) {
@@ -37,6 +39,7 @@ const AgentDashboard = () => {
       path: '/agent/game-orders',
       enabled: canManageGameTopups,
       color: 'bg-purple-500',
+      pendingCount: pendingCounts.gameTopups,
     },
     {
       title: 'طلبات المراهنات',
@@ -46,6 +49,7 @@ const AgentDashboard = () => {
       path: '/agent/betting-orders',
       enabled: canManageBetting,
       color: 'bg-orange-500',
+      pendingCount: pendingCounts.betting,
     },
     {
       title: 'طلبات شحن الهاتف',
@@ -55,6 +59,7 @@ const AgentDashboard = () => {
       path: '/agent/phone-orders',
       enabled: canManagePhoneTopups,
       color: 'bg-blue-500',
+      pendingCount: pendingCounts.phoneTopups,
     },
   ];
 
@@ -108,14 +113,29 @@ const AgentDashboard = () => {
             {enabledItems.map((item) => (
               <Card 
                 key={item.path}
-                className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02]"
+                className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] relative"
                 onClick={() => navigate(item.path)}
               >
+                {/* شارة عدد الطلبات المعلقة */}
+                {item.pendingCount > 0 && (
+                  <div className="absolute -top-2 -right-2 z-10 animate-pulse">
+                    <div className="bg-red-500 text-white min-w-6 h-6 flex items-center justify-center rounded-full shadow-lg font-bold text-sm border-2 border-white px-1.5">
+                      {item.pendingCount > 99 ? '99+' : item.pendingCount}
+                    </div>
+                  </div>
+                )}
                 <CardHeader>
                   <div className={`w-12 h-12 rounded-xl ${item.color} flex items-center justify-center mb-3`}>
                     <item.icon className="w-6 h-6 text-white" />
                   </div>
-                  <CardTitle className="text-lg">{item.title}</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    {item.title}
+                    {item.pendingCount > 0 && (
+                      <Badge variant="destructive" className="text-xs">
+                        {item.pendingCount} معلق
+                      </Badge>
+                    )}
+                  </CardTitle>
                   <CardDescription>{item.description}</CardDescription>
                 </CardHeader>
               </Card>
