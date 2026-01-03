@@ -11,19 +11,18 @@ import { usePhoneOperators } from '@/hooks/usePhoneOperators';
 import { usePhoneTopupOrders } from '@/hooks/usePhoneTopupOrders';
 import { useBalance } from '@/hooks/useBalance';
 
-// Operator logos
-const operatorLogos: Record<string, string> = {
-  'mobilis': '🟢',
-  'djezzy': '🔴',
-  'ooredoo': '🟣',
-  'idoom-adsl': '🌐'
-};
+// Import operator logos
+import mobilisLogo from '@/assets/mobilis-logo.png';
+import djezzyLogo from '@/assets/djezzy-logo.png';
+import ooredooLogo from '@/assets/ooredoo-logo.png';
+import idoomLogo from '@/assets/idoom-logo.webp';
 
-const operatorColors: Record<string, string> = {
-  'mobilis': 'from-green-500 to-green-600',
-  'djezzy': 'from-red-500 to-red-600',
-  'ooredoo': 'from-purple-500 to-purple-600',
-  'idoom-adsl': 'from-blue-500 to-blue-600'
+// Operator logos mapping
+const operatorLogos: Record<string, string> = {
+  'mobilis': mobilisLogo,
+  'djezzy': djezzyLogo,
+  'ooredoo': ooredooLogo,
+  'idoom-adsl': idoomLogo
 };
 
 const PhoneTopup = () => {
@@ -119,9 +118,17 @@ const PhoneTopup = () => {
                   onClick={() => setSelectedOperator(operator.id)}
                 >
                   <CardContent className="p-4 text-center">
-                    <div className={`w-12 h-12 mx-auto mb-2 rounded-xl bg-gradient-to-br ${operatorColors[operator.slug] || 'from-gray-500 to-gray-600'} flex items-center justify-center text-2xl`}>
-                      {operatorLogos[operator.slug] || '📱'}
-                    </div>
+                    {operatorLogos[operator.slug] ? (
+                      <img 
+                        src={operatorLogos[operator.slug]} 
+                        alt={operator.name_ar}
+                        className="w-12 h-12 mx-auto mb-2 rounded-xl object-contain"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 mx-auto mb-2 rounded-xl bg-muted flex items-center justify-center">
+                        <Smartphone className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                    )}
                     <h3 className="font-semibold">{operator.name_ar}</h3>
                     <p className="text-xs text-muted-foreground">
                       {operator.min_amount} - {operator.max_amount.toLocaleString()} د.ج
@@ -226,9 +233,17 @@ const PhoneTopup = () => {
                     <CardContent className="py-4">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${operatorColors[order.phone_operators?.slug || ''] || 'from-gray-500 to-gray-600'} flex items-center justify-center text-sm`}>
-                            {operatorLogos[order.phone_operators?.slug || ''] || '📱'}
+                        {operatorLogos[order.phone_operators?.slug || ''] ? (
+                          <img 
+                            src={operatorLogos[order.phone_operators?.slug || '']} 
+                            alt={order.phone_operators?.name_ar}
+                            className="w-8 h-8 rounded-lg object-contain"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                            <Smartphone className="w-4 h-4 text-muted-foreground" />
                           </div>
+                        )}
                           <div>
                             <p className="font-medium">{order.phone_operators?.name_ar}</p>
                             <p className="text-sm text-muted-foreground" dir="ltr">{order.phone_number}</p>
