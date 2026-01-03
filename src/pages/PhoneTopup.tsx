@@ -37,12 +37,20 @@ const operatorPrefixes: Record<string, string[]> = {
   '4g-adsl': []
 };
 
-// Service types
-const serviceTypes = [
+// Service types for mobile operators
+const mobileServiceTypes = [
   { id: 'flexy', name: 'فليكسي عادي', icon: Zap },
   { id: 'cards', name: 'البطاقات', icon: CreditCard },
   { id: 'offers', name: 'العروض', icon: Gift }
 ];
+
+// Service types for internet operators (Idoom, 4G LTE)
+const internetServiceTypes = [
+  { id: 'modem', name: 'شحن المودم', icon: Smartphone }
+];
+
+// Identify internet operators
+const internetOperatorSlugs = ['idoom-adsl', '4g-adsl'];
 
 const PhoneTopup = () => {
   const { operators, loading: operatorsLoading } = usePhoneOperators();
@@ -60,8 +68,12 @@ const PhoneTopup = () => {
 
   const selectedOp = operators.find(op => op.id === selectedOperator);
   
-  // Check if operator requires phone validation (mobile operators)
+  // Check if operator is mobile or internet
   const isMobileOperator = selectedOp && ['mobilis', 'djezzy', 'ooredoo'].includes(selectedOp.slug);
+  const isInternetOperator = selectedOp && internetOperatorSlugs.includes(selectedOp.slug);
+  
+  // Get appropriate service types based on operator
+  const currentServiceTypes = isInternetOperator ? internetServiceTypes : mobileServiceTypes;
 
   // Validate phone number based on operator
   const validatePhoneNumber = (phone: string): boolean => {
@@ -115,7 +127,8 @@ const PhoneTopup = () => {
     
     setSubmitting(true);
     // Include service type in notes
-    const serviceNote = serviceTypes.find(s => s.id === selectedService)?.name || '';
+    const allServiceTypes = [...mobileServiceTypes, ...internetServiceTypes];
+    const serviceNote = allServiceTypes.find(s => s.id === selectedService)?.name || '';
     const fullNotes = notes ? `${serviceNote} - ${notes}` : serviceNote;
     
     const success = await createOrder(selectedOperator, phoneNumber, parseFloat(amount), fullNotes);
@@ -232,8 +245,8 @@ const PhoneTopup = () => {
                     {/* Service Type Selection */}
                     <div className="space-y-2">
                       <Label>نوع الخدمة</Label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {serviceTypes.map((service) => {
+                      <div className={`grid gap-2 ${isInternetOperator ? 'grid-cols-1' : 'grid-cols-3'}`}>
+                        {currentServiceTypes.map((service) => {
                           const Icon = service.icon;
                           return (
                             <button
