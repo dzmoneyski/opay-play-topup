@@ -69,6 +69,45 @@ export type Database = {
           },
         ]
       }
+      agent_permissions: {
+        Row: {
+          can_manage_betting: boolean | null
+          can_manage_game_topups: boolean | null
+          can_view_orders: boolean | null
+          created_at: string | null
+          created_by: string | null
+          daily_limit: number | null
+          id: string
+          notes: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          can_manage_betting?: boolean | null
+          can_manage_game_topups?: boolean | null
+          can_view_orders?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          daily_limit?: number | null
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          can_manage_betting?: boolean | null
+          can_manage_game_topups?: boolean | null
+          can_view_orders?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          daily_limit?: number | null
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       aliexpress_orders: {
         Row: {
           admin_notes: string | null
@@ -1702,6 +1741,10 @@ export type Database = {
         Args: { _admin_id: string; _target_user_id: string }
         Returns: Json
       }
+      agent_can: {
+        Args: { _permission: string; _user_id: string }
+        Returns: boolean
+      }
       approve_betting_deposit: {
         Args: { _admin_notes?: string; _transaction_id: string }
         Returns: Json
@@ -1844,6 +1887,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_agent: { Args: { _user_id: string }; Returns: boolean }
       merchant_recharge_customer: {
         Args: { _amount: number; _customer_phone: string }
         Returns: Json
@@ -1960,7 +2004,7 @@ export type Database = {
       withdraw_referral_rewards: { Args: { _amount: number }; Returns: Json }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "agent"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2088,7 +2132,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "agent"],
     },
   },
 } as const
