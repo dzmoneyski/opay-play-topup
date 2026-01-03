@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,25 +7,41 @@ import { Label } from '@/components/ui/label';
 import { useMerchant } from '@/hooks/useMerchant';
 import { useAuth } from '@/hooks/useAuth';
 import { useBalance } from '@/hooks/useBalance';
-import { Wallet, TrendingUp, Users, ArrowUpRight, Phone, Receipt, Award, RefreshCw, ArrowRightLeft } from 'lucide-react';
+import { Wallet, TrendingUp, Users, ArrowUpRight, Phone, Receipt, Award, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const MerchantDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { merchant, transactions, loading, rechargeCustomer, transferFromUserBalance, refreshData } = useMerchant();
+  const { merchant, transactions, loading, topupCustomer, calculateCommission, refreshData } = useMerchant();
   const { balance, fetchBalance } = useBalance();
   
   const [rechargeForm, setRechargeForm] = useState({
     phone: '',
     amount: ''
   });
-  const [transferAmount, setTransferAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [commissionInfo, setCommissionInfo] = useState<{
+    commission_amount: number;
+    total_from_customer: number;
+  } | null>(null);
+
+  // حساب العمولة عند تغيير المبلغ
+  useEffect(() => {
+    const amount = parseFloat(rechargeForm.amount);
+    if (!isNaN(amount) && amount >= 100 && merchant) {
+      const commissionAmount = Math.round(amount * merchant.commission_rate / 100 * 100) / 100;
+      setCommissionInfo({
+        commission_amount: commissionAmount,
+        total_from_customer: amount + commissionAmount
+      });
+    } else {
+      setCommissionInfo(null);
+    }
+  }, [rechargeForm.amount, merchant?.commission_rate]);
 
   if (!user) {
     return (
@@ -81,29 +97,16 @@ const MerchantDashboard = () => {
     if (!rechargeForm.phone || !rechargeForm.amount) return;
     
     const amount = parseFloat(rechargeForm.amount);
-    if (isNaN(amount) || amount <= 0) return;
+    if (isNaN(amount) || amount < 100) return;
 
     setSubmitting(true);
-    const result = await rechargeCustomer(rechargeForm.phone, amount);
+    const result = await topupCustomer(rechargeForm.phone, amount);
     setSubmitting(false);
 
     if (result.success) {
       setRechargeForm({ phone: '', amount: '' });
-    }
-  };
-
-  const handleTransfer = async () => {
-    const amount = parseFloat(transferAmount);
-    if (isNaN(amount) || amount <= 0) return;
-
-    setSubmitting(true);
-    const result = await transferFromUserBalance(amount);
-    setSubmitting(false);
-
-    if (result.success) {
-      setTransferAmount('');
-      setTransferDialogOpen(false);
-      await fetchBalance();
+      setCommissionInfo(null);
+      await fetchBalance(); // تحديث الرصيد
     }
   };
 
@@ -115,13 +118,18 @@ const MerchantDashboard = () => {
   };
 
   const transactionTypeLabels: Record<string, string> = {
+    topup: 'شحن رصيد',
     recharge: 'شحن رصيد',
     gift_card_purchase: 'شراء بطاقات',
     commission_earned: 'عمولة',
     balance_topup: 'تعمير رصيد',
-    balance_transfer: 'تحويل من الرصيد الشخصي',
+    balance_transfer: 'تحويل رصيد',
     withdrawal: 'سحب'
   };
+
+  const userBalance = balance?.balance || 0;
+  const amount = parseFloat(rechargeForm.amount) || 0;
+  const hasEnoughBalance = userBalance >= amount;
 
   return (
     <div className="min-h-screen p-4">
@@ -141,74 +149,32 @@ const MerchantDashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <Card>
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <Card className="border-2 border-primary/20">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
                 <Wallet className="h-8 w-8 text-primary" />
-                <Button variant="ghost" size="icon" onClick={refreshData}>
+                <Button variant="ghost" size="icon" onClick={() => { refreshData(); fetchBalance(); }}>
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground mb-1">رصيد التاجر</p>
-              <p className="text-2xl font-bold">{merchant.balance.toFixed(2)} دج</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 border-primary/20">
-            <CardContent className="pt-6">
-              <Wallet className="h-8 w-8 text-blue-600 mb-2" />
-              <p className="text-sm text-muted-foreground mb-1">رصيدك الشخصي</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {balance?.balance.toFixed(2) || '0.00'} دج
+              <p className="text-sm text-muted-foreground mb-1">رصيدك المتاح للشحن</p>
+              <p className="text-2xl font-bold text-primary">{userBalance.toFixed(2)} دج</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                هذا هو رصيدك الشخصي الذي تستخدمه لشحن الزبائن
               </p>
-              <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-full mt-3">
-                    <ArrowRightLeft className="ml-2 h-4 w-4" />
-                    تحويل إلى رصيد التاجر
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>تحويل رصيد</DialogTitle>
-                    <DialogDescription>
-                      حول رصيد من حسابك الشخصي إلى حساب التاجر
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label>المبلغ المتاح: {balance?.balance.toFixed(2) || '0.00'} دج</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="1"
-                        max={balance?.balance || 0}
-                        value={transferAmount}
-                        onChange={(e) => setTransferAmount(e.target.value)}
-                        placeholder="أدخل المبلغ للتحويل"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setTransferDialogOpen(false)}>
-                      إلغاء
-                    </Button>
-                    <Button onClick={handleTransfer} disabled={submitting || !transferAmount}>
-                      {submitting ? 'جاري التحويل...' : 'تحويل'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="pt-6">
               <TrendingUp className="h-8 w-8 text-green-600 mb-2" />
-              <p className="text-sm text-muted-foreground mb-1">إجمالي الأرباح</p>
+              <p className="text-sm text-muted-foreground mb-1">إجمالي العمولات المكتسبة</p>
               <p className="text-2xl font-bold text-green-600">
                 {merchant.total_earnings.toFixed(2)} دج
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                العمولات التي أخذتها نقداً من الزبائن
               </p>
             </CardContent>
           </Card>
@@ -216,9 +182,12 @@ const MerchantDashboard = () => {
           <Card>
             <CardContent className="pt-6">
               <Users className="h-8 w-8 text-blue-600 mb-2" />
-              <p className="text-sm text-muted-foreground mb-1">نسبة العمولة</p>
+              <p className="text-sm text-muted-foreground mb-1">نسبة عمولتك</p>
               <p className="text-2xl font-bold text-blue-600">
                 {merchant.commission_rate}%
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                تُضاف للمبلغ ويدفعها الزبون نقداً
               </p>
             </CardContent>
           </Card>
@@ -262,24 +231,55 @@ const MerchantDashboard = () => {
                     <Input
                       id="amount"
                       type="number"
-                      step="0.01"
-                      min="1"
+                      step="1"
+                      min="100"
+                      max="50000"
                       value={rechargeForm.amount}
                       onChange={(e) => setRechargeForm({ ...rechargeForm, amount: e.target.value })}
-                      placeholder="100.00"
+                      placeholder="1000"
                       required
                     />
-                    {rechargeForm.amount && (
-                      <p className="text-sm text-muted-foreground mt-2">
-                        العمولة: {(parseFloat(rechargeForm.amount) * merchant.commission_rate / 100).toFixed(2)} دج
-                      </p>
-                    )}
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={submitting || !merchant.is_active}>
+                  {/* Commission Display */}
+                  {commissionInfo && amount >= 100 && (
+                    <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200">
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      <AlertTitle className="text-green-800 dark:text-green-400">
+                        خذ من الزبون: {commissionInfo.total_from_customer.toFixed(2)} دج
+                      </AlertTitle>
+                      <AlertDescription className="text-green-700 dark:text-green-300 space-y-1">
+                        <p>• المبلغ المُشحن: {amount.toFixed(2)} دج</p>
+                        <p>• عمولتك ({merchant.commission_rate}%): {commissionInfo.commission_amount.toFixed(2)} دج</p>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {/* Balance Warning */}
+                  {amount > 0 && !hasEnoughBalance && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        رصيدك غير كافي. لديك {userBalance.toFixed(2)} دج وتحتاج {amount.toFixed(2)} دج
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={submitting || !merchant.is_active || !hasEnoughBalance || amount < 100}
+                    size="lg"
+                  >
                     {submitting ? 'جاري الشحن...' : 'شحن الآن'}
-                    <ArrowUpRight className="mr-2 h-4 w-4" />
+                    <ArrowUpRight className="mr-2 h-5 w-5" />
                   </Button>
+
+                  {!merchant.is_active && (
+                    <p className="text-sm text-destructive text-center">
+                      حسابك غير نشط. تواصل مع الإدارة
+                    </p>
+                  )}
                 </form>
               </CardContent>
             </Card>
