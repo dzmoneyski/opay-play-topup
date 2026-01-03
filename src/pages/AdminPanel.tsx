@@ -13,6 +13,7 @@ import TransfersPage from '@/pages/admin/Transfers';
 import CardsPage from '@/pages/admin/Cards';
 import GameManagement from '@/pages/admin/GameManagement';
 import BettingManagement from '@/pages/admin/BettingManagement';
+import PhoneTopupManagement from '@/pages/admin/PhoneTopup';
 import MerchantManagement from '@/pages/admin/MerchantManagement';
 import SettingsPage from '@/pages/admin/Settings';
 import DigitalCardsPage from '@/pages/admin/DigitalCards';
@@ -70,6 +71,7 @@ const AdminPanel = () => {
           <Route path="digital-cards" element={<DigitalCardsPage />} />
           <Route path="games" element={<GameManagement />} />
           <Route path="betting" element={<BettingManagement />} />
+          <Route path="phone-topup" element={<PhoneTopupManagement />} />
           <Route path="merchants" element={<MerchantManagement />} />
           <Route path="agents" element={<AgentManagement />} />
           <Route path="aliexpress" element={<AliExpressOrders />} />
