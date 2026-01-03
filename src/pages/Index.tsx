@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserRoles } from "@/hooks/useUserRoles";
+import { useAgentPermissions } from "@/hooks/useAgentPermissions";
 import { useBalance } from "@/hooks/useBalance";
 import { useToast } from "@/hooks/use-toast";
 import { useTransactionHistory } from "@/hooks/useTransactionHistory";
@@ -53,7 +54,8 @@ import {
 const Index = () => {
   const { user, signOut } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
-  const { isAdmin, loading: rolesLoading } = useUserRoles();
+const { isAdmin, loading: rolesLoading } = useUserRoles();
+  const { isAgent } = useAgentPermissions();
   const { balance, loading: balanceLoading } = useBalance();
   const { transactions, loading: transactionsLoading } = useTransactionHistory(10); // Limit to 10 for dashboard
   const { toast } = useToast();
@@ -353,6 +355,23 @@ const Index = () => {
                     الإعدادات
                   </div>
                 </div>
+
+                {/* Agent Panel Access */}
+                {isAgent && !isAdmin && (
+                  <div className="relative group">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => navigate('/agent')}
+                      className="w-10 h-10 p-0 bg-gradient-to-br from-orange-500/20 to-amber-500/20 backdrop-blur-sm rounded-xl border border-white/10 hover:from-orange-500/30 hover:to-amber-500/30 transition-all"
+                    >
+                      <Users className="h-5 w-5 text-white" />
+                    </Button>
+                    <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      لوحة الوكيل
+                    </div>
+                  </div>
+                )}
 
                 {/* Admin Panel Access */}
                 {isAdmin && (
