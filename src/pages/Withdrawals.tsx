@@ -81,10 +81,13 @@ export default function Withdrawals() {
     );
   }, [withdrawals]);
 
-  // حساب الرسوم
+  // حساب الرسوم - الرسوم تُخصم من المبلغ المسحوب وليس إضافة عليه
   const withdrawalAmount = parseFloat(formData.amount) || 0;
   const withdrawalFee = calculateFee(withdrawalAmount, feeSettings?.withdrawal_fees || null);
-  const totalDeducted = withdrawalAmount + withdrawalFee.fee_amount;
+  // المبلغ المخصوم من الرصيد = المبلغ المطلوب فقط (الرسوم تُخصم من المبلغ المسحوب)
+  const totalDeducted = withdrawalAmount;
+  // المبلغ الذي سيستلمه المستخدم = المبلغ - الرسوم
+  const netReceived = withdrawalAmount - withdrawalFee.fee_amount;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -540,9 +543,13 @@ export default function Withdrawals() {
                           <span className="font-medium text-foreground">{formatCurrency(withdrawalFee.fee_amount)} دج</span>
                         </div>
                         <div className="h-px bg-border my-2"></div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">سيُخصم من رصيدك:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(totalDeducted)} دج</span>
+                        </div>
                         <div className="flex justify-between font-semibold">
-                          <span className="text-foreground">إجمالي المخصوم من رصيدك:</span>
-                          <span className="text-primary">{formatCurrency(totalDeducted)} دج</span>
+                          <span className="text-foreground">ستستلم:</span>
+                          <span className="text-primary">{formatCurrency(netReceived)} دج</span>
                         </div>
                       </div>
                     </div>
@@ -653,9 +660,13 @@ export default function Withdrawals() {
                           <span className="font-medium text-foreground">{formatCurrency(withdrawalFee.fee_amount)} دج</span>
                         </div>
                         <div className="h-px bg-border my-2"></div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">سيُخصم من رصيدك:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(totalDeducted)} دج</span>
+                        </div>
                         <div className="flex justify-between font-semibold">
-                          <span className="text-foreground">إجمالي المخصوم من رصيدك:</span>
-                          <span className="text-primary">{formatCurrency(totalDeducted)} دج</span>
+                          <span className="text-foreground">ستستلم:</span>
+                          <span className="text-primary">{formatCurrency(netReceived)} دج</span>
                         </div>
                       </div>
                     </div>
@@ -766,9 +777,13 @@ export default function Withdrawals() {
                           <span className="font-medium text-foreground">{formatCurrency(withdrawalFee.fee_amount)} دج</span>
                         </div>
                         <div className="h-px bg-border my-2"></div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">سيُخصم من رصيدك:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(totalDeducted)} دج</span>
+                        </div>
                         <div className="flex justify-between font-semibold">
-                          <span className="text-foreground">إجمالي المخصوم من رصيدك:</span>
-                          <span className="text-primary">{formatCurrency(totalDeducted)} دج</span>
+                          <span className="text-foreground">ستستلم:</span>
+                          <span className="text-primary">{formatCurrency(netReceived)} دج</span>
                         </div>
                       </div>
                     </div>
@@ -935,9 +950,13 @@ export default function Withdrawals() {
                           <span className="font-medium text-foreground">{formatCurrency(withdrawalFee.fee_amount)} دج</span>
                         </div>
                         <div className="h-px bg-border my-2"></div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">سيُخصم من رصيدك:</span>
+                          <span className="font-medium text-foreground">{formatCurrency(totalDeducted)} دج</span>
+                        </div>
                         <div className="flex justify-between font-semibold">
-                          <span className="text-foreground">إجمالي المخصوم من رصيدك:</span>
-                          <span className="text-primary">{formatCurrency(totalDeducted)} دج</span>
+                          <span className="text-foreground">ستستلم:</span>
+                          <span className="text-primary">{formatCurrency(netReceived)} دج</span>
                         </div>
                       </div>
                     </div>
