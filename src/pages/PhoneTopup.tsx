@@ -75,6 +75,8 @@ const PhoneTopup = () => {
   const numericAmount = parseFloat(amount) || 0;
   const fee = calculateFee(numericAmount);
   const totalAmount = numericAmount + fee;
+  const userBalance = balance?.balance || 0;
+  const hasInsufficientBalance = numericAmount > 0 && totalAmount > userBalance;
 
   const selectedOp = operators.find(op => op.id === selectedOperator);
   
@@ -334,6 +336,11 @@ const PhoneTopup = () => {
                               <span>المجموع</span>
                               <span className="text-primary">{totalAmount.toLocaleString()} د.ج</span>
                             </div>
+                            {hasInsufficientBalance && (
+                              <div className="text-destructive text-sm font-medium bg-destructive/10 p-2 rounded mt-2">
+                                ⚠️ رصيدك غير كافي! تحتاج {totalAmount.toLocaleString()} د.ج ولديك {userBalance.toLocaleString()} د.ج
+                              </div>
+                            )}
                           </div>
                         )}
 
@@ -351,7 +358,7 @@ const PhoneTopup = () => {
                           type="submit"
                           className="w-full" 
                           size="lg"
-                          disabled={submitting || !phoneNumber || !amount || !selectedService || !!phoneError}
+                          disabled={submitting || !phoneNumber || !amount || !selectedService || !!phoneError || hasInsufficientBalance}
                         >
                           {submitting ? (
                             <>
