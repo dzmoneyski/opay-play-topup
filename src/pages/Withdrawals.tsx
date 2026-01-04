@@ -81,6 +81,11 @@ export default function Withdrawals() {
     );
   }, [withdrawals]);
 
+  // التحقق إذا كانت جميع طرق السحب معطلة
+  const allMethodsDisabled = React.useMemo(() => {
+    return Object.keys(WithdrawalMethods).every(key => !isMethodEnabled(key));
+  }, [withdrawalMethodSettings]);
+
   // حساب الرسوم - الرسوم تُضاف على المبلغ المطلوب
   const withdrawalAmount = parseFloat(formData.amount) || 0;
   const withdrawalFee = calculateFee(withdrawalAmount, feeSettings?.withdrawal_fees || null);
@@ -343,133 +348,159 @@ export default function Withdrawals() {
           </CardContent>
         </Card>
 
-        {/* Withdrawal Method Selection */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-          {Object.entries(WithdrawalMethods).map(([key, method]) => {
-            const isEnabled = isMethodEnabled(key);
-            const disabledReason = getDisabledReason(key);
-            
-            return (
-              <button
-                key={key}
-                onClick={() => isEnabled && setSelectedMethod(key)}
-                disabled={!isEnabled}
-                className={`group relative p-6 rounded-2xl border-2 transition-all duration-300 ${
-                  !isEnabled
-                    ? 'border-destructive/30 bg-destructive/10 cursor-not-allowed opacity-70'
-                    : selectedMethod === key
-                      ? 'border-primary bg-white shadow-xl scale-105'
-                      : 'border-white/30 bg-white/10 backdrop-blur-sm hover:border-white/50 hover:bg-white/20'
-                }`}
-              >
-                <div className="flex flex-col items-center gap-4">
-                  {method.logo ? (
-                    <div className="relative w-24 h-24 flex items-center justify-center">
-                      <div className={`absolute inset-0 rounded-2xl transition-opacity ${
-                        !isEnabled 
-                          ? 'bg-destructive/10 opacity-100'
-                          : selectedMethod === key 
-                            ? 'bg-primary/10 opacity-100' 
-                            : 'opacity-0 group-hover:opacity-50'
-                      }`}></div>
-                      <div className={`relative w-20 h-20 flex items-center justify-center p-2 bg-white rounded-xl shadow-sm ${!isEnabled ? 'grayscale' : ''}`}>
-                        <img 
-                          src={method.logo} 
-                          alt={method.name} 
-                          className="w-full h-full object-contain"
-                        />
+        {/* تنبيه إذا كانت جميع طرق السحب معطلة */}
+        {allMethodsDisabled && (
+          <Card className="bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-800 shadow-xl">
+            <CardContent className="p-8">
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="p-4 bg-red-100 dark:bg-red-900/50 rounded-full">
+                  <Ban className="h-12 w-12 text-red-600 dark:text-red-400" />
+                </div>
+                <div className="space-y-3">
+                  <h3 className="font-bold text-red-800 dark:text-red-300 text-2xl">
+                    خدمة السحب غير متاحة حالياً
+                  </h3>
+                  <p className="text-red-700 dark:text-red-400 text-lg leading-relaxed max-w-lg">
+                    نعتذر عن الإزعاج، جميع طرق السحب معطلة مؤقتاً بسبب أعمال الصيانة.
+                  </p>
+                  <p className="text-red-600 dark:text-red-500 text-base">
+                    سيتم إعادة تفعيل الخدمة في أقرب وقت ممكن. شكراً لتفهمكم 🙏
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Withdrawal Method Selection - فقط إذا كانت هناك طرق متاحة */}
+        {!allMethodsDisabled && (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+              {Object.entries(WithdrawalMethods).map(([key, method]) => {
+                const isEnabled = isMethodEnabled(key);
+                const disabledReason = getDisabledReason(key);
+                
+                return (
+                  <button
+                    key={key}
+                    onClick={() => isEnabled && setSelectedMethod(key)}
+                    disabled={!isEnabled}
+                    className={`group relative p-6 rounded-2xl border-2 transition-all duration-300 ${
+                      !isEnabled
+                        ? 'border-destructive/30 bg-destructive/10 cursor-not-allowed opacity-70'
+                        : selectedMethod === key
+                          ? 'border-primary bg-white shadow-xl scale-105'
+                          : 'border-white/30 bg-white/10 backdrop-blur-sm hover:border-white/50 hover:bg-white/20'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-4">
+                      {method.logo ? (
+                        <div className="relative w-24 h-24 flex items-center justify-center">
+                          <div className={`absolute inset-0 rounded-2xl transition-opacity ${
+                            !isEnabled 
+                              ? 'bg-destructive/10 opacity-100'
+                              : selectedMethod === key 
+                                ? 'bg-primary/10 opacity-100' 
+                                : 'opacity-0 group-hover:opacity-50'
+                          }`}></div>
+                          <div className={`relative w-20 h-20 flex items-center justify-center p-2 bg-white rounded-xl shadow-sm ${!isEnabled ? 'grayscale' : ''}`}>
+                            <img 
+                              src={method.logo} 
+                              alt={method.name} 
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                        </div>
+                      ) : method.icon && (
+                        <div className={`relative w-24 h-24 flex items-center justify-center p-4 rounded-2xl transition-all ${
+                          !isEnabled
+                            ? 'bg-destructive/20'
+                            : selectedMethod === key 
+                              ? 'bg-gradient-primary' 
+                              : 'bg-white/10 group-hover:bg-white/20'
+                        }`}>
+                          <method.icon className={`h-12 w-12 ${
+                            !isEnabled
+                              ? 'text-destructive/70'
+                              : selectedMethod === key 
+                                ? 'text-white' 
+                                : 'text-white/70 group-hover:text-white'
+                          }`} />
+                        </div>
+                      )}
+                      <div className="text-center">
+                        <p className={`text-sm font-medium transition-colors ${
+                          !isEnabled
+                            ? 'text-destructive'
+                            : selectedMethod === key 
+                              ? 'text-primary' 
+                              : 'text-white group-hover:text-white'
+                        }`}>
+                          {method.name}
+                        </p>
                       </div>
                     </div>
-                  ) : method.icon && (
-                    <div className={`relative w-24 h-24 flex items-center justify-center p-4 rounded-2xl transition-all ${
-                      !isEnabled
-                        ? 'bg-destructive/20'
-                        : selectedMethod === key 
-                          ? 'bg-gradient-primary' 
-                          : 'bg-white/10 group-hover:bg-white/20'
-                    }`}>
-                      <method.icon className={`h-12 w-12 ${
-                        !isEnabled
-                          ? 'text-destructive/70'
-                          : selectedMethod === key 
-                            ? 'text-white' 
-                            : 'text-white/70 group-hover:text-white'
-                      }`} />
+                    {!isEnabled && (
+                      <div className="absolute -top-2 -right-2">
+                        <Ban className="w-6 h-6 text-destructive bg-white rounded-full" />
+                      </div>
+                    )}
+                    {isEnabled && selectedMethod === key && (
+                      <div className="absolute -top-2 -right-2">
+                        <CheckCircle className="w-6 h-6 text-primary fill-white" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* إشعار سبب إغلاق طريقة السحب المختارة */}
+            {!isMethodEnabled(selectedMethod) && getDisabledReason(selectedMethod) && (
+              <Card className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 shadow-lg">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-amber-100 dark:bg-amber-900/50 rounded-full shrink-0">
+                      <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                     </div>
-                  )}
-                  <div className="text-center">
-                    <p className={`text-sm font-medium transition-colors ${
-                      !isEnabled
-                        ? 'text-destructive'
-                        : selectedMethod === key 
-                          ? 'text-primary' 
-                          : 'text-white group-hover:text-white'
-                    }`}>
-                      {method.name}
-                    </p>
+                    <div className="space-y-2">
+                      <h3 className="font-bold text-amber-800 dark:text-amber-300 text-lg">
+                        {WithdrawalMethods[selectedMethod]?.name} غير متاح حالياً
+                      </h3>
+                      <p className="text-amber-700 dark:text-amber-400 text-base leading-relaxed">
+                        {getDisabledReason(selectedMethod)}
+                      </p>
+                      <p className="text-amber-600 dark:text-amber-500 text-sm mt-3">
+                        نعتذر عن الإزعاج، نعمل جاهدين على تحسين خدماتنا. يرجى اختيار طريقة سحب أخرى متاحة أو المحاولة لاحقاً. 🙏
+                      </p>
+                    </div>
                   </div>
-                </div>
-                {!isEnabled && (
-                  <div className="absolute -top-2 -right-2">
-                    <Ban className="w-6 h-6 text-destructive bg-white rounded-full" />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* تحذير إذا كان هناك طلب سحب معلق حديث */}
+            {hasPendingRecentWithdrawal && (
+              <Card className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 shadow-lg">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-full shrink-0">
+                      <Clock className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="font-bold text-blue-800 dark:text-blue-300 text-lg">
+                        لديك طلب سحب قيد المراجعة
+                      </h3>
+                      <p className="text-blue-700 dark:text-blue-400 text-base leading-relaxed">
+                        لديك طلب سحب معلق تم إرساله مؤخراً. يرجى انتظار معالجته قبل إرسال طلب جديد لتجنب أي مشاكل.
+                      </p>
+                    </div>
                   </div>
-                )}
-                {isEnabled && selectedMethod === key && (
-                  <div className="absolute -top-2 -right-2">
-                    <CheckCircle className="w-6 h-6 text-primary fill-white" />
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
+                </CardContent>
+              </Card>
+            )}
 
-        {/* إشعار سبب إغلاق طريقة السحب المختارة */}
-        {!isMethodEnabled(selectedMethod) && getDisabledReason(selectedMethod) && (
-          <Card className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-800 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-amber-100 dark:bg-amber-900/50 rounded-full shrink-0">
-                  <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="font-bold text-amber-800 dark:text-amber-300 text-lg">
-                    {WithdrawalMethods[selectedMethod]?.name} غير متاح حالياً
-                  </h3>
-                  <p className="text-amber-700 dark:text-amber-400 text-base leading-relaxed">
-                    {getDisabledReason(selectedMethod)}
-                  </p>
-                  <p className="text-amber-600 dark:text-amber-500 text-sm mt-3">
-                    نعتذر عن الإزعاج، نعمل جاهدين على تحسين خدماتنا. يرجى اختيار طريقة سحب أخرى متاحة أو المحاولة لاحقاً. 🙏
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* تحذير إذا كان هناك طلب سحب معلق حديث */}
-        {hasPendingRecentWithdrawal && (
-          <Card className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-full shrink-0">
-                  <Clock className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="font-bold text-blue-800 dark:text-blue-300 text-lg">
-                    لديك طلب سحب قيد المراجعة
-                  </h3>
-                  <p className="text-blue-700 dark:text-blue-400 text-base leading-relaxed">
-                    لديك طلب سحب معلق تم إرساله مؤخراً. يرجى انتظار معالجته قبل إرسال طلب جديد لتجنب أي مشاكل.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <Tabs value={selectedMethod} onValueChange={setSelectedMethod} className="space-y-6">
+            <Tabs value={selectedMethod} onValueChange={setSelectedMethod} className="space-y-6">
 
           {/* OPay Withdrawal */}
           <TabsContent value="opay" className="space-y-6">
@@ -1022,6 +1053,8 @@ export default function Withdrawals() {
             </Card>
           </TabsContent>
         </Tabs>
+          </>
+        )}
 
         {/* Withdrawal History */}
         <Card className="bg-white/95 backdrop-blur-sm shadow-xl border-2 border-primary/10">
