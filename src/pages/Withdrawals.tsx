@@ -81,13 +81,15 @@ export default function Withdrawals() {
     );
   }, [withdrawals]);
 
-  // حساب الرسوم - الرسوم تُخصم من المبلغ المسحوب وليس إضافة عليه
+  // حساب الرسوم - الرسوم تُضاف على المبلغ المطلوب
   const withdrawalAmount = parseFloat(formData.amount) || 0;
   const withdrawalFee = calculateFee(withdrawalAmount, feeSettings?.withdrawal_fees || null);
-  // المبلغ المخصوم من الرصيد = المبلغ المطلوب فقط (الرسوم تُخصم من المبلغ المسحوب)
-  const totalDeducted = withdrawalAmount;
-  // المبلغ الذي سيستلمه المستخدم = المبلغ - الرسوم
-  const netReceived = withdrawalAmount - withdrawalFee.fee_amount;
+  // المبلغ الذي سيستلمه المستخدم = المبلغ المطلوب كاملاً
+  const netReceived = withdrawalAmount;
+  // إجمالي الخصم من الرصيد = المبلغ + الرسوم
+  const totalDeducted = withdrawalAmount + withdrawalFee.fee_amount;
+  // التحقق من كفاية الرصيد
+  const hasInsufficientBalance = withdrawalAmount > 0 && (balance?.balance || 0) < totalDeducted;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -531,7 +533,7 @@ export default function Withdrawals() {
 
                   {/* عرض الرسوم */}
                   {withdrawalAmount > 0 && (
-                    <div className="p-4 bg-gradient-secondary/10 rounded-xl border border-accent/20">
+                    <div className={`p-4 rounded-xl border ${hasInsufficientBalance ? 'bg-destructive/10 border-destructive/30' : 'bg-gradient-secondary/10 border-accent/20'}`}>
                       <h3 className="font-semibold text-foreground mb-3">تفاصيل السحب</h3>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -540,17 +542,23 @@ export default function Withdrawals() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">رسوم السحب:</span>
-                          <span className="font-medium text-foreground">{formatCurrency(withdrawalFee.fee_amount)} دج</span>
+                          <span className="font-medium text-orange-600">{formatCurrency(withdrawalFee.fee_amount)} دج</span>
                         </div>
                         <div className="h-px bg-border my-2"></div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">سيُخصم من رصيدك:</span>
-                          <span className="font-medium text-foreground">{formatCurrency(totalDeducted)} دج</span>
+                          <span className={`font-bold ${hasInsufficientBalance ? 'text-destructive' : 'text-foreground'}`}>{formatCurrency(totalDeducted)} دج</span>
                         </div>
-                        <div className="flex justify-between font-semibold">
-                          <span className="text-foreground">ستستلم:</span>
+                        <div className="flex justify-between font-semibold text-lg border-t pt-2 mt-2">
+                          <span className="text-foreground">💰 ستستلم:</span>
                           <span className="text-primary">{formatCurrency(netReceived)} دج</span>
                         </div>
+                        {hasInsufficientBalance && (
+                          <div className="mt-3 p-3 bg-destructive/20 rounded-lg flex items-center gap-2 text-destructive">
+                            <AlertTriangle className="h-5 w-5 shrink-0" />
+                            <span className="font-medium">رصيدك غير كافي! تحتاج {formatCurrency(totalDeducted - (balance?.balance || 0))} دج إضافية</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -569,7 +577,7 @@ export default function Withdrawals() {
                   <Button
                     type="submit"
                     className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={submitting || loading || cooldown || hasPendingRecentWithdrawal}
+                    disabled={submitting || loading || cooldown || hasPendingRecentWithdrawal || hasInsufficientBalance}
                     size="lg"
                   >
                     {submitting ? (
@@ -648,7 +656,7 @@ export default function Withdrawals() {
 
                   {/* عرض الرسوم */}
                   {withdrawalAmount > 0 && (
-                    <div className="p-4 bg-gradient-secondary/10 rounded-xl border border-accent/20">
+                    <div className={`p-4 rounded-xl border ${hasInsufficientBalance ? 'bg-destructive/10 border-destructive/30' : 'bg-gradient-secondary/10 border-accent/20'}`}>
                       <h3 className="font-semibold text-foreground mb-3">تفاصيل السحب</h3>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -657,17 +665,23 @@ export default function Withdrawals() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">رسوم السحب:</span>
-                          <span className="font-medium text-foreground">{formatCurrency(withdrawalFee.fee_amount)} دج</span>
+                          <span className="font-medium text-orange-600">{formatCurrency(withdrawalFee.fee_amount)} دج</span>
                         </div>
                         <div className="h-px bg-border my-2"></div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">سيُخصم من رصيدك:</span>
-                          <span className="font-medium text-foreground">{formatCurrency(totalDeducted)} دج</span>
+                          <span className={`font-bold ${hasInsufficientBalance ? 'text-destructive' : 'text-foreground'}`}>{formatCurrency(totalDeducted)} دج</span>
                         </div>
-                        <div className="flex justify-between font-semibold">
-                          <span className="text-foreground">ستستلم:</span>
+                        <div className="flex justify-between font-semibold text-lg border-t pt-2 mt-2">
+                          <span className="text-foreground">💰 ستستلم:</span>
                           <span className="text-primary">{formatCurrency(netReceived)} دج</span>
                         </div>
+                        {hasInsufficientBalance && (
+                          <div className="mt-3 p-3 bg-destructive/20 rounded-lg flex items-center gap-2 text-destructive">
+                            <AlertTriangle className="h-5 w-5 shrink-0" />
+                            <span className="font-medium">رصيدك غير كافي! تحتاج {formatCurrency(totalDeducted - (balance?.balance || 0))} دج إضافية</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -686,7 +700,7 @@ export default function Withdrawals() {
                   <Button
                     type="submit"
                     className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={submitting || loading || cooldown || hasPendingRecentWithdrawal}
+                    disabled={submitting || loading || cooldown || hasPendingRecentWithdrawal || hasInsufficientBalance}
                     size="lg"
                   >
                     {submitting ? (
@@ -765,7 +779,7 @@ export default function Withdrawals() {
 
                   {/* عرض الرسوم */}
                   {withdrawalAmount > 0 && (
-                    <div className="p-4 bg-gradient-secondary/10 rounded-xl border border-accent/20">
+                    <div className={`p-4 rounded-xl border ${hasInsufficientBalance ? 'bg-destructive/10 border-destructive/30' : 'bg-gradient-secondary/10 border-accent/20'}`}>
                       <h3 className="font-semibold text-foreground mb-3">تفاصيل السحب</h3>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -774,17 +788,23 @@ export default function Withdrawals() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">رسوم السحب:</span>
-                          <span className="font-medium text-foreground">{formatCurrency(withdrawalFee.fee_amount)} دج</span>
+                          <span className="font-medium text-orange-600">{formatCurrency(withdrawalFee.fee_amount)} دج</span>
                         </div>
                         <div className="h-px bg-border my-2"></div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">سيُخصم من رصيدك:</span>
-                          <span className="font-medium text-foreground">{formatCurrency(totalDeducted)} دج</span>
+                          <span className={`font-bold ${hasInsufficientBalance ? 'text-destructive' : 'text-foreground'}`}>{formatCurrency(totalDeducted)} دج</span>
                         </div>
-                        <div className="flex justify-between font-semibold">
-                          <span className="text-foreground">ستستلم:</span>
+                        <div className="flex justify-between font-semibold text-lg border-t pt-2 mt-2">
+                          <span className="text-foreground">💰 ستستلم:</span>
                           <span className="text-primary">{formatCurrency(netReceived)} دج</span>
                         </div>
+                        {hasInsufficientBalance && (
+                          <div className="mt-3 p-3 bg-destructive/20 rounded-lg flex items-center gap-2 text-destructive">
+                            <AlertTriangle className="h-5 w-5 shrink-0" />
+                            <span className="font-medium">رصيدك غير كافي! تحتاج {formatCurrency(totalDeducted - (balance?.balance || 0))} دج إضافية</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -803,7 +823,7 @@ export default function Withdrawals() {
                   <Button
                     type="submit"
                     className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={submitting || loading || cooldown || hasPendingRecentWithdrawal}
+                    disabled={submitting || loading || cooldown || hasPendingRecentWithdrawal || hasInsufficientBalance}
                     size="lg"
                   >
                     {submitting ? (
@@ -938,7 +958,7 @@ export default function Withdrawals() {
 
                   {/* عرض الرسوم */}
                   {withdrawalAmount > 0 && (
-                    <div className="p-4 bg-gradient-secondary/10 rounded-xl border border-accent/20">
+                    <div className={`p-4 rounded-xl border ${hasInsufficientBalance ? 'bg-destructive/10 border-destructive/30' : 'bg-gradient-secondary/10 border-accent/20'}`}>
                       <h3 className="font-semibold text-foreground mb-3">تفاصيل السحب</h3>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -947,17 +967,23 @@ export default function Withdrawals() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">رسوم السحب:</span>
-                          <span className="font-medium text-foreground">{formatCurrency(withdrawalFee.fee_amount)} دج</span>
+                          <span className="font-medium text-orange-600">{formatCurrency(withdrawalFee.fee_amount)} دج</span>
                         </div>
                         <div className="h-px bg-border my-2"></div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">سيُخصم من رصيدك:</span>
-                          <span className="font-medium text-foreground">{formatCurrency(totalDeducted)} دج</span>
+                          <span className={`font-bold ${hasInsufficientBalance ? 'text-destructive' : 'text-foreground'}`}>{formatCurrency(totalDeducted)} دج</span>
                         </div>
-                        <div className="flex justify-between font-semibold">
-                          <span className="text-foreground">ستستلم:</span>
+                        <div className="flex justify-between font-semibold text-lg border-t pt-2 mt-2">
+                          <span className="text-foreground">💰 ستستلم:</span>
                           <span className="text-primary">{formatCurrency(netReceived)} دج</span>
                         </div>
+                        {hasInsufficientBalance && (
+                          <div className="mt-3 p-3 bg-destructive/20 rounded-lg flex items-center gap-2 text-destructive">
+                            <AlertTriangle className="h-5 w-5 shrink-0" />
+                            <span className="font-medium">رصيدك غير كافي! تحتاج {formatCurrency(totalDeducted - (balance?.balance || 0))} دج إضافية</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -976,7 +1002,7 @@ export default function Withdrawals() {
                   <Button
                     type="submit"
                     className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={submitting || loading || cooldown || hasPendingRecentWithdrawal}
+                    disabled={submitting || loading || cooldown || hasPendingRecentWithdrawal || hasInsufficientBalance}
                     size="lg"
                   >
                     {submitting ? (
