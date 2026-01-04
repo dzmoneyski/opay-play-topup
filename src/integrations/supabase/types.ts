@@ -1704,6 +1704,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_withdrawal_accounts: {
+        Row: {
+          account_number: string
+          created_at: string | null
+          id: string
+          user_id: string
+          withdrawal_method: string
+        }
+        Insert: {
+          account_number: string
+          created_at?: string | null
+          id?: string
+          user_id: string
+          withdrawal_method: string
+        }
+        Update: {
+          account_number?: string
+          created_at?: string | null
+          id?: string
+          user_id?: string
+          withdrawal_method?: string
+        }
+        Relationships: []
+      }
       verification_requests: {
         Row: {
           created_at: string
