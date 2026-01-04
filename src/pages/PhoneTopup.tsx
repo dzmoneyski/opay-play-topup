@@ -66,6 +66,16 @@ const PhoneTopup = () => {
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Calculate fee based on amount
+  const calculateFee = (amt: number): number => {
+    if (amt <= 0) return 0;
+    return amt < 1000 ? 10 : 50;
+  };
+
+  const numericAmount = parseFloat(amount) || 0;
+  const fee = calculateFee(numericAmount);
+  const totalAmount = numericAmount + fee;
+
   const selectedOp = operators.find(op => op.id === selectedOperator);
   
   // Check if operator is mobile or internet
@@ -309,6 +319,24 @@ const PhoneTopup = () => {
                           )}
                         </div>
 
+                        {/* Fee Display */}
+                        {numericAmount > 0 && (
+                          <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">مبلغ الشحن</span>
+                              <span>{numericAmount.toLocaleString()} د.ج</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">الرسوم</span>
+                              <span className="text-orange-600">+{fee} د.ج</span>
+                            </div>
+                            <div className="border-t pt-2 flex justify-between font-bold">
+                              <span>المجموع</span>
+                              <span className="text-primary">{totalAmount.toLocaleString()} د.ج</span>
+                            </div>
+                          </div>
+                        )}
+
                         <div className="space-y-2">
                           <Label htmlFor="notes">ملاحظات (اختياري)</Label>
                           <Input
@@ -320,7 +348,7 @@ const PhoneTopup = () => {
                         </div>
 
                         <Button 
-                          type="submit" 
+                          type="submit"
                           className="w-full" 
                           size="lg"
                           disabled={submitting || !phoneNumber || !amount || !selectedService || !!phoneError}
