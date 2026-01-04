@@ -100,62 +100,40 @@ export const useAdminWithdrawals = () => {
   }, [user, toast, page]);
 
   const approveWithdrawal = React.useCallback(async (withdrawalId: string, notes?: string) => {
-    if (!user) return;
+    if (!user) throw new Error('غير مصرح');
 
-    try {
-      const { error } = await supabase.rpc('approve_withdrawal', {
-        _withdrawal_id: withdrawalId,
-        _admin_id: user.id,
-        _notes: notes || null
-      });
+    const { error } = await supabase.rpc('approve_withdrawal', {
+      _withdrawal_id: withdrawalId,
+      _admin_id: user.id,
+      _notes: notes || null
+    });
 
-      if (error) throw error;
-
-      toast({
-        title: "تم قبول طلب السحب",
-        description: "تم معالجة الطلب بنجاح وخصم المبلغ من الحساب"
-      });
-
-      // إعادة تحديث القائمة
-      await fetchWithdrawals();
-    } catch (error) {
+    if (error) {
       console.error('Error approving withdrawal:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في قبول طلب السحب",
-        variant: "destructive"
-      });
+      throw error;
     }
-  }, [user, toast, fetchWithdrawals]);
+
+    // إعادة تحديث القائمة
+    await fetchWithdrawals();
+  }, [user, fetchWithdrawals]);
 
   const rejectWithdrawal = React.useCallback(async (withdrawalId: string, reason: string) => {
-    if (!user) return;
+    if (!user) throw new Error('غير مصرح');
 
-    try {
-      const { error } = await supabase.rpc('reject_withdrawal', {
-        _withdrawal_id: withdrawalId,
-        _admin_id: user.id,
-        _reason: reason
-      });
+    const { error } = await supabase.rpc('reject_withdrawal', {
+      _withdrawal_id: withdrawalId,
+      _admin_id: user.id,
+      _reason: reason
+    });
 
-      if (error) throw error;
-
-      toast({
-        title: "تم رفض طلب السحب",
-        description: "تم رفض الطلب وإضافة سبب الرفض"
-      });
-
-      // إعادة تحديث القائمة
-      await fetchWithdrawals();
-    } catch (error) {
+    if (error) {
       console.error('Error rejecting withdrawal:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في رفض طلب السحب",
-        variant: "destructive"
-      });
+      throw error;
     }
-  }, [user, toast, fetchWithdrawals]);
+
+    // إعادة تحديث القائمة
+    await fetchWithdrawals();
+  }, [user, fetchWithdrawals]);
 
   React.useEffect(() => {
     fetchWithdrawals();
