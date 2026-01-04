@@ -28,7 +28,10 @@ const GameTopup = () => {
   const { data: packages, isLoading: packagesLoading } = useGamePackages(selectedPlatform);
   const createOrder = useCreateGameTopupOrder();
   const { balance, loading: balanceLoading, fetchBalance } = useBalance();
-  const { data: orders, isLoading: ordersLoading } = useGameTopupOrders();
+  const { data: orders, isLoading: ordersLoading, refetch: refetchOrders } = useGameTopupOrders();
+
+  // Check if user has pending orders
+  const hasPendingOrder = orders?.some(order => order.status === 'pending') || false;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -356,6 +359,17 @@ const GameTopup = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {/* Pending Order Warning */}
+                  {hasPendingOrder && (
+                    <Alert className="mb-6 bg-amber-500/10 border-amber-500/30">
+                      <Lock className="h-4 w-4 text-amber-500" />
+                      <AlertDescription className="text-amber-700 dark:text-amber-400">
+                        <strong>لديك طلب قيد الانتظار!</strong>
+                        <br />
+                        لا يمكنك إنشاء طلب جديد حتى يتم معالجة طلبك الحالي. يرجى الانتظار أو التحقق من تبويب "الطلبيات".
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Player ID */}
                     <div className="space-y-2">
@@ -422,12 +436,17 @@ const GameTopup = () => {
                     <Button
                       type="submit"
                       className="w-full bg-gradient-primary hover:opacity-90"
-                      disabled={createOrder.isPending || !selectedPlatform || !playerId || !selectedPackage}
+                      disabled={createOrder.isPending || !selectedPlatform || !playerId || !selectedPackage || hasPendingOrder}
                     >
                       {createOrder.isPending ? (
                         <>
                           <Loader2 className="ml-2 h-4 w-4 animate-spin" />
                           جاري الشحن...
+                        </>
+                      ) : hasPendingOrder ? (
+                        <>
+                          <Lock className="ml-2 h-4 w-4" />
+                          لديك طلب قيد الانتظار
                         </>
                       ) : (
                         "شحن الآن"
