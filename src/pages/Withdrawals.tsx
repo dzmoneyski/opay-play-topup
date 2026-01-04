@@ -53,7 +53,7 @@ const WithdrawalMethods: Record<string, WithdrawalMethod> = {
 };
 
 export default function Withdrawals() {
-  const { balance, loading: balanceLoading } = useBalance();
+  const { balance, loading: balanceLoading, fetchBalance } = useBalance();
   const { withdrawals, loading, createWithdrawal } = useWithdrawals();
   const { toast } = useToast();
   const { feeSettings } = useFeeSettings();
@@ -68,6 +68,18 @@ export default function Withdrawals() {
     notes: ''
   });
   const [submitting, setSubmitting] = React.useState(false);
+  
+  // منع الطلبات المتكررة - قفل مؤقت لمدة 3 ثواني بعد كل طلب
+  const [cooldown, setCooldown] = React.useState(false);
+  
+  // التحقق من وجود طلب سحب معلق حديث (آخر 5 دقائق)
+  const hasPendingRecentWithdrawal = React.useMemo(() => {
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    return withdrawals.some(w => 
+      w.status === 'pending' && 
+      new Date(w.created_at) > fiveMinutesAgo
+    );
+  }, [withdrawals]);
 
   // حساب الرسوم
   const withdrawalAmount = parseFloat(formData.amount) || 0;
@@ -76,6 +88,26 @@ export default function Withdrawals() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // منع الإرسال إذا كان هناك طلب قيد المعالجة أو في فترة الانتظار
+    if (submitting || cooldown) {
+      toast({
+        title: "انتظر قليلاً",
+        description: "يتم معالجة طلبك، يرجى الانتظار...",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // تحذير إذا كان هناك طلب سحب معلق حديث
+    if (hasPendingRecentWithdrawal) {
+      toast({
+        title: "لديك طلب سحب معلق",
+        description: "لديك طلب سحب قيد المراجعة. يرجى انتظار معالجته قبل إرسال طلب جديد.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     // التحقق من أن الطريقة المختارة مفعّلة
     if (!isMethodEnabled(selectedMethod)) {
@@ -171,6 +203,8 @@ export default function Withdrawals() {
     }
 
     setSubmitting(true);
+    setCooldown(true);
+    
     try {
       // إرسال المبلغ الأصلي فقط - الـ backend سيحسب الرسوم
       await createWithdrawal({
@@ -181,6 +215,9 @@ export default function Withdrawals() {
         cash_location: formData.cash_location || undefined,
         notes: formData.notes || undefined
       });
+
+      // تحديث الرصيد فوراً
+      await fetchBalance();
 
       if (selectedMethod === 'cash') {
         toast({
@@ -202,15 +239,17 @@ export default function Withdrawals() {
         cash_location: '',
         notes: ''
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating withdrawal:', error);
       toast({
         title: "خطأ في الإرسال",
-        description: "فشل في إرسال طلب السحب. يرجى المحاولة مرة أخرى",
+        description: error?.message || "فشل في إرسال طلب السحب. يرجى المحاولة مرة أخرى",
         variant: "destructive"
       });
     } finally {
       setSubmitting(false);
+      // فترة انتظار 3 ثواني قبل السماح بطلب جديد
+      setTimeout(() => setCooldown(false), 3000);
     }
   };
 
@@ -404,6 +443,27 @@ export default function Withdrawals() {
           </Card>
         )}
 
+        {/* تحذير إذا كان هناك طلب سحب معلق حديث */}
+        {hasPendingRecentWithdrawal && (
+          <Card className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-full shrink-0">
+                  <Clock className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-bold text-blue-800 dark:text-blue-300 text-lg">
+                    لديك طلب سحب قيد المراجعة
+                  </h3>
+                  <p className="text-blue-700 dark:text-blue-400 text-base leading-relaxed">
+                    لديك طلب سحب معلق تم إرساله مؤخراً. يرجى انتظار معالجته قبل إرسال طلب جديد لتجنب أي مشاكل.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Tabs value={selectedMethod} onValueChange={setSelectedMethod} className="space-y-6">
 
           {/* OPay Withdrawal */}
@@ -502,7 +562,7 @@ export default function Withdrawals() {
                   <Button
                     type="submit"
                     className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={submitting || loading}
+                    disabled={submitting || loading || cooldown || hasPendingRecentWithdrawal}
                     size="lg"
                   >
                     {submitting ? (
@@ -615,7 +675,7 @@ export default function Withdrawals() {
                   <Button
                     type="submit"
                     className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={submitting || loading}
+                    disabled={submitting || loading || cooldown || hasPendingRecentWithdrawal}
                     size="lg"
                   >
                     {submitting ? (
@@ -728,7 +788,7 @@ export default function Withdrawals() {
                   <Button
                     type="submit"
                     className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={submitting || loading}
+                    disabled={submitting || loading || cooldown || hasPendingRecentWithdrawal}
                     size="lg"
                   >
                     {submitting ? (
@@ -897,7 +957,7 @@ export default function Withdrawals() {
                   <Button
                     type="submit"
                     className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={submitting || loading}
+                    disabled={submitting || loading || cooldown || hasPendingRecentWithdrawal}
                     size="lg"
                   >
                     {submitting ? (
