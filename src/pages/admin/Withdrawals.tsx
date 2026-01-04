@@ -215,11 +215,20 @@ export default function WithdrawalsPage() {
         title: "تم قبول طلب السحب",
         description: receiptFile ? "تم رفع إيصال السحب بنجاح" : "تم قبول الطلب بنجاح"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error approving withdrawal:', error);
+      let errorMessage = "فشل في قبول الطلب";
+      
+      // Check for specific error types
+      if (error?.message?.includes('balance_non_negative') || error?.code === '23514') {
+        errorMessage = "رصيد المستخدم غير كافٍ لإتمام عملية السحب. يرجى التحقق من رصيده الفعلي.";
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
-        title: "خطأ",
-        description: "فشل في قبول الطلب",
+        title: "خطأ في قبول السحب",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
