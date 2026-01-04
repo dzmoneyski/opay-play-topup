@@ -72,14 +72,31 @@ export default function Withdrawals() {
   // منع الطلبات المتكررة - قفل مؤقت لمدة 3 ثواني بعد كل طلب
   const [cooldown, setCooldown] = React.useState(false);
   
-  // التحقق من وجود طلب سحب معلق حديث (آخر 5 دقائق)
-  const hasPendingRecentWithdrawal = React.useMemo(() => {
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    return withdrawals.some(w => 
-      w.status === 'pending' && 
-      new Date(w.created_at) > fiveMinutesAgo
-    );
+  // الحد اليومي للسحب
+  const DAILY_LIMIT = 10000;
+  const MAX_AMOUNT = 10000;
+  const MIN_AMOUNT = 500;
+
+  // التحقق من وجود طلب سحب معلق (أي طلب معلق يمنع إنشاء طلب جديد)
+  const hasPendingWithdrawal = React.useMemo(() => {
+    return withdrawals.some(w => w.status === 'pending');
   }, [withdrawals]);
+
+  // حساب المسحوب اليوم
+  const todayWithdrawals = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return withdrawals
+      .filter(w => {
+        const withdrawalDate = new Date(w.created_at);
+        withdrawalDate.setHours(0, 0, 0, 0);
+        return withdrawalDate.getTime() === today.getTime() && 
+               ['pending', 'approved', 'completed'].includes(w.status);
+      })
+      .reduce((sum, w) => sum + w.amount, 0);
+  }, [withdrawals]);
+
+  const remainingDailyLimit = DAILY_LIMIT - todayWithdrawals;
 
   // التحقق إذا كانت جميع طرق السحب معطلة
   const allMethodsDisabled = React.useMemo(() => {
@@ -93,8 +110,27 @@ export default function Withdrawals() {
   const netReceived = withdrawalAmount;
   // إجمالي الخصم من الرصيد = المبلغ + الرسوم
   const totalDeducted = withdrawalAmount + withdrawalFee.fee_amount;
-  // التحقق من كفاية الرصيد
+  
+  // التحقق من كفاية الرصيد للمبلغ + الرسوم
   const hasInsufficientBalance = withdrawalAmount > 0 && (balance?.balance || 0) < totalDeducted;
+  
+  // التحقق من تجاوز الحد اليومي
+  const exceedsDailyLimit = withdrawalAmount > 0 && withdrawalAmount > remainingDailyLimit;
+  
+  // التحقق من تجاوز الحد الأقصى للطلب الواحد
+  const exceedsMaxAmount = withdrawalAmount > MAX_AMOUNT;
+  
+  // أسباب عدم إمكانية السحب
+  const cannotSubmit = hasInsufficientBalance || exceedsDailyLimit || exceedsMaxAmount || hasPendingWithdrawal || withdrawalAmount < MIN_AMOUNT;
+  
+  const getSubmitBlockReason = (): string | null => {
+    if (hasPendingWithdrawal) return 'لديك طلب سحب معلق. انتظر حتى تتم معالجته.';
+    if (withdrawalAmount > 0 && withdrawalAmount < MIN_AMOUNT) return `الحد الأدنى للسحب هو ${MIN_AMOUNT} دج`;
+    if (exceedsMaxAmount) return `الحد الأقصى للسحب الواحد هو ${MAX_AMOUNT} دج`;
+    if (exceedsDailyLimit) return `تجاوزت الحد اليومي. المتبقي لك اليوم: ${remainingDailyLimit} دج`;
+    if (hasInsufficientBalance) return `رصيدك غير كافٍ. تحتاج ${totalDeducted.toFixed(2)} دج (المبلغ + الرسوم)`;
+    return null;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,11 +145,21 @@ export default function Withdrawals() {
       return;
     }
     
-    // تحذير إذا كان هناك طلب سحب معلق حديث
-    if (hasPendingRecentWithdrawal) {
+    // تحذير إذا كان هناك طلب سحب معلق
+    if (hasPendingWithdrawal) {
       toast({
         title: "لديك طلب سحب معلق",
         description: "لديك طلب سحب قيد المراجعة. يرجى انتظار معالجته قبل إرسال طلب جديد.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // التحقق من الحد اليومي
+    if (exceedsDailyLimit) {
+      toast({
+        title: "تجاوز الحد اليومي",
+        description: `المتبقي لك اليوم: ${remainingDailyLimit} دج من أصل ${DAILY_LIMIT} دج`,
         variant: "destructive"
       });
       return;
@@ -142,20 +188,20 @@ export default function Withdrawals() {
     
     // التحقق من الحد الأدنى والأقصى للسحب
     if (selectedMethod === 'cash') {
-      // للسحب بدون بطاقة: حد أقصى 20000 دج وأعداد زوجية فقط
-      if (amount < 500) {
+      // للسحب بدون بطاقة: حد أقصى = الحد اليومي وأعداد زوجية فقط
+      if (amount < MIN_AMOUNT) {
         toast({
           title: "مبلغ غير صحيح",
-          description: "الحد الأدنى للسحب بدون بطاقة هو 500 دج",
+          description: `الحد الأدنى للسحب هو ${MIN_AMOUNT} دج`,
           variant: "destructive"
         });
         return;
       }
 
-      if (amount > 20000) {
+      if (amount > MAX_AMOUNT) {
         toast({
           title: "مبلغ غير صحيح",
-          description: "الحد الأقصى للسحب بدون بطاقة هو 20,000 دج",
+          description: `الحد الأقصى للسحب هو ${MAX_AMOUNT} دج`,
           variant: "destructive"
         });
         return;
@@ -170,20 +216,20 @@ export default function Withdrawals() {
         return;
       }
     } else {
-      // باقي طرق السحب: حد أقصى 200000
-      if (amount < 500) {
+      // باقي طرق السحب
+      if (amount < MIN_AMOUNT) {
         toast({
           title: "مبلغ غير صحيح",
-          description: "الحد الأدنى للسحب هو 500 دج",
+          description: `الحد الأدنى للسحب هو ${MIN_AMOUNT} دج`,
           variant: "destructive"
         });
         return;
       }
 
-      if (amount > 200000) {
+      if (amount > MAX_AMOUNT) {
         toast({
           title: "مبلغ غير صحيح",
-          description: "الحد الأقصى للسحب هو 200,000 دج",
+          description: `الحد الأقصى للسحب هو ${MAX_AMOUNT} دج`,
           variant: "destructive"
         });
         return;
@@ -479,8 +525,8 @@ export default function Withdrawals() {
               </Card>
             )}
 
-            {/* تحذير إذا كان هناك طلب سحب معلق حديث */}
-            {hasPendingRecentWithdrawal && (
+            {/* تحذير إذا كان هناك طلب سحب معلق */}
+            {hasPendingWithdrawal && (
               <Card className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 shadow-lg">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
@@ -492,13 +538,29 @@ export default function Withdrawals() {
                         لديك طلب سحب قيد المراجعة
                       </h3>
                       <p className="text-blue-700 dark:text-blue-400 text-base leading-relaxed">
-                        لديك طلب سحب معلق تم إرساله مؤخراً. يرجى انتظار معالجته قبل إرسال طلب جديد لتجنب أي مشاكل.
+                        لديك طلب سحب معلق. يرجى انتظار معالجته أو رفضه قبل إرسال طلب جديد.
                       </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             )}
+
+            {/* معلومات الحد اليومي */}
+            <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Wallet className="h-5 w-5 text-primary" />
+                    <span className="font-medium">الحد اليومي للسحب:</span>
+                  </div>
+                  <div className="text-left">
+                    <span className="font-bold text-primary">{remainingDailyLimit.toFixed(2)} دج</span>
+                    <span className="text-muted-foreground text-sm"> متبقي من {DAILY_LIMIT} دج</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             <Tabs value={selectedMethod} onValueChange={setSelectedMethod} className="space-y-6">
 
@@ -605,10 +667,20 @@ export default function Withdrawals() {
                     />
                   </div>
 
+                  {/* سبب عدم إمكانية السحب */}
+                  {getSubmitBlockReason() && withdrawalAmount > 0 && (
+                    <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+                      <p className="text-destructive text-sm font-medium flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        {getSubmitBlockReason()}
+                      </p>
+                    </div>
+                  )}
+
                   <Button
                     type="submit"
                     className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={submitting || loading || cooldown || hasPendingRecentWithdrawal || hasInsufficientBalance}
+                    disabled={submitting || loading || cooldown || cannotSubmit}
                     size="lg"
                   >
                     {submitting ? (
@@ -728,10 +800,20 @@ export default function Withdrawals() {
                     />
                   </div>
 
+                  {/* سبب عدم إمكانية السحب */}
+                  {getSubmitBlockReason() && withdrawalAmount > 0 && (
+                    <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+                      <p className="text-destructive text-sm font-medium flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        {getSubmitBlockReason()}
+                      </p>
+                    </div>
+                  )}
+
                   <Button
                     type="submit"
                     className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={submitting || loading || cooldown || hasPendingRecentWithdrawal || hasInsufficientBalance}
+                    disabled={submitting || loading || cooldown || cannotSubmit}
                     size="lg"
                   >
                     {submitting ? (
@@ -851,10 +933,20 @@ export default function Withdrawals() {
                     />
                   </div>
 
+                  {/* سبب عدم إمكانية السحب */}
+                  {getSubmitBlockReason() && withdrawalAmount > 0 && (
+                    <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+                      <p className="text-destructive text-sm font-medium flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        {getSubmitBlockReason()}
+                      </p>
+                    </div>
+                  )}
+
                   <Button
                     type="submit"
                     className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={submitting || loading || cooldown || hasPendingRecentWithdrawal || hasInsufficientBalance}
+                    disabled={submitting || loading || cooldown || cannotSubmit}
                     size="lg"
                   >
                     {submitting ? (
@@ -1030,10 +1122,20 @@ export default function Withdrawals() {
                     />
                   </div>
 
+                  {/* سبب عدم إمكانية السحب */}
+                  {getSubmitBlockReason() && withdrawalAmount > 0 && (
+                    <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+                      <p className="text-destructive text-sm font-medium flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        {getSubmitBlockReason()}
+                      </p>
+                    </div>
+                  )}
+
                   <Button
                     type="submit"
                     className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={submitting || loading || cooldown || hasPendingRecentWithdrawal || hasInsufficientBalance}
+                    disabled={submitting || loading || cooldown || cannotSubmit}
                     size="lg"
                   >
                     {submitting ? (
