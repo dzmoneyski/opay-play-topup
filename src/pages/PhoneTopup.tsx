@@ -351,6 +351,7 @@ const PhoneTopup = () => {
                             placeholder="أي تفاصيل إضافية..."
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
+                            maxLength={200}
                           />
                         </div>
 
