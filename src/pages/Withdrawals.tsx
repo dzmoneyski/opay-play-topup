@@ -69,7 +69,7 @@ export default function Withdrawals() {
   });
   const [submitting, setSubmitting] = React.useState(false);
   
-  // منع الطلبات المتكررة - قفل مؤقت لمدة 3 ثواني بعد كل طلب
+  // منع الطلبات المتكررة - قفل مؤقت لمدة دقيقة واحدة بعد كل طلب
   const [cooldown, setCooldown] = React.useState(false);
   
   // الحد اليومي للسحب
