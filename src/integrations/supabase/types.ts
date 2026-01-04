@@ -2051,10 +2051,7 @@ export type Database = {
         Returns: Json
       }
       recalculate_all_balances: { Args: never; Returns: undefined }
-      recalculate_user_balance: {
-        Args: { _user_id: string }
-        Returns: undefined
-      }
+      recalculate_user_balance: { Args: { _user_id: string }; Returns: number }
       record_platform_revenue: {
         Args: {
           _fee_info: Json
