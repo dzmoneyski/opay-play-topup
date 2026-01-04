@@ -304,8 +304,8 @@ export default function Withdrawals() {
       });
     } finally {
       setSubmitting(false);
-      // فترة انتظار 3 ثواني قبل السماح بطلب جديد
-      setTimeout(() => setCooldown(false), 3000);
+      // فترة انتظار دقيقة واحدة قبل السماح بطلب جديد
+      setTimeout(() => setCooldown(false), 60000);
     }
   };
 
