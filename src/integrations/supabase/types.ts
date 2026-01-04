@@ -1820,7 +1820,144 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_gift_cards_view: {
+        Row: {
+          amount: number | null
+          card_code: string | null
+          created_at: string | null
+          id: string | null
+          is_used: boolean | null
+          updated_at: string | null
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          amount?: number | null
+          card_code?: never
+          created_at?: string | null
+          id?: string | null
+          is_used?: boolean | null
+          updated_at?: string | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          amount?: number | null
+          card_code?: never
+          created_at?: string | null
+          id?: string | null
+          is_used?: boolean | null
+          updated_at?: string | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
+      user_transfers_view: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          id: string | null
+          note: string | null
+          recipient_id: string | null
+          recipient_phone: string | null
+          sender_id: string | null
+          sender_phone: string | null
+          status: string | null
+          transaction_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          id?: string | null
+          note?: string | null
+          recipient_id?: string | null
+          recipient_phone?: never
+          sender_id?: string | null
+          sender_phone?: never
+          status?: string | null
+          transaction_number?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          id?: string | null
+          note?: string | null
+          recipient_id?: string | null
+          recipient_phone?: never
+          sender_id?: string | null
+          sender_phone?: never
+          status?: string | null
+          transaction_number?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_withdrawals_view: {
+        Row: {
+          account_holder_name: string | null
+          account_number: string | null
+          admin_notes: string | null
+          amount: number | null
+          cash_location: string | null
+          created_at: string | null
+          fee_amount: number | null
+          fee_fixed: number | null
+          fee_percentage: number | null
+          id: string | null
+          net_amount: number | null
+          notes: string | null
+          processed_at: string | null
+          processed_by: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+          withdrawal_method: string | null
+        }
+        Insert: {
+          account_holder_name?: never
+          account_number?: never
+          admin_notes?: string | null
+          amount?: number | null
+          cash_location?: string | null
+          created_at?: string | null
+          fee_amount?: number | null
+          fee_fixed?: number | null
+          fee_percentage?: number | null
+          id?: string | null
+          net_amount?: number | null
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          withdrawal_method?: string | null
+        }
+        Update: {
+          account_holder_name?: never
+          account_number?: never
+          admin_notes?: string | null
+          amount?: number | null
+          cash_location?: string | null
+          created_at?: string | null
+          fee_amount?: number | null
+          fee_fixed?: number | null
+          fee_percentage?: number | null
+          id?: string | null
+          net_amount?: number | null
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          withdrawal_method?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       activate_approved_accounts_and_process_referrals: {
@@ -1982,6 +2119,19 @@ export type Database = {
           used_at: string
         }[]
       }
+      get_user_verification_request: {
+        Args: never
+        Returns: {
+          full_name: string
+          id: string
+          national_id_masked: string
+          rejection_reason: string
+          reviewed_at: string
+          status: string
+          submitted_at: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1990,6 +2140,12 @@ export type Database = {
         Returns: boolean
       }
       is_agent: { Args: { _user_id: string }; Returns: boolean }
+      mask_account_number: { Args: { account_num: string }; Returns: string }
+      mask_card_code: {
+        Args: { code: string; show_last?: number }
+        Returns: string
+      }
+      mask_phone_number: { Args: { phone: string }; Returns: string }
       merchant_recharge_customer: {
         Args: { _amount: number; _customer_phone: string }
         Returns: Json
