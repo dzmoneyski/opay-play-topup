@@ -67,8 +67,24 @@ export const useWithdrawals = () => {
     if (error) throw error;
     
     // التحقق من نتيجة الدالة
-    const result = data as { success: boolean; error?: string; withdrawal_id?: string };
+    const result = data as { 
+      success: boolean; 
+      error?: string; 
+      withdrawal_id?: string;
+      details?: {
+        current_balance: number;
+        requested_amount: number;
+        fee_amount: number;
+        total_required: number;
+      };
+    };
+    
     if (!result.success) {
+      // إذا كان هناك تفاصيل الرصيد، أضفها للرسالة
+      if (result.details) {
+        const { current_balance, total_required } = result.details;
+        throw new Error(`رصيدك غير كافٍ. المتاح: ${current_balance.toFixed(2)} دج، المطلوب: ${total_required.toFixed(2)} دج`);
+      }
       throw new Error(result.error || 'فشل في إنشاء طلب السحب');
     }
     
