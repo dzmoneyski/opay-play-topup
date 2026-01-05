@@ -2280,7 +2280,7 @@ export type Database = {
         Returns: undefined
       }
       reject_withdrawal: {
-        Args: { _admin_id: string; _reason: string; _withdrawal_id: string }
+        Args: { _admin_id: string; _reason?: string; _withdrawal_id: string }
         Returns: undefined
       }
       sync_existing_users_data: { Args: never; Returns: Json }
