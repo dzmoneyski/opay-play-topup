@@ -297,9 +297,14 @@ export default function Withdrawals() {
       });
     } catch (error: any) {
       console.error('Error creating withdrawal:', error);
+      // تحسين عرض رسالة الخطأ
+      let errorMessage = "فشل في إرسال طلب السحب. يرجى المحاولة مرة أخرى";
+      if (error?.message) {
+        errorMessage = error.message;
+      }
       toast({
         title: "خطأ في الإرسال",
-        description: error?.message || "فشل في إرسال طلب السحب. يرجى المحاولة مرة أخرى",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
