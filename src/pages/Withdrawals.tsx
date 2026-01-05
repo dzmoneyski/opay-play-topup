@@ -111,8 +111,9 @@ export default function Withdrawals() {
   // إجمالي الخصم من الرصيد = المبلغ + الرسوم
   const totalDeducted = withdrawalAmount + withdrawalFee.fee_amount;
   
-  // التحقق من كفاية الرصيد للمبلغ + الرسوم
-  const hasInsufficientBalance = withdrawalAmount > 0 && (balance?.balance || 0) < totalDeducted;
+  // ✅ عرض تحذير الرصيد غير الكافي للمعلومات فقط (لكن لا نمنع الإرسال)
+  // التحقق النهائي يتم في الـ backend لضمان الدقة
+  const hasInsufficientBalanceWarning = withdrawalAmount > 0 && (balance?.balance || 0) < totalDeducted;
   
   // التحقق من تجاوز الحد اليومي
   const exceedsDailyLimit = withdrawalAmount > 0 && withdrawalAmount > remainingDailyLimit;
@@ -120,15 +121,15 @@ export default function Withdrawals() {
   // التحقق من تجاوز الحد الأقصى للطلب الواحد
   const exceedsMaxAmount = withdrawalAmount > MAX_AMOUNT;
   
-  // أسباب عدم إمكانية السحب
-  const cannotSubmit = hasInsufficientBalance || exceedsDailyLimit || exceedsMaxAmount || hasPendingWithdrawal || withdrawalAmount < MIN_AMOUNT;
+  // ✅ أسباب منع السحب - بدون التحقق من الرصيد (يتم في الـ backend)
+  const cannotSubmit = exceedsDailyLimit || exceedsMaxAmount || hasPendingWithdrawal || withdrawalAmount < MIN_AMOUNT;
   
   const getSubmitBlockReason = (): string | null => {
     if (hasPendingWithdrawal) return 'لديك طلب سحب معلق. انتظر حتى تتم معالجته.';
     if (withdrawalAmount > 0 && withdrawalAmount < MIN_AMOUNT) return `الحد الأدنى للسحب هو ${MIN_AMOUNT} دج`;
     if (exceedsMaxAmount) return `الحد الأقصى للسحب الواحد هو ${MAX_AMOUNT} دج`;
     if (exceedsDailyLimit) return `تجاوزت الحد اليومي. المتبقي لك اليوم: ${remainingDailyLimit} دج`;
-    if (hasInsufficientBalance) return `رصيدك غير كافٍ. تحتاج ${totalDeducted.toFixed(2)} دج (المبلغ + الرسوم)`;
+    // ✅ لا نعرض خطأ الرصيد هنا - سيتم التحقق في الـ backend
     return null;
   };
 
@@ -236,15 +237,11 @@ export default function Withdrawals() {
       }
     }
 
-    // التحقق من الرصيد المتاح
-    if ((balance?.balance || 0) < totalDeducted) {
-      toast({
-        title: "رصيد غير كافي",
-        description: `رصيدك الحالي ${formatCurrency(balance?.balance || 0)} دج غير كافي للسحب مع الرسوم`,
-        variant: "destructive"
-      });
-      return;
-    }
+    // ✅ تحديث الرصيد قبل التحقق للتأكد من استخدام أحدث قيمة
+    await fetchBalance();
+    
+    // ✅ التحقق النهائي سيتم في الـ backend - لا نمنع الإرسال هنا
+    // لأن الرصيد قد يكون محدثاً في الـ backend ولم يصل للـ frontend بعد
 
     // التحقق من الحقول المطلوبة حسب طريقة السحب
     // للسحب بدون بطاقة لا نحتاج حقول إضافية
@@ -631,7 +628,7 @@ export default function Withdrawals() {
 
                   {/* عرض الرسوم */}
                   {withdrawalAmount > 0 && (
-                    <div className={`p-4 rounded-xl border ${hasInsufficientBalance ? 'bg-destructive/10 border-destructive/30' : 'bg-gradient-secondary/10 border-accent/20'}`}>
+                    <div className={`p-4 rounded-xl border ${hasInsufficientBalanceWarning ? 'bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800' : 'bg-gradient-secondary/10 border-accent/20'}`}>
                       <h3 className="font-semibold text-foreground mb-3">تفاصيل السحب</h3>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -645,16 +642,16 @@ export default function Withdrawals() {
                         <div className="h-px bg-border my-2"></div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">سيُخصم من رصيدك:</span>
-                          <span className={`font-bold ${hasInsufficientBalance ? 'text-destructive' : 'text-foreground'}`}>{formatCurrency(totalDeducted)} دج</span>
+                          <span className={`font-bold ${hasInsufficientBalanceWarning ? 'text-orange-600' : 'text-foreground'}`}>{formatCurrency(totalDeducted)} دج</span>
                         </div>
                         <div className="flex justify-between font-semibold text-lg border-t pt-2 mt-2">
                           <span className="text-foreground">💰 ستستلم:</span>
                           <span className="text-primary">{formatCurrency(netReceived)} دج</span>
                         </div>
-                        {hasInsufficientBalance && (
-                          <div className="mt-3 p-3 bg-destructive/20 rounded-lg flex items-center gap-2 text-destructive">
+                        {hasInsufficientBalanceWarning && (
+                          <div className="mt-3 p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center gap-2 text-orange-700 dark:text-orange-400">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
-                            <span className="font-medium">رصيدك غير كافي! تحتاج {formatCurrency(totalDeducted - (balance?.balance || 0))} دج إضافية</span>
+                            <span className="font-medium">تنبيه: قد يكون رصيدك غير كافٍ. جرب الإرسال وسيتم التحقق.</span>
                           </div>
                         )}
                       </div>
@@ -764,7 +761,7 @@ export default function Withdrawals() {
 
                   {/* عرض الرسوم */}
                   {withdrawalAmount > 0 && (
-                    <div className={`p-4 rounded-xl border ${hasInsufficientBalance ? 'bg-destructive/10 border-destructive/30' : 'bg-gradient-secondary/10 border-accent/20'}`}>
+                    <div className={`p-4 rounded-xl border ${hasInsufficientBalanceWarning ? 'bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800' : 'bg-gradient-secondary/10 border-accent/20'}`}>
                       <h3 className="font-semibold text-foreground mb-3">تفاصيل السحب</h3>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -778,16 +775,16 @@ export default function Withdrawals() {
                         <div className="h-px bg-border my-2"></div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">سيُخصم من رصيدك:</span>
-                          <span className={`font-bold ${hasInsufficientBalance ? 'text-destructive' : 'text-foreground'}`}>{formatCurrency(totalDeducted)} دج</span>
+                          <span className={`font-bold ${hasInsufficientBalanceWarning ? 'text-orange-600' : 'text-foreground'}`}>{formatCurrency(totalDeducted)} دج</span>
                         </div>
                         <div className="flex justify-between font-semibold text-lg border-t pt-2 mt-2">
                           <span className="text-foreground">💰 ستستلم:</span>
                           <span className="text-primary">{formatCurrency(netReceived)} دج</span>
                         </div>
-                        {hasInsufficientBalance && (
-                          <div className="mt-3 p-3 bg-destructive/20 rounded-lg flex items-center gap-2 text-destructive">
+                        {hasInsufficientBalanceWarning && (
+                          <div className="mt-3 p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center gap-2 text-orange-700 dark:text-orange-400">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
-                            <span className="font-medium">رصيدك غير كافي! تحتاج {formatCurrency(totalDeducted - (balance?.balance || 0))} دج إضافية</span>
+                            <span className="font-medium">تنبيه: قد يكون رصيدك غير كافٍ. جرب الإرسال وسيتم التحقق.</span>
                           </div>
                         )}
                       </div>
@@ -897,7 +894,7 @@ export default function Withdrawals() {
 
                   {/* عرض الرسوم */}
                   {withdrawalAmount > 0 && (
-                    <div className={`p-4 rounded-xl border ${hasInsufficientBalance ? 'bg-destructive/10 border-destructive/30' : 'bg-gradient-secondary/10 border-accent/20'}`}>
+                    <div className={`p-4 rounded-xl border ${hasInsufficientBalanceWarning ? 'bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800' : 'bg-gradient-secondary/10 border-accent/20'}`}>
                       <h3 className="font-semibold text-foreground mb-3">تفاصيل السحب</h3>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -911,16 +908,16 @@ export default function Withdrawals() {
                         <div className="h-px bg-border my-2"></div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">سيُخصم من رصيدك:</span>
-                          <span className={`font-bold ${hasInsufficientBalance ? 'text-destructive' : 'text-foreground'}`}>{formatCurrency(totalDeducted)} دج</span>
+                          <span className={`font-bold ${hasInsufficientBalanceWarning ? 'text-orange-600' : 'text-foreground'}`}>{formatCurrency(totalDeducted)} دج</span>
                         </div>
                         <div className="flex justify-between font-semibold text-lg border-t pt-2 mt-2">
                           <span className="text-foreground">💰 ستستلم:</span>
                           <span className="text-primary">{formatCurrency(netReceived)} دج</span>
                         </div>
-                        {hasInsufficientBalance && (
-                          <div className="mt-3 p-3 bg-destructive/20 rounded-lg flex items-center gap-2 text-destructive">
+                        {hasInsufficientBalanceWarning && (
+                          <div className="mt-3 p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center gap-2 text-orange-700 dark:text-orange-400">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
-                            <span className="font-medium">رصيدك غير كافي! تحتاج {formatCurrency(totalDeducted - (balance?.balance || 0))} دج إضافية</span>
+                            <span className="font-medium">تنبيه: قد يكون رصيدك غير كافٍ. جرب الإرسال وسيتم التحقق.</span>
                           </div>
                         )}
                       </div>
@@ -1086,7 +1083,7 @@ export default function Withdrawals() {
 
                   {/* عرض الرسوم */}
                   {withdrawalAmount > 0 && (
-                    <div className={`p-4 rounded-xl border ${hasInsufficientBalance ? 'bg-destructive/10 border-destructive/30' : 'bg-gradient-secondary/10 border-accent/20'}`}>
+                    <div className={`p-4 rounded-xl border ${hasInsufficientBalanceWarning ? 'bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800' : 'bg-gradient-secondary/10 border-accent/20'}`}>
                       <h3 className="font-semibold text-foreground mb-3">تفاصيل السحب</h3>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -1100,16 +1097,16 @@ export default function Withdrawals() {
                         <div className="h-px bg-border my-2"></div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">سيُخصم من رصيدك:</span>
-                          <span className={`font-bold ${hasInsufficientBalance ? 'text-destructive' : 'text-foreground'}`}>{formatCurrency(totalDeducted)} دج</span>
+                          <span className={`font-bold ${hasInsufficientBalanceWarning ? 'text-orange-600' : 'text-foreground'}`}>{formatCurrency(totalDeducted)} دج</span>
                         </div>
                         <div className="flex justify-between font-semibold text-lg border-t pt-2 mt-2">
                           <span className="text-foreground">💰 ستستلم:</span>
                           <span className="text-primary">{formatCurrency(netReceived)} دج</span>
                         </div>
-                        {hasInsufficientBalance && (
-                          <div className="mt-3 p-3 bg-destructive/20 rounded-lg flex items-center gap-2 text-destructive">
+                        {hasInsufficientBalanceWarning && (
+                          <div className="mt-3 p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center gap-2 text-orange-700 dark:text-orange-400">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
-                            <span className="font-medium">رصيدك غير كافي! تحتاج {formatCurrency(totalDeducted - (balance?.balance || 0))} دج إضافية</span>
+                            <span className="font-medium">تنبيه: قد يكون رصيدك غير كافٍ. جرب الإرسال وسيتم التحقق.</span>
                           </div>
                         )}
                       </div>
