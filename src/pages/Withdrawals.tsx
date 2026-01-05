@@ -60,6 +60,17 @@ export default function Withdrawals() {
   const { settings: withdrawalMethodSettings, isMethodEnabled, getDisabledReason } = useWithdrawalMethodSettings();
 
   const [selectedMethod, setSelectedMethod] = React.useState<string>('opay');
+
+  // ✅ اختر تلقائياً أول طريقة سحب متاحة (لمنع بقاء الطريقة الافتراضية معطلة)
+  React.useEffect(() => {
+    const enabledMethods = Object.keys(WithdrawalMethods).filter((key) => isMethodEnabled(key));
+    if (enabledMethods.length === 0) return;
+
+    if (!WithdrawalMethods[selectedMethod] || !isMethodEnabled(selectedMethod)) {
+      setSelectedMethod(enabledMethods[0]);
+    }
+  }, [withdrawalMethodSettings, selectedMethod, isMethodEnabled]);
+
   const [formData, setFormData] = React.useState({
     amount: '',
     account_number: '',
