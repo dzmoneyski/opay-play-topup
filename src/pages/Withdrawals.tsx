@@ -293,15 +293,40 @@ export default function Withdrawals() {
         notes: ''
       });
     } catch (error: any) {
-      console.error('Error creating withdrawal:', error);
-      // تحسين عرض رسالة الخطأ
+      // ✅ نطبع الخطأ كاملاً في الكونسول حتى نعرف السبب الحقيقي (رصيد/حد يومي/سياسة/إلخ)
+      console.error('Error creating withdrawal (raw):', error);
+
+      // ✅ رسالة واضحة للمستخدم + تفاصيل رقمية عند مشكلة الرصيد
       let errorMessage = "فشل في إرسال طلب السحب. يرجى المحاولة مرة أخرى";
-      if (error?.message) {
-        errorMessage = error.message;
+
+      const rawMessage: string | undefined = error?.message;
+      if (rawMessage) errorMessage = rawMessage;
+
+      // إذا كانت رسالة الرصيد غير كافي بدون أرقام، نضيف الأرقام من الواجهة على الأقل
+      const looksLikeInsufficient =
+        (rawMessage && /غير\s*كاف/i.test(rawMessage)) ||
+        (rawMessage && /insufficient/i.test(rawMessage));
+
+      const hasNumbers = rawMessage && /(\d+\.?\d*)/.test(rawMessage);
+      if (looksLikeInsufficient && !hasNumbers) {
+        const current = Number(balance?.balance || 0);
+        const fee = Number(withdrawalFee?.fee_amount || 0);
+        const required = Number(totalDeducted || 0);
+        errorMessage =
+          `رصيدك غير كافٍ لإتمام السحب.\n` +
+          `الرصيد الحالي: ${current.toFixed(2)} دج\n` +
+          `المبلغ المطلوب: ${Number(withdrawalAmount || 0).toFixed(2)} دج\n` +
+          `الرسوم: ${fee.toFixed(2)} دج\n` +
+          `الإجمالي المطلوب: ${required.toFixed(2)} دج`;
       }
+
+      // إظهار بعض تفاصيل Supabase (بدون تسريب معلومات حساسة)
+      const supaCode = error?.code ? ` (رمز: ${error.code})` : '';
+      const supaDetails = typeof error?.details === 'string' && error.details.trim() ? `\nتفاصيل: ${error.details}` : '';
+
       toast({
-        title: "خطأ في الإرسال",
-        description: errorMessage,
+        title: `خطأ في الإرسال${supaCode}`,
+        description: `${errorMessage}${supaDetails}`,
         variant: "destructive"
       });
     } finally {
