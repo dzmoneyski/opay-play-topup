@@ -43,6 +43,7 @@ export default function WithdrawalsPage() {
   const { 
     withdrawals, 
     loading, 
+    stats,
     approveWithdrawal, 
     rejectWithdrawal, 
     fetchWithdrawals,
@@ -193,18 +194,6 @@ export default function WithdrawalsPage() {
 
   // إحصائيات التاريخ المحدد
   const selectedDateStats = selectedDate ? dailyStats[selectedDate] : null;
-
-  // إجمالي كل الطلبات
-  const allRequestsTotal = withdrawals.reduce((sum, w) => sum + w.amount, 0);
-  // إجمالي المكتملة فقط
-  const totalWithdrawals = withdrawals.reduce((sum, withdrawal) => 
-    withdrawal.status === 'completed' ? sum + withdrawal.amount : sum, 0
-  );
-  const pendingWithdrawals = withdrawals.filter(w => w.status === 'pending').length;
-  const approvedWithdrawals = withdrawals.filter(w => w.status === 'approved').length;
-  const completedWithdrawals = withdrawals.filter(w => w.status === 'completed').length;
-  const rejectedWithdrawals = withdrawals.filter(w => w.status === 'rejected').length;
-  const totalFees = withdrawals.reduce((sum, w) => w.status === 'completed' ? sum + (w.fee_amount || 0) : sum, 0);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -393,9 +382,9 @@ export default function WithdrawalsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-indigo-600">
-              {formatCurrency(allRequestsTotal)}
+              {formatCurrency(stats.totalAmount)}
             </div>
-            <p className="text-xs text-muted-foreground">{withdrawals.length} طلب</p>
+            <p className="text-xs text-muted-foreground">{stats.totalCount} طلب</p>
           </CardContent>
         </Card>
 
@@ -406,9 +395,9 @@ export default function WithdrawalsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(totalWithdrawals)}
+              {formatCurrency(stats.completedAmount)}
             </div>
-            <p className="text-xs text-muted-foreground">{completedWithdrawals} عملية</p>
+            <p className="text-xs text-muted-foreground">{stats.completedCount} عملية</p>
           </CardContent>
         </Card>
 
@@ -418,7 +407,7 @@ export default function WithdrawalsPage() {
             <Clock className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{pendingWithdrawals}</div>
+            <div className="text-2xl font-bold text-yellow-600">{stats.pendingCount}</div>
             <p className="text-xs text-muted-foreground">تحتاج معالجة</p>
           </CardContent>
         </Card>
@@ -429,7 +418,7 @@ export default function WithdrawalsPage() {
             <CheckCircle className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{approvedWithdrawals}</div>
+            <div className="text-2xl font-bold text-blue-600">{stats.approvedCount}</div>
             <p className="text-xs text-muted-foreground">في المعالجة</p>
           </CardContent>
         </Card>
@@ -440,7 +429,7 @@ export default function WithdrawalsPage() {
             <X className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{rejectedWithdrawals}</div>
+            <div className="text-2xl font-bold text-red-600">{stats.rejectedCount}</div>
             <p className="text-xs text-muted-foreground">تم رفضها</p>
           </CardContent>
         </Card>
@@ -451,7 +440,7 @@ export default function WithdrawalsPage() {
             <TrendingUp className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">{formatCurrency(totalFees)}</div>
+            <div className="text-2xl font-bold text-emerald-600">{formatCurrency(stats.totalFees)}</div>
             <p className="text-xs text-muted-foreground">من المكتملة</p>
           </CardContent>
         </Card>
@@ -619,7 +608,7 @@ export default function WithdrawalsPage() {
           <CardTitle className="flex items-center justify-between">
             <span>سجل عمليات السحب ({filteredAndSortedWithdrawals.length})</span>
             <Badge variant="outline" className="font-normal">
-              إجمالي الرسوم: {formatCurrency(totalFees)}
+              إجمالي الرسوم: {formatCurrency(stats.totalFees)}
             </Badge>
           </CardTitle>
           <CardDescription>

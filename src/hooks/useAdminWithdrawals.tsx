@@ -29,14 +29,91 @@ export interface AdminWithdrawal {
   };
 }
 
+export interface WithdrawalStats {
+  totalAmount: number;
+  completedAmount: number;
+  pendingAmount: number;
+  rejectedAmount: number;
+  totalCount: number;
+  completedCount: number;
+  pendingCount: number;
+  approvedCount: number;
+  rejectedCount: number;
+  totalFees: number;
+}
+
 export const useAdminWithdrawals = () => {
   const [withdrawals, setWithdrawals] = React.useState<AdminWithdrawal[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [stats, setStats] = React.useState<WithdrawalStats>({
+    totalAmount: 0,
+    completedAmount: 0,
+    pendingAmount: 0,
+    rejectedAmount: 0,
+    totalCount: 0,
+    completedCount: 0,
+    pendingCount: 0,
+    approvedCount: 0,
+    rejectedCount: 0,
+    totalFees: 0
+  });
   const [page, setPage] = React.useState(1);
   const [totalCount, setTotalCount] = React.useState(0);
   const pageSize = 20;
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // جلب الإحصائيات الكاملة من قاعدة البيانات
+  const fetchStats = React.useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      // جلب كل السحوبات للإحصائيات (بدون تصفح)
+      const { data: allWithdrawals, error } = await supabase
+        .from('withdrawals')
+        .select('amount, fee_amount, status');
+      
+      if (error) throw error;
+      
+      if (allWithdrawals) {
+        const newStats: WithdrawalStats = {
+          totalAmount: 0,
+          completedAmount: 0,
+          pendingAmount: 0,
+          rejectedAmount: 0,
+          totalCount: allWithdrawals.length,
+          completedCount: 0,
+          pendingCount: 0,
+          approvedCount: 0,
+          rejectedCount: 0,
+          totalFees: 0
+        };
+        
+        allWithdrawals.forEach(w => {
+          newStats.totalAmount += w.amount || 0;
+          
+          if (w.status === 'completed') {
+            newStats.completedAmount += w.amount || 0;
+            newStats.completedCount++;
+            newStats.totalFees += w.fee_amount || 0;
+          } else if (w.status === 'pending') {
+            newStats.pendingAmount += w.amount || 0;
+            newStats.pendingCount++;
+          } else if (w.status === 'approved') {
+            newStats.approvedCount++;
+            newStats.pendingAmount += w.amount || 0;
+          } else if (w.status === 'rejected') {
+            newStats.rejectedAmount += w.amount || 0;
+            newStats.rejectedCount++;
+          }
+        });
+        
+        setStats(newStats);
+      }
+    } catch (error) {
+      console.error('Error fetching withdrawal stats:', error);
+    }
+  }, [user]);
 
   const fetchWithdrawals = React.useCallback(async (fetchAll: boolean = false) => {
     if (!user) return;
@@ -137,7 +214,8 @@ export const useAdminWithdrawals = () => {
 
   React.useEffect(() => {
     fetchWithdrawals();
-  }, [fetchWithdrawals]);
+    fetchStats();
+  }, [fetchWithdrawals, fetchStats]);
 
   // Realtime subscription - only refetch on changes
   React.useEffect(() => {
@@ -160,6 +238,7 @@ export const useAdminWithdrawals = () => {
   return {
     withdrawals,
     loading,
+    stats,
     approveWithdrawal,
     rejectWithdrawal,
     fetchWithdrawals,
