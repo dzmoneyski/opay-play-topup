@@ -27,8 +27,17 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  TrendingUp,
+  TrendingDown,
+  BarChart3
 } from 'lucide-react';
+
+type SortField = 'amount' | 'created_at' | 'fee_amount';
+type SortOrder = 'asc' | 'desc';
 
 export default function WithdrawalsPage() {
   const { 
@@ -53,6 +62,12 @@ export default function WithdrawalsPage() {
   const [actionLoading, setActionLoading] = React.useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = React.useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
+  
+  // فلترة وترتيب جديد
+  const [sortField, setSortField] = React.useState<SortField>('created_at');
+  const [sortOrder, setSortOrder] = React.useState<SortOrder>('desc');
+  const [selectedDate, setSelectedDate] = React.useState<string>('');
+  const [selectedMethod, setSelectedMethod] = React.useState<string>('all');
 
   // جلب جميع البيانات عند البحث
   React.useEffect(() => {
@@ -63,33 +78,121 @@ export default function WithdrawalsPage() {
     }
   }, [searchTerm, page]);
 
-  const filteredWithdrawals = withdrawals.filter(withdrawal => {
-    const query = searchTerm.trim().toLowerCase();
+  // حساب الإحصائيات اليومية
+  const dailyStats = React.useMemo(() => {
+    const stats: Record<string, { 
+      pending: number; 
+      pendingCount: number;
+      completed: number; 
+      completedCount: number;
+      rejected: number;
+      rejectedCount: number;
+      fees: number;
+    }> = {};
     
-    // إذا لم يكن هناك نص بحث
-    if (!query) {
-      return selectedStatus === 'all' || withdrawal.status === selectedStatus;
+    withdrawals.forEach(w => {
+      const date = new Date(w.created_at).toISOString().split('T')[0];
+      if (!stats[date]) {
+        stats[date] = { pending: 0, pendingCount: 0, completed: 0, completedCount: 0, rejected: 0, rejectedCount: 0, fees: 0 };
+      }
+      
+      if (w.status === 'pending' || w.status === 'approved') {
+        stats[date].pending += w.amount;
+        stats[date].pendingCount++;
+      } else if (w.status === 'completed') {
+        stats[date].completed += w.amount;
+        stats[date].completedCount++;
+        stats[date].fees += w.fee_amount || 0;
+      } else if (w.status === 'rejected') {
+        stats[date].rejected += w.amount;
+        stats[date].rejectedCount++;
+      }
+    });
+    
+    return stats;
+  }, [withdrawals]);
+
+  // الفلترة والترتيب
+  const filteredAndSortedWithdrawals = React.useMemo(() => {
+    let result = withdrawals.filter(withdrawal => {
+      const query = searchTerm.trim().toLowerCase();
+      
+      // فلتر التاريخ
+      if (selectedDate) {
+        const withdrawalDate = new Date(withdrawal.created_at).toISOString().split('T')[0];
+        if (withdrawalDate !== selectedDate) return false;
+      }
+      
+      // فلتر طريقة السحب
+      if (selectedMethod !== 'all' && withdrawal.withdrawal_method !== selectedMethod) {
+        return false;
+      }
+      
+      // فلتر الحالة
+      if (selectedStatus !== 'all' && withdrawal.status !== selectedStatus) {
+        return false;
+      }
+      
+      // البحث النصي
+      if (query) {
+        const matchesSearch = 
+          withdrawal.user_profile?.full_name?.toLowerCase().includes(query) ||
+          withdrawal.id.toLowerCase().includes(query) ||
+          withdrawal.user_profile?.phone?.replace(/\s/g, '').includes(query.replace(/\s/g, '')) ||
+          withdrawal.account_number?.toLowerCase().includes(query) ||
+          withdrawal.account_holder_name?.toLowerCase().includes(query) ||
+          withdrawal.cash_location?.toLowerCase().includes(query);
+        
+        if (!matchesSearch) return false;
+      }
+      
+      return true;
+    });
+    
+    // الترتيب
+    result.sort((a, b) => {
+      let aVal: number, bVal: number;
+      
+      switch (sortField) {
+        case 'amount':
+          aVal = a.amount;
+          bVal = b.amount;
+          break;
+        case 'fee_amount':
+          aVal = a.fee_amount || 0;
+          bVal = b.fee_amount || 0;
+          break;
+        case 'created_at':
+        default:
+          aVal = new Date(a.created_at).getTime();
+          bVal = new Date(b.created_at).getTime();
+          break;
+      }
+      
+      return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+    
+    return result;
+  }, [withdrawals, searchTerm, selectedStatus, selectedDate, selectedMethod, sortField, sortOrder]);
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
     }
-    
-    // البحث في جميع الحقول
-    const matchesSearch = 
-      // البحث بالاسم
-      withdrawal.user_profile?.full_name?.toLowerCase().includes(query) ||
-      // البحث بمعرف الطلب
-      withdrawal.id.toLowerCase().includes(query) ||
-      // البحث برقم الهاتف (مع تنظيف الأرقام)
-      withdrawal.user_profile?.phone?.replace(/\s/g, '').includes(query.replace(/\s/g, '')) ||
-      // البحث برقم الحساب
-      withdrawal.account_number?.toLowerCase().includes(query) ||
-      // البحث باسم صاحب الحساب
-      withdrawal.account_holder_name?.toLowerCase().includes(query) ||
-      // البحث بموقع الاستلام النقدي
-      withdrawal.cash_location?.toLowerCase().includes(query);
-    
-    const matchesStatus = selectedStatus === 'all' || withdrawal.status === selectedStatus;
-    
-    return matchesSearch && matchesStatus;
-  });
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
+    return sortOrder === 'asc' 
+      ? <ArrowUp className="h-4 w-4 text-primary" /> 
+      : <ArrowDown className="h-4 w-4 text-primary" />;
+  };
+
+  // إحصائيات التاريخ المحدد
+  const selectedDateStats = selectedDate ? dailyStats[selectedDate] : null;
 
   const totalWithdrawals = withdrawals.reduce((sum, withdrawal) => 
     withdrawal.status === 'completed' ? sum + withdrawal.amount : sum, 0
@@ -98,6 +201,7 @@ export default function WithdrawalsPage() {
   const approvedWithdrawals = withdrawals.filter(w => w.status === 'approved').length;
   const completedWithdrawals = withdrawals.filter(w => w.status === 'completed').length;
   const rejectedWithdrawals = withdrawals.filter(w => w.status === 'rejected').length;
+  const totalFees = withdrawals.reduce((sum, w) => w.status === 'completed' ? sum + (w.fee_amount || 0) : sum, 0);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -337,33 +441,158 @@ export default function WithdrawalsPage() {
         </Card>
       </div>
 
+      {/* إحصائيات اليوم المحدد */}
+      {selectedDateStats && (
+        <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              إحصائيات يوم {new Date(selectedDate).toLocaleDateString('ar-DZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <div className="text-yellow-600 dark:text-yellow-400 text-sm font-medium">معلقة</div>
+                <div className="text-xl font-bold text-yellow-700 dark:text-yellow-300">{formatCurrency(selectedDateStats.pending)}</div>
+                <div className="text-xs text-yellow-600/70">{selectedDateStats.pendingCount} طلب</div>
+              </div>
+              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="text-green-600 dark:text-green-400 text-sm font-medium">مكتملة</div>
+                <div className="text-xl font-bold text-green-700 dark:text-green-300">{formatCurrency(selectedDateStats.completed)}</div>
+                <div className="text-xs text-green-600/70">{selectedDateStats.completedCount} طلب</div>
+              </div>
+              <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+                <div className="text-red-600 dark:text-red-400 text-sm font-medium">مرفوضة</div>
+                <div className="text-xl font-bold text-red-700 dark:text-red-300">{formatCurrency(selectedDateStats.rejected)}</div>
+                <div className="text-xs text-red-600/70">{selectedDateStats.rejectedCount} طلب</div>
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="text-blue-600 dark:text-blue-400 text-sm font-medium">أرباح الرسوم</div>
+                <div className="text-xl font-bold text-blue-700 dark:text-blue-300">{formatCurrency(selectedDateStats.fees)}</div>
+                <div className="text-xs text-blue-600/70">من المكتملة</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Search and Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>البحث والتصفية</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="h-5 w-5" />
+            البحث والتصفية المتقدمة
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <CardContent className="space-y-4">
+          {/* الصف الأول: البحث */}
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="البحث بالاسم، معرف الطلب، رقم الهاتف، أو رقم الحساب..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pr-10"
+            />
+          </div>
+          
+          {/* الصف الثاني: الفلاتر */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {/* فلتر الحالة */}
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">الحالة</Label>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm"
+              >
+                <option value="all">جميع الحالات</option>
+                <option value="pending">قيد الانتظار</option>
+                <option value="approved">معتمد</option>
+                <option value="completed">مكتمل</option>
+                <option value="rejected">مرفوض</option>
+              </select>
+            </div>
+            
+            {/* فلتر طريقة السحب */}
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">طريقة السحب</Label>
+              <select
+                value={selectedMethod}
+                onChange={(e) => setSelectedMethod(e.target.value)}
+                className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm"
+              >
+                <option value="all">جميع الطرق</option>
+                <option value="opay">OPay</option>
+                <option value="barid_bank">بريد الجزائر</option>
+                <option value="ccp">CCP</option>
+                <option value="cash">سحب نقدي</option>
+              </select>
+            </div>
+            
+            {/* فلتر التاريخ */}
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">التاريخ</Label>
               <Input
-                placeholder="البحث بالاسم، معرف الطلب، أو رقم الهاتف..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10"
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="text-sm"
               />
             </div>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 border border-input rounded-md bg-background"
+            
+            {/* زر المسح */}
+            <div className="flex items-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedStatus('all');
+                  setSelectedMethod('all');
+                  setSelectedDate('');
+                  setSortField('created_at');
+                  setSortOrder('desc');
+                }}
+                className="w-full"
+              >
+                <X className="h-4 w-4 ml-1" />
+                مسح الفلاتر
+              </Button>
+            </div>
+          </div>
+          
+          {/* الصف الثالث: أزرار الترتيب */}
+          <div className="flex flex-wrap gap-2 pt-2 border-t">
+            <span className="text-sm text-muted-foreground self-center ml-2">ترتيب حسب:</span>
+            <Button
+              variant={sortField === 'created_at' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => toggleSort('created_at')}
+              className="gap-1"
             >
-              <option value="all">جميع الحالات</option>
-              <option value="pending">قيد الانتظار</option>
-              <option value="approved">معتمد</option>
-              <option value="completed">مكتمل</option>
-              <option value="rejected">مرفوض</option>
-            </select>
+              التاريخ
+              {getSortIcon('created_at')}
+            </Button>
+            <Button
+              variant={sortField === 'amount' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => toggleSort('amount')}
+              className="gap-1"
+            >
+              المبلغ
+              {getSortIcon('amount')}
+            </Button>
+            <Button
+              variant={sortField === 'fee_amount' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => toggleSort('fee_amount')}
+              className="gap-1"
+            >
+              الرسوم
+              {getSortIcon('fee_amount')}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -371,9 +600,14 @@ export default function WithdrawalsPage() {
       {/* Withdrawals Table */}
       <Card>
         <CardHeader>
-          <CardTitle>سجل عمليات السحب ({filteredWithdrawals.length})</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>سجل عمليات السحب ({filteredAndSortedWithdrawals.length})</span>
+            <Badge variant="outline" className="font-normal">
+              إجمالي الرسوم: {formatCurrency(totalFees)}
+            </Badge>
+          </CardTitle>
           <CardDescription>
-            عرض تفصيلي لجميع طلبات السحب وحالتها
+            عرض تفصيلي لجميع طلبات السحب وحالتها • مرتب حسب {sortField === 'amount' ? 'المبلغ' : sortField === 'fee_amount' ? 'الرسوم' : 'التاريخ'} ({sortOrder === 'asc' ? 'تصاعدي' : 'تنازلي'})
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -385,7 +619,7 @@ export default function WithdrawalsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredWithdrawals.map((withdrawal) => (
+              {filteredAndSortedWithdrawals.map((withdrawal) => (
                 <div key={withdrawal.id} className="border rounded-lg p-4 hover:bg-muted/20 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
@@ -704,7 +938,7 @@ export default function WithdrawalsPage() {
             </div>
           )}
 
-          {!loading && filteredWithdrawals.length === 0 && (
+          {!loading && filteredAndSortedWithdrawals.length === 0 && (
             <div className="text-center py-8">
               <ArrowUpFromLine className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">لا توجد عمليات سحب</h3>
