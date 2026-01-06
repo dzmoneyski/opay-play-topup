@@ -194,6 +194,9 @@ export default function WithdrawalsPage() {
   // إحصائيات التاريخ المحدد
   const selectedDateStats = selectedDate ? dailyStats[selectedDate] : null;
 
+  // إجمالي كل الطلبات
+  const allRequestsTotal = withdrawals.reduce((sum, w) => sum + w.amount, 0);
+  // إجمالي المكتملة فقط
   const totalWithdrawals = withdrawals.reduce((sum, withdrawal) => 
     withdrawal.status === 'completed' ? sum + withdrawal.amount : sum, 0
   );
@@ -382,17 +385,30 @@ export default function WithdrawalsPage() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-5">
-        <Card>
+      <div className="grid gap-4 md:grid-cols-6">
+        <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/20 border-indigo-200 dark:border-indigo-800">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">إجمالي السحوبات</CardTitle>
-            <DollarSign className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium">إجمالي الطلبات</CardTitle>
+            <TrendingUp className="h-4 w-4 text-indigo-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-indigo-600">
+              {formatCurrency(allRequestsTotal)}
+            </div>
+            <p className="text-xs text-muted-foreground">{withdrawals.length} طلب</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">المكتملة</CardTitle>
+            <DollarSign className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
               {formatCurrency(totalWithdrawals)}
             </div>
-            <p className="text-xs text-muted-foreground">المكتملة فقط</p>
+            <p className="text-xs text-muted-foreground">{completedWithdrawals} عملية</p>
           </CardContent>
         </Card>
 
@@ -420,23 +436,23 @@ export default function WithdrawalsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">مكتملة</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{completedWithdrawals}</div>
-            <p className="text-xs text-muted-foreground">تم بنجاح</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">مرفوضة</CardTitle>
             <X className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{rejectedWithdrawals}</div>
             <p className="text-xs text-muted-foreground">تم رفضها</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/20 border-emerald-200 dark:border-emerald-800">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">أرباح الرسوم</CardTitle>
+            <TrendingUp className="h-4 w-4 text-emerald-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-emerald-600">{formatCurrency(totalFees)}</div>
+            <p className="text-xs text-muted-foreground">من المكتملة</p>
           </CardContent>
         </Card>
       </div>
