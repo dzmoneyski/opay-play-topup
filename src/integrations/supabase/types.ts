@@ -2129,6 +2129,16 @@ export type Database = {
       ensure_referral_code: { Args: { _user_id: string }; Returns: string }
       ensure_referral_for_current_user: { Args: never; Returns: Json }
       ensure_user_referral: { Args: { _user_id: string }; Returns: Json }
+      fix_all_user_balances: {
+        Args: never
+        Returns: {
+          deducted_amount: number
+          full_name: string
+          new_balance: number
+          old_balance: number
+          phone: string
+        }[]
+      }
       flag_suspicious_referrals: { Args: never; Returns: Json }
       generate_merchant_code: { Args: never; Returns: string }
       generate_transfer_transaction_number: { Args: never; Returns: string }
