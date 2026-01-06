@@ -29,6 +29,16 @@ export interface AdminWithdrawal {
   };
 }
 
+export interface DailyStats {
+  date: string;
+  pendingCount: number;
+  pendingAmount: number;
+  completedCount: number;
+  completedAmount: number;
+  totalCount: number;
+  totalAmount: number;
+}
+
 export interface WithdrawalStats {
   totalAmount: number;
   completedAmount: number;
@@ -40,6 +50,7 @@ export interface WithdrawalStats {
   approvedCount: number;
   rejectedCount: number;
   totalFees: number;
+  dailyStats: DailyStats[];
 }
 
 export const useAdminWithdrawals = () => {
@@ -55,7 +66,8 @@ export const useAdminWithdrawals = () => {
     pendingCount: 0,
     approvedCount: 0,
     rejectedCount: 0,
-    totalFees: 0
+    totalFees: 0,
+    dailyStats: []
   });
   const [page, setPage] = React.useState(1);
   const [totalCount, setTotalCount] = React.useState(0);
@@ -71,7 +83,7 @@ export const useAdminWithdrawals = () => {
       // جلب كل السحوبات للإحصائيات (بدون تصفح)
       const { data: allWithdrawals, error } = await supabase
         .from('withdrawals')
-        .select('amount, fee_amount, status');
+        .select('amount, fee_amount, status, created_at');
       
       if (error) throw error;
       
@@ -86,27 +98,58 @@ export const useAdminWithdrawals = () => {
           pendingCount: 0,
           approvedCount: 0,
           rejectedCount: 0,
-          totalFees: 0
+          totalFees: 0,
+          dailyStats: []
         };
+        
+        // لحساب الإحصائيات اليومية
+        const dailyMap: Record<string, DailyStats> = {};
         
         allWithdrawals.forEach(w => {
           newStats.totalAmount += w.amount || 0;
+          
+          // استخراج التاريخ
+          const date = new Date(w.created_at).toISOString().split('T')[0];
+          if (!dailyMap[date]) {
+            dailyMap[date] = {
+              date,
+              pendingCount: 0,
+              pendingAmount: 0,
+              completedCount: 0,
+              completedAmount: 0,
+              totalCount: 0,
+              totalAmount: 0
+            };
+          }
+          dailyMap[date].totalCount++;
+          dailyMap[date].totalAmount += w.amount || 0;
           
           if (w.status === 'completed') {
             newStats.completedAmount += w.amount || 0;
             newStats.completedCount++;
             newStats.totalFees += w.fee_amount || 0;
+            dailyMap[date].completedCount++;
+            dailyMap[date].completedAmount += w.amount || 0;
           } else if (w.status === 'pending') {
             newStats.pendingAmount += w.amount || 0;
             newStats.pendingCount++;
+            dailyMap[date].pendingCount++;
+            dailyMap[date].pendingAmount += w.amount || 0;
           } else if (w.status === 'approved') {
             newStats.approvedCount++;
             newStats.pendingAmount += w.amount || 0;
+            dailyMap[date].pendingCount++;
+            dailyMap[date].pendingAmount += w.amount || 0;
           } else if (w.status === 'rejected') {
             newStats.rejectedAmount += w.amount || 0;
             newStats.rejectedCount++;
           }
         });
+        
+        // تحويل الخريطة إلى مصفوفة مرتبة بالتاريخ (الأحدث أولاً)
+        newStats.dailyStats = Object.values(dailyMap).sort((a, b) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
         
         setStats(newStats);
       }

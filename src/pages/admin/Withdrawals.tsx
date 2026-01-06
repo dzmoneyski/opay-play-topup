@@ -267,11 +267,7 @@ export default function WithdrawalsPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-DZ', {
-      style: 'currency',
-      currency: 'DZD',
-      minimumFractionDigits: 2
-    }).format(amount);
+    return Math.round(amount).toLocaleString('en-US').replace(/,/g, '') + ' د.ج';
   };
 
   const handleApprove = async (withdrawalId: string) => {
@@ -445,6 +441,59 @@ export default function WithdrawalsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* إحصائيات يومية لآخر 7 أيام */}
+      {stats.dailyStats && stats.dailyStats.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              إحصائيات يومية (آخر 7 أيام)
+            </CardTitle>
+            <CardDescription>عدد الطلبات والمبالغ لكل يوم</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {stats.dailyStats.slice(0, 7).map((day) => (
+                <div 
+                  key={day.date} 
+                  className="bg-gradient-to-br from-muted/50 to-muted p-4 rounded-lg border hover:border-primary/50 transition-colors"
+                >
+                  <div className="font-bold text-sm mb-2 text-primary">
+                    {new Date(day.date).toLocaleDateString('ar-DZ', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">الإجمالي:</span>
+                      <span className="font-bold">{day.totalCount} طلب</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">المبلغ:</span>
+                      <span className="font-semibold">{formatCurrency(day.totalAmount)}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-t pt-2 mt-2">
+                      <span className="text-yellow-600">قيد الانتظار:</span>
+                      <span className="font-bold text-yellow-600">{day.pendingCount}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-yellow-600/70">المبلغ المعلق:</span>
+                      <span className="text-yellow-600">{formatCurrency(day.pendingAmount)}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-t pt-2 mt-2">
+                      <span className="text-green-600">مكتملة:</span>
+                      <span className="font-bold text-green-600">{day.completedCount}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-green-600/70">المبلغ المكتمل:</span>
+                      <span className="text-green-600">{formatCurrency(day.completedAmount)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* إحصائيات اليوم المحدد */}
       {selectedDateStats && (
