@@ -2196,23 +2196,14 @@ export type Database = {
         Args: { _amount: number; _platform_id: string; _player_id: string }
         Returns: Json
       }
-      process_digital_card_order:
-        | {
-            Args: {
-              _account_id: string
-              _amount_usd: number
-              _card_type_id: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              _account_id: string
-              _amount_usd: number
-              _card_type_id: string
-            }
-            Returns: Json
-          }
+      process_digital_card_order: {
+        Args: {
+          _account_id: string
+          _amount_usd: number
+          _card_type_id: string
+        }
+        Returns: Json
+      }
       process_game_topup_order: {
         Args: {
           _amount: number
