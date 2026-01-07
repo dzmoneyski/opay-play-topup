@@ -31,6 +31,8 @@ const MerchantDashboard = () => {
     amount: ''
   });
   const [submitting, setSubmitting] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
+  const [amountError, setAmountError] = useState('');
   const [commissionInfo, setCommissionInfo] = useState<{
     commission_amount: number;
     total_from_customer: number;
@@ -127,21 +129,56 @@ const MerchantDashboard = () => {
     );
   }
 
+  // Validate phone number
+  const validatePhone = (phone: string): boolean => {
+    const cleanedPhone = phone.replace(/[^0-9]/g, '');
+    if (cleanedPhone.length < 10) {
+      setPhoneError('رقم الهاتف يجب أن يكون 10 أرقام على الأقل');
+      return false;
+    }
+    if (!/^0[567]\d{8}$/.test(cleanedPhone)) {
+      setPhoneError('رقم الهاتف غير صحيح (يجب أن يبدأ بـ 05 أو 06 أو 07)');
+      return false;
+    }
+    setPhoneError('');
+    return true;
+  };
+
+  // Validate amount
+  const validateAmount = (amountStr: string): boolean => {
+    const amount = parseFloat(amountStr);
+    if (isNaN(amount) || amount < 100) {
+      setAmountError('الحد الأدنى للشحن 100 دج');
+      return false;
+    }
+    if (amount > 50000) {
+      setAmountError('الحد الأقصى للشحن 50,000 دج');
+      return false;
+    }
+    setAmountError('');
+    return true;
+  };
+
   const handleRecharge = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!rechargeForm.phone || !rechargeForm.amount) return;
+    // Client-side validation
+    const isPhoneValid = validatePhone(rechargeForm.phone);
+    const isAmountValid = validateAmount(rechargeForm.amount);
+    
+    if (!isPhoneValid || !isAmountValid) return;
     
     const amount = parseFloat(rechargeForm.amount);
-    if (isNaN(amount) || amount < 100) return;
 
     setSubmitting(true);
-    const result = await topupCustomer(rechargeForm.phone, amount);
+    const result = await topupCustomer(rechargeForm.phone.replace(/[^0-9]/g, ''), amount);
     setSubmitting(false);
 
     if (result.success) {
       setRechargeForm({ phone: '', amount: '' });
       setCommissionInfo(null);
+      setPhoneError('');
+      setAmountError('');
       await fetchBalance();
     }
   };
@@ -334,12 +371,19 @@ const MerchantDashboard = () => {
                         id="phone"
                         type="tel"
                         value={rechargeForm.phone}
-                        onChange={(e) => setRechargeForm({ ...rechargeForm, phone: e.target.value })}
+                        onChange={(e) => {
+                          setRechargeForm({ ...rechargeForm, phone: e.target.value });
+                          if (phoneError) setPhoneError('');
+                        }}
                         placeholder="05XXXXXXXX"
                         dir="ltr"
-                        className="h-12 text-lg"
+                        className={`h-12 text-lg ${phoneError ? 'border-red-500' : ''}`}
                         required
+                        maxLength={15}
                       />
+                      {phoneError && (
+                        <p className="text-sm text-red-500 mt-1">{phoneError}</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -354,11 +398,17 @@ const MerchantDashboard = () => {
                         min="100"
                         max="50000"
                         value={rechargeForm.amount}
-                        onChange={(e) => setRechargeForm({ ...rechargeForm, amount: e.target.value })}
+                        onChange={(e) => {
+                          setRechargeForm({ ...rechargeForm, amount: e.target.value });
+                          if (amountError) setAmountError('');
+                        }}
                         placeholder="1000"
-                        className="h-12 text-lg"
+                        className={`h-12 text-lg ${amountError ? 'border-red-500' : ''}`}
                         required
                       />
+                      {amountError && (
+                        <p className="text-sm text-red-500 mt-1">{amountError}</p>
+                      )}
                       
                       {/* Quick Amount Buttons */}
                       <div className="flex gap-2 mt-2">
