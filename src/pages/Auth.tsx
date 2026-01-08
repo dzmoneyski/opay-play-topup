@@ -71,24 +71,38 @@ const Auth = () => {
     const hash = window.location.hash;
     const isReset = params.get('reset') === 'true';
     
+    // Check for errors in query params (e.g., ?error=access_denied&error_code=otp_expired)
+    const errorInParams = params.get('error');
+    const errorCodeInParams = params.get('error_code');
+    const errorDescInParams = params.get('error_description');
+    
     // Check for errors in hash (e.g., #error=access_denied&error_code=otp_expired)
+    let errorCode = errorCodeInParams;
+    let errorDescription = errorDescInParams;
+    
     if (hash && hash.includes('error')) {
       const hashParams = new URLSearchParams(hash.substring(1));
-      const errorCode = hashParams.get('error_code');
-      const errorDescription = hashParams.get('error_description');
-      
-      if (errorCode === 'otp_expired') {
-        setResetError('انتهت صلاحية رابط إعادة التعيين. يرجى طلب رابط جديد.');
+      errorCode = errorCode || hashParams.get('error_code');
+      errorDescription = errorDescription || hashParams.get('error_description');
+    }
+    
+    // Handle any error found
+    if (errorInParams || (hash && hash.includes('error'))) {
+      if (errorCode === 'otp_expired' || errorCode === 'otp_not_found' || 
+          errorDescription?.includes('expired') || errorDescription?.includes('invalid')) {
+        setResetError('انتهت صلاحية رابط إعادة التعيين أو أنه غير صالح. يرجى طلب رابط جديد.');
         toast({
-          title: "انتهت صلاحية الرابط",
-          description: "رابط إعادة تعيين كلمة المرور منتهي الصلاحية. يرجى طلب رابط جديد.",
+          title: "رمز غير صالح",
+          description: "رابط إعادة تعيين كلمة المرور منتهي الصلاحية أو غير صالح. يرجى طلب رابط جديد.",
           variant: "destructive"
         });
       } else if (errorDescription) {
         setResetError(decodeURIComponent(errorDescription.replace(/\+/g, ' ')));
+      } else {
+        setResetError('حدث خطأ أثناء إعادة تعيين كلمة المرور. يرجى المحاولة مرة أخرى.');
       }
-      // Clear the hash from URL
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      // Clear the URL
+      window.history.replaceState(null, '', '/auth');
     } else if (isReset) {
       setIsResetMode(true);
     }
