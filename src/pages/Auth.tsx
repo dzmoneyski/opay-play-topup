@@ -110,12 +110,24 @@ const Auth = () => {
 
   // Redirect if already authenticated (but not in reset mode)
   React.useEffect(() => {
+    // Check URL for reset parameter BEFORE redirecting
+    const params = new URLSearchParams(window.location.search);
+    const isResetFromUrl = params.get('reset') === 'true';
+    const hash = window.location.hash;
+    const hasRecoveryToken = hash.includes('type=recovery') || params.get('type') === 'recovery';
+    
+    // If this is a password reset flow, set reset mode and DON'T redirect
+    if (isResetFromUrl || hasRecoveryToken) {
+      setIsResetMode(true);
+      return; // Don't redirect, let user change password
+    }
+    
+    // Only redirect to dashboard if user is logged in AND not in reset mode
     if (user && !isResetMode) {
       navigate('/dashboard');
     }
 
     // Check for referral code in URL
-    const params = new URLSearchParams(window.location.search);
     const refCode = params.get('ref');
     if (refCode) {
       setSignUpData(prev => ({ ...prev, referralCode: refCode }));
