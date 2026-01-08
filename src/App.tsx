@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -51,6 +51,32 @@ const queryClient = new QueryClient({
   },
 });
 
+const RecoveryRedirect = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const isRecovery =
+      params.get('type') === 'recovery' || location.hash.includes('type=recovery');
+
+    if (!isRecovery) return;
+
+    const isAuthPath = location.pathname.startsWith('/auth');
+    const hasResetParam = params.get('reset') === 'true';
+
+    // Ensure password recovery always lands on /auth?reset=true
+    if (!isAuthPath || !hasResetParam) {
+      navigate(
+        { pathname: '/auth', search: '?reset=true', hash: location.hash },
+        { replace: true }
+      );
+    }
+  }, [location.pathname, location.search, location.hash, navigate]);
+
+  return null;
+};
+
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -61,6 +87,7 @@ const App = () => {
           <PWAPermissionsPrompt />
           <BrowserRouter>
             <ScrollToTop />
+            <RecoveryRedirect />
             <Routes>
               <Route path="/" element={
                 <ProtectedRoute requireActivation={false}>

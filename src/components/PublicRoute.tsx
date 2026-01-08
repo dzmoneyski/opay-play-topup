@@ -11,7 +11,10 @@ const PublicRoute = ({ children }: PublicRouteProps) => {
 
   // Allow authenticated users to access /auth only for password recovery flow
   const params = new URLSearchParams(location.search);
-  const isPasswordResetFlow = params.get('reset') === 'true';
+  const isPasswordResetFlow =
+    params.get('reset') === 'true' ||
+    params.get('type') === 'recovery' ||
+    location.hash.includes('type=recovery');
 
   if (loading) {
     return (
