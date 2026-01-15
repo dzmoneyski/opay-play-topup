@@ -30,19 +30,22 @@ export const useTransactionHistory = (limit?: number) => {
           .from('deposits')
           .select('*')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .limit(5000),
         
         supabase
           .from('transfers')
           .select('*, transaction_number')
           .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .limit(5000),
         
         supabase
           .from('withdrawals')
           .select('*')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .limit(5000),
         
         // جلب بطاقات الهدايا مباشرة للمستخدم الحالي
         supabase
@@ -50,19 +53,22 @@ export const useTransactionHistory = (limit?: number) => {
           .select('id, amount, used_at, card_code')
           .eq('used_by', user.id)
           .eq('is_used', true)
-          .order('used_at', { ascending: false }),
+          .order('used_at', { ascending: false })
+          .limit(5000),
         
         supabase
           .from('betting_transactions')
           .select('*, platform:game_platforms(name, name_ar)')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .limit(5000),
         
         supabase
           .from('game_topup_orders')
           .select('*, platform:game_platforms(name, name_ar)')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .limit(5000),
         
         // جلب طلبات البطاقات الرقمية
         supabase
@@ -70,6 +76,7 @@ export const useTransactionHistory = (limit?: number) => {
           .select('*, card_type:digital_card_types(name, name_ar)')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
+          .limit(5000)
       ]);
 
       const allTransactions: TransactionHistoryItem[] = [];
