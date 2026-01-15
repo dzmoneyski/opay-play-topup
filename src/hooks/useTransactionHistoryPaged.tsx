@@ -39,7 +39,7 @@ export const useTransactionHistoryPaged = (options?: Options) => {
 
   const fetchPaged = useCallback(
     async <T,>(
-      fetchPage: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>
+      fetchPage: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: any }>
     ) => {
       const all: T[] = [];
       for (let from = 0; from < maxRows; from += PAGE_SIZE) {
