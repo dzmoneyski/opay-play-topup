@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTransactionHistory } from '@/hooks/useTransactionHistory';
+import { useTransactionHistoryPaged } from '@/hooks/useTransactionHistoryPaged';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -62,7 +62,7 @@ const ITEMS_PER_PAGE = 10;
 
 const Transactions = () => {
   const navigate = useNavigate();
-  const { transactions, loading, totalCount } = useTransactionHistory();
+  const { transactions, loading, totalCount } = useTransactionHistoryPaged({ maxRows: 5000 });
   const { profile } = useProfile();
   const [expandedTransaction, setExpandedTransaction] = useState<string | null>(null);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
