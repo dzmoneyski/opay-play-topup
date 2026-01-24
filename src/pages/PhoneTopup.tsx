@@ -53,7 +53,7 @@ const internetServiceTypes = [
 const internetOperatorSlugs = ['idoom-adsl', '4g-adsl'];
 
 const PhoneTopup = () => {
-  const { operators, loading: operatorsLoading } = usePhoneOperators();
+  const { operators, loading: operatorsLoading, settings, calculateFee, isServiceEnabled } = usePhoneOperators();
   const { orders, loading: ordersLoading, createOrder } = usePhoneTopupOrders();
   const { balance } = useBalance();
   const { toast } = useToast();
@@ -66,14 +66,8 @@ const PhoneTopup = () => {
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Calculate fee based on amount
-  const calculateFee = (amt: number): number => {
-    if (amt <= 0) return 0;
-    return amt < 1000 ? 10 : 50;
-  };
-
   const numericAmount = parseFloat(amount) || 0;
-  const fee = calculateFee(numericAmount);
+  const fee = selectedOperator ? calculateFee(numericAmount, selectedOperator) : 0;
   const totalAmount = numericAmount + fee;
   const userBalance = balance?.balance || 0;
   const hasInsufficientBalance = numericAmount > 0 && totalAmount > userBalance;
@@ -172,6 +166,28 @@ const PhoneTopup = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Check if service is disabled
+  if (!isServiceEnabled) {
+    return (
+      <div className="min-h-screen bg-background" dir="rtl">
+        <div className="container mx-auto px-4 py-6 max-w-2xl">
+          <BackButton />
+          <Card className="text-center py-12">
+            <CardContent>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                <Smartphone className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h2 className="text-xl font-bold mb-2">الخدمة متوقفة مؤقتاً</h2>
+              <p className="text-muted-foreground">
+                خدمة شحن الهاتف غير متاحة حالياً. يرجى المحاولة لاحقاً.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
