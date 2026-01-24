@@ -1128,6 +1128,10 @@ export type Database = {
         Row: {
           created_at: string
           display_order: number
+          fee_max: number | null
+          fee_min: number
+          fee_type: string
+          fee_value: number
           id: string
           is_active: boolean
           logo_url: string | null
@@ -1141,6 +1145,10 @@ export type Database = {
         Insert: {
           created_at?: string
           display_order?: number
+          fee_max?: number | null
+          fee_min?: number
+          fee_type?: string
+          fee_value?: number
           id?: string
           is_active?: boolean
           logo_url?: string | null
@@ -1154,6 +1162,10 @@ export type Database = {
         Update: {
           created_at?: string
           display_order?: number
+          fee_max?: number | null
+          fee_min?: number
+          fee_type?: string
+          fee_value?: number
           id?: string
           is_active?: boolean
           logo_url?: string | null
@@ -1171,6 +1183,7 @@ export type Database = {
           admin_notes: string | null
           amount: number
           created_at: string
+          fee_amount: number
           id: string
           notes: string | null
           operator_id: string
@@ -1178,6 +1191,7 @@ export type Database = {
           processed_at: string | null
           processed_by: string | null
           status: string
+          total_amount: number
           updated_at: string
           user_id: string
         }
@@ -1185,6 +1199,7 @@ export type Database = {
           admin_notes?: string | null
           amount: number
           created_at?: string
+          fee_amount?: number
           id?: string
           notes?: string | null
           operator_id: string
@@ -1192,6 +1207,7 @@ export type Database = {
           processed_at?: string | null
           processed_by?: string | null
           status?: string
+          total_amount?: number
           updated_at?: string
           user_id: string
         }
@@ -1199,6 +1215,7 @@ export type Database = {
           admin_notes?: string | null
           amount?: number
           created_at?: string
+          fee_amount?: number
           id?: string
           notes?: string | null
           operator_id?: string
@@ -1206,6 +1223,7 @@ export type Database = {
           processed_at?: string | null
           processed_by?: string | null
           status?: string
+          total_amount?: number
           updated_at?: string
           user_id?: string
         }
