@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Smartphone, Loader2, CheckCircle, XCircle, Clock, Phone, Search, RefreshCw, Settings, Power, PowerOff, Save, Percent, DollarSign } from 'lucide-react';
+import { Smartphone, Loader2, CheckCircle, XCircle, Clock, Phone, Search, RefreshCw, Settings, Power, PowerOff, Save, Percent, DollarSign, Calculator } from 'lucide-react';
+import AgentAccountingReport from '@/components/admin/AgentAccountingReport';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -423,10 +424,14 @@ const AdminPhoneTopup = () => {
 
       {/* Main Tabs */}
       <Tabs value={mainTab} onValueChange={setMainTab} className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-lg grid-cols-3">
           <TabsTrigger value="orders" className="gap-2">
             <Phone className="w-4 h-4" />
             الطلبات
+          </TabsTrigger>
+          <TabsTrigger value="accounting" className="gap-2">
+            <Calculator className="w-4 h-4" />
+            محاسبة الوكلاء
           </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2">
             <Settings className="w-4 h-4" />
@@ -672,6 +677,11 @@ const AdminPhoneTopup = () => {
               )}
             </TabsContent>
           </Tabs>
+        </TabsContent>
+
+        {/* Accounting Tab */}
+        <TabsContent value="accounting" className="space-y-6">
+          <AgentAccountingReport />
         </TabsContent>
 
         {/* Settings Tab */}
