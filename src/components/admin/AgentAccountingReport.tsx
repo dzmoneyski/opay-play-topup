@@ -109,10 +109,10 @@ const AgentAccountingReport = () => {
       const range = dateRanges.find(r => r.value === selectedPeriod);
       if (!range) return;
 
-      // Fetch phone topup orders
+      // Fetch phone topup orders with operator info
       let phoneQuery = supabase
         .from('phone_topup_orders')
-        .select('*')
+        .select('*, phone_operators(fee_type, fee_value, fee_min, fee_max)')
         .not('processed_by', 'is', null);
 
       // Fetch game topup orders
@@ -140,6 +140,26 @@ const AgentAccountingReport = () => {
 
       const phoneOrders = phoneResult.data || [];
       const gameOrders = gameResult.data || [];
+
+      // Helper function to calculate fee based on operator settings
+      const calculateFee = (amount: number, operator: any): number => {
+        if (!operator) return 0;
+        
+        const { fee_type, fee_value, fee_min, fee_max } = operator;
+        let fee = 0;
+        
+        if (fee_type === 'percentage') {
+          fee = (amount * fee_value) / 100;
+        } else {
+          fee = fee_value;
+        }
+        
+        // Apply min/max bounds
+        if (fee < fee_min) fee = fee_min;
+        if (fee_max && fee > fee_max) fee = fee_max;
+        
+        return fee;
+      };
 
       // Get unique agent IDs from both services
       const allAgentIds = [
@@ -196,8 +216,14 @@ const AgentAccountingReport = () => {
           stats.approved_orders++;
           stats.phone_topup.total_approved_amount += order.amount || 0;
           stats.total_approved_amount += order.amount || 0;
-          stats.phone_topup.total_fees_collected += order.fee_amount || 0;
-          stats.total_fees_collected += order.fee_amount || 0;
+          
+          // Calculate fee from operator settings if fee_amount is 0
+          const calculatedFee = order.fee_amount > 0 
+            ? order.fee_amount 
+            : calculateFee(order.amount, order.phone_operators);
+          
+          stats.phone_topup.total_fees_collected += calculatedFee;
+          stats.total_fees_collected += calculatedFee;
         } else if (order.status === 'rejected') {
           stats.phone_topup.rejected_orders++;
           stats.rejected_orders++;
