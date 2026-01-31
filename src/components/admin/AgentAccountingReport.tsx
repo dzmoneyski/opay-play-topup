@@ -8,10 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface AgentStats {
-  agent_id: string;
-  agent_name: string;
-  agent_phone: string;
+interface ServiceStats {
   total_orders: number;
   approved_orders: number;
   rejected_orders: number;
@@ -20,7 +17,25 @@ interface AgentStats {
   total_rejected_amount: number;
   total_pending_amount: number;
   total_fees_collected: number;
-  net_due: number; // المبلغ المستحق للوكيل = إجمالي الشحن - الرسوم
+}
+
+interface AgentStats {
+  agent_id: string;
+  agent_name: string;
+  agent_phone: string;
+  // Combined stats
+  total_orders: number;
+  approved_orders: number;
+  rejected_orders: number;
+  pending_orders: number;
+  total_approved_amount: number;
+  total_rejected_amount: number;
+  total_pending_amount: number;
+  total_fees_collected: number;
+  net_due: number;
+  // Per-service breakdown
+  phone_topup: ServiceStats;
+  game_topup: ServiceStats;
 }
 
 interface DateRange {
@@ -77,49 +92,77 @@ const AgentAccountingReport = () => {
     fetchAgentStats();
   }, [selectedPeriod]);
 
+  const createEmptyServiceStats = (): ServiceStats => ({
+    total_orders: 0,
+    approved_orders: 0,
+    rejected_orders: 0,
+    pending_orders: 0,
+    total_approved_amount: 0,
+    total_rejected_amount: 0,
+    total_pending_amount: 0,
+    total_fees_collected: 0,
+  });
+
   const fetchAgentStats = async () => {
     setLoading(true);
     try {
       const range = dateRanges.find(r => r.value === selectedPeriod);
       if (!range) return;
 
-      // Fetch orders with date filter
-      let query = supabase
+      // Fetch phone topup orders
+      let phoneQuery = supabase
         .from('phone_topup_orders')
         .select('*')
         .not('processed_by', 'is', null);
 
+      // Fetch game topup orders
+      let gameQuery = supabase
+        .from('game_topup_orders')
+        .select('*')
+        .not('processed_by', 'is', null);
+
       if (selectedPeriod !== 'all') {
-        query = query
+        phoneQuery = phoneQuery
+          .gte('processed_at', range.startDate.toISOString())
+          .lte('processed_at', range.endDate.toISOString());
+        gameQuery = gameQuery
           .gte('processed_at', range.startDate.toISOString())
           .lte('processed_at', range.endDate.toISOString());
       }
 
-      const { data: orders, error } = await query;
+      const [phoneResult, gameResult] = await Promise.all([
+        phoneQuery,
+        gameQuery
+      ]);
 
-      if (error) throw error;
+      if (phoneResult.error) throw phoneResult.error;
+      if (gameResult.error) throw gameResult.error;
 
-      // Get unique agent IDs
-      const agentIds = [...new Set((orders || []).map(o => o.processed_by).filter(Boolean))];
+      const phoneOrders = phoneResult.data || [];
+      const gameOrders = gameResult.data || [];
+
+      // Get unique agent IDs from both services
+      const allAgentIds = [
+        ...new Set([
+          ...phoneOrders.map(o => o.processed_by).filter(Boolean),
+          ...gameOrders.map(o => o.processed_by).filter(Boolean)
+        ])
+      ];
 
       // Fetch agent profiles
       const { data: profiles } = await supabase
         .from('profiles')
         .select('user_id, full_name, phone')
-        .in('user_id', agentIds);
+        .in('user_id', allAgentIds);
 
       const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
       // Calculate stats per agent
       const statsMap = new Map<string, AgentStats>();
 
-      for (const order of orders || []) {
-        if (!order.processed_by) continue;
-
-        const agentId = order.processed_by;
-        const profile = profilesMap.get(agentId);
-
+      const getOrCreateAgent = (agentId: string): AgentStats => {
         if (!statsMap.has(agentId)) {
+          const profile = profilesMap.get(agentId);
           statsMap.set(agentId, {
             agent_id: agentId,
             agent_name: profile?.full_name || 'غير معروف',
@@ -133,21 +176,63 @@ const AgentAccountingReport = () => {
             total_pending_amount: 0,
             total_fees_collected: 0,
             net_due: 0,
+            phone_topup: createEmptyServiceStats(),
+            game_topup: createEmptyServiceStats(),
           });
         }
+        return statsMap.get(agentId)!;
+      };
 
-        const stats = statsMap.get(agentId)!;
+      // Process phone topup orders
+      for (const order of phoneOrders) {
+        if (!order.processed_by) continue;
+        const stats = getOrCreateAgent(order.processed_by);
+        
+        stats.phone_topup.total_orders++;
         stats.total_orders++;
 
         if (order.status === 'approved') {
+          stats.phone_topup.approved_orders++;
           stats.approved_orders++;
+          stats.phone_topup.total_approved_amount += order.amount || 0;
           stats.total_approved_amount += order.amount || 0;
+          stats.phone_topup.total_fees_collected += order.fee_amount || 0;
           stats.total_fees_collected += order.fee_amount || 0;
         } else if (order.status === 'rejected') {
+          stats.phone_topup.rejected_orders++;
           stats.rejected_orders++;
+          stats.phone_topup.total_rejected_amount += order.amount || 0;
           stats.total_rejected_amount += order.amount || 0;
         } else if (order.status === 'pending') {
+          stats.phone_topup.pending_orders++;
           stats.pending_orders++;
+          stats.phone_topup.total_pending_amount += order.amount || 0;
+          stats.total_pending_amount += order.amount || 0;
+        }
+      }
+
+      // Process game topup orders (game orders don't have fee_amount, so we use 0)
+      for (const order of gameOrders) {
+        if (!order.processed_by) continue;
+        const stats = getOrCreateAgent(order.processed_by);
+        
+        stats.game_topup.total_orders++;
+        stats.total_orders++;
+
+        if (order.status === 'approved') {
+          stats.game_topup.approved_orders++;
+          stats.approved_orders++;
+          stats.game_topup.total_approved_amount += order.amount || 0;
+          stats.total_approved_amount += order.amount || 0;
+        } else if (order.status === 'rejected') {
+          stats.game_topup.rejected_orders++;
+          stats.rejected_orders++;
+          stats.game_topup.total_rejected_amount += order.amount || 0;
+          stats.total_rejected_amount += order.amount || 0;
+        } else if (order.status === 'pending') {
+          stats.game_topup.pending_orders++;
+          stats.pending_orders++;
+          stats.game_topup.total_pending_amount += order.amount || 0;
           stats.total_pending_amount += order.amount || 0;
         }
       }
@@ -216,6 +301,8 @@ const AgentAccountingReport = () => {
       'المبلغ المشحون',
       'الرسوم المحصلة',
       'المستحق للوكيل',
+      'طلبات الهاتف',
+      'طلبات الألعاب',
     ];
 
     const rows = agentStats.map(agent => [
@@ -227,6 +314,8 @@ const AgentAccountingReport = () => {
       agent.total_approved_amount,
       agent.total_fees_collected,
       agent.net_due,
+      agent.phone_topup.approved_orders,
+      agent.game_topup.approved_orders,
     ]);
 
     // Add totals row
@@ -239,6 +328,8 @@ const AgentAccountingReport = () => {
       totals.totalApprovedAmount,
       totals.totalFees,
       totals.totalNetDue,
+      agentStats.reduce((sum, a) => sum + a.phone_topup.approved_orders, 0),
+      agentStats.reduce((sum, a) => sum + a.game_topup.approved_orders, 0),
     ]);
 
     const csvContent = [
@@ -387,6 +478,8 @@ const AgentAccountingReport = () => {
                     <TableHead className="text-center">
                       <span className="text-red-500">مرفوضة</span>
                     </TableHead>
+                    <TableHead className="text-center">📱 هاتف</TableHead>
+                    <TableHead className="text-center">🎮 ألعاب</TableHead>
                     <TableHead className="text-center">المبلغ المشحون</TableHead>
                     <TableHead className="text-center">الرسوم</TableHead>
                     <TableHead className="text-center">
@@ -418,6 +511,16 @@ const AgentAccountingReport = () => {
                           {agent.rejected_orders}
                         </span>
                       </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-blue-500 font-medium">
+                          {agent.phone_topup.approved_orders}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-purple-500 font-medium">
+                          {agent.game_topup.approved_orders}
+                        </span>
+                      </TableCell>
                       <TableCell className="text-center font-medium">
                         {formatCurrency(agent.total_approved_amount)}
                       </TableCell>
@@ -443,6 +546,12 @@ const AgentAccountingReport = () => {
                     </TableCell>
                     <TableCell className="text-center text-red-500">
                       {totals.totalRejected}
+                    </TableCell>
+                    <TableCell className="text-center text-blue-500">
+                      {agentStats.reduce((sum, a) => sum + a.phone_topup.approved_orders, 0)}
+                    </TableCell>
+                    <TableCell className="text-center text-purple-500">
+                      {agentStats.reduce((sum, a) => sum + a.game_topup.approved_orders, 0)}
                     </TableCell>
                     <TableCell className="text-center">
                       {formatCurrency(totals.totalApprovedAmount)}
