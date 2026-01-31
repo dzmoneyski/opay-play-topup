@@ -263,10 +263,10 @@ const AgentAccountingReport = () => {
         }
       }
 
-      // Calculate net due for each agent
+      // Calculate net due for each agent (Amount + Fees)
       const agentStatsArray = Array.from(statsMap.values()).map(agent => ({
         ...agent,
-        net_due: agent.total_approved_amount - agent.total_fees_collected,
+        net_due: agent.total_approved_amount + agent.total_fees_collected,
       }));
 
       // Sort by total approved amount
