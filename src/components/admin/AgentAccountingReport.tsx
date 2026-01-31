@@ -211,7 +211,7 @@ const AgentAccountingReport = () => {
         }
       }
 
-      // Process game topup orders (game orders don't have fee_amount, so we use 0)
+      // Process game topup orders (uses 'completed' instead of 'approved')
       for (const order of gameOrders) {
         if (!order.processed_by) continue;
         const stats = getOrCreateAgent(order.processed_by);
@@ -219,7 +219,7 @@ const AgentAccountingReport = () => {
         stats.game_topup.total_orders++;
         stats.total_orders++;
 
-        if (order.status === 'approved') {
+        if (order.status === 'approved' || order.status === 'completed') {
           stats.game_topup.approved_orders++;
           stats.approved_orders++;
           stats.game_topup.total_approved_amount += order.amount || 0;
