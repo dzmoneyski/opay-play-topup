@@ -314,7 +314,7 @@ const AgentAccountingReport = () => {
   };
 
   const formatCurrency = (amount: number) => {
-    return amount.toLocaleString('ar-DZ') + ' د.ج';
+    return Math.round(amount) + ' د.ج';
   };
 
   const exportToCSV = () => {
