@@ -445,23 +445,42 @@ export default function DepositsPage() {
                   {/* Deposit Details */}
                   <div className="grid gap-2 text-sm">
                     {deposit.payment_method === 'flexy_mobilis' ? (
-                      <>
-                        <div className="flex justify-between items-center p-2 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
-                          <span className="text-green-700 dark:text-green-400 font-semibold flex items-center gap-1">
-                            <Smartphone className="h-3.5 w-3.5" />
-                            رقم المرسل:
-                          </span>
-                          <span className="font-bold text-green-800 dark:text-green-300 font-mono text-base" dir="ltr">
-                            {deposit.transaction_id || 'غير محدد'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">وقت الطلب الدقيق:</span>
-                          <span className="font-medium font-mono" dir="ltr">
-                            {new Date(deposit.created_at).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                          </span>
-                        </div>
-                      </>
+                      (() => {
+                        // Parse transaction_id format: "phone|HH:MM:SS" or legacy "phone"
+                        const parts = (deposit.transaction_id || '').split('|');
+                        const senderPhone = parts[0] || 'غير محدد';
+                        const sendTime = parts[1] || null;
+                        return (
+                          <>
+                            <div className="flex justify-between items-center p-2 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+                              <span className="text-green-700 dark:text-green-400 font-semibold flex items-center gap-1">
+                                <Smartphone className="h-3.5 w-3.5" />
+                                رقم المرسل:
+                              </span>
+                              <span className="font-bold text-green-800 dark:text-green-300 font-mono text-base" dir="ltr">
+                                {senderPhone}
+                              </span>
+                            </div>
+                            {sendTime && (
+                              <div className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                                <span className="text-blue-700 dark:text-blue-400 font-semibold flex items-center gap-1">
+                                  <Clock className="h-3.5 w-3.5" />
+                                  وقت الإرسال (من المستخدم):
+                                </span>
+                                <span className="font-bold text-blue-800 dark:text-blue-300 font-mono text-lg" dir="ltr">
+                                  {sendTime}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">وقت تقديم الطلب:</span>
+                              <span className="font-medium font-mono" dir="ltr">
+                                {new Date(deposit.created_at).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                              </span>
+                            </div>
+                          </>
+                        );
+                      })()
                     ) : (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">معرف المعاملة:</span>
@@ -477,10 +496,12 @@ export default function DepositsPage() {
                   {/* Receipt Image */}
                   {deposit.receipt_image && (
                     <div>
-                      <h4 className="text-sm font-medium mb-2">صورة الوصل</h4>
+                      <h4 className="text-sm font-medium mb-2">
+                        {deposit.payment_method === 'flexy_mobilis' ? '📱 صورة رسالة تأكيد الإرسال' : 'صورة الوصل'}
+                      </h4>
                       <img
                         src={getImageUrl(deposit.receipt_image) || ''}
-                        alt="وصل الإيداع"
+                        alt={deposit.payment_method === 'flexy_mobilis' ? 'تأكيد إرسال الفليكسي' : 'وصل الإيداع'}
                         className="max-w-md max-h-64 object-contain border rounded-md cursor-pointer"
                         onClick={() => window.open(getImageUrl(deposit.receipt_image) || '', '_blank')}
                       />
@@ -642,7 +663,16 @@ export default function DepositsPage() {
                   </div>
                     <div className="text-sm text-muted-foreground space-y-1">
                     <p>طريقة الدفع: {getPaymentMethodLabel(deposit.payment_method)}</p>
-                    <p>{deposit.payment_method === 'flexy_mobilis' ? 'رقم المرسل' : 'معرف المعاملة'}: {deposit.transaction_id}</p>
+                    {deposit.payment_method === 'flexy_mobilis' ? (
+                      <>
+                        <p>رقم المرسل: {(deposit.transaction_id || '').split('|')[0]}</p>
+                        {(deposit.transaction_id || '').includes('|') && (
+                          <p className="font-semibold text-blue-600">وقت الإرسال: <span className="font-mono">{(deposit.transaction_id || '').split('|')[1]}</span></p>
+                        )}
+                      </>
+                    ) : (
+                      <p>معرف المعاملة: {deposit.transaction_id}</p>
+                    )}
                     <p>تاريخ الطلب: {formatDate(deposit.created_at)}</p>
                     {deposit.processed_at && (
                       <p>تاريخ المراجعة: {formatDate(deposit.processed_at)}</p>

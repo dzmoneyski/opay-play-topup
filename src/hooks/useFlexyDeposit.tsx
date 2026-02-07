@@ -86,7 +86,9 @@ export const useFlexyDeposit = () => {
 
   const createFlexyDeposit = async (
     senderPhone: string,
-    amount: number
+    amount: number,
+    sendTime: string,
+    receiptFile?: File
   ): Promise<{ success: boolean; error?: string }> => {
     if (!user) {
       toast({
@@ -95,6 +97,16 @@ export const useFlexyDeposit = () => {
         variant: 'destructive',
       });
       return { success: false, error: 'غير مصرح' };
+    }
+
+    // Validate time format (HH:MM:SS)
+    if (!/^\d{2}:\d{2}:\d{2}$/.test(sendTime)) {
+      toast({
+        title: 'وقت غير صحيح',
+        description: 'يرجى إدخال الوقت بالصيغة الصحيحة (ساعة:دقيقة:ثانية)',
+        variant: 'destructive',
+      });
+      return { success: false, error: 'وقت غير صحيح' };
     }
 
     // Validation
@@ -162,13 +174,37 @@ export const useFlexyDeposit = () => {
 
     setSubmitting(true);
     try {
+      // Upload receipt image if provided
+      let receiptPath: string | null = null;
+      if (receiptFile) {
+        const fileExt = receiptFile.name.split('.').pop();
+        const fileName = `${user.id}/flexy_${Date.now()}.${fileExt}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('deposit-receipts')
+          .upload(fileName, receiptFile);
+        if (uploadError) {
+          toast({
+            title: 'خطأ في الرفع',
+            description: 'فشل في رفع صورة التأكيد',
+            variant: 'destructive',
+          });
+          setSubmitting(false);
+          return { success: false, error: 'فشل في رفع الصورة' };
+        }
+        receiptPath = uploadData.path;
+      }
+
+      // Store sender phone + send time in transaction_id (format: phone|HH:MM:SS)
+      const transactionRef = `${cleaned}|${sendTime}`;
+
       const { error } = await supabase
         .from('deposits')
         .insert({
           user_id: user.id,
           payment_method: 'flexy_mobilis',
           amount,
-          transaction_id: cleaned, // Store sender phone as transaction_id
+          transaction_id: transactionRef,
+          receipt_image: receiptPath,
           status: 'pending',
         });
 

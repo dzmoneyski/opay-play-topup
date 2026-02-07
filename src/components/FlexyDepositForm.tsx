@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,9 @@ import {
   Copy,
   Check,
   Zap,
+  Camera,
+  Image as ImageIcon,
+  X,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import mobilisLogo from '@/assets/mobilis-logo.png';
@@ -32,7 +35,13 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
 
   const [senderPhone, setSenderPhone] = useState('');
   const [amount, setAmount] = useState('');
+  const [sendHour, setSendHour] = useState('');
+  const [sendMinute, setSendMinute] = useState('');
+  const [sendSecond, setSendSecond] = useState('');
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const numericAmount = parseFloat(amount) || 0;
   const { fee, net } = calculateFlexyFee(numericAmount);
@@ -42,21 +51,83 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
     const cleaned = value.replace(/[^\d]/g, '');
     setSenderPhone(cleaned);
     if (phoneError) setPhoneError('');
-
-    // Validate on the fly
     if (cleaned.length > 0 && cleaned.length >= 2 && !cleaned.startsWith('06')) {
       setPhoneError('رقم موبيليس يجب أن يبدأ بـ 06');
     }
   };
 
+  const handleTimeInput = (
+    value: string,
+    setter: (v: string) => void,
+    max: number
+  ) => {
+    const cleaned = value.replace(/[^\d]/g, '').slice(0, 2);
+    if (cleaned === '' || parseInt(cleaned) <= max) {
+      setter(cleaned);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'حجم الملف كبير',
+        description: 'الحد الأقصى لحجم الصورة هو 5 ميجابايت',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setReceiptFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setReceiptPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const removeFile = () => {
+    setReceiptFile(null);
+    setReceiptPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const isTimeValid =
+    sendHour.length === 2 && sendMinute.length === 2 && sendSecond.length === 2;
+
+  const formattedTime = isTimeValid
+    ? `${sendHour}:${sendMinute}:${sendSecond}`
+    : '';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const result = await createFlexyDeposit(senderPhone, numericAmount);
+    if (!isTimeValid) {
+      toast({
+        title: 'وقت غير صحيح',
+        description: 'يرجى إدخال وقت الإرسال بالكامل',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!receiptFile) {
+      toast({
+        title: 'صورة مطلوبة',
+        description: 'يرجى رفع صورة رسالة تأكيد الإرسال',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const result = await createFlexyDeposit(senderPhone, numericAmount, formattedTime, receiptFile);
     if (result.success) {
       setSenderPhone('');
       setAmount('');
-      setPhoneError('');
+      setSendHour('');
+      setSendMinute('');
+      setSendSecond('');
+      removeFile();
       fetchBalance();
       onSuccess?.();
     }
@@ -155,9 +226,9 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
           <ol className="space-y-3">
             {[
               'أرسل فليكسي بالمبلغ المطلوب إلى الرقم أعلاه',
-              'أدخل رقم هاتفك (الذي أرسلت منه) والمبلغ',
+              'أدخل رقم هاتفك والمبلغ ووقت الإرسال الدقيق',
+              'ارفع صورة رسالة تأكيد الإرسال',
               'أكد الطلب وانتظر الموافقة',
-              'سيُضاف المبلغ إلى رصيدك بعد الخصم',
             ].map((step, i) => (
               <li key={i} className="flex items-start gap-3 text-muted-foreground">
                 <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-sm">
@@ -183,6 +254,7 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Phone & Amount Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-3">
               <Label htmlFor="senderPhone" className="text-foreground font-semibold text-base flex items-center gap-2">
@@ -246,6 +318,129 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
             </div>
           </div>
 
+          {/* Exact Time Input */}
+          <div className="space-y-3">
+            <Label className="text-foreground font-semibold text-base flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-green-500/10">
+                <Clock className="h-4 w-4 text-green-600" />
+              </div>
+              وقت الإرسال الدقيق
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              أدخل الوقت المعروض في رسالة تأكيد الإرسال بالضبط (ساعة : دقيقة : ثانية)
+            </p>
+            <div className="flex items-center gap-2 justify-center" dir="ltr">
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-green-500 rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="ثا"
+                  value={sendSecond}
+                  onChange={(e) => handleTimeInput(e.target.value, setSendSecond, 59)}
+                  maxLength={2}
+                  disabled={isOverLimit}
+                  className="relative w-20 h-14 text-center text-2xl font-bold font-mono bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-green-500/50 focus:border-green-500 transition-all rounded-xl"
+                />
+              </div>
+              <span className="text-3xl font-bold text-muted-foreground">:</span>
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-green-500 rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="دق"
+                  value={sendMinute}
+                  onChange={(e) => handleTimeInput(e.target.value, setSendMinute, 59)}
+                  maxLength={2}
+                  disabled={isOverLimit}
+                  className="relative w-20 h-14 text-center text-2xl font-bold font-mono bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-green-500/50 focus:border-green-500 transition-all rounded-xl"
+                />
+              </div>
+              <span className="text-3xl font-bold text-muted-foreground">:</span>
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-green-500 rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="سا"
+                  value={sendHour}
+                  onChange={(e) => handleTimeInput(e.target.value, setSendHour, 23)}
+                  maxLength={2}
+                  disabled={isOverLimit}
+                  className="relative w-20 h-14 text-center text-2xl font-bold font-mono bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-green-500/50 focus:border-green-500 transition-all rounded-xl"
+                />
+              </div>
+            </div>
+            {isTimeValid && (
+              <p className="text-xs text-green-600 flex items-center justify-center gap-1">
+                <CheckCircle className="h-3 w-3" /> الوقت: {formattedTime}
+              </p>
+            )}
+          </div>
+
+          {/* Receipt Image Upload */}
+          <div className="space-y-3">
+            <Label className="text-foreground font-semibold text-base flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-green-500/10">
+                <Camera className="h-4 w-4 text-green-600" />
+              </div>
+              صورة رسالة تأكيد الإرسال
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              ارفع لقطة شاشة لرسالة التأكيد التي ظهرت بعد إرسال الفليكسي (تحتوي على الوقت والمبلغ)
+            </p>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+              disabled={isOverLimit}
+            />
+
+            {!receiptFile ? (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isOverLimit}
+                className="w-full p-8 border-2 border-dashed border-border/50 hover:border-green-500/50 rounded-2xl transition-all hover:bg-green-500/5 group disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="flex flex-col items-center gap-3 text-muted-foreground group-hover:text-green-600 transition-colors">
+                  <div className="p-4 rounded-2xl bg-muted group-hover:bg-green-500/10 transition-colors">
+                    <ImageIcon className="h-8 w-8" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-semibold text-base">اضغط لرفع صورة التأكيد</p>
+                    <p className="text-xs mt-1">PNG, JPG — الحد الأقصى 5 ميجابايت</p>
+                  </div>
+                </div>
+              </button>
+            ) : (
+              <div className="relative rounded-2xl border-2 border-green-500/30 overflow-hidden bg-green-500/5">
+                <img
+                  src={receiptPreview || ''}
+                  alt="صورة التأكيد"
+                  className="w-full max-h-64 object-contain p-2"
+                />
+                <button
+                  type="button"
+                  onClick={removeFile}
+                  className="absolute top-3 left-3 p-2 rounded-full bg-destructive text-white hover:bg-destructive/90 shadow-lg transition-all"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                <div className="p-3 bg-green-500/10 border-t border-green-500/20 flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-green-700 dark:text-green-400 font-medium">
+                    تم تحميل الصورة بنجاح
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Fee Preview */}
           {numericAmount > 0 && numericAmount >= settings.min_amount && numericAmount <= settings.max_amount && (
             <div className="relative p-8 bg-gradient-to-br from-green-500/5 via-green-400/5 to-transparent rounded-3xl border-2 border-green-500/10 shadow-lg">
@@ -302,7 +497,9 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
                 !amount ||
                 numericAmount < settings.min_amount ||
                 numericAmount > settings.max_amount ||
-                !!phoneError
+                !!phoneError ||
+                !isTimeValid ||
+                !receiptFile
               }
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
