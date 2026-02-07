@@ -83,10 +83,21 @@ export const useTransactionHistory = (limit?: number) => {
 
       // Process deposits
       deposits.data?.forEach(deposit => {
+        const methodLabels: Record<string, string> = {
+          baridimob: 'بريدي موب',
+          ccp: 'حساب جاري بريدي',
+          edahabiya: 'الذهبية',
+          albaraka: 'بنك البركة',
+          badr: 'بنك البدر',
+          atm: 'صراف آلي',
+          cash: 'دفع نقدي',
+          flexy_mobilis: 'فليكسي موبيليس',
+        };
+        const methodName = methodLabels[deposit.payment_method] || deposit.payment_method;
         allTransactions.push({
           id: deposit.id,
           type: 'deposit',
-          description: `إيداع عبر ${deposit.payment_method === 'baridimob' ? 'بريدي موب' : deposit.payment_method === 'ccp' ? 'حساب جاري بريدي' : 'الذهبية'}`,
+          description: `إيداع عبر ${methodName}`,
           amount: Number(deposit.amount),
           status: deposit.status,
           created_at: deposit.created_at,
