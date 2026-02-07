@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAdminDeposits } from '@/hooks/useAdminDeposits';
+import { useFlexyDeposit } from '@/hooks/useFlexyDeposit';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ArrowDownToLine,
@@ -40,6 +41,7 @@ const getPaymentMethodLabel = (method: string) => {
 
 export default function DepositsPage() {
   const { deposits, loading, approveDeposit, rejectDeposit, fetchDeposits } = useAdminDeposits();
+  const { settings: flexySettings } = useFlexyDeposit();
   const [selectedDeposit, setSelectedDeposit] = React.useState<any>(null);
   const [rejectionReason, setRejectionReason] = React.useState('');
   const [approvalNotes, setApprovalNotes] = React.useState('');
@@ -66,6 +68,12 @@ export default function DepositsPage() {
       fetchDeposits(false); // جلب مع التصفح
     }
   }, [searchQuery, statusFilter, dateFrom, dateTo, amountMin, amountMax, timeFrom, timeTo]);
+
+  // حساب المبلغ المعدّل لإيداعات الفليكسي (خصم رسوم الفليكسي)
+  const calculateFlexyAdjustedAmount = (originalAmount: number) => {
+    const flexyFee = Math.round((originalAmount * flexySettings.fee_percentage) / 100);
+    return originalAmount - flexyFee;
+  };
 
   const getImageUrl = (imagePath: string | null) => {
     if (!imagePath) return null;
@@ -517,7 +525,12 @@ export default function DepositsPage() {
                           onClick={() => { 
                             setSelectedDeposit(deposit);
                             setApprovalNotes('');
-                            setAdjustedAmount(String(deposit.amount));
+                            // للفليكسي: خصم رسوم الفليكسي تلقائياً
+                            if (deposit.payment_method === 'flexy_mobilis') {
+                              setAdjustedAmount(String(calculateFlexyAdjustedAmount(deposit.amount)));
+                            } else {
+                              setAdjustedAmount(String(deposit.amount));
+                            }
                           }}
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
@@ -532,6 +545,33 @@ export default function DepositsPage() {
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
+                          {/* عرض تفاصيل رسوم الفليكسي */}
+                          {deposit.payment_method === 'flexy_mobilis' && (
+                            <div className="p-4 bg-orange-50 dark:bg-orange-950/30 rounded-lg border border-orange-200 dark:border-orange-800 space-y-2">
+                              <h4 className="font-semibold text-orange-800 dark:text-orange-300 text-sm">📊 تفاصيل رسوم الفليكسي</h4>
+                              <div className="text-sm space-y-1">
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">المبلغ الأصلي:</span>
+                                  <span className="font-medium">{formatAmount(deposit.amount)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-orange-600 dark:text-orange-400">رسوم الفليكسي ({flexySettings.fee_percentage}%):</span>
+                                  <span className="font-medium text-orange-600 dark:text-orange-400">
+                                    -{formatAmount(Math.round((deposit.amount * flexySettings.fee_percentage) / 100))}
+                                  </span>
+                                </div>
+                                <div className="border-t border-orange-200 dark:border-orange-700 pt-1">
+                                  <div className="flex justify-between font-bold">
+                                    <span>بعد خصم الفليكسي:</span>
+                                    <span className="text-green-600">{formatAmount(calculateFlexyAdjustedAmount(deposit.amount))}</span>
+                                  </div>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2">
+                                  + سيتم تطبيق رسوم الإيداع العامة (0.5%) تلقائياً عند القبول
+                                </p>
+                              </div>
+                            </div>
+                          )}
                           <div>
                             <Label htmlFor="approval-notes">ملاحظات (اختيارية)</Label>
                             <Textarea
@@ -553,7 +593,9 @@ export default function DepositsPage() {
                               onChange={(e) => setAdjustedAmount(e.target.value)}
                             />
                             <p className="text-xs text-muted-foreground mt-1">
-                              المبلغ الذي سيتم اعتماده عند قبول الطلب
+                              {deposit.payment_method === 'flexy_mobilis' 
+                                ? 'المبلغ بعد خصم رسوم الفليكسي (يمكنك تعديله يدوياً)' 
+                                : 'المبلغ الذي سيتم اعتماده عند قبول الطلب'}
                             </p>
                           </div>
                         </div>
