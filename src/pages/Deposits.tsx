@@ -38,14 +38,16 @@ import ccpLogo from '@/assets/ccp-logo.png';
 import edahabiyaLogo from '@/assets/edahabiya-logo.png';
 import albarakaLogo from '@/assets/albaraka-logo.png';
 import badrLogo from '@/assets/badr-logo.png';
+import mobilisLogo from '@/assets/mobilis-logo.png';
+import FlexyDepositForm from '@/components/FlexyDepositForm';
 
 export default function Deposits() {
-  const { deposits, loading, createDeposit } = useDeposits();
+  const { deposits, loading, createDeposit, fetchDeposits } = useDeposits();
   const { balance, loading: balanceLoading, fetchBalance } = useBalance();
   const { toast } = useToast();
   const { feeSettings } = useFeeSettings();
   const { wallets, loading: walletsLoading } = usePaymentWallets();
-  const [selectedMethod, setSelectedMethod] = React.useState<PaymentMethod>('baridimob');
+  const [selectedMethod, setSelectedMethod] = React.useState<PaymentMethod>('flexy_mobilis');
   const [amount, setAmount] = React.useState('');
   const [transactionId, setTransactionId] = React.useState('');
   const [receiptFile, setReceiptFile] = React.useState<File | null>(null);
@@ -144,6 +146,12 @@ export default function Deposits() {
   };
 
   const paymentMethods = [
+    { 
+      id: 'flexy_mobilis', 
+      name: 'فليكسي موبيليس', 
+      logo: mobilisLogo,
+      description: 'الإيداع عبر فليكسي موبيليس'
+    },
     { 
       id: 'baridimob', 
       name: 'Baridimob', 
@@ -269,7 +277,7 @@ export default function Deposits() {
         {/* Premium Payment Methods Grid */}
         <div className="mb-10 animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <h2 className="text-2xl font-bold text-white mb-6 text-center">اختر طريقة الدفع</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
             {paymentMethods.map((method) => (
               <button
                 key={method.id}
@@ -332,6 +340,13 @@ export default function Deposits() {
 
         <Tabs value={selectedMethod} onValueChange={(value) => setSelectedMethod(value as PaymentMethod)} className="space-y-6">
 
+          {/* Flexy Mobilis */}
+          <TabsContent value="flexy_mobilis" className="space-y-6">
+            <FlexyDepositForm onSuccess={() => {
+              fetchBalance();
+              fetchDeposits();
+            }} />
+          </TabsContent>
 
           {/* Deposit Form */}
           <TabsContent value="baridimob" className="space-y-6">
@@ -1332,13 +1347,13 @@ export default function Deposits() {
                       <div className="flex items-center gap-2">
                         <span className="font-semibold">{deposit.amount} دج</span>
                         <span className="text-sm text-muted-foreground">
-                          عبر {deposit.payment_method}
+                          عبر {deposit.payment_method === 'flexy_mobilis' ? 'فليكسي موبيليس' : deposit.payment_method}
                         </span>
                       </div>
                       {getStatusBadge(deposit.status)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      <p>معرف المعاملة: {deposit.transaction_id}</p>
+                      <p>{deposit.payment_method === 'flexy_mobilis' ? 'رقم المرسل' : 'معرف المعاملة'}: {deposit.transaction_id}</p>
                       <p>تاريخ الإرسال: {formatDate(deposit.created_at)}</p>
                       {deposit.admin_notes && (
                         <p className="text-blue-600 font-medium">ملاحظة: {deposit.admin_notes}</p>

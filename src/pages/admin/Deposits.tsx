@@ -23,6 +23,20 @@ import {
   X
 } from 'lucide-react';
 
+const getPaymentMethodLabel = (method: string) => {
+  const labels: Record<string, string> = {
+    baridimob: 'بريدي موب',
+    ccp: 'CCP',
+    edahabiya: 'الذهبية',
+    albaraka: 'بنك البركة',
+    badr: 'بنك البدر',
+    atm: 'صراف آلي',
+    cash: 'دفع نقدي',
+    flexy_mobilis: 'فليكسي موبيليس',
+  };
+  return labels[method] || method;
+};
+
 export default function DepositsPage() {
   const { deposits, loading, approveDeposit, rejectDeposit, fetchDeposits } = useAdminDeposits();
   const [selectedDeposit, setSelectedDeposit] = React.useState<any>(null);
@@ -415,7 +429,7 @@ export default function DepositsPage() {
                         </span>
                         <span className="flex items-center gap-1">
                           <ArrowDownToLine className="h-3 w-3" />
-                          <span>{deposit.payment_method}</span>
+                          <span>{getPaymentMethodLabel(deposit.payment_method)}</span>
                         </span>
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
@@ -605,9 +619,9 @@ export default function DepositsPage() {
                     </div>
                     {getStatusBadge(deposit.status)}
                   </div>
-                  <div className="text-sm text-muted-foreground space-y-1">
-                    <p>طريقة الدفع: {deposit.payment_method}</p>
-                    <p>معرف المعاملة: {deposit.transaction_id}</p>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                    <p>طريقة الدفع: {getPaymentMethodLabel(deposit.payment_method)}</p>
+                    <p>{deposit.payment_method === 'flexy_mobilis' ? 'رقم المرسل' : 'معرف المعاملة'}: {deposit.transaction_id}</p>
                     <p>تاريخ الطلب: {formatDate(deposit.created_at)}</p>
                     {deposit.processed_at && (
                       <p>تاريخ المراجعة: {formatDate(deposit.processed_at)}</p>
