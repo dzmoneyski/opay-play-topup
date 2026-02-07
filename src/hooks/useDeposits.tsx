@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
-export type PaymentMethod = 'baridimob' | 'ccp' | 'edahabiya' | 'albaraka' | 'badr' | 'atm' | 'cash';
+export type PaymentMethod = 'baridimob' | 'ccp' | 'edahabiya' | 'albaraka' | 'badr' | 'atm' | 'cash' | 'flexy_mobilis';
 
 export interface Deposit {
   id: string;
