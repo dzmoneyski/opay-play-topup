@@ -20,7 +20,8 @@ import {
   Receipt,
   Search,
   Filter,
-  X
+  X,
+  Smartphone
 } from 'lucide-react';
 
 const getPaymentMethodLabel = (method: string) => {
@@ -443,12 +444,32 @@ export default function DepositsPage() {
                 <CardContent className="space-y-4">
                   {/* Deposit Details */}
                   <div className="grid gap-2 text-sm">
+                    {deposit.payment_method === 'flexy_mobilis' ? (
+                      <>
+                        <div className="flex justify-between items-center p-2 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+                          <span className="text-green-700 dark:text-green-400 font-semibold flex items-center gap-1">
+                            <Smartphone className="h-3.5 w-3.5" />
+                            رقم المرسل:
+                          </span>
+                          <span className="font-bold text-green-800 dark:text-green-300 font-mono text-base" dir="ltr">
+                            {deposit.transaction_id || 'غير محدد'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">وقت الطلب الدقيق:</span>
+                          <span className="font-medium font-mono" dir="ltr">
+                            {new Date(deposit.created_at).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">معرف المعاملة:</span>
+                        <span className="font-medium">{deposit.transaction_id || 'غير محدد'}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">معرف المعاملة:</span>
-                      <span className="font-medium">{deposit.transaction_id || 'غير محدد'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">رقم الهاتف:</span>
+                      <span className="text-muted-foreground">رقم هاتف المستخدم:</span>
                       <span className="font-medium">{deposit.profiles?.phone || 'غير محدد'}</span>
                     </div>
                   </div>
