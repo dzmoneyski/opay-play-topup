@@ -22,11 +22,25 @@ const DEFAULT_SETTINGS: FlexyDepositSettings = {
 };
 
 /**
- * Generate a unique deposit amount by adding a random 1-99 DZD offset.
- * This makes each deposit easily identifiable in the admin's Flexy history.
+ * Generate a unique deposit amount by adding a small random offset.
+ * The offset scales with the base amount to keep it reasonable for small deposits.
+ * - 100-299 DZD → +1 to +5
+ * - 300-999 DZD → +1 to +15
+ * - 1000-2999 DZD → +1 to +39
+ * - 3000+ DZD → +1 to +79
  */
 export const generateUniqueAmount = (baseAmount: number): number => {
-  const offset = Math.floor(Math.random() * 99) + 1; // 1-99
+  let maxOffset: number;
+  if (baseAmount < 300) {
+    maxOffset = 5;
+  } else if (baseAmount < 1000) {
+    maxOffset = 15;
+  } else if (baseAmount < 3000) {
+    maxOffset = 39;
+  } else {
+    maxOffset = 79;
+  }
+  const offset = Math.floor(Math.random() * maxOffset) + 1;
   return baseAmount + offset;
 };
 
