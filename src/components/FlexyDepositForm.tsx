@@ -44,8 +44,10 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const numericAmount = parseFloat(amount) || 0;
-  const { fee, net } = calculateFlexyFee(numericAmount);
   const isOverLimit = todayCount >= settings.daily_limit;
+
+  // Fee is calculated on the FULL unique amount (what user actually sends)
+  const { fee: uniqueFee, net: uniqueNet } = calculateFlexyFee(uniqueAmount || 0);
 
   // Generate unique amount when base amount changes and is valid
   useEffect(() => {
@@ -284,19 +286,19 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
             </p>
           </div>
 
-          {/* Unique Amount Display */}
+          {/* Unique Amount Display - PROMINENT */}
           {uniqueAmount && numericAmount >= settings.min_amount && numericAmount <= settings.max_amount && (
             <div className="relative">
-              <div className="absolute inset-0 bg-amber-500 rounded-3xl blur-lg opacity-15"></div>
-              <div className="relative p-6 bg-gradient-to-br from-amber-500/10 to-orange-400/5 rounded-3xl border-2 border-amber-500/30">
-                <div className="flex items-center justify-between mb-4">
+              <div className="absolute inset-0 bg-amber-500 rounded-3xl blur-xl opacity-20"></div>
+              <div className="relative p-8 bg-gradient-to-br from-amber-500/15 to-orange-400/10 rounded-3xl border-2 border-amber-500/40 shadow-xl">
+                <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-2xl bg-amber-500">
+                    <div className="p-3 rounded-2xl bg-amber-500 shadow-lg">
                       <Hash className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-foreground text-lg">المبلغ الفريد للإرسال</h3>
-                      <p className="text-xs text-muted-foreground">أرسل هذا المبلغ بالضبط كفليكسي</p>
+                      <h3 className="font-bold text-foreground text-xl">⚡ المبلغ المطلوب إرساله</h3>
+                      <p className="text-sm text-muted-foreground">أرسل هذا المبلغ بالضبط كفليكسي</p>
                     </div>
                   </div>
                   <Button
@@ -306,28 +308,38 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
                     onClick={() => generateNewUniqueAmount(numericAmount)}
                     disabled={generatingAmount}
                     className="text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
+                    title="توليد مبلغ فريد جديد"
                   >
                     <RefreshCw className={`h-4 w-4 ${generatingAmount ? 'animate-spin' : ''}`} />
                   </Button>
                 </div>
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white/60 dark:bg-black/30 rounded-2xl border border-amber-500/20">
+                <div className="flex flex-col items-center gap-4 p-8 bg-white/70 dark:bg-black/40 rounded-2xl border-2 border-amber-500/30 shadow-inner">
                   {generatingAmount ? (
-                    <div className="flex items-center gap-2">
-                      <RefreshCw className="h-5 w-5 animate-spin text-amber-500" />
-                      <span className="text-muted-foreground">جاري التوليد...</span>
+                    <div className="flex items-center gap-2 py-4">
+                      <RefreshCw className="h-6 w-6 animate-spin text-amber-500" />
+                      <span className="text-muted-foreground text-lg">جاري التوليد...</span>
                     </div>
                   ) : (
-                    <span className="text-4xl font-bold font-mono text-amber-600" dir="ltr">
-                      {uniqueAmount} <span className="text-lg">د.ج</span>
-                    </span>
+                    <>
+                      <span className="text-5xl font-black font-mono text-amber-600" dir="ltr">
+                        {uniqueAmount}
+                      </span>
+                      <span className="text-xl font-bold text-amber-500">دينار جزائري</span>
+                    </>
                   )}
-                  {!generatingAmount && <CopyButton text={uniqueAmount.toString()} />}
+                  {!generatingAmount && (
+                    <div className="w-full flex justify-center">
+                      <CopyButton text={uniqueAmount.toString()} />
+                    </div>
+                  )}
                 </div>
-                <div className="mt-4 p-3 bg-amber-500/10 rounded-xl flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                    يجب إرسال هذا المبلغ بالضبط ({uniqueAmount} د.ج) وليس {numericAmount} د.ج — هذا يساعدنا في التحقق من إيداعك بسرعة
-                  </p>
+                <div className="mt-5 p-4 bg-green-500/10 rounded-xl border border-green-500/20 flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-green-700 dark:text-green-400 font-medium space-y-1">
+                    <p>✅ أرسل <strong>{uniqueAmount} د.ج</strong> فليكسي بالضبط إلى الرقم أعلاه</p>
+                    <p>✅ المبلغ الكامل ({uniqueAmount} د.ج) يُحسب لصالحك بعد خصم الرسوم</p>
+                    <p>✅ هذا المبلغ الفريد يضمن التحقق السريع من إيداعك</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -431,7 +443,7 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
           </div>
 
           {/* Fee Preview */}
-          {numericAmount > 0 && numericAmount >= settings.min_amount && numericAmount <= settings.max_amount && (
+          {uniqueAmount && numericAmount >= settings.min_amount && numericAmount <= settings.max_amount && (
             <div className="relative p-8 bg-gradient-to-br from-green-500/5 via-green-400/5 to-transparent rounded-3xl border-2 border-green-500/10 shadow-lg">
               <div className="flex items-center gap-4 mb-6">
                 <div className="relative">
@@ -443,28 +455,22 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
                 <h3 className="font-bold text-foreground text-xl">ملخص الإيداع</h3>
               </div>
               <div className="space-y-4">
-                {uniqueAmount && (
-                  <div className="flex justify-between items-center p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20">
-                    <span className="text-amber-700 dark:text-amber-400 font-semibold text-base">المبلغ الفريد للإرسال:</span>
-                    <span className="font-bold text-amber-600 text-xl">{uniqueAmount} د.ج</span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center p-4 bg-background/50 rounded-2xl backdrop-blur-sm">
-                  <span className="text-muted-foreground font-semibold text-base">المبلغ الأساسي:</span>
-                  <span className="font-bold text-foreground text-xl">{numericAmount} د.ج</span>
+                <div className="flex justify-between items-center p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20">
+                  <span className="text-amber-700 dark:text-amber-400 font-semibold text-base">المبلغ الفريد المُرسل:</span>
+                  <span className="font-bold text-amber-600 text-xl">{uniqueAmount} د.ج</span>
                 </div>
                 <div className="flex justify-between items-center p-4 bg-background/50 rounded-2xl backdrop-blur-sm">
                   <span className="text-muted-foreground font-semibold text-base">
-                    الرسوم ({settings.fee_percentage}%):
+                    الرسوم ({settings.fee_percentage}%) على المبلغ الكامل:
                   </span>
-                  <span className="font-bold text-orange-600 text-xl">-{fee} د.ج</span>
+                  <span className="font-bold text-orange-600 text-xl">-{uniqueFee} د.ج</span>
                 </div>
                 <div className="h-px bg-gradient-to-r from-transparent via-green-500/30 to-transparent my-2"></div>
                 <div className="relative">
                   <div className="absolute inset-0 bg-green-500/5 rounded-2xl blur-sm"></div>
                   <div className="relative flex justify-between items-center p-5 bg-green-500/10 rounded-2xl border border-green-500/20">
-                    <span className="font-bold text-foreground text-lg">صافي المبلغ المُضاف:</span>
-                    <span className="font-bold text-green-600 text-2xl">{net} د.ج</span>
+                    <span className="font-bold text-foreground text-lg">صافي المبلغ المُضاف لرصيدك:</span>
+                    <span className="font-bold text-green-600 text-2xl">{uniqueNet} د.ج</span>
                   </div>
                 </div>
               </div>
