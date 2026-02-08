@@ -3,7 +3,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { useFlexyDeposit } from '@/hooks/useFlexyDeposit';
 import { useBalance } from '@/hooks/useBalance';
 import {
@@ -12,15 +11,16 @@ import {
   CheckCircle,
   Clock,
   ArrowRight,
+  ArrowLeft,
   AlertCircle,
   Copy,
   Check,
-  Zap,
   Camera,
   Image as ImageIcon,
   X,
   RefreshCw,
-  Hash,
+  Send,
+  ShieldCheck,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import mobilisLogo from '@/assets/mobilis-logo.png';
@@ -29,11 +29,14 @@ interface FlexyDepositFormProps {
   onSuccess?: () => void;
 }
 
+const QUICK_AMOUNTS = [100, 200, 500, 1000, 2000, 5000];
+
 const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
   const { settings, loading, submitting, todayCount, calculateFlexyFee, createFlexyDeposit, getAvailableUniqueAmount } = useFlexyDeposit();
   const { fetchBalance } = useBalance();
   const { toast } = useToast();
 
+  const [step, setStep] = useState(1);
   const [senderPhone, setSenderPhone] = useState('');
   const [amount, setAmount] = useState('');
   const [uniqueAmount, setUniqueAmount] = useState<number | null>(null);
@@ -45,13 +48,14 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
 
   const numericAmount = parseFloat(amount) || 0;
   const isOverLimit = todayCount >= settings.daily_limit;
-
-  // Fee is calculated on the FULL unique amount (what user actually sends)
   const { fee: uniqueFee, net: uniqueNet } = calculateFlexyFee(uniqueAmount || 0);
+
+  const isAmountValid = numericAmount >= settings.min_amount && numericAmount <= settings.max_amount;
+  const isPhoneValid = senderPhone.length === 10 && senderPhone.startsWith('06');
 
   // Generate unique amount when base amount changes and is valid
   useEffect(() => {
-    if (numericAmount >= settings.min_amount && numericAmount <= settings.max_amount) {
+    if (isAmountValid) {
       generateNewUniqueAmount(numericAmount);
     } else {
       setUniqueAmount(null);
@@ -64,8 +68,7 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
       const unique = await getAvailableUniqueAmount(baseAmount);
       setUniqueAmount(unique);
     } catch {
-      // Fallback: simple random
-      setUniqueAmount(baseAmount + Math.floor(Math.random() * 99) + 1);
+      setUniqueAmount(baseAmount + Math.floor(Math.random() * 5) + 1);
     } finally {
       setGeneratingAmount(false);
     }
@@ -83,16 +86,10 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: 'حجم الملف كبير',
-        description: 'الحد الأقصى لحجم الصورة هو 5 ميجابايت',
-        variant: 'destructive',
-      });
+      toast({ title: 'حجم الملف كبير', description: 'الحد الأقصى 5 ميجابايت', variant: 'destructive' });
       return;
     }
-
     setReceiptFile(file);
     const reader = new FileReader();
     reader.onload = (ev) => setReceiptPreview(ev.target?.result as string);
@@ -105,33 +102,15 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!uniqueAmount) {
-      toast({
-        title: 'خطأ',
-        description: 'يرجى الانتظار حتى يتم توليد المبلغ الفريد',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!receiptFile) {
-      toast({
-        title: 'صورة مطلوبة',
-        description: 'يرجى رفع صورة رسالة تأكيد الإرسال',
-        variant: 'destructive',
-      });
-      return;
-    }
-
+  const handleSubmit = async () => {
+    if (!uniqueAmount || !receiptFile) return;
     const result = await createFlexyDeposit(senderPhone, numericAmount, uniqueAmount, receiptFile);
     if (result.success) {
       setSenderPhone('');
       setAmount('');
       setUniqueAmount(null);
       removeFile();
+      setStep(1);
       fetchBalance();
       onSuccess?.();
     }
@@ -139,7 +118,7 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
 
   if (loading) {
     return (
-      <Card className="bg-card/95 backdrop-blur-xl border border-border/30 shadow-elevated animate-slide-up overflow-hidden">
+      <Card className="bg-card border border-border/30 shadow-sm animate-slide-up">
         <CardContent className="p-8">
           <div className="flex items-center justify-center py-12">
             <Clock className="w-8 h-8 animate-spin text-primary" />
@@ -151,15 +130,13 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
 
   if (!settings.enabled) {
     return (
-      <Card className="bg-card/95 backdrop-blur-xl border border-border/30 shadow-elevated animate-slide-up overflow-hidden">
+      <Card className="bg-card border border-border/30 shadow-sm animate-slide-up">
         <CardContent className="p-8 text-center py-12">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
             <Smartphone className="w-8 h-8 text-muted-foreground" />
           </div>
           <h2 className="text-xl font-bold mb-2">خدمة الفليكسي متوقفة مؤقتاً</h2>
-          <p className="text-muted-foreground">
-            خدمة إيداع الفليكسي غير متاحة حالياً. يرجى المحاولة لاحقاً.
-          </p>
+          <p className="text-muted-foreground">خدمة إيداع الفليكسي غير متاحة حالياً. يرجى المحاولة لاحقاً.</p>
         </CardContent>
       </Card>
     );
@@ -167,194 +144,255 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
 
   if (!settings.receiving_number) {
     return (
-      <Card className="bg-card/95 backdrop-blur-xl border border-border/30 shadow-elevated animate-slide-up overflow-hidden">
+      <Card className="bg-card border border-border/30 shadow-sm animate-slide-up">
         <CardContent className="p-8 text-center py-12">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
             <AlertCircle className="w-8 h-8 text-muted-foreground" />
           </div>
           <h2 className="text-xl font-bold mb-2">الخدمة غير مهيأة</h2>
-          <p className="text-muted-foreground">
-            لم يتم تحديد رقم استقبال الفليكسي بعد. تواصل مع الإدارة.
-          </p>
+          <p className="text-muted-foreground">لم يتم تحديد رقم استقبال الفليكسي بعد. تواصل مع الإدارة.</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="bg-card/95 backdrop-blur-xl border border-border/30 shadow-elevated animate-slide-up overflow-hidden">
+    <Card className="bg-card border border-border/30 shadow-sm animate-slide-up overflow-hidden">
       {/* Header */}
-      <div className="relative bg-gradient-to-br from-green-500/10 via-green-400/5 to-transparent border-b border-border/30 p-8">
-        <div className="flex items-center gap-5">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-3xl blur-md opacity-50 bg-green-500"></div>
-            <div className="relative p-4 rounded-3xl bg-white shadow-lg">
-              <img src={mobilisLogo} alt="Mobilis" className="h-12 w-12 object-contain" />
-            </div>
+      <div className="bg-gradient-to-l from-[hsl(var(--success)/0.08)] to-transparent border-b border-border/30 px-6 py-5">
+        <div className="flex items-center gap-4">
+          <div className="p-3 rounded-2xl bg-white shadow-sm border border-border/30">
+            <img src={mobilisLogo} alt="Mobilis" className="h-10 w-10 object-contain" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-foreground mb-1">إيداع عبر فليكسي موبيليس</h2>
-            <p className="text-muted-foreground">أرسل فليكسي بالمبلغ الفريد إلى الرقم أدناه</p>
+            <h2 className="text-xl font-bold text-foreground">إيداع فليكسي موبيليس</h2>
+            <p className="text-sm text-muted-foreground">
+              {todayCount}/{settings.daily_limit} طلبات اليوم
+            </p>
           </div>
         </div>
       </div>
 
-      <CardContent className="p-8 lg:p-10 space-y-8">
-        {/* Receiving Number */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-green-500 rounded-3xl blur-lg opacity-10"></div>
-          <div className="relative p-8 bg-gradient-to-br from-green-500/10 to-green-400/5 rounded-3xl border-2 border-green-500/20">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-2xl bg-green-500">
-                <Smartphone className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="font-bold text-foreground text-xl">رقم استقبال الفليكسي</h3>
-            </div>
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white/50 dark:bg-black/20 rounded-2xl">
-              <span className="text-3xl font-bold font-mono text-foreground" dir="ltr">
-                {settings.receiving_number}
-              </span>
-              <CopyButton text={settings.receiving_number} />
-            </div>
-          </div>
-        </div>
-
-        {/* Steps */}
-        <div className="relative p-6 bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl border border-border/30">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-xl bg-primary/10">
-              <Zap className="h-5 w-5 text-primary" />
-            </div>
-            <h3 className="font-bold text-foreground text-lg">خطوات الإيداع</h3>
-          </div>
-          <ol className="space-y-3">
-            {[
-              'أدخل المبلغ المطلوب وسيُنشئ النظام مبلغاً فريداً لك',
-              'أرسل فليكسي بالمبلغ الفريد بالضبط إلى الرقم أعلاه',
-              'أدخل رقم هاتفك وارفع صورة رسالة تأكيد الإرسال',
-              'أكد الطلب وانتظر الموافقة',
-            ].map((step, i) => (
-              <li key={i} className="flex items-start gap-3 text-muted-foreground">
-                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-sm">
-                  {i + 1}
+      {/* Stepper */}
+      <div className="px-6 py-4 border-b border-border/20 bg-muted/30">
+        <div className="flex items-center justify-between max-w-md mx-auto">
+          {[
+            { num: 1, label: 'المبلغ' },
+            { num: 2, label: 'الإرسال' },
+            { num: 3, label: 'التأكيد' },
+          ].map((s, i) => (
+            <React.Fragment key={s.num}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (s.num < step) setStep(s.num);
+                }}
+                className="flex flex-col items-center gap-1.5 group"
+                disabled={s.num > step}
+              >
+                <div
+                  className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                    step === s.num
+                      ? 'bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))] shadow-md'
+                      : step > s.num
+                      ? 'bg-[hsl(var(--success)/0.15)] text-[hsl(var(--success))]'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {step > s.num ? <Check className="h-4 w-4" /> : s.num}
+                </div>
+                <span className={`text-xs font-medium ${step >= s.num ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  {s.label}
                 </span>
-                <span className="text-sm font-medium pt-0.5">{step}</span>
-              </li>
-            ))}
-          </ol>
+              </button>
+              {i < 2 && (
+                <div className={`flex-1 h-0.5 mx-2 rounded-full transition-all ${step > s.num ? 'bg-[hsl(var(--success))]' : 'bg-border'}`} />
+              )}
+            </React.Fragment>
+          ))}
         </div>
+      </div>
 
-        <Separator className="bg-border/50" />
+      {/* Daily limit warning */}
+      {isOverLimit && (
+        <div className="mx-6 mt-4 p-3 bg-destructive/10 rounded-xl border border-destructive/20 flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0" />
+          <p className="text-sm text-destructive font-medium">
+            وصلت للحد الأقصى ({settings.daily_limit} طلبات يومياً). حاول غداً.
+          </p>
+        </div>
+      )}
 
-        {/* Daily limit warning */}
-        {isOverLimit && (
-          <div className="p-4 bg-destructive/10 rounded-2xl border border-destructive/20 flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0" />
-            <p className="text-sm text-destructive font-medium">
-              لقد وصلت إلى الحد الأقصى اليومي ({settings.daily_limit} طلبات). حاول غداً.
-            </p>
-          </div>
-        )}
+      <CardContent className="p-6">
+        {/* ===== STEP 1: Amount ===== */}
+        {step === 1 && (
+          <div className="space-y-5 animate-in fade-in slide-in-from-left-4 duration-300">
+            <div className="space-y-2">
+              <Label className="text-foreground font-semibold flex items-center gap-2">
+                <Banknote className="h-4 w-4 text-[hsl(var(--success))]" />
+                حدد المبلغ الذي تريد إيداعه
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {settings.min_amount} - {settings.max_amount} د.ج
+              </p>
+            </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Amount Input */}
-          <div className="space-y-3">
-            <Label htmlFor="flexyAmount" className="text-foreground font-semibold text-base flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-green-500/10">
-                <Banknote className="h-4 w-4 text-green-600" />
-              </div>
-              المبلغ المطلوب إيداعه (د.ج)
-            </Label>
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-green-500 rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+            {/* Quick amount buttons */}
+            <div className="grid grid-cols-3 gap-2">
+              {QUICK_AMOUNTS.filter(a => a >= settings.min_amount && a <= settings.max_amount).map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => setAmount(a.toString())}
+                  disabled={isOverLimit}
+                  className={`p-3 rounded-xl text-sm font-bold transition-all border-2 ${
+                    numericAmount === a
+                      ? 'border-[hsl(var(--success))] bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))]'
+                      : 'border-border/50 bg-background hover:border-[hsl(var(--success)/0.5)] text-foreground'
+                  } disabled:opacity-50`}
+                >
+                  {a.toLocaleString()} د.ج
+                </button>
+              ))}
+            </div>
+
+            {/* Custom amount input */}
+            <div className="relative">
               <Input
-                id="flexyAmount"
                 type="number"
-                placeholder={`${settings.min_amount} - ${settings.max_amount}`}
+                placeholder="أو أدخل مبلغ مخصص..."
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 min={settings.min_amount}
                 max={settings.max_amount}
-                required
                 disabled={isOverLimit}
-                className="relative bg-background/80 backdrop-blur-sm border-2 border-border/50 hover:border-green-500/50 focus:border-green-500 transition-all h-12 text-base rounded-xl font-medium"
+                className="h-12 text-base rounded-xl border-2 border-border/50 focus:border-[hsl(var(--success))] pr-4 pl-16 font-medium"
               />
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">
+                د.ج
+              </span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              الحد: {settings.min_amount} - {settings.max_amount} د.ج
-            </p>
-          </div>
 
-          {/* Unique Amount Display - PROMINENT */}
-          {uniqueAmount && numericAmount >= settings.min_amount && numericAmount <= settings.max_amount && (
-            <div className="relative">
-              <div className="absolute inset-0 bg-amber-500 rounded-3xl blur-xl opacity-20"></div>
-              <div className="relative p-8 bg-gradient-to-br from-amber-500/15 to-orange-400/10 rounded-3xl border-2 border-amber-500/40 shadow-xl">
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-2xl bg-amber-500 shadow-lg">
-                      <Hash className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-foreground text-xl">⚡ المبلغ المطلوب إرساله</h3>
-                      <p className="text-sm text-muted-foreground">أرسل هذا المبلغ بالضبط كفليكسي</p>
-                    </div>
-                  </div>
+            {/* Fee preview */}
+            {isAmountValid && uniqueAmount && (
+              <div className="p-4 bg-muted/50 rounded-xl space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">ستُرسل فليكسي بقيمة:</span>
+                  <span className="font-bold text-foreground">{uniqueAmount} د.ج</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">الرسوم ({settings.fee_percentage}%):</span>
+                  <span className="font-medium text-orange-600">-{uniqueFee} د.ج</span>
+                </div>
+                <div className="h-px bg-border/50 my-1" />
+                <div className="flex justify-between">
+                  <span className="font-semibold text-foreground">يُضاف لرصيدك:</span>
+                  <span className="font-bold text-[hsl(var(--success))] text-base">{uniqueNet} د.ج</span>
+                </div>
+              </div>
+            )}
+
+            <Button
+              type="button"
+              onClick={() => setStep(2)}
+              disabled={!isAmountValid || isOverLimit || !uniqueAmount || generatingAmount}
+              className="w-full h-12 text-base font-bold rounded-xl bg-[hsl(var(--success))] hover:bg-[hsl(var(--success)/0.9)] text-[hsl(var(--success-foreground))]"
+            >
+              {generatingAmount ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin ml-2" />
+                  جاري التحضير...
+                </>
+              ) : (
+                <>
+                  التالي
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+
+        {/* ===== STEP 2: Send Flexy ===== */}
+        {step === 2 && uniqueAmount && (
+          <div className="space-y-5 animate-in fade-in slide-in-from-left-4 duration-300">
+            {/* Unique amount - hero */}
+            <div className="text-center space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">أرسل فليكسي بهذا المبلغ بالضبط</p>
+              <div className="py-5 px-6 bg-gradient-to-br from-[hsl(var(--success)/0.08)] to-[hsl(var(--success)/0.03)] rounded-2xl border-2 border-[hsl(var(--success)/0.3)]">
+                <div className="flex items-center justify-center gap-3">
+                  <span className="text-5xl font-black text-[hsl(var(--success))] font-mono tracking-tight" dir="ltr">
+                    {uniqueAmount}
+                  </span>
+                  <span className="text-lg font-bold text-[hsl(var(--success)/0.7)]">د.ج</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  <CopyButton text={uniqueAmount.toString()} />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => generateNewUniqueAmount(numericAmount)}
                     disabled={generatingAmount}
-                    className="text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
-                    title="توليد مبلغ فريد جديد"
+                    className="text-muted-foreground hover:text-foreground"
                   >
                     <RefreshCw className={`h-4 w-4 ${generatingAmount ? 'animate-spin' : ''}`} />
+                    <span className="mr-1 text-xs">تغيير</span>
                   </Button>
-                </div>
-                <div className="flex flex-col items-center gap-4 p-8 bg-white/70 dark:bg-black/40 rounded-2xl border-2 border-amber-500/30 shadow-inner">
-                  {generatingAmount ? (
-                    <div className="flex items-center gap-2 py-4">
-                      <RefreshCw className="h-6 w-6 animate-spin text-amber-500" />
-                      <span className="text-muted-foreground text-lg">جاري التوليد...</span>
-                    </div>
-                  ) : (
-                    <>
-                      <span className="text-5xl font-black font-mono text-amber-600" dir="ltr">
-                        {uniqueAmount}
-                      </span>
-                      <span className="text-xl font-bold text-amber-500">دينار جزائري</span>
-                    </>
-                  )}
-                  {!generatingAmount && (
-                    <div className="w-full flex justify-center">
-                      <CopyButton text={uniqueAmount.toString()} />
-                    </div>
-                  )}
-                </div>
-                <div className="mt-5 p-4 bg-green-500/10 rounded-xl border border-green-500/20 flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-green-700 dark:text-green-400 font-medium space-y-1">
-                    <p>✅ أرسل <strong>{uniqueAmount} د.ج</strong> فليكسي بالضبط إلى الرقم أعلاه</p>
-                    <p>✅ المبلغ الكامل ({uniqueAmount} د.ج) يُحسب لصالحك بعد خصم الرسوم</p>
-                    <p>✅ هذا المبلغ الفريد يضمن التحقق السريع من إيداعك</p>
-                  </div>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Phone Input */}
-          <div className="space-y-3">
-            <Label htmlFor="senderPhone" className="text-foreground font-semibold text-base flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-green-500/10">
-                <Smartphone className="h-4 w-4 text-green-600" />
+            {/* Target number */}
+            <div className="p-4 bg-muted/50 rounded-xl">
+              <p className="text-xs text-muted-foreground mb-2 text-center">إلى الرقم</p>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold font-mono text-foreground" dir="ltr">
+                  {settings.receiving_number}
+                </span>
+                <CopyButton text={settings.receiving_number} compact />
               </div>
-              رقم الهاتف المُرسل منه
-            </Label>
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-green-500 rounded-xl opacity-0 group-focus-within:opacity-20 blur transition-opacity"></div>
+            </div>
+
+            {/* Important note */}
+            <div className="p-3 bg-[hsl(var(--warning)/0.08)] rounded-xl border border-[hsl(var(--warning)/0.2)] flex items-start gap-2.5">
+              <ShieldCheck className="h-5 w-5 text-[hsl(var(--warning))] flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-foreground leading-relaxed">
+                <strong>مهم:</strong> أرسل المبلغ <strong>{uniqueAmount} د.ج</strong> بالضبط. المبلغ الكامل يُحسب لصالحك بعد خصم الرسوم ({settings.fee_percentage}%).
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setStep(1)}
+                className="flex-1 h-12 rounded-xl font-bold"
+              >
+                <ArrowRight className="h-4 w-4 ml-2" />
+                رجوع
+              </Button>
+              <Button
+                type="button"
+                onClick={() => setStep(3)}
+                className="flex-[2] h-12 rounded-xl font-bold bg-[hsl(var(--success))] hover:bg-[hsl(var(--success)/0.9)] text-[hsl(var(--success-foreground))]"
+              >
+                <Send className="h-4 w-4 ml-2" />
+                أرسلت الفليكسي
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ===== STEP 3: Confirm ===== */}
+        {step === 3 && uniqueAmount && (
+          <div className="space-y-5 animate-in fade-in slide-in-from-left-4 duration-300">
+            {/* Phone */}
+            <div className="space-y-2">
+              <Label htmlFor="senderPhone" className="text-foreground font-semibold flex items-center gap-2">
+                <Smartphone className="h-4 w-4 text-[hsl(var(--success))]" />
+                رقم الهاتف المُرسل منه
+              </Label>
               <Input
                 id="senderPhone"
                 type="tel"
@@ -363,194 +401,160 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
                 onChange={(e) => handlePhoneChange(e.target.value)}
                 maxLength={10}
                 dir="ltr"
-                required
-                disabled={isOverLimit}
-                className={`relative bg-background/80 backdrop-blur-sm border-2 transition-all h-12 text-base rounded-xl font-medium text-left ${
+                className={`h-12 text-base rounded-xl border-2 font-medium text-left ${
                   phoneError
                     ? 'border-destructive'
-                    : 'border-border/50 hover:border-green-500/50 focus:border-green-500'
+                    : isPhoneValid
+                    ? 'border-[hsl(var(--success))]'
+                    : 'border-border/50 focus:border-[hsl(var(--success))]'
                 }`}
               />
+              {phoneError && <p className="text-xs text-destructive">{phoneError}</p>}
+              {isPhoneValid && !phoneError && (
+                <p className="text-xs text-[hsl(var(--success))] flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3" /> رقم صحيح
+                </p>
+              )}
             </div>
-            {phoneError && <p className="text-xs text-destructive">{phoneError}</p>}
-            {!phoneError && senderPhone.length === 10 && senderPhone.startsWith('06') && (
-              <p className="text-xs text-green-600 flex items-center gap-1">
-                <CheckCircle className="h-3 w-3" /> رقم موبيليس صحيح
-              </p>
-            )}
-          </div>
 
-          {/* Receipt Image Upload */}
-          <div className="space-y-3">
-            <Label className="text-foreground font-semibold text-base flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-green-500/10">
-                <Camera className="h-4 w-4 text-green-600" />
-              </div>
-              صورة رسالة تأكيد الإرسال
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              ارفع لقطة شاشة لرسالة التأكيد التي ظهرت بعد إرسال الفليكسي
-            </p>
+            {/* Receipt Upload */}
+            <div className="space-y-2">
+              <Label className="text-foreground font-semibold flex items-center gap-2">
+                <Camera className="h-4 w-4 text-[hsl(var(--success))]" />
+                صورة تأكيد الإرسال
+              </Label>
+              <p className="text-xs text-muted-foreground">لقطة شاشة لرسالة التأكيد بعد إرسال الفليكسي</p>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="hidden"
-              disabled={isOverLimit}
-            />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
 
-            {!receiptFile ? (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isOverLimit}
-                className="w-full p-8 border-2 border-dashed border-border/50 hover:border-green-500/50 rounded-2xl transition-all hover:bg-green-500/5 group disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="flex flex-col items-center gap-3 text-muted-foreground group-hover:text-green-600 transition-colors">
-                  <div className="p-4 rounded-2xl bg-muted group-hover:bg-green-500/10 transition-colors">
-                    <ImageIcon className="h-8 w-8" />
-                  </div>
-                  <div className="text-center">
-                    <p className="font-semibold text-base">اضغط لرفع صورة التأكيد</p>
-                    <p className="text-xs mt-1">PNG, JPG — الحد الأقصى 5 ميجابايت</p>
-                  </div>
-                </div>
-              </button>
-            ) : (
-              <div className="relative rounded-2xl border-2 border-green-500/30 overflow-hidden bg-green-500/5">
-                <img
-                  src={receiptPreview || ''}
-                  alt="صورة التأكيد"
-                  className="w-full max-h-64 object-contain p-2"
-                />
+              {!receiptFile ? (
                 <button
                   type="button"
-                  onClick={removeFile}
-                  className="absolute top-3 left-3 p-2 rounded-full bg-destructive text-white hover:bg-destructive/90 shadow-lg transition-all"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full p-6 border-2 border-dashed border-border/50 hover:border-[hsl(var(--success)/0.5)] rounded-xl transition-all hover:bg-[hsl(var(--success)/0.03)] group"
                 >
-                  <X className="h-4 w-4" />
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground group-hover:text-[hsl(var(--success))]">
+                    <ImageIcon className="h-8 w-8" />
+                    <p className="font-semibold text-sm">اضغط لرفع الصورة</p>
+                    <p className="text-xs">PNG, JPG — حد أقصى 5MB</p>
+                  </div>
                 </button>
-                <div className="p-3 bg-green-500/10 border-t border-green-500/20 flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-700 dark:text-green-400 font-medium">
-                    تم تحميل الصورة بنجاح
-                  </span>
+              ) : (
+                <div className="relative rounded-xl border-2 border-[hsl(var(--success)/0.3)] overflow-hidden">
+                  <img
+                    src={receiptPreview || ''}
+                    alt="صورة التأكيد"
+                    className="w-full max-h-48 object-contain p-2 bg-muted/30"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeFile}
+                    className="absolute top-2 left-2 p-1.5 rounded-full bg-destructive text-white shadow-md"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                  <div className="p-2.5 bg-[hsl(var(--success)/0.08)] border-t border-[hsl(var(--success)/0.2)] flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-[hsl(var(--success))]" />
+                    <span className="text-xs text-[hsl(var(--success))] font-medium">تم التحميل</span>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          {/* Fee Preview */}
-          {uniqueAmount && numericAmount >= settings.min_amount && numericAmount <= settings.max_amount && (
-            <div className="relative p-8 bg-gradient-to-br from-green-500/5 via-green-400/5 to-transparent rounded-3xl border-2 border-green-500/10 shadow-lg">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-green-500 rounded-2xl blur-md opacity-50"></div>
-                  <div className="relative p-3 rounded-2xl bg-green-500 shadow-lg">
-                    <CheckCircle className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-                <h3 className="font-bold text-foreground text-xl">ملخص الإيداع</h3>
+            {/* Summary */}
+            <div className="p-4 bg-muted/40 rounded-xl space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">المبلغ المُرسل:</span>
+                <span className="font-bold">{uniqueAmount} د.ج</span>
               </div>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20">
-                  <span className="text-amber-700 dark:text-amber-400 font-semibold text-base">المبلغ الفريد المُرسل:</span>
-                  <span className="font-bold text-amber-600 text-xl">{uniqueAmount} د.ج</span>
-                </div>
-                <div className="flex justify-between items-center p-4 bg-background/50 rounded-2xl backdrop-blur-sm">
-                  <span className="text-muted-foreground font-semibold text-base">
-                    الرسوم ({settings.fee_percentage}%) على المبلغ الكامل:
-                  </span>
-                  <span className="font-bold text-orange-600 text-xl">-{uniqueFee} د.ج</span>
-                </div>
-                <div className="h-px bg-gradient-to-r from-transparent via-green-500/30 to-transparent my-2"></div>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-green-500/5 rounded-2xl blur-sm"></div>
-                  <div className="relative flex justify-between items-center p-5 bg-green-500/10 rounded-2xl border border-green-500/20">
-                    <span className="font-bold text-foreground text-lg">صافي المبلغ المُضاف لرصيدك:</span>
-                    <span className="font-bold text-green-600 text-2xl">{uniqueNet} د.ج</span>
-                  </div>
-                </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">الرسوم ({settings.fee_percentage}%):</span>
+                <span className="text-orange-600">-{uniqueFee} د.ج</span>
+              </div>
+              <div className="h-px bg-border/50" />
+              <div className="flex justify-between">
+                <span className="font-semibold">يُضاف للرصيد:</span>
+                <span className="font-bold text-[hsl(var(--success))]">{uniqueNet} د.ج</span>
               </div>
             </div>
-          )}
 
-          {/* Today's count */}
-          <div className="flex items-center justify-between text-sm text-muted-foreground bg-muted/50 p-3 rounded-xl">
-            <span>الطلبات اليوم:</span>
-            <span className={todayCount >= settings.daily_limit ? 'text-destructive font-bold' : ''}>
-              {todayCount} / {settings.daily_limit}
-            </span>
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setStep(2)}
+                className="flex-1 h-12 rounded-xl font-bold"
+              >
+                <ArrowRight className="h-4 w-4 ml-2" />
+                رجوع
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitting || !isPhoneValid || !!phoneError || !receiptFile}
+                className="flex-[2] h-12 rounded-xl font-bold bg-[hsl(var(--success))] hover:bg-[hsl(var(--success)/0.9)] text-[hsl(var(--success-foreground))]"
+              >
+                {submitting ? (
+                  <>
+                    <Clock className="h-4 w-4 animate-spin ml-2" />
+                    جاري الإرسال...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 ml-2" />
+                    تأكيد الإيداع
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
-
-          <div className="relative pt-2">
-            <div className="absolute -inset-1 bg-green-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
-            <Button
-              type="submit"
-              className="relative w-full bg-green-500 hover:bg-green-600 text-white font-bold py-5 text-lg transition-all hover:scale-[1.02] hover:shadow-elevated rounded-2xl overflow-hidden group"
-              disabled={
-                submitting ||
-                isOverLimit ||
-                !senderPhone ||
-                senderPhone.length !== 10 ||
-                !amount ||
-                numericAmount < settings.min_amount ||
-                numericAmount > settings.max_amount ||
-                !!phoneError ||
-                !uniqueAmount ||
-                generatingAmount ||
-                !receiptFile
-              }
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-              {submitting ? (
-                <>
-                  <Clock className="h-5 w-5 animate-spin ml-2 relative z-10" />
-                  <span className="relative z-10">جاري الإرسال...</span>
-                </>
-              ) : (
-                <>
-                  <span className="relative z-10">تأكيد إرسال الفليكسي</span>
-                  <ArrowRight className="h-5 w-5 mr-2 relative z-10" />
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
+        )}
       </CardContent>
     </Card>
   );
 };
 
-// Internal CopyButton component
-const CopyButton: React.FC<{ text: string }> = ({ text }) => {
+// Internal CopyButton
+const CopyButton: React.FC<{ text: string; compact?: boolean }> = ({ text, compact }) => {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(text);
     setCopied(true);
-    toast({ title: 'تم النسخ', description: 'تم نسخ الرقم بنجاح' });
+    toast({ title: 'تم النسخ' });
     setTimeout(() => setCopied(false), 2000);
   };
+
+  if (compact) {
+    return (
+      <Button variant="ghost" size="sm" onClick={handleCopy} className="h-8 px-3 text-xs">
+        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      </Button>
+    );
+  }
 
   return (
     <Button
       variant="outline"
-      size="lg"
+      size="sm"
       onClick={handleCopy}
-      className="hover:bg-green-500 hover:text-white hover:border-green-500/50 transition-all hover:scale-105 rounded-2xl px-8 border-2 font-bold"
+      className="h-8 px-4 text-xs rounded-lg border-border/50 hover:border-[hsl(var(--success))] hover:text-[hsl(var(--success))]"
     >
       {copied ? (
         <>
-          <Check className="h-5 w-5 ml-2" />
-          تم النسخ
+          <Check className="h-3.5 w-3.5 ml-1" />
+          تم
         </>
       ) : (
         <>
-          <Copy className="h-5 w-5 ml-2" />
+          <Copy className="h-3.5 w-3.5 ml-1" />
           نسخ
         </>
       )}
