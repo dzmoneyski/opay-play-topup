@@ -1353,7 +1353,20 @@ export default function Deposits() {
                       {getStatusBadge(deposit.status)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      <p>{deposit.payment_method === 'flexy_mobilis' ? 'رقم المرسل' : 'معرف المعاملة'}: {deposit.transaction_id}</p>
+                      {deposit.payment_method === 'flexy_mobilis' ? (
+                        (() => {
+                          const parts = (deposit.transaction_id || '').split('|');
+                          const uniqueAmountRef = parts.length === 3 ? parts[2] : null;
+                          return (
+                            <>
+                              <p>رقم المرسل: {parts[0]}</p>
+                              {uniqueAmountRef && <p>المبلغ الفريد المُرسل: {uniqueAmountRef} د.ج</p>}
+                            </>
+                          );
+                        })()
+                      ) : (
+                        <p>معرف المعاملة: {deposit.transaction_id}</p>
+                      )}
                       <p>تاريخ الإرسال: {formatDate(deposit.created_at)}</p>
                       {deposit.admin_notes && (
                         <p className="text-blue-600 font-medium">ملاحظة: {deposit.admin_notes}</p>

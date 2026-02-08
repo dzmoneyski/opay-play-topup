@@ -21,6 +21,15 @@ const DEFAULT_SETTINGS: FlexyDepositSettings = {
   daily_limit: 3,
 };
 
+/**
+ * Generate a unique deposit amount by adding a random 1-99 DZD offset.
+ * This makes each deposit easily identifiable in the admin's Flexy history.
+ */
+export const generateUniqueAmount = (baseAmount: number): number => {
+  const offset = Math.floor(Math.random() * 99) + 1; // 1-99
+  return baseAmount + offset;
+};
+
 export const useFlexyDeposit = () => {
   const [settings, setSettings] = useState<FlexyDepositSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
@@ -84,10 +93,47 @@ export const useFlexyDeposit = () => {
     return { fee, net: amount - fee };
   };
 
+  /**
+   * Check if a unique amount is already used by a pending deposit today.
+   */
+  const isUniqueAmountAvailable = async (uniqueAmount: number): Promise<boolean> => {
+    if (!user) return false;
+    try {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const { data } = await supabase
+        .from('deposits')
+        .select('id')
+        .eq('payment_method', 'flexy_mobilis')
+        .eq('amount', uniqueAmount)
+        .in('status', ['pending'])
+        .gte('created_at', todayStart.toISOString())
+        .limit(1);
+
+      return !data || data.length === 0;
+    } catch {
+      return true; // Allow on error to not block user
+    }
+  };
+
+  /**
+   * Generate a unique amount that isn't already pending today.
+   */
+  const getAvailableUniqueAmount = async (baseAmount: number): Promise<number> => {
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const candidate = generateUniqueAmount(baseAmount);
+      const available = await isUniqueAmountAvailable(candidate);
+      if (available) return candidate;
+    }
+    // Fallback: just return a generated one
+    return generateUniqueAmount(baseAmount);
+  };
+
   const createFlexyDeposit = async (
     senderPhone: string,
-    amount: number,
-    sendTime: string,
+    baseAmount: number,
+    uniqueAmount: number,
     receiptFile?: File
   ): Promise<{ success: boolean; error?: string }> => {
     if (!user) {
@@ -97,16 +143,6 @@ export const useFlexyDeposit = () => {
         variant: 'destructive',
       });
       return { success: false, error: 'غير مصرح' };
-    }
-
-    // Validate time format (HH:MM:SS)
-    if (!/^\d{2}:\d{2}:\d{2}$/.test(sendTime)) {
-      toast({
-        title: 'وقت غير صحيح',
-        description: 'يرجى إدخال الوقت بالصيغة الصحيحة (ساعة:دقيقة:ثانية)',
-        variant: 'destructive',
-      });
-      return { success: false, error: 'وقت غير صحيح' };
     }
 
     // Validation
@@ -128,7 +164,7 @@ export const useFlexyDeposit = () => {
       return { success: false, error: 'تجاوز الحد اليومي' };
     }
 
-    if (amount < settings.min_amount || amount > settings.max_amount) {
+    if (baseAmount < settings.min_amount || baseAmount > settings.max_amount) {
       toast({
         title: 'مبلغ غير صحيح',
         description: `المبلغ يجب أن يكون بين ${settings.min_amount} و ${settings.max_amount} د.ج`,
@@ -148,7 +184,7 @@ export const useFlexyDeposit = () => {
       return { success: false, error: 'رقم غير صحيح' };
     }
 
-    // Check for duplicate (same phone + same amount within 5 min)
+    // Check for duplicate (same phone + same unique amount within 5 min)
     try {
       const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       const { data: duplicates } = await supabase
@@ -156,8 +192,7 @@ export const useFlexyDeposit = () => {
         .select('id')
         .eq('user_id', user.id)
         .eq('payment_method', 'flexy_mobilis')
-        .eq('amount', amount)
-        .eq('transaction_id', cleaned)
+        .eq('amount', uniqueAmount)
         .gte('created_at', fiveMinAgo);
 
       if (duplicates && duplicates.length > 0) {
@@ -194,15 +229,16 @@ export const useFlexyDeposit = () => {
         receiptPath = uploadData.path;
       }
 
-      // Store sender phone + send time in transaction_id (format: phone|HH:MM:SS)
-      const transactionRef = `${cleaned}|${sendTime}`;
+      // Store sender phone + base amount in transaction_id for admin reference
+      // Format: phone|baseAmount|uniqueAmount
+      const transactionRef = `${cleaned}|${baseAmount}|${uniqueAmount}`;
 
       const { error } = await supabase
         .from('deposits')
         .insert({
           user_id: user.id,
           payment_method: 'flexy_mobilis',
-          amount,
+          amount: uniqueAmount, // Store unique amount as the actual sent amount
           transaction_id: transactionRef,
           receipt_image: receiptPath,
           status: 'pending',
@@ -233,7 +269,6 @@ export const useFlexyDeposit = () => {
 
   const updateSettings = async (newSettings: FlexyDepositSettings) => {
     try {
-      // Upsert settings
       const { data: existing } = await supabase
         .from('platform_settings')
         .select('id')
@@ -280,6 +315,7 @@ export const useFlexyDeposit = () => {
     calculateFlexyFee,
     createFlexyDeposit,
     updateSettings,
+    getAvailableUniqueAmount,
     refetch: fetchSettings,
   };
 };

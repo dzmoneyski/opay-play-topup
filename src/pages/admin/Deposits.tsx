@@ -454,10 +454,12 @@ export default function DepositsPage() {
                   <div className="grid gap-2 text-sm">
                     {deposit.payment_method === 'flexy_mobilis' ? (
                       (() => {
-                        // Parse transaction_id format: "phone|HH:MM:SS" or legacy "phone"
+                        // Parse transaction_id format: "phone|baseAmount|uniqueAmount" or legacy "phone|HH:MM:SS" or "phone"
                         const parts = (deposit.transaction_id || '').split('|');
                         const senderPhone = parts[0] || 'غير محدد';
-                        const sendTime = parts[1] || null;
+                        const baseAmount = parts.length === 3 ? parts[1] : null;
+                        const uniqueAmountRef = parts.length === 3 ? parts[2] : null;
+                        const legacySendTime = parts.length === 2 && parts[1]?.includes(':') ? parts[1] : null;
                         return (
                           <>
                             <div className="flex justify-between items-center p-2 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
@@ -469,14 +471,30 @@ export default function DepositsPage() {
                                 {senderPhone}
                               </span>
                             </div>
-                            {sendTime && (
+                            {uniqueAmountRef && (
+                              <div className="flex justify-between items-center p-2 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+                                <span className="text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-1">
+                                  المبلغ الفريد المُرسل:
+                                </span>
+                                <span className="font-bold text-amber-800 dark:text-amber-300 font-mono text-lg" dir="ltr">
+                                  {uniqueAmountRef} د.ج
+                                </span>
+                              </div>
+                            )}
+                            {baseAmount && (
+                              <div className="flex justify-between items-center p-2 bg-background/50 rounded-lg">
+                                <span className="text-muted-foreground">المبلغ الأساسي:</span>
+                                <span className="font-medium">{baseAmount} د.ج</span>
+                              </div>
+                            )}
+                            {legacySendTime && (
                               <div className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
                                 <span className="text-blue-700 dark:text-blue-400 font-semibold flex items-center gap-1">
                                   <Clock className="h-3.5 w-3.5" />
-                                  وقت الإرسال (من المستخدم):
+                                  وقت الإرسال:
                                 </span>
                                 <span className="font-bold text-blue-800 dark:text-blue-300 font-mono text-lg" dir="ltr">
-                                  {sendTime}
+                                  {legacySendTime}
                                 </span>
                               </div>
                             )}
@@ -706,12 +724,23 @@ export default function DepositsPage() {
                     <div className="text-sm text-muted-foreground space-y-1">
                     <p>طريقة الدفع: {getPaymentMethodLabel(deposit.payment_method)}</p>
                     {deposit.payment_method === 'flexy_mobilis' ? (
-                      <>
-                        <p>رقم المرسل: {(deposit.transaction_id || '').split('|')[0]}</p>
-                        {(deposit.transaction_id || '').includes('|') && (
-                          <p className="font-semibold text-blue-600">وقت الإرسال: <span className="font-mono">{(deposit.transaction_id || '').split('|')[1]}</span></p>
-                        )}
-                      </>
+                      (() => {
+                        const parts = (deposit.transaction_id || '').split('|');
+                        const senderPhone = parts[0] || 'غير محدد';
+                        const uniqueAmountRef = parts.length === 3 ? parts[2] : null;
+                        const legacyTime = parts.length === 2 && parts[1]?.includes(':') ? parts[1] : null;
+                        return (
+                          <>
+                            <p>رقم المرسل: {senderPhone}</p>
+                            {uniqueAmountRef && (
+                              <p className="font-semibold text-amber-600">المبلغ الفريد: <span className="font-mono">{uniqueAmountRef} د.ج</span></p>
+                            )}
+                            {legacyTime && (
+                              <p className="font-semibold text-blue-600">وقت الإرسال: <span className="font-mono">{legacyTime}</span></p>
+                            )}
+                          </>
+                        );
+                      })()
                     ) : (
                       <p>معرف المعاملة: {deposit.transaction_id}</p>
                     )}
