@@ -11,6 +11,7 @@ import PublicRoute from "@/components/PublicRoute";
 import { PWAPermissionsPrompt } from "@/components/PWAPermissionsPrompt";
 import { PageTransition } from "@/components/PageTransition";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import MaintenanceMode from "./components/MaintenanceMode";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AccountActivation from "./pages/AccountActivation";
@@ -77,7 +78,14 @@ const RecoveryRedirect = () => {
   return null;
 };
 
+// 🔴 MAINTENANCE MODE - Set to true to enable
+const MAINTENANCE_MODE = true;
+
 const App = () => {
+  if (MAINTENANCE_MODE) {
+    return <MaintenanceMode />;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
