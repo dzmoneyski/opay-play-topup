@@ -319,13 +319,13 @@ const Transactions = () => {
         document.body.appendChild(container);
         await new Promise((r) => requestAnimationFrame(() => r(null)));
 
-        const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-        const img = canvas.toDataURL('image/png');
+        const canvas = await html2canvas(container, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' });
+        const img = canvas.toDataURL('image/jpeg', 0.7);
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
         if (p > 0) pdf.addPage();
-        pdf.addImage(img, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.addImage(img, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
 
         document.body.removeChild(container);
       }
@@ -375,14 +375,14 @@ const Transactions = () => {
     document.body.appendChild(container);
     await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
 
-    const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-    const imgData = canvas.toDataURL('image/png');
+    const canvas = await html2canvas(container, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' });
+    const imgData = canvas.toDataURL('image/jpeg', 0.7);
 
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
     pdf.save(`receipt-${transaction.transaction_number || transaction.id.slice(0, 8)}.pdf`);
 
     document.body.removeChild(container);
