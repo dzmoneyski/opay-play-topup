@@ -79,7 +79,7 @@ const RecoveryRedirect = () => {
 };
 
 // 🔴 MAINTENANCE MODE - Set to true to enable
-const MAINTENANCE_MODE = true;
+const MAINTENANCE_MODE = false;
 
 const App = () => {
   if (MAINTENANCE_MODE) {
