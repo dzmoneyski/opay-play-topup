@@ -110,6 +110,11 @@ const { isAdmin, loading: rolesLoading } = useUserRoles();
       return;
     }
 
+    if (service.action === 'p2p') {
+      navigate('/p2p');
+      return;
+    }
+
     if (service.action === 'cards') {
       navigate('/cards');
       return;
@@ -195,7 +200,7 @@ const { isAdmin, loading: rolesLoading } = useUserRoles();
       title: "P2P",
       subtitle: "تداول آمن بين المستخدمين",
       gradient: "bg-gradient-gold",
-      action: "disabled"
+      action: isAdmin ? "p2p" : "disabled"
     },
     {
       icon: <img src={platformsCollage} alt="Gaming Platforms" className="w-full h-full object-cover rounded-2xl" />,
