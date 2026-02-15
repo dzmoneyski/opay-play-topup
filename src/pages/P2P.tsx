@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Repeat2, Shield, TrendingUp, ShieldCheck, Zap, Clock, Users } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ArrowLeft, Repeat2, Shield, TrendingUp, ShieldCheck, Zap, Clock, Users, Lock } from 'lucide-react';
 import { P2PAdsList } from '@/components/p2p/P2PAdsList';
 import { P2PMyOrders } from '@/components/p2p/P2PMyOrders';
 import { P2PMyAds } from '@/components/p2p/P2PMyAds';
 import { P2PCreateAd } from '@/components/p2p/P2PCreateAd';
 import { useP2PAds } from '@/hooks/useP2P';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { useBalance } from '@/hooks/useBalance';
 import { motion } from 'framer-motion';
 
@@ -18,6 +20,62 @@ const P2P = () => {
   const { balance } = useBalance();
   const { ads: buyAds } = useP2PAds('buy');
   const { ads: sellAds } = useP2PAds('sell');
+  const { isAdmin, loading: rolesLoading } = useUserRoles();
+
+  // Show coming soon page for non-admin users
+  if (!rolesLoading && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-background" dir="rtl">
+        <header className="bg-gradient-hero border-b border-border/50">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground hover:bg-primary-foreground/10">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-gradient-gold">
+                  <Repeat2 className="h-6 w-6 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-primary-foreground">P2P</h1>
+                  <p className="text-sm text-primary-foreground/70">تداول آمن بين المستخدمين</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <Card className="shadow-card border-0 bg-gradient-card relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-gold opacity-5"></div>
+            <CardHeader className="text-center relative z-10">
+              <div className="flex justify-center mb-4">
+                <div className="p-6 rounded-full bg-gradient-gold/20">
+                  <Lock className="h-12 w-12 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl mb-2">الخدمة قيد التطوير</CardTitle>
+              <CardDescription className="text-base">نعمل على إطلاق منصة P2P قريباً</CardDescription>
+            </CardHeader>
+            <CardContent className="relative z-10 space-y-4">
+              <div className="bg-muted/50 rounded-lg p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Repeat2 className="h-5 w-5 text-primary" />
+                  ماذا يعني P2P؟
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  P2P (Peer-to-Peer) هي منصة تداول مباشرة بين المستخدمين تتيح لك شراء وبيع الرصيد بشكل آمن وسريع مع حماية كاملة لحقوق الطرفين.
+                </p>
+              </div>
+              <div className="flex justify-center pt-4">
+                <Badge variant="secondary" className="text-lg py-2 px-6">قريباً</Badge>
+              </div>
+              <Button onClick={() => navigate("/")} className="w-full mt-6" variant="outline">العودة للرئيسية</Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   const stats = [
     { icon: <Users className="h-4 w-4" />, label: 'إعلانات الشراء', value: buyAds.length },
