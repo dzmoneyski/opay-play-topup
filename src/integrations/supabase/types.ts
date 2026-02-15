@@ -1124,6 +1124,279 @@ export type Database = {
         }
         Relationships: []
       }
+      p2p_ads: {
+        Row: {
+          ad_type: string
+          amount: number
+          completed_trades: number
+          created_at: string
+          id: string
+          is_active: boolean
+          max_amount: number
+          min_amount: number
+          payment_methods: string[]
+          price_per_unit: number
+          terms: string | null
+          total_volume: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ad_type: string
+          amount: number
+          completed_trades?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_amount: number
+          min_amount?: number
+          payment_methods?: string[]
+          price_per_unit?: number
+          terms?: string | null
+          total_volume?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ad_type?: string
+          amount?: number
+          completed_trades?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_amount?: number
+          min_amount?: number
+          payment_methods?: string[]
+          price_per_unit?: number
+          terms?: string | null
+          total_volume?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      p2p_disputes: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          evidence_images: string[] | null
+          id: string
+          opened_by: string
+          order_id: string
+          reason: string
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          evidence_images?: string[] | null
+          id?: string
+          opened_by: string
+          order_id: string
+          reason: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          evidence_images?: string[] | null
+          id?: string
+          opened_by?: string
+          order_id?: string
+          reason?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "p2p_disputes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "p2p_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      p2p_messages: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          is_read: boolean
+          is_system: boolean
+          message: string | null
+          order_id: string
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_read?: boolean
+          is_system?: boolean
+          message?: string | null
+          order_id: string
+          sender_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_read?: boolean
+          is_system?: boolean
+          message?: string | null
+          order_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "p2p_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "p2p_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      p2p_orders: {
+        Row: {
+          ad_id: string
+          amount: number
+          buyer_id: string
+          buyer_rating: number | null
+          buyer_review: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          completed_at: string | null
+          created_at: string
+          escrow_locked_at: string | null
+          fee_percentage: number
+          id: string
+          payment_confirmed_at: string | null
+          payment_deadline: string | null
+          payment_method: string
+          payment_sent_at: string | null
+          platform_fee: number
+          seller_id: string
+          seller_rating: number | null
+          seller_review: string | null
+          status: string
+          total_price: number
+          updated_at: string
+        }
+        Insert: {
+          ad_id: string
+          amount: number
+          buyer_id: string
+          buyer_rating?: number | null
+          buyer_review?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          escrow_locked_at?: string | null
+          fee_percentage?: number
+          id?: string
+          payment_confirmed_at?: string | null
+          payment_deadline?: string | null
+          payment_method: string
+          payment_sent_at?: string | null
+          platform_fee?: number
+          seller_id: string
+          seller_rating?: number | null
+          seller_review?: string | null
+          status?: string
+          total_price: number
+          updated_at?: string
+        }
+        Update: {
+          ad_id?: string
+          amount?: number
+          buyer_id?: string
+          buyer_rating?: number | null
+          buyer_review?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          escrow_locked_at?: string | null
+          fee_percentage?: number
+          id?: string
+          payment_confirmed_at?: string | null
+          payment_deadline?: string | null
+          payment_method?: string
+          payment_sent_at?: string | null
+          platform_fee?: number
+          seller_id?: string
+          seller_rating?: number | null
+          seller_review?: string | null
+          status?: string
+          total_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "p2p_orders_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "p2p_ads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      p2p_trader_profiles: {
+        Row: {
+          avg_rating: number
+          avg_release_time: number
+          created_at: string
+          id: string
+          is_verified_trader: boolean
+          last_active_at: string | null
+          successful_trades: number
+          total_trades: number
+          total_volume: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avg_rating?: number
+          avg_release_time?: number
+          created_at?: string
+          id?: string
+          is_verified_trader?: boolean
+          last_active_at?: string | null
+          successful_trades?: number
+          total_trades?: number
+          total_volume?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avg_rating?: number
+          avg_release_time?: number
+          created_at?: string
+          id?: string
+          is_verified_trader?: boolean
+          last_active_at?: string | null
+          successful_trades?: number
+          total_trades?: number
+          total_volume?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       phone_operators: {
         Row: {
           created_at: string
