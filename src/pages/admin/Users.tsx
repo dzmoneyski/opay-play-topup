@@ -479,12 +479,31 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
 
   const getSignedUrl = async (imagePath: string | null): Promise<string | null> => {
     if (!imagePath) return null;
-    if (imagePath.startsWith('http')) return imagePath;
+    
+    // If it's a full URL, extract the relative path after the bucket name
+    let relativePath = imagePath;
+    if (imagePath.startsWith('http')) {
+      const bucketMarker = '/object/public/identity-documents/';
+      const idx = imagePath.indexOf(bucketMarker);
+      if (idx !== -1) {
+        relativePath = imagePath.substring(idx + bucketMarker.length);
+      } else {
+        // Try signed URL marker too
+        const signedMarker = '/object/sign/identity-documents/';
+        const idx2 = imagePath.indexOf(signedMarker);
+        if (idx2 !== -1) {
+          relativePath = imagePath.substring(idx2 + signedMarker.length).split('?')[0];
+        } else {
+          return imagePath; // fallback: return as-is
+        }
+      }
+    }
+    
     const { data, error } = await supabase.storage
       .from('identity-documents')
-      .createSignedUrl(imagePath, 3600); // valid for 1 hour
+      .createSignedUrl(relativePath, 3600);
     if (error) {
-      console.error('Error creating signed URL:', error);
+      console.error('Error creating signed URL:', error, 'path:', relativePath);
       return null;
     }
     return data.signedUrl;
