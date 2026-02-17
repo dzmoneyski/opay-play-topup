@@ -15,10 +15,6 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false }
-    });
-
     const { user_ids, admin_secret } = await req.json();
 
     if (admin_secret !== "opay_admin_ban_2025") {
@@ -28,21 +24,41 @@ serve(async (req) => {
       );
     }
 
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    });
+
     const results = [];
 
     for (const user_id of user_ids) {
-      // Ban for 100 years (effectively permanent)
-      const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
+      // 1. Ban the user (prevents any new token refresh)
+      const { error: banError } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
         ban_duration: "876600h"
       });
 
-      if (error) {
-        console.error(`Error banning user ${user_id}:`, error);
-        results.push({ user_id, success: false, error: error.message });
-      } else {
-        console.log(`User ${user_id} banned successfully`);
-        results.push({ user_id, success: true });
-      }
+      // 2. Delete all active sessions via Supabase Auth Admin REST API
+      const sessionsResponse = await fetch(
+        `${supabaseUrl}/auth/v1/admin/users/${user_id}/sessions`,
+        {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${serviceRoleKey}`,
+            "apikey": serviceRoleKey,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const sessionResult = await sessionsResponse.text();
+      console.log(`Sessions deleted for ${user_id}:`, sessionsResponse.status, sessionResult);
+
+      results.push({
+        user_id,
+        banned: !banError,
+        sessions_revoked: sessionsResponse.status === 200 || sessionsResponse.status === 204,
+        ban_error: banError?.message,
+        session_status: sessionsResponse.status,
+      });
     }
 
     return new Response(
