@@ -473,12 +473,36 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
     }
   };
 
-  const getImageUrl = (imagePath: string | null) => {
+  const [imageUrls, setImageUrls] = React.useState<{ front?: string; back?: string }>({});
+  const [zoomedImage, setZoomedImage] = React.useState<string | null>(null);
+  const [zoomLevel, setZoomLevel] = React.useState(1);
+
+  const getSignedUrl = async (imagePath: string | null): Promise<string | null> => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
-    const { data } = supabase.storage.from('identity-documents').getPublicUrl(imagePath);
-    return data.publicUrl;
+    const { data, error } = await supabase.storage
+      .from('identity-documents')
+      .createSignedUrl(imagePath, 3600); // valid for 1 hour
+    if (error) {
+      console.error('Error creating signed URL:', error);
+      return null;
+    }
+    return data.signedUrl;
   };
+
+  React.useEffect(() => {
+    const loadImages = async () => {
+      if (!verificationRequest) return;
+      const frontPath = verificationRequest.id_front_image || verificationRequest.national_id_front_image;
+      const backPath = verificationRequest.id_back_image || verificationRequest.national_id_back_image;
+      const [frontUrl, backUrl] = await Promise.all([
+        getSignedUrl(frontPath),
+        getSignedUrl(backPath)
+      ]);
+      setImageUrls({ front: frontUrl || undefined, back: backUrl || undefined });
+    };
+    loadImages();
+  }, [verificationRequest]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ar-DZ', {
@@ -681,34 +705,76 @@ const UserDetailsModal = ({ user, onUpdate }: { user: any; onUpdate: () => void 
                   </div>
 
                   {/* Document Images */}
-                  {(verificationRequest.national_id_front_image || verificationRequest.national_id_back_image) && (
+                  {(imageUrls.front || imageUrls.back) && (
                     <div>
                       <h4 className="font-medium mb-4">صور المستندات</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {verificationRequest.national_id_front_image && (
+                        {imageUrls.front && (
                           <div>
                             <p className="text-sm font-medium text-muted-foreground mb-2">الوجه الأمامي</p>
-                            <img 
-                              src={getImageUrl(verificationRequest.national_id_front_image) || ''} 
-                              alt="الوجه الأمامي للهوية"
-                              className="w-full max-h-48 object-contain border rounded-md bg-gray-50 cursor-pointer"
-                              onClick={() => window.open(getImageUrl(verificationRequest.national_id_front_image) || '', '_blank')}
-                            />
+                            <div className="relative group">
+                              <img 
+                                src={imageUrls.front} 
+                                alt="الوجه الأمامي للهوية"
+                                className="w-full max-h-52 object-contain border rounded-md bg-muted/20 cursor-zoom-in hover:opacity-90 transition-opacity"
+                                onClick={() => { setZoomedImage(imageUrls.front!); setZoomLevel(1); }}
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                <span className="bg-black/50 text-white text-xs px-2 py-1 rounded">انقر للتكبير</span>
+                              </div>
+                            </div>
                           </div>
                         )}
-                        
-                        {verificationRequest.national_id_back_image && (
+                        {imageUrls.back && (
                           <div>
                             <p className="text-sm font-medium text-muted-foreground mb-2">الوجه الخلفي</p>
-                            <img 
-                              src={getImageUrl(verificationRequest.national_id_back_image) || ''} 
-                              alt="الوجه الخلفي للهوية"
-                              className="w-full max-h-48 object-contain border rounded-md bg-gray-50 cursor-pointer"
-                              onClick={() => window.open(getImageUrl(verificationRequest.national_id_back_image) || '', '_blank')}
-                            />
+                            <div className="relative group">
+                              <img 
+                                src={imageUrls.back} 
+                                alt="الوجه الخلفي للهوية"
+                                className="w-full max-h-52 object-contain border rounded-md bg-muted/20 cursor-zoom-in hover:opacity-90 transition-opacity"
+                                onClick={() => { setZoomedImage(imageUrls.back!); setZoomLevel(1); }}
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                <span className="bg-black/50 text-white text-xs px-2 py-1 rounded">انقر للتكبير</span>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Image Zoom Modal */}
+                  {zoomedImage && (
+                    <div 
+                      className="fixed inset-0 z-[9999] bg-black/90 flex flex-col items-center justify-center"
+                      onClick={() => setZoomedImage(null)}
+                    >
+                      <div className="flex items-center gap-4 mb-4" onClick={e => e.stopPropagation()}>
+                        <button
+                          onClick={() => setZoomLevel(z => Math.max(0.5, z - 0.25))}
+                          className="bg-white/20 hover:bg-white/30 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold"
+                        >−</button>
+                        <span className="text-white text-sm font-medium">{Math.round(zoomLevel * 100)}%</span>
+                        <button
+                          onClick={() => setZoomLevel(z => Math.min(4, z + 0.25))}
+                          className="bg-white/20 hover:bg-white/30 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold"
+                        >+</button>
+                        <button
+                          onClick={() => setZoomedImage(null)}
+                          className="bg-white/20 hover:bg-white/30 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold mr-4"
+                        >✕</button>
+                      </div>
+                      <div className="overflow-auto max-h-[80vh] max-w-[90vw]" onClick={e => e.stopPropagation()}>
+                        <img
+                          src={zoomedImage}
+                          alt="صورة الهوية"
+                          style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top center', transition: 'transform 0.2s' }}
+                          className="max-w-full"
+                        />
+                      </div>
+                      <p className="text-white/50 text-xs mt-4">انقر خارج الصورة للإغلاق</p>
                     </div>
                   )}
 
