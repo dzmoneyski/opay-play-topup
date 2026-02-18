@@ -12,6 +12,8 @@ const AboutUs = () => {
     telegram: "https://t.me/opay_admin",
     website: "https://opaydz.com",
     commercialRegister: "19621230011114402100",
+    email: "opaydz.officel@gmail.com",
+    whatsapp: "https://wa.me/213660873714",
   };
 
   return (
@@ -170,6 +172,44 @@ const AboutUs = () => {
                     </div>
                   </div>
                   <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-[#0088cc] transition-colors" />
+                </div>
+              </a>
+
+              <a 
+                href={`https://wa.me/213660873714`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
+                <div className="flex items-center justify-between p-4 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 rounded-xl transition-all group cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+                      <Phone className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">واتساب</p>
+                      <p className="text-xs text-muted-foreground direction-ltr">+213 660 873 714</p>
+                    </div>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-green-500 transition-colors" />
+                </div>
+              </a>
+
+              <a 
+                href={`mailto:${companyInfo.email}`}
+                className="block"
+              >
+                <div className="flex items-center justify-between p-4 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl transition-all group cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">البريد الإلكتروني</p>
+                      <p className="text-xs text-muted-foreground direction-ltr">{companyInfo.email}</p>
+                    </div>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-red-500 transition-colors" />
                 </div>
               </a>
 
