@@ -42,6 +42,7 @@ import AgentGameOrders from "./pages/agent/AgentGameOrders";
 import AgentBettingOrders from "./pages/agent/AgentBettingOrders";
 import AgentPhoneOrders from "./pages/agent/AgentPhoneOrders";
 import PhoneTopup from "./pages/PhoneTopup";
+import FraudReport from "./pages/FraudReport";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -230,6 +231,12 @@ const App = () => {
               <Route path="/phone-topup" element={
                 <ProtectedRoute>
                   <PhoneTopup />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/fraud-report" element={
+                <ProtectedRoute requireActivation={false}>
+                  <FraudReport />
                 </ProtectedRoute>
               } />
               
