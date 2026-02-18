@@ -176,7 +176,7 @@ const AboutUs = () => {
               </a>
 
               <a 
-                href={`https://wa.me/213660873714`}
+                href={`https://wa.me/213553980661`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block"
@@ -188,7 +188,7 @@ const AboutUs = () => {
                     </div>
                     <div>
                       <p className="font-semibold text-sm">واتساب</p>
-                      <p className="text-xs text-muted-foreground direction-ltr">+213 660 873 714</p>
+                      <p className="text-xs text-muted-foreground direction-ltr">+213 553 980 661</p>
                     </div>
                   </div>
                   <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-green-500 transition-colors" />
