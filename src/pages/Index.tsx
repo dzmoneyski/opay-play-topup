@@ -787,6 +787,73 @@ const { isAdmin, loading: rolesLoading } = useUserRoles();
             </CardContent>
           </Card>
         </div>
+
+        {/* Contact Us Section */}
+        <div className="animate-slide-up" style={{ animationDelay: '0.8s', animationFillMode: 'both' }}>
+          <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
+            <div className="w-1 h-8 bg-gradient-secondary rounded-full"></div>
+            تواصل معنا
+          </h2>
+          <Card className="shadow-card border-0 bg-gradient-card backdrop-blur-sm">
+            <CardContent className="p-6 space-y-3">
+              {/* Telegram */}
+              <a href="https://t.me/opay_admin" target="_blank" rel="noopener noreferrer" className="block">
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-[#0088cc]/10 hover:bg-[#0088cc]/20 border border-[#0088cc]/20 transition-all duration-300 hover:scale-[1.02] group cursor-pointer">
+                  <div className="w-12 h-12 rounded-2xl bg-[#0088cc] flex items-center justify-center shadow-md flex-shrink-0">
+                    <Send className="w-6 h-6 text-white -rotate-45" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-foreground">تيليغرام</p>
+                    <p className="text-sm text-muted-foreground direction-ltr">@opay_admin</p>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-[#0088cc] transition-colors" />
+                </div>
+              </a>
+
+              {/* WhatsApp */}
+              <a href="https://wa.me/213553980661" target="_blank" rel="noopener noreferrer" className="block">
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 transition-all duration-300 hover:scale-[1.02] group cursor-pointer">
+                  <div className="w-12 h-12 rounded-2xl bg-green-500 flex items-center justify-center shadow-md flex-shrink-0">
+                    <MessageCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-foreground">واتساب</p>
+                    <p className="text-sm text-muted-foreground direction-ltr">+213 553 980 661</p>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-green-500 transition-colors" />
+                </div>
+              </a>
+
+              {/* Email */}
+              <a href="mailto:opaydz.officel@gmail.com" className="block">
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-all duration-300 hover:scale-[1.02] group cursor-pointer">
+                  <div className="w-12 h-12 rounded-2xl bg-red-500 flex items-center justify-center shadow-md flex-shrink-0">
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-foreground">البريد الإلكتروني</p>
+                    <p className="text-sm text-muted-foreground direction-ltr">opaydz.officel@gmail.com</p>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-red-500 transition-colors" />
+                </div>
+              </a>
+
+              {/* About Us Link */}
+              <Link to="/about-us" className="block">
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-all duration-300 hover:scale-[1.02] group cursor-pointer">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-md flex-shrink-0">
+                    <Shield className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-foreground">من نحن</p>
+                    <p className="text-sm text-muted-foreground">اعرف أكثر عن منصة OPay DZ</p>
+                  </div>
+                  <ArrowLeft className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* QR Scanner Modal */}
