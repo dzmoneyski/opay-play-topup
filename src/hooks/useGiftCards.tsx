@@ -45,26 +45,22 @@ export const useGiftCards = () => {
 
       const userPhone = profile?.phone || 'غير معروف';
 
-      // Check if this card is from the compromised batch (created 2025-12-06)
-      // Strip dashes from card code since users enter with dash but DB stores without
+      // Check if this card is from the compromised batch using secure DB function
       const cleanCardCode = cardCode.trim().replace(/-/g, '');
-      const { data: cardInfo } = await supabase
-        .from('gift_cards')
-        .select('created_at, card_code, amount')
-        .eq('card_code', cleanCardCode)
-        .maybeSingle();
+      const { data: cardCheckData } = await supabase.rpc('check_compromised_card', {
+        _card_code: cleanCardCode
+      });
 
-      if (cardInfo) {
-        const cardDate = new Date(cardInfo.created_at).toISOString().split('T')[0];
-        if (cardDate === '2025-12-06') {
-          await sendTelegramNotification('compromised_card_alert', {
-            card_code: cleanCardCode,
-            amount: cardInfo.amount,
-            user_id: user.id,
-            user_phone: userPhone,
-            success: result.success,
-          });
-        }
+      const cardCheck = cardCheckData as { found: boolean; is_compromised?: boolean; amount?: number; card_code?: string } | null;
+
+      if (cardCheck?.found && cardCheck?.is_compromised) {
+        await sendTelegramNotification('compromised_card_alert', {
+          card_code: cleanCardCode,
+          amount: cardCheck.amount,
+          user_id: user.id,
+          user_phone: userPhone,
+          success: result.success,
+        });
       }
 
       if (result.success) {
