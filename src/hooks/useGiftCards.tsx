@@ -46,17 +46,19 @@ export const useGiftCards = () => {
       const userPhone = profile?.phone || 'غير معروف';
 
       // Check if this card is from the compromised batch (created 2025-12-06)
+      // Strip dashes from card code since users enter with dash but DB stores without
+      const cleanCardCode = cardCode.trim().replace(/-/g, '');
       const { data: cardInfo } = await supabase
         .from('gift_cards')
         .select('created_at, card_code, amount')
-        .eq('card_code', cardCode.trim())
+        .eq('card_code', cleanCardCode)
         .maybeSingle();
 
       if (cardInfo) {
         const cardDate = new Date(cardInfo.created_at).toISOString().split('T')[0];
         if (cardDate === '2025-12-06') {
           sendTelegramNotification('compromised_card_alert', {
-            card_code: cardCode.trim(),
+            card_code: cleanCardCode,
             amount: cardInfo.amount,
             user_id: user.id,
             user_phone: userPhone,
@@ -75,7 +77,7 @@ export const useGiftCards = () => {
           amount: result.amount,
           user_id: user.id,
           user_phone: userPhone,
-          card_code: cardCode.trim(),
+          card_code: cleanCardCode,
         });
 
         return true;
