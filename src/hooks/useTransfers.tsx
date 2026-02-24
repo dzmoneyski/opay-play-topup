@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { sendTelegramNotification } from '@/lib/telegramNotify';
 
 interface TransferData {
   recipient_phone: string;
@@ -79,6 +80,14 @@ export const useTransfers = () => {
       toast({
         title: "تم التحويل بنجاح",
         description: `تم تحويل ${transferData.amount} دج إلى ${transferData.recipient_phone}${transactionNumber ? ` - رقم المعاملة: ${transactionNumber}` : ''}`,
+      });
+
+      // Send Telegram notification (large transfers get special alert)
+      const notifType = transferData.amount >= 10000 ? 'large_transfer' : 'new_transfer';
+      sendTelegramNotification(notifType, {
+        amount: transferData.amount,
+        sender_phone: 'المرسل',
+        recipient_phone: transferData.recipient_phone
       });
 
       return result;

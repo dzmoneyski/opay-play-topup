@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { sendTelegramNotification } from '@/lib/telegramNotify';
 
 interface Profile {
   id: string;
@@ -330,6 +331,12 @@ export const useProfile = () => {
 
       // Refetch verification request to get the latest one
       await fetchVerificationRequest();
+
+      // Send Telegram notification
+      sendTelegramNotification('new_verification', {
+        full_name: additionalInfo?.fullNameOnId || profile?.full_name,
+        phone: profile?.phone
+      });
 
       return { data, error: null };
     } catch (error) {

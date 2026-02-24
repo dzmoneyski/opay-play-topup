@@ -66,10 +66,81 @@ serve(async (req) => {
       }
 
       case 'gift_card_redeemed': {
-        message = `🎴 *تفعيل بطاقة*\n\n` +
+        message = `🎴 *تفعيل بطاقة هدية*\n\n` +
           `💰 المبلغ: ${record.amount} دج\n` +
           `👤 المستخدم: \`${record.user_id}\`\n` +
-          `🔢 الكود: \`${record.card_code}\`\n` +
+          `🕐 الوقت: ${timestamp}`;
+        break;
+      }
+
+      case 'new_verification': {
+        message = `🆔 *طلب تحقق هوية جديد*\n\n` +
+          `👤 الاسم: ${record.full_name || 'غير محدد'}\n` +
+          `📱 الهاتف: \`${record.phone || 'غير محدد'}\`\n` +
+          `🕐 الوقت: ${timestamp}`;
+        break;
+      }
+
+      case 'new_merchant_request': {
+        message = `🏪 *طلب تاجر جديد*\n\n` +
+          `🏢 اسم النشاط: ${record.business_name}\n` +
+          `📋 نوع النشاط: ${record.business_type}\n` +
+          `📱 الهاتف: \`${record.phone}\`\n` +
+          `🕐 الوقت: ${timestamp}`;
+        break;
+      }
+
+      case 'new_game_topup': {
+        message = `🎮 *طلب شحن لعبة*\n\n` +
+          `💰 المبلغ: ${record.amount} دج\n` +
+          `🎯 اللعبة: ${record.platform_name || 'غير محدد'}\n` +
+          `🆔 معرف اللاعب: \`${record.player_id}\`\n` +
+          `🕐 الوقت: ${timestamp}`;
+        break;
+      }
+
+      case 'new_betting_deposit': {
+        message = `🎰 *طلب إيداع مراهنات*\n\n` +
+          `💰 المبلغ: ${record.amount} دج\n` +
+          `🎯 المنصة: ${record.platform_name || 'غير محدد'}\n` +
+          `🆔 معرف اللاعب: \`${record.player_id}\`\n` +
+          `🕐 الوقت: ${timestamp}`;
+        break;
+      }
+
+      case 'new_betting_withdrawal': {
+        message = `🎰 *طلب سحب مراهنات*\n\n` +
+          `💰 المبلغ: ${record.amount} دج\n` +
+          `🎯 المنصة: ${record.platform_name || 'غير محدد'}\n` +
+          `🆔 معرف اللاعب: \`${record.player_id}\`\n` +
+          `🔑 كود السحب: \`${record.withdrawal_code}\`\n` +
+          `🕐 الوقت: ${timestamp}`;
+        break;
+      }
+
+      case 'new_digital_card': {
+        message = `💳 *طلب بطاقة رقمية*\n\n` +
+          `💰 المبلغ: ${record.amount_usd}$ (${record.total_dzd} دج)\n` +
+          `📋 النوع: ${record.card_type || 'غير محدد'}\n` +
+          `🆔 الحساب: \`${record.account_id}\`\n` +
+          `🕐 الوقت: ${timestamp}`;
+        break;
+      }
+
+      case 'new_phone_topup': {
+        message = `📱 *طلب شحن هاتف*\n\n` +
+          `💰 المبلغ: ${record.amount} دج\n` +
+          `📞 الرقم: \`${record.phone_number}\`\n` +
+          `📡 المشغل: ${record.operator_name || 'غير محدد'}\n` +
+          `🕐 الوقت: ${timestamp}`;
+        break;
+      }
+
+      case 'new_transfer': {
+        message = `💸 *تحويل جديد*\n\n` +
+          `💰 المبلغ: ${record.amount} دج\n` +
+          `📤 المرسل: \`${record.sender_phone}\`\n` +
+          `📥 المستقبل: \`${record.recipient_phone}\`\n` +
           `🕐 الوقت: ${timestamp}`;
         break;
       }

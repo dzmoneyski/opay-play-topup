@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { sendTelegramNotification } from '@/lib/telegramNotify';
 
 interface MerchantRequestData {
   business_name: string;
@@ -50,6 +51,13 @@ export const useMerchantRequest = () => {
         });
 
       if (error) throw error;
+
+      // Send Telegram notification
+      sendTelegramNotification('new_merchant_request', {
+        business_name: data.business_name,
+        business_type: data.business_type,
+        phone: data.phone
+      });
 
       toast.success('تم إرسال طلبك بنجاح! سيتم مراجعته قريباً');
       return { success: true };

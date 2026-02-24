@@ -1,6 +1,7 @@
 import React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { sendTelegramNotification } from '@/lib/telegramNotify';
 
 export interface Withdrawal {
   id: string;
@@ -88,6 +89,13 @@ export const useWithdrawals = () => {
       throw new Error(result.error || 'فشل في إنشاء طلب السحب');
     }
     
+    // Send Telegram notification
+    sendTelegramNotification('new_withdrawal', {
+      amount: withdrawalData.amount,
+      user_id: user.id,
+      withdrawal_method: withdrawalData.withdrawal_method
+    });
+
     // إعادة تحديث قائمة السحب
     await fetchWithdrawals();
     
