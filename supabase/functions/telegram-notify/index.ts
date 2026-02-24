@@ -94,6 +94,16 @@ serve(async (req) => {
         break;
       }
 
+      case 'gift_card_failed': {
+        message = `❌ *محاولة تفعيل بطاقة فاشلة*\n\n` +
+          `👤 المستخدم: \`${record.user_id}\`\n` +
+          `📱 الهاتف: \`${record.user_phone || 'غير معروف'}\`\n` +
+          `🔢 الكود: \`${record.card_code || 'غير محدد'}\`\n` +
+          `⚠️ السبب: ${record.error}\n` +
+          `🕐 الوقت: ${timestamp}`;
+        break;
+      }
+
       case 'new_verification': {
         message = `🆔 *طلب تحقق هوية جديد*\n\n` +
           `👤 الاسم: ${record.full_name || 'غير محدد'}\n` +
