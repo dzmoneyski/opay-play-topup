@@ -80,15 +80,6 @@ export const useGiftCards = () => {
 
         return true;
       } else {
-        // Send notification for failed attempts too
-        sendTelegramNotification('gift_card_failed', {
-          user_id: user.id,
-          user_phone: userPhone,
-          card_code: cardCode.trim(),
-          error: result.error || 'خطأ غير معروف',
-        });
-
-        // Handle lockout with countdown
         if (result.locked_until && result.remaining_seconds) {
           const hours = Math.floor(result.remaining_seconds / 3600);
           const minutes = Math.floor((result.remaining_seconds % 3600) / 60);
