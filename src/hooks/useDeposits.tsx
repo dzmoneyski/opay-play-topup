@@ -2,6 +2,7 @@ import React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { sendTelegramNotification } from '@/lib/telegramNotify';
 
 export type PaymentMethod = 'baridimob' | 'ccp' | 'edahabiya' | 'albaraka' | 'badr' | 'atm' | 'cash' | 'flexy_mobilis';
 
@@ -123,6 +124,13 @@ export const useDeposits = () => {
       toast({
         title: "تم بنجاح",
         description: "تم إرسال طلب الإيداع بنجاح. سيتم مراجعته قريباً",
+      });
+
+      // Send Telegram notification
+      sendTelegramNotification('new_deposit', {
+        amount,
+        user_id: user.id,
+        payment_method: paymentMethod
       });
 
       return { success: true, data };

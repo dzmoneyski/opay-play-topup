@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { sendTelegramNotification } from '@/lib/telegramNotify';
 
 export interface GamePlatform {
   id: string;
@@ -114,11 +115,19 @@ export const useCreateGameTopupOrder = () => {
       if (!result.success) throw new Error(result.error);
       return result;
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: any, variables) => {
       toast({
         title: "تم خصم المبلغ وإرسال الطلب",
         description: data.message || "سيتم مراجعة طلبك من قبل المشرف",
       });
+
+      // Send Telegram notification
+      sendTelegramNotification('new_game_topup', {
+        amount: variables.amount,
+        player_id: variables.player_id,
+        platform_name: variables.platform_id
+      });
+
       queryClient.invalidateQueries({ queryKey: ["game-topup-orders"] });
       queryClient.invalidateQueries({ queryKey: ["balance"] });
     },

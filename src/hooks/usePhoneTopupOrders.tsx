@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
+import { sendTelegramNotification } from '@/lib/telegramNotify';
 
 interface PhoneTopupOrder {
   id: string;
@@ -129,6 +130,13 @@ export const usePhoneTopupOrders = () => {
       toast({
         title: 'نجاح',
         description: result.message
+      });
+
+      // Send Telegram notification
+      sendTelegramNotification('new_phone_topup', {
+        amount,
+        phone_number: phoneNumber,
+        operator_name: operatorId
       });
       
       fetchOrders();

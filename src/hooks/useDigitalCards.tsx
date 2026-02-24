@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { sendTelegramNotification } from '@/lib/telegramNotify';
 
 export interface DigitalCardType {
   id: string;
@@ -151,6 +152,15 @@ export const useDigitalCards = () => {
           title: "نجح الطلب",
           description: result.message || "تم إرسال طلبك بنجاح",
         });
+
+        // Send Telegram notification
+        sendTelegramNotification('new_digital_card', {
+          amount_usd: amountUsd,
+          total_dzd: result.total_dzd,
+          card_type: cardTypeId,
+          account_id: accountId
+        });
+
         await fetchUserOrders();
         return { 
           success: true, 

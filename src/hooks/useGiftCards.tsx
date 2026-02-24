@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { sendTelegramNotification } from '@/lib/telegramNotify';
 
 export const useGiftCards = () => {
   const [loading, setLoading] = useState(false);
@@ -40,6 +41,13 @@ export const useGiftCards = () => {
           title: "نجح العملية",
           description: `${result.message} - ${result.amount} دج`,
         });
+
+        // Send Telegram notification
+        sendTelegramNotification('gift_card_redeemed', {
+          amount: result.amount,
+          user_id: user.id
+        });
+
         return true;
       } else {
         // Handle lockout with countdown

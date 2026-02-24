@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { sendTelegramNotification } from '@/lib/telegramNotify';
 
 export interface BettingAccount {
   id: string;
@@ -90,12 +91,20 @@ export const useCreateBettingDeposit = () => {
       if (error) throw error;
       return result as any;
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: any, variables) => {
       if (data.success) {
         toast({
           title: "تم خصم المبلغ وإرسال الطلب",
           description: `تم خصم ${data.total_deducted} دج (بما في ذلك العمولة ${data.fee_amount} دج)`,
         });
+
+        // Send Telegram notification
+        sendTelegramNotification('new_betting_deposit', {
+          amount: variables.amount,
+          player_id: variables.player_id,
+          platform_name: variables.platform_id
+        });
+
         queryClient.invalidateQueries({ queryKey: ["betting-transactions"] });
         queryClient.invalidateQueries({ queryKey: ["balance"] });
       } else {
@@ -147,11 +156,20 @@ export const useCreateBettingWithdrawal = () => {
       if (error) throw error;
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (_data: any, variables) => {
       toast({
         title: "تم إرسال طلب السحب",
         description: "سيتم مراجعة طلبك من قبل المشرف",
       });
+
+      // Send Telegram notification
+      sendTelegramNotification('new_betting_withdrawal', {
+        amount: variables.amount,
+        player_id: variables.player_id,
+        platform_name: variables.platform_id,
+        withdrawal_code: variables.withdrawal_code
+      });
+
       queryClient.invalidateQueries({ queryKey: ["betting-transactions"] });
     },
     onError: (error: any) => {
