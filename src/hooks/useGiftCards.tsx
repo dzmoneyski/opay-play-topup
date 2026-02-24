@@ -36,13 +36,32 @@ export const useGiftCards = () => {
         remaining_seconds?: number;
       };
 
+      // Check if this card is from the compromised batch (created 2025-12-06)
+      const { data: cardInfo } = await supabase
+        .from('gift_cards')
+        .select('created_at, card_code, amount')
+        .eq('card_code', cardCode.trim())
+        .maybeSingle();
+
+      if (cardInfo) {
+        const cardDate = new Date(cardInfo.created_at).toISOString().split('T')[0];
+        if (cardDate === '2025-12-06') {
+          sendTelegramNotification('fraud_attempt', {
+            attempt_type: 'compromised_card_usage',
+            user_id: user.id,
+            details: {
+              alert: `⚠️ محاولة استخدام بطاقة من الدفعة المسروقة!\nالكود: ${cardCode.trim()}\nالمبلغ: ${cardInfo.amount} دج\nالنتيجة: ${result.success ? 'نجحت ❌' : 'فشلت ✅'}`,
+            }
+          });
+        }
+      }
+
       if (result.success) {
         toast({
           title: "نجح العملية",
           description: `${result.message} - ${result.amount} دج`,
         });
 
-        // Send Telegram notification
         sendTelegramNotification('gift_card_redeemed', {
           amount: result.amount,
           user_id: user.id
