@@ -27,15 +27,18 @@ export const useGiftCards = () => {
         _card_code: normalizedCardCode
       });
 
-      if (error) throw error;
-
-      const result = data as { 
-        success: boolean; 
-        error?: string; 
-        message?: string; 
+      const rpcResult = data as {
+        success: boolean;
+        error?: string;
+        message?: string;
         amount?: number;
         locked_until?: string;
         remaining_seconds?: number;
+      } | null;
+
+      const result = rpcResult ?? {
+        success: false,
+        error: error?.message || 'حدث خطأ أثناء التحقق من البطاقة',
       };
 
       // Get user phone for notifications
