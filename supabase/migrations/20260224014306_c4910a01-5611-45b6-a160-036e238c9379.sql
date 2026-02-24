@@ -1,0 +1,1 @@
+UPDATE profiles SET redeem_locked_until = NULL, failed_redeem_attempts = 0 WHERE user_id IN ('b3b7972c-df14-4bf2-988e-ed951cfe9497', '14cce3f6-fe8a-4f71-b9af-06556c6e0a01');
