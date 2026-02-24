@@ -21,8 +21,10 @@ export const useGiftCards = () => {
 
     setLoading(true);
     try {
+      const normalizedCardCode = cardCode.replace(/[^0-9]/g, '');
+
       const { data, error } = await supabase.rpc('redeem_gift_card', {
-        _card_code: cardCode.trim()
+        _card_code: normalizedCardCode
       });
 
       if (error) throw error;
@@ -46,7 +48,7 @@ export const useGiftCards = () => {
       const userPhone = profile?.phone || 'غير معروف';
 
       // Check if this card is from the compromised batch using secure DB function
-      const cleanCardCode = cardCode.trim().replace(/-/g, '');
+      const cleanCardCode = normalizedCardCode;
       const { data: cardCheckData } = await supabase.rpc('check_compromised_card', {
         _card_code: cleanCardCode
       });
@@ -81,6 +83,18 @@ export const useGiftCards = () => {
         if (result.locked_until && result.remaining_seconds) {
           const hours = Math.floor(result.remaining_seconds / 3600);
           const minutes = Math.floor((result.remaining_seconds % 3600) / 60);
+
+          await sendTelegramNotification('fraud_attempt', {
+            attempt_type: 'gift_card_redeem_locked',
+            user_id: user.id,
+            details: {
+              alert: 'تم توقيف محاولات تفعيل البطاقات بسبب تكرار المحاولات',
+              card_code: cleanCardCode,
+              user_phone: userPhone,
+              remaining_seconds: result.remaining_seconds,
+            },
+          });
+
           toast({
             title: "تم إيقاف الحساب مؤقتاً",
             description: `${result.error}. الوقت المتبقي: ${hours}س ${minutes}د`,
