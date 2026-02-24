@@ -2387,6 +2387,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: undefined
       }
+      check_compromised_card: { Args: { _card_code: string }; Returns: Json }
       check_daily_limit: {
         Args: { _amount: number; _user_id: string }
         Returns: Json
