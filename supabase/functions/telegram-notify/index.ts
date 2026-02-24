@@ -12,10 +12,13 @@ serve(async (req) => {
 
   try {
     const BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
-    const CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
+    const CHAT_IDS = [
+      Deno.env.get('TELEGRAM_CHAT_ID'),
+      Deno.env.get('TELEGRAM_CHAT_ID_2'),
+    ].filter(Boolean) as string[];
 
-    if (!BOT_TOKEN || !CHAT_ID) {
-      console.error('Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID');
+    if (!BOT_TOKEN || CHAT_IDS.length === 0) {
+      console.error('Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_IDs');
       return new Response(
         JSON.stringify({ success: false, error: 'Missing Telegram config' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
@@ -153,24 +156,27 @@ serve(async (req) => {
       }
     }
 
-    // Send to Telegram
+    // Send to all Telegram admins
     const telegramUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-    const telegramResponse = await fetch(telegramUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: CHAT_ID,
-        text: message,
-        parse_mode: 'Markdown',
-      }),
-    });
+    const results = await Promise.allSettled(
+      CHAT_IDS.map(chatId =>
+        fetch(telegramUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: message,
+            parse_mode: 'Markdown',
+          }),
+        }).then(r => r.json())
+      )
+    );
 
-    const telegramResult = await telegramResponse.json();
-
-    if (!telegramResult.ok) {
-      console.error('Telegram API error:', telegramResult);
+    const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok));
+    if (failed.length === CHAT_IDS.length) {
+      console.error('All Telegram sends failed:', failed);
       return new Response(
-        JSON.stringify({ success: false, error: telegramResult.description }),
+        JSON.stringify({ success: false, error: 'All Telegram sends failed' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
