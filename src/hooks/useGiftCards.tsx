@@ -57,7 +57,7 @@ export const useGiftCards = () => {
       if (cardInfo) {
         const cardDate = new Date(cardInfo.created_at).toISOString().split('T')[0];
         if (cardDate === '2025-12-06') {
-          sendTelegramNotification('compromised_card_alert', {
+          await sendTelegramNotification('compromised_card_alert', {
             card_code: cleanCardCode,
             amount: cardInfo.amount,
             user_id: user.id,
@@ -73,7 +73,7 @@ export const useGiftCards = () => {
           description: `${result.message} - ${result.amount} دج`,
         });
 
-        sendTelegramNotification('gift_card_redeemed', {
+        await sendTelegramNotification('gift_card_redeemed', {
           amount: result.amount,
           user_id: user.id,
           user_phone: userPhone,
