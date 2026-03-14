@@ -53,23 +53,46 @@ export function AnnouncementBanner() {
               نعتذر عن هذا الإزعاج ونعمل على حل المشكلة في أقرب وقت.
             </p>
             
-            <div className="mt-3 space-y-1.5">
-              <p className="text-xs font-semibold text-yellow-700 dark:text-yellow-300">📞 طرق التواصل مع دعم 1xBet:</p>
-              {CONTACTS_1XBET.map((contact, i) => {
-                const Icon = contact.icon;
-                return (
-                  <a
-                    key={i}
-                    href={contact.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Icon className="h-3.5 w-3.5 shrink-0 text-yellow-600 dark:text-yellow-400" />
-                    <span className="underline-offset-2 hover:underline">{contact.label}</span>
+            <div className="mt-3 space-y-3">
+              {/* Telegram */}
+              <div>
+                <p className="text-xs font-semibold text-yellow-700 dark:text-yellow-300 mb-1">💬 تلغرام:</p>
+                {CONTACTS_1XBET.telegram.map((c, i) => (
+                  <a key={i} href={c.href} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                    <MessageCircle className="h-3.5 w-3.5 shrink-0 text-yellow-600 dark:text-yellow-400" />
+                    <span>{c.label}: <span className="underline-offset-2 hover:underline">{c.value}</span></span>
                   </a>
-                );
-              })}
+                ))}
+              </div>
+
+              {/* Emails */}
+              <div>
+                <p className="text-xs font-semibold text-yellow-700 dark:text-yellow-300 mb-1">📧 البريد الإلكتروني:</p>
+                <div className="space-y-1">
+                  {CONTACTS_1XBET.emails.map((c, i) => (
+                    <a key={i} href={c.href} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                      <Mail className="h-3.5 w-3.5 shrink-0 text-yellow-600 dark:text-yellow-400" />
+                      <span>{c.label}: <span className="underline-offset-2 hover:underline">{c.value}</span></span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              {/* Phones */}
+              <div>
+                <p className="text-xs font-semibold text-yellow-700 dark:text-yellow-300 mb-1">📞 الهاتف:</p>
+                <div className="space-y-1">
+                  {CONTACTS_1XBET.phones.map((c, i) => (
+                    <a key={i} href={c.href} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                      <Phone className="h-3.5 w-3.5 shrink-0 text-yellow-600 dark:text-yellow-400" />
+                      <span>{c.label}: <span className="underline-offset-2 hover:underline">{c.value}</span></span>
+                    </a>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <a 
