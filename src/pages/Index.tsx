@@ -325,6 +325,8 @@ const { isAdmin, loading: rolesLoading } = useUserRoles();
   
   return (
     <div className="min-h-screen bg-background" dir="rtl">
+      {/* 1xBet Announcement Banner */}
+      <AnnouncementBanner />
       {/* Professional Header */}
       <header className="relative bg-gradient-hero overflow-hidden">
         <div className="absolute inset-0 bg-gradient-glass"></div>
