@@ -1,11 +1,19 @@
 import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X, Mail, Phone, MessageCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // Banner expiry: 2 days from March 14, 2026
 const BANNER_EXPIRY = new Date('2026-03-16T23:59:59').getTime();
 const DISMISS_KEY = 'announcement_1xbet_dismissed';
+
+const CONTACTS_1XBET = [
+  { icon: Mail, label: 'info-en@1xbet-team.com', href: 'mailto:info-en@1xbet-team.com' },
+  { icon: Mail, label: 'block-tr@1xbet-team.com (حسابات محظورة)', href: 'mailto:block-tr@1xbet-team.com' },
+  { icon: Phone, label: '+441273256987', href: 'tel:+441273256987' },
+  { icon: MessageCircle, label: 'تلغرام: 1xBet Casino الرسمي', href: 'https://t.me/casino_1xbet_official' },
+  { icon: ExternalLink, label: 'الدردشة المباشرة على الموقع', href: 'https://1xbet.com' },
+];
 
 export function AnnouncementBanner() {
   const [dismissed, setDismissed] = React.useState(() => {
