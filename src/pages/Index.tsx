@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import { QRScanner } from "@/components/QRScanner";
 import { InstallBanner } from "@/components/InstallBanner";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import {
   Wallet, 
   CreditCard, 
