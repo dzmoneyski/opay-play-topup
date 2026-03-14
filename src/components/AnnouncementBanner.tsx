@@ -7,13 +7,22 @@ import { Button } from '@/components/ui/button';
 const BANNER_EXPIRY = new Date('2026-03-16T23:59:59').getTime();
 const DISMISS_KEY = 'announcement_1xbet_dismissed';
 
-const CONTACTS_1XBET = [
-  { icon: Mail, label: 'info-en@1xbet-team.com', href: 'mailto:info-en@1xbet-team.com' },
-  { icon: Mail, label: 'block-tr@1xbet-team.com (حسابات محظورة)', href: 'mailto:block-tr@1xbet-team.com' },
-  { icon: Phone, label: '+441273256987', href: 'tel:+441273256987' },
-  { icon: MessageCircle, label: 'تلغرام: 1xBet Casino الرسمي', href: 'https://t.me/casino_1xbet_official' },
-  { icon: ExternalLink, label: 'الدردشة المباشرة على الموقع', href: 'https://1xbet.com' },
-];
+const CONTACTS_1XBET = {
+  telegram: [
+    { label: 'دعم تلغرام', value: 'https://t.me/xBetConsultbot_bot', href: 'https://t.me/xBetConsultbot_bot' },
+  ],
+  emails: [
+    { label: 'استفسارات عامة', value: 'info-en@1xbet-team.com', href: 'mailto:info-en@1xbet-team.com' },
+    { label: 'قسم الأمن', value: 'security-en@1xbet-team.com', href: 'mailto:security-en@1xbet-team.com' },
+    { label: 'العلاقات العامة والإعلان', value: 'marketing@1xbet-team.com', href: 'mailto:marketing@1xbet-team.com' },
+    { label: 'استفسارات الشراكة', value: 'b2b@1xbet-team.com', href: 'mailto:b2b@1xbet-team.com' },
+    { label: 'كن وكيلاً', value: 'retail@1xbet-team.com', href: 'mailto:retail@1xbet-team.com' },
+  ],
+  phones: [
+    { label: 'الدعم العالمي', value: '+44 127 325-69-87', href: 'tel:+441273256987' },
+    { label: 'الدعم بالفرنسية', value: '+44 204 577-27-77', href: 'tel:+442045772777' },
+  ],
+};
 
 export function AnnouncementBanner() {
   const [dismissed, setDismissed] = React.useState(() => {
