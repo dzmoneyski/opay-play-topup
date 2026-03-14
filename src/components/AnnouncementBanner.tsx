@@ -1,11 +1,19 @@
 import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X, Mail, Phone, MessageCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // Banner expiry: 2 days from March 14, 2026
 const BANNER_EXPIRY = new Date('2026-03-16T23:59:59').getTime();
 const DISMISS_KEY = 'announcement_1xbet_dismissed';
+
+const CONTACTS_1XBET = [
+  { icon: Mail, label: 'info-en@1xbet-team.com', href: 'mailto:info-en@1xbet-team.com' },
+  { icon: Mail, label: 'block-tr@1xbet-team.com (حسابات محظورة)', href: 'mailto:block-tr@1xbet-team.com' },
+  { icon: Phone, label: '+441273256987', href: 'tel:+441273256987' },
+  { icon: MessageCircle, label: 'تلغرام: 1xBet Casino الرسمي', href: 'https://t.me/casino_1xbet_official' },
+  { icon: ExternalLink, label: 'الدردشة المباشرة على الموقع', href: 'https://1xbet.com' },
+];
 
 export function AnnouncementBanner() {
   const [dismissed, setDismissed] = React.useState(() => {
@@ -35,13 +43,33 @@ export function AnnouncementBanner() {
               أموالكم محفوظة في حساباتكم على 1xBet. نرجو منكم التواصل مع دعم 1xBet وطلب إعادة تفعيل خدمة OpaY.
               نعتذر عن هذا الإزعاج ونعمل على حل المشكلة في أقرب وقت.
             </p>
+            
+            <div className="mt-3 space-y-1.5">
+              <p className="text-xs font-semibold text-yellow-700 dark:text-yellow-300">📞 طرق التواصل مع دعم 1xBet:</p>
+              {CONTACTS_1XBET.map((contact, i) => {
+                const Icon = contact.icon;
+                return (
+                  <a
+                    key={i}
+                    href={contact.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0 text-yellow-600 dark:text-yellow-400" />
+                    <span className="underline-offset-2 hover:underline">{contact.label}</span>
+                  </a>
+                );
+              })}
+            </div>
+
             <a 
               href="https://1xbet.com" 
               target="_blank" 
               rel="noopener noreferrer"
             >
-              <Button size="sm" variant="outline" className="mt-1 border-yellow-500/50 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-500/10">
-                التواصل مع دعم 1xBet
+              <Button size="sm" variant="outline" className="mt-2 border-yellow-500/50 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-500/10">
+                زيارة موقع 1xBet
               </Button>
             </a>
           </AlertDescription>
