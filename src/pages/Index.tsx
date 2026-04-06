@@ -17,6 +17,7 @@ import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import { QRScanner } from "@/components/QRScanner";
 import { InstallBanner } from "@/components/InstallBanner";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { WelcomeBackDialog } from "@/components/WelcomeBackDialog";
 import {
   Wallet, 
   CreditCard, 
