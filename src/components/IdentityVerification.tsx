@@ -73,6 +73,17 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
       return;
     }
 
+    // Validate national ID format (18 digits only)
+    const cleanId = nationalId.trim();
+    if (!/^\d{18}$/.test(cleanId)) {
+      toast({
+        title: "خطأ في رقم الهوية",
+        description: "رقم الهوية الوطنية يجب أن يتكون من 18 رقماً بالضبط (أرقام فقط)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!fullNameOnId.trim()) {
       toast({
         title: "خطأ في البيانات",
@@ -91,10 +102,10 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
       return;
     }
 
-    if (!frontImage && !backImage) {
+    if (!frontImage || !backImage) {
       toast({
         title: "خطأ في البيانات",
-        description: "يرجى رفع صورة واحدة على الأقل من الهوية",
+        description: "يجب رفع صورتي الوجه الأمامي والخلفي للهوية",
         variant: "destructive",
       });
       return;
