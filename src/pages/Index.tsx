@@ -704,6 +704,16 @@ const { isAdmin, loading: rolesLoading } = useUserRoles();
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <div className="relative mb-3">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="ابحث عن معاملة أو رقم هاتف..."
+                  value={transactionSearch}
+                  onChange={(e) => setTransactionSearch(e.target.value)}
+                  className="pr-10 text-right bg-muted/50 border-0 focus-visible:ring-primary/20"
+                  dir="rtl"
+                />
+              </div>
               {transactionsLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
