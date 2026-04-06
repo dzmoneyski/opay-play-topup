@@ -60,21 +60,62 @@ export const useVerificationRequests = () => {
 
     try {
       const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
 
-      // Get verification requests with count
-      const { data: requestsData, error: requestsError, count } = await supabase
+      // Strategy: on page 1, show pending requests first, then fill with others
+      // On other pages, show only non-pending (since all pending shown on page 1)
+      
+      // First, get total count
+      const { count: totalCountResult } = await supabase
         .from('verification_requests')
-        .select('*', { count: 'exact' })
-        .order('submitted_at', { ascending: false })
-        .range(from, to);
+        .select('*', { count: 'exact', head: true });
 
-      if (requestsError) {
-        console.error('Error fetching verification requests:', requestsError);
-        return;
+      setTotalCount(totalCountResult || 0);
+
+      let requestsData: any[] = [];
+
+      if (page === 1) {
+        // Fetch all pending requests first
+        const { data: pendingData } = await supabase
+          .from('verification_requests')
+          .select('*')
+          .eq('status', 'pending')
+          .order('submitted_at', { ascending: false });
+
+        requestsData = pendingData || [];
+
+        // Fill remaining slots with non-pending requests
+        const remaining = pageSize - requestsData.length;
+        if (remaining > 0) {
+          const { data: otherData } = await supabase
+            .from('verification_requests')
+            .select('*')
+            .neq('status', 'pending')
+            .order('submitted_at', { ascending: false })
+            .range(0, remaining - 1);
+
+          requestsData = [...requestsData, ...(otherData || [])];
+        }
+      } else {
+        // On subsequent pages, skip pending (already shown on page 1)
+        // Calculate offset: subtract pending count from the offset
+        const { count: pendingCount } = await supabase
+          .from('verification_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+
+        const adjustedFrom = from - (pendingCount || 0);
+        const adjustedTo = adjustedFrom + pageSize - 1;
+
+        const { data: otherData } = await supabase
+          .from('verification_requests')
+          .select('*')
+          .neq('status', 'pending')
+          .order('submitted_at', { ascending: false })
+          .range(Math.max(0, adjustedFrom), Math.max(0, adjustedTo));
+
+        requestsData = otherData || [];
       }
 
-      setTotalCount(count || 0);
 
       // Get profiles for the current page
       const userIds = [...new Set(requestsData?.map(req => req.user_id) || [])];
