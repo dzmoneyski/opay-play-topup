@@ -6,7 +6,26 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
 const ANNOUNCEMENT_KEY = 'welcome_back_1xbet_april_2026';
-const ANNOUNCEMENT_EXPIRY = new Date('2026-04-16T23:59:59').getTime(); // 10 days from April 6
+const ANNOUNCEMENT_EXPIRY = new Date('2026-04-16T23:59:59').getTime();
+const MAX_SHOWS_PER_DAY = 2;
+
+const getLocalShowKey = () => `ann_show_${ANNOUNCEMENT_KEY}_${new Date().toDateString()}`;
+
+const getLocalShowCount = (): number => {
+  try { return parseInt(localStorage.getItem(getLocalShowKey()) || '0', 10); } catch { return 0; }
+};
+
+const incrementLocalShowCount = () => {
+  try { localStorage.setItem(getLocalShowKey(), String(getLocalShowCount() + 1)); } catch {}
+};
+
+const isLocallyAcknowledged = (): boolean => {
+  try { return localStorage.getItem(`ann_ack_${ANNOUNCEMENT_KEY}`) === '1'; } catch { return false; }
+};
+
+const setLocallyAcknowledged = () => {
+  try { localStorage.setItem(`ann_ack_${ANNOUNCEMENT_KEY}`, '1'); } catch {}
+};
 
 export function WelcomeBackDialog() {
   const { user } = useAuth();
@@ -20,6 +39,18 @@ export function WelcomeBackDialog() {
       return;
     }
 
+    // Already acknowledged locally — don't even query
+    if (isLocallyAcknowledged()) {
+      setLoading(false);
+      return;
+    }
+
+    // Already shown enough times today
+    if (getLocalShowCount() >= MAX_SHOWS_PER_DAY) {
+      setLoading(false);
+      return;
+    }
+
     const checkAcknowledgment = async () => {
       const { data } = await supabase
         .from('announcement_acknowledgments')
@@ -28,7 +59,10 @@ export function WelcomeBackDialog() {
         .eq('announcement_key', ANNOUNCEMENT_KEY)
         .maybeSingle();
 
-      if (!data) {
+      if (data) {
+        setLocallyAcknowledged();
+      } else {
+        incrementLocalShowCount();
         setOpen(true);
       }
       setLoading(false);
