@@ -3,8 +3,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, X, Mail, Phone, MessageCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Banner expiry: 2 days from March 14, 2026
-const BANNER_EXPIRY = new Date('2026-03-16T23:59:59').getTime();
+// Banner expired - 1xBet issue resolved
+const BANNER_EXPIRY = new Date('2026-01-01T00:00:00').getTime();
 const DISMISS_KEY = 'announcement_1xbet_dismissed';
 
 const CONTACTS_1XBET = {
