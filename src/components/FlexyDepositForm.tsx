@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import FlexyTutorial from '@/components/FlexyTutorial';
 import { Label } from '@/components/ui/label';
 import { useFlexyDeposit } from '@/hooks/useFlexyDeposit';
 import { useBalance } from '@/hooks/useBalance';
@@ -21,6 +22,7 @@ import {
   RefreshCw,
   Send,
   ShieldCheck,
+  HelpCircle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import mobilisLogo from '@/assets/mobilis-logo.png';
@@ -37,6 +39,7 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
   const { toast } = useToast();
 
   const [step, setStep] = useState(1);
+  const [showTutorial, setShowTutorial] = useState(false);
   const [senderPhone, setSenderPhone] = useState('');
   const [amount, setAmount] = useState('');
   const [uniqueAmount, setUniqueAmount] = useState<number | null>(null);
@@ -156,20 +159,40 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
     );
   }
 
+  if (showTutorial) {
+    return (
+      <FlexyTutorial
+        onClose={() => setShowTutorial(false)}
+        onStartDeposit={() => setShowTutorial(false)}
+      />
+    );
+  }
+
   return (
     <Card className="bg-card border border-border/30 shadow-sm animate-slide-up overflow-hidden">
       {/* Header */}
       <div className="bg-gradient-to-l from-[hsl(var(--success)/0.08)] to-transparent border-b border-border/30 px-6 py-5">
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-2xl bg-white shadow-sm border border-border/30">
-            <img src={mobilisLogo} alt="Mobilis" className="h-10 w-10 object-contain" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-white shadow-sm border border-border/30">
+              <img src={mobilisLogo} alt="Mobilis" className="h-10 w-10 object-contain" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-foreground">إيداع فليكسي موبيليس</h2>
+              <p className="text-sm text-muted-foreground">
+                {todayCount}/{settings.daily_limit} طلبات اليوم
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-foreground">إيداع فليكسي موبيليس</h2>
-            <p className="text-sm text-muted-foreground">
-              {todayCount}/{settings.daily_limit} طلبات اليوم
-            </p>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTutorial(true)}
+            className="rounded-xl text-xs gap-1.5 border-[hsl(var(--success)/0.3)] text-[hsl(var(--success))] hover:bg-[hsl(var(--success)/0.05)]"
+          >
+            <HelpCircle className="h-3.5 w-3.5" />
+            كيف يعمل؟
+          </Button>
         </div>
       </div>
 
