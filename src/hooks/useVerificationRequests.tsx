@@ -63,9 +63,13 @@ export const useVerificationRequests = () => {
       const to = from + pageSize - 1;
 
       // Get verification requests with count
+      // Order: pending first (status ascending: approved < pending < rejected — we need custom)
+      // Use status ascending so 'pending' comes before 'rejected' but after 'approved'
+      // Better approach: fetch pending separately to ensure they always show on top
       const { data: requestsData, error: requestsError, count } = await supabase
         .from('verification_requests')
         .select('*', { count: 'exact' })
+        .order('status', { ascending: true })
         .order('submitted_at', { ascending: false })
         .range(from, to);
 
