@@ -22,6 +22,7 @@ import {
   RefreshCw,
   Send,
   ShieldCheck,
+  HelpCircle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import mobilisLogo from '@/assets/mobilis-logo.png';
