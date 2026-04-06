@@ -38,6 +38,7 @@ const FlexyDepositForm: React.FC<FlexyDepositFormProps> = ({ onSuccess }) => {
   const { toast } = useToast();
 
   const [step, setStep] = useState(1);
+  const [showTutorial, setShowTutorial] = useState(false);
   const [senderPhone, setSenderPhone] = useState('');
   const [amount, setAmount] = useState('');
   const [uniqueAmount, setUniqueAmount] = useState<number | null>(null);
