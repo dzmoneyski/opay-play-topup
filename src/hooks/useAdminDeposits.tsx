@@ -36,22 +36,85 @@ export const useAdminDeposits = () => {
     
     setLoading(true);
     try {
-      let query = supabase
-        .from('deposits')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false });
+      if (fetchAll) {
+        const { data: depositsData, error: depositsError, count } = await supabase
+          .from('deposits')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false });
 
-      // إذا لم يكن جلب الكل، نستخدم التصفح
-      if (!fetchAll) {
-        const from = (page - 1) * pageSize;
-        const to = from + pageSize - 1;
-        query = query.range(from, to);
+        if (depositsError) throw depositsError;
+        setTotalCount(count || 0);
+
+        if (!depositsData || depositsData.length === 0) {
+          setDeposits([]);
+          return;
+        }
+
+        const userIds = [...new Set(depositsData.map(d => d.user_id))];
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, phone')
+          .in('user_id', userIds);
+
+        if (profilesError) throw profilesError;
+
+        const depositsWithProfiles = depositsData.map(deposit => ({
+          ...deposit,
+          profiles: profilesData?.find(profile => profile.user_id === deposit.user_id) || null
+        }));
+
+        setDeposits(depositsWithProfiles as any[]);
+        return;
       }
 
-      const { data: depositsData, error: depositsError, count } = await query;
+      // Pending-first pagination
+      const { count: totalCountResult } = await supabase
+        .from('deposits')
+        .select('*', { count: 'exact', head: true });
 
-      if (depositsError) throw depositsError;
-      setTotalCount(count || 0);
+      setTotalCount(totalCountResult || 0);
+
+      let depositsData: any[] = [];
+
+      if (page === 1) {
+        // Page 1: pending first, then fill with others
+        const { data: pendingData } = await supabase
+          .from('deposits')
+          .select('*')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+
+        depositsData = pendingData || [];
+
+        const remaining = pageSize - depositsData.length;
+        if (remaining > 0) {
+          const { data: otherData } = await supabase
+            .from('deposits')
+            .select('*')
+            .neq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .range(0, remaining - 1);
+
+          depositsData = [...depositsData, ...(otherData || [])];
+        }
+      } else {
+        const { count: pendingCount } = await supabase
+          .from('deposits')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+
+        const adjustedFrom = (page - 1) * pageSize - (pendingCount || 0);
+        const adjustedTo = adjustedFrom + pageSize - 1;
+
+        const { data: otherData } = await supabase
+          .from('deposits')
+          .select('*')
+          .neq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .range(Math.max(0, adjustedFrom), Math.max(0, adjustedTo));
+
+        depositsData = otherData || [];
+      }
 
       if (!depositsData || depositsData.length === 0) {
         setDeposits([]);

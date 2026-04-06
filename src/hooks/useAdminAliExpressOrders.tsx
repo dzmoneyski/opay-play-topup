@@ -13,23 +13,54 @@ export const useAdminAliExpressOrders = () => {
   const { data, isLoading } = useQuery({
     queryKey: ['admin-aliexpress-orders', page],
     queryFn: async () => {
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-
-      const { data, error, count } = await supabase
+      const { count: totalCount } = await supabase
         .from('aliexpress_orders')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(from, to);
+        .select('*', { count: 'exact', head: true });
 
-      if (error) {
-        console.error('Error fetching orders:', error);
-        throw error;
+      let ordersData: any[] = [];
+
+      if (page === 1) {
+        const { data: pendingData } = await supabase
+          .from('aliexpress_orders')
+          .select('*')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+
+        ordersData = pendingData || [];
+
+        const remaining = pageSize - ordersData.length;
+        if (remaining > 0) {
+          const { data: otherData } = await supabase
+            .from('aliexpress_orders')
+            .select('*')
+            .neq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .range(0, remaining - 1);
+
+          ordersData = [...ordersData, ...(otherData || [])];
+        }
+      } else {
+        const { count: pendingCount } = await supabase
+          .from('aliexpress_orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+
+        const adjustedFrom = (page - 1) * pageSize - (pendingCount || 0);
+        const adjustedTo = adjustedFrom + pageSize - 1;
+
+        const { data: otherData } = await supabase
+          .from('aliexpress_orders')
+          .select('*')
+          .neq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .range(Math.max(0, adjustedFrom), Math.max(0, adjustedTo));
+
+        ordersData = otherData || [];
       }
-      
+
       return { 
-        orders: data as AliExpressOrder[], 
-        count: count || 0 
+        orders: ordersData as AliExpressOrder[], 
+        count: totalCount || 0 
       };
     },
   });

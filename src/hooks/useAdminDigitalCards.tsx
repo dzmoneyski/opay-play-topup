@@ -24,25 +24,54 @@ export const useAdminDigitalCards = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-
-      const { data, error, count } = await supabase
+      const { count: totalCountResult } = await supabase
         .from('digital_card_orders')
-        .select(`
-          *,
-          profiles (
-            full_name,
-            phone,
-            email
-          )
-        `, { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(from, to);
+        .select('*', { count: 'exact', head: true });
 
-      if (error) throw error;
-      setTotalCount(count || 0);
-      setOrders(data as OrderWithProfile[] || []);
+      setTotalCount(totalCountResult || 0);
+
+      let ordersData: any[] = [];
+
+      if (page === 1) {
+        const { data: pendingData } = await supabase
+          .from('digital_card_orders')
+          .select(`*, profiles (full_name, phone, email)`)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+
+        ordersData = pendingData || [];
+
+        const remaining = pageSize - ordersData.length;
+        if (remaining > 0) {
+          const { data: otherData } = await supabase
+            .from('digital_card_orders')
+            .select(`*, profiles (full_name, phone, email)`)
+            .neq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .range(0, remaining - 1);
+
+          ordersData = [...ordersData, ...(otherData || [])];
+        }
+      } else {
+        const { count: pendingCount } = await supabase
+          .from('digital_card_orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+
+        const adjustedFrom = (page - 1) * pageSize - (pendingCount || 0);
+        const adjustedTo = adjustedFrom + pageSize - 1;
+
+        const { data: otherData } = await supabase
+          .from('digital_card_orders')
+          .select(`*, profiles (full_name, phone, email)`)
+          .neq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .range(Math.max(0, adjustedFrom), Math.max(0, adjustedTo));
+
+        ordersData = otherData || [];
+      }
+
+      setOrders(ordersData as OrderWithProfile[] || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast({

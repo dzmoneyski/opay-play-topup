@@ -163,22 +163,87 @@ export const useAdminWithdrawals = () => {
     
     setLoading(true);
     try {
-      let query = supabase
-        .from('withdrawals')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false });
+      if (fetchAll) {
+        const { data: withdrawalsData, error: withdrawalsError, count } = await supabase
+          .from('withdrawals')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false });
 
-      // إذا لم يكن جلب الكل، نستخدم التصفح
-      if (!fetchAll) {
-        const from = (page - 1) * pageSize;
-        const to = from + pageSize - 1;
-        query = query.range(from, to);
+        if (withdrawalsError) throw withdrawalsError;
+        setTotalCount(count || 0);
+
+        if (!withdrawalsData || withdrawalsData.length === 0) {
+          setWithdrawals([]);
+          return;
+        }
+
+        const userIds = [...new Set(withdrawalsData.map(w => w.user_id))];
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, phone')
+          .in('user_id', userIds);
+
+        if (profilesError) throw profilesError;
+
+        const formattedData = withdrawalsData.map(withdrawal => ({
+          ...withdrawal,
+          user_profile: {
+            full_name: profilesData?.find(p => p.user_id === withdrawal.user_id)?.full_name || 'غير محدد',
+            phone: profilesData?.find(p => p.user_id === withdrawal.user_id)?.phone || 'غير محدد'
+          }
+        }));
+        
+        setWithdrawals(formattedData as AdminWithdrawal[]);
+        return;
       }
 
-      const { data: withdrawalsData, error: withdrawalsError, count } = await query;
+      // Pending-first pagination
+      const { count: totalCountResult } = await supabase
+        .from('withdrawals')
+        .select('*', { count: 'exact', head: true });
 
-      if (withdrawalsError) throw withdrawalsError;
-      setTotalCount(count || 0);
+      setTotalCount(totalCountResult || 0);
+
+      let withdrawalsData: any[] = [];
+
+      if (page === 1) {
+        const { data: pendingData } = await supabase
+          .from('withdrawals')
+          .select('*')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+
+        withdrawalsData = pendingData || [];
+
+        const remaining = pageSize - withdrawalsData.length;
+        if (remaining > 0) {
+          const { data: otherData } = await supabase
+            .from('withdrawals')
+            .select('*')
+            .neq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .range(0, remaining - 1);
+
+          withdrawalsData = [...withdrawalsData, ...(otherData || [])];
+        }
+      } else {
+        const { count: pendingCount } = await supabase
+          .from('withdrawals')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+
+        const adjustedFrom = (page - 1) * pageSize - (pendingCount || 0);
+        const adjustedTo = adjustedFrom + pageSize - 1;
+
+        const { data: otherData } = await supabase
+          .from('withdrawals')
+          .select('*')
+          .neq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .range(Math.max(0, adjustedFrom), Math.max(0, adjustedTo));
+
+        withdrawalsData = otherData || [];
+      }
 
       if (!withdrawalsData || withdrawalsData.length === 0) {
         setWithdrawals([]);
