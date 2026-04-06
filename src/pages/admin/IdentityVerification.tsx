@@ -171,7 +171,7 @@ export default function IdentityVerificationPage() {
 
   const getDuplicateCount = (request: VerificationRequest) => request.duplicates?.reduce((sum, d) => sum + d.count, 0) || 0;
   const hasDuplicates = (request: VerificationRequest) => getDuplicateCount(request) > 0;
-  const hasNameMismatch = (request: VerificationRequest) => request.full_name && request.full_name !== request.profiles?.full_name;
+  const hasNameMismatch = (request: VerificationRequest) => request.full_name && request.profiles?.full_name && request.full_name.toLowerCase().trim() !== request.profiles.full_name.toLowerCase().trim();
 
   if (rolesLoading || requestsLoading) {
     return (
