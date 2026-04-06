@@ -75,7 +75,8 @@ const { isAdmin, loading: rolesLoading } = useUserRoles();
     const q = transactionSearch.trim().toLowerCase();
     return transactions.filter(t => 
       (t.description || '').toLowerCase().includes(q) ||
-      (t.transaction_number || '').toLowerCase().includes(q)
+      (t.transaction_number || '').toLowerCase().includes(q) ||
+      (t.id || '').toLowerCase().includes(q)
     );
   }, [transactions, transactionSearch]);
 
