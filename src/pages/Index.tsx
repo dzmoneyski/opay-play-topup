@@ -68,6 +68,16 @@ const { isAdmin, loading: rolesLoading } = useUserRoles();
   const navigate = useNavigate();
   const [showBalance, setShowBalance] = React.useState(true);
   const [showQRScanner, setShowQRScanner] = React.useState(false);
+  const [transactionSearch, setTransactionSearch] = React.useState("");
+
+  const filteredTransactions = React.useMemo(() => {
+    if (!transactionSearch.trim()) return transactions;
+    const q = transactionSearch.trim().toLowerCase();
+    return transactions.filter(t => 
+      (t.description || '').toLowerCase().includes(q) ||
+      (t.transaction_number || '').toLowerCase().includes(q)
+    );
+  }, [transactions, transactionSearch]);
 
   // إذا كانت البيانات الأساسية قيد التحميل، عرض شاشة تحميل
   if (profileLoading || rolesLoading) {
