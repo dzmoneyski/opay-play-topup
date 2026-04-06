@@ -235,85 +235,85 @@ export const useProfile = () => {
   ) => {
     if (!user) return { error: 'لم يتم تسجيل الدخول' };
 
-    try {
-      // Check if national_id is already used by another user
-      const { data: existingProfile, error: checkError } = await supabase
-        .from('profiles')
-        .select('user_id, full_name')
-        .eq('national_id', nationalId)
-        .neq('user_id', user.id)
-        .maybeSingle();
+    // Validate national ID format (18 digits)
+    const cleanNationalId = nationalId.trim();
+    if (!/^\d{18}$/.test(cleanNationalId)) {
+      return { error: 'رقم الهوية الوطنية يجب أن يتكون من 18 رقماً بالضبط' };
+    }
 
-      if (checkError && checkError.code !== 'PGRST116') {
-        return { error: `خطأ في التحقق من البيانات: ${checkError.message}` };
+    // Both images are required
+    if (!frontImage || !backImage) {
+      return { error: 'يجب رفع صورتي الوجه الأمامي والخلفي للهوية' };
+    }
+
+    try {
+      // Check for existing pending request
+      const { data: existingPending } = await supabase
+        .from('verification_requests')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('status', 'pending')
+        .limit(1);
+
+      if (existingPending && existingPending.length > 0) {
+        return { error: 'لديك طلب تحقق معلق بالفعل. يرجى انتظار المراجعة.' };
       }
 
-      if (existingProfile) {
+      // Check if national_id is already used by another user in profiles
+      const { data: existingProfiles } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('national_id', cleanNationalId)
+        .neq('user_id', user.id)
+        .limit(1);
+
+      if (existingProfiles && existingProfiles.length > 0) {
         return { error: 'رقم البطاقة الوطنية مستخدم بالفعل في حساب آخر. كل بطاقة يمكن استخدامها لحساب واحد فقط.' };
       }
 
       // Check if national_id exists in verification_requests for another user
-      const { data: existingRequest, error: requestCheckError } = await supabase
+      const { data: existingRequests } = await supabase
         .from('verification_requests')
         .select('user_id')
-        .eq('national_id', nationalId)
+        .eq('national_id', cleanNationalId)
         .neq('user_id', user.id)
-        .maybeSingle();
+        .limit(1);
 
-      if (requestCheckError && requestCheckError.code !== 'PGRST116') {
-        return { error: `خطأ في التحقق من البيانات: ${requestCheckError.message}` };
-      }
-
-      if (existingRequest) {
+      if (existingRequests && existingRequests.length > 0) {
         return { error: 'رقم البطاقة الوطنية مستخدم بالفعل في حساب آخر. كل بطاقة يمكن استخدامها لحساب واحد فقط.' };
       }
 
-      let frontImageUrl = null;
-      let backImageUrl = null;
-
-      // Upload front image if provided
-      if (frontImage) {
-        const frontFileName = `${user.id}/front_${Date.now()}.${frontImage.name.split('.').pop()}`;
-        const { error: frontError } = await supabase.storage
-          .from('identity-documents')
-          .upload(frontFileName, frontImage);
-        
-        if (frontError) {
-          return { error: `خطأ في رفع صورة الوجه الأمامي: ${frontError.message}` };
-        }
-        
-        const { data: frontPublicUrl } = supabase.storage
-          .from('identity-documents')
-          .getPublicUrl(frontFileName);
-        frontImageUrl = frontPublicUrl.publicUrl;
+      // Upload front image - store just the path, not the full URL
+      const frontFileName = `${user.id}/front_${Date.now()}.${frontImage.name.split('.').pop()}`;
+      const { error: frontError } = await supabase.storage
+        .from('identity-documents')
+        .upload(frontFileName, frontImage);
+      
+      if (frontError) {
+        return { error: `خطأ في رفع صورة الوجه الأمامي: ${frontError.message}` };
       }
 
-      // Upload back image if provided
-      if (backImage) {
-        const backFileName = `${user.id}/back_${Date.now()}.${backImage.name.split('.').pop()}`;
-        const { error: backError } = await supabase.storage
-          .from('identity-documents')
-          .upload(backFileName, backImage);
-        
-        if (backError) {
-          return { error: `خطأ في رفع صورة الوجه الخلفي: ${backError.message}` };
-        }
-        
-        const { data: backPublicUrl } = supabase.storage
-          .from('identity-documents')
-          .getPublicUrl(backFileName);
-        backImageUrl = backPublicUrl.publicUrl;
+      // Upload back image - store just the path
+      const backFileName = `${user.id}/back_${Date.now()}.${backImage.name.split('.').pop()}`;
+      const { error: backError } = await supabase.storage
+        .from('identity-documents')
+        .upload(backFileName, backImage);
+      
+      if (backError) {
+        return { error: `خطأ في رفع صورة الوجه الخلفي: ${backError.message}` };
       }
 
       const { data, error } = await supabase
         .from('verification_requests')
         .insert({
           user_id: user.id,
-          national_id: nationalId,
-          id_front_image: frontImageUrl,
-          id_back_image: backImageUrl,
-          full_name: additionalInfo?.fullNameOnId || null,
+          national_id: cleanNationalId,
+          id_front_image: frontFileName,
+          id_back_image: backFileName,
+          full_name: additionalInfo?.fullNameOnId || profile?.full_name || '',
           date_of_birth: additionalInfo?.dateOfBirth || null,
+          place_of_birth: additionalInfo?.placeOfBirth || null,
+          address: additionalInfo?.address || null,
           status: 'pending'
         })
         .select()
@@ -325,7 +325,7 @@ export const useProfile = () => {
 
       // Update profile with national_id and status
       await updateProfile({
-        national_id: nationalId,
+        national_id: cleanNationalId,
         identity_verification_status: 'pending'
       });
 

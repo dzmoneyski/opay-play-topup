@@ -73,6 +73,17 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
       return;
     }
 
+    // Validate national ID format (18 digits only)
+    const cleanId = nationalId.trim();
+    if (!/^\d{18}$/.test(cleanId)) {
+      toast({
+        title: "خطأ في رقم الهوية",
+        description: "رقم الهوية الوطنية يجب أن يتكون من 18 رقماً بالضبط (أرقام فقط)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!fullNameOnId.trim()) {
       toast({
         title: "خطأ في البيانات",
@@ -91,10 +102,10 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
       return;
     }
 
-    if (!frontImage && !backImage) {
+    if (!frontImage || !backImage) {
       toast({
         title: "خطأ في البيانات",
-        description: "يرجى رفع صورة واحدة على الأقل من الهوية",
+        description: "يجب رفع صورتي الوجه الأمامي والخلفي للهوية",
         variant: "destructive",
       });
       return;
@@ -236,12 +247,15 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
                 id="nationalId"
                 type="text"
                 value={nationalId}
-                onChange={(e) => setNationalId(e.target.value)}
+                onChange={(e) => setNationalId(e.target.value.replace(/\D/g, ''))}
                 placeholder="أدخل رقم الهوية الوطنية (18 رقم)"
                 maxLength={18}
-                className="text-right"
+                className="text-right font-mono tracking-wider"
                 disabled={loading}
               />
+              {nationalId && nationalId.length < 18 && (
+                <p className="text-xs text-muted-foreground">{nationalId.length}/18 رقم</p>
+              )}
             </div>
 
             {/* Full Name on ID */}
@@ -412,7 +426,7 @@ export const IdentityVerification: React.FC<IdentityVerificationProps> = ({ onSu
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={loading || (!nationalId.trim()) || (!fullNameOnId.trim()) || (!dateOfBirth.trim()) || (!frontImage && !backImage)}
+            disabled={loading || nationalId.trim().length !== 18 || !fullNameOnId.trim() || !dateOfBirth.trim() || !frontImage || !backImage}
           >
             {loading ? 'جاري الإرسال...' : 'إرسال طلب التحقق'}
           </Button>
