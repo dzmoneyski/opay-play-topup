@@ -729,13 +729,13 @@ const { isAdmin, loading: rolesLoading } = useUserRoles();
                     </div>
                   ))}
                 </div>
-              ) : transactions.length === 0 ? (
+              ) : filteredTransactions.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>لا توجد معاملات حتى الآن</p>
+                  <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>{transactionSearch.trim() ? 'لا توجد نتائج للبحث' : 'لا توجد معاملات حتى الآن'}</p>
                 </div>
               ) : (
-                transactions.map((transaction, index) => (
+                filteredTransactions.map((transaction, index) => (
                   <div 
                     key={transaction.id} 
                     className="group flex items-center justify-between p-4 rounded-xl bg-muted/50 hover:bg-gradient-primary/5 transition-all duration-300 hover:shadow-soft border border-transparent hover:border-primary/10"
