@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import FlexyTutorial from '@/components/FlexyTutorial';
 import { Label } from '@/components/ui/label';
 import { useFlexyDeposit } from '@/hooks/useFlexyDeposit';
 import { useBalance } from '@/hooks/useBalance';
