@@ -174,6 +174,27 @@ export type Database = {
         }
         Relationships: []
       }
+      announcement_acknowledgments: {
+        Row: {
+          acknowledged_at: string
+          announcement_key: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          acknowledged_at?: string
+          announcement_key: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          acknowledged_at?: string
+          announcement_key?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       betting_accounts: {
         Row: {
           created_at: string
