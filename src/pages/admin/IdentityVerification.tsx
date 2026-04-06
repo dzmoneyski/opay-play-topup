@@ -4,7 +4,7 @@ import { useUserRoles } from '@/hooks/useUserRoles';
 import { useVerificationRequests, VerificationRequest } from '@/hooks/useVerificationRequests';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,9 +13,9 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
-  AlertCircle, CheckCircle, Clock, Eye, Shield, XCircle, Phone, Calendar, 
+  AlertCircle, CheckCircle, Clock, Eye, Shield, XCircle,
   FileText, Search, ZoomIn, ChevronLeft, ChevronRight, AlertTriangle, 
-  UserX, Copy, Image, SkullIcon, Ban
+  Image, SkullIcon, Ban
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminAlertBanner } from '@/components/AdminAlertBanner';
