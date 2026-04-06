@@ -60,7 +60,6 @@ export const useVerificationRequests = () => {
 
     try {
       const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
 
       // Strategy: on page 1, show pending requests first, then fill with others
       // On other pages, show only non-pending (since all pending shown on page 1)
@@ -117,12 +116,6 @@ export const useVerificationRequests = () => {
         requestsData = otherData || [];
       }
 
-      if (requestsError) {
-        console.error('Error fetching verification requests:', requestsError);
-        return;
-      }
-
-      setTotalCount(count || 0);
 
       // Get profiles for the current page
       const userIds = [...new Set(requestsData?.map(req => req.user_id) || [])];
