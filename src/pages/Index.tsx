@@ -51,8 +51,10 @@ import {
   ExternalLink,
   FileText,
   Globe2,
-  Heart
+  Heart,
+  Search
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 const Index = () => {
   const { user, signOut } = useAuth();
