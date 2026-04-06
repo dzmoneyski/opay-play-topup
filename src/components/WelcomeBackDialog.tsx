@@ -80,10 +80,11 @@ export function WelcomeBackDialog() {
         user_id: user.id,
         announcement_key: ANNOUNCEMENT_KEY,
       });
-      setOpen(false);
     } catch (e) {
       console.error('Failed to acknowledge:', e);
     } finally {
+      setLocallyAcknowledged();
+      setOpen(false);
       setSubmitting(false);
     }
   };
