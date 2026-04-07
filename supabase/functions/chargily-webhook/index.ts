@@ -70,25 +70,9 @@ serve(async (req) => {
       return new Response("Database error", { status: 500 });
     }
 
-    // If payment is successful, add to user balance
+    // If payment is successful, create an approved deposit (triggers balance update automatically)
     if (paymentStatus === "paid" && payment) {
-      const { error: balanceError } = await supabaseAdmin.rpc(
-        "add_to_balance",
-        {
-          p_user_id: payment.user_id,
-          p_amount: payment.amount,
-        }
-      );
-
-      if (balanceError) {
-        console.error("Error updating balance:", balanceError);
-        // Still return 200 to avoid Chargily retrying
-      } else {
-        console.log(`Balance updated for user ${payment.user_id}: +${payment.amount} DZD`);
-      }
-
-      // Also create a deposit record for transaction history
-      await supabaseAdmin.from("deposits").insert({
+      const { error: depositError } = await supabaseAdmin.from("deposits").insert({
         user_id: payment.user_id,
         amount: payment.amount,
         payment_method: payment.payment_method === "edahabia" ? "edahabiya" : "cib",
@@ -97,6 +81,12 @@ serve(async (req) => {
         processed_at: new Date().toISOString(),
         admin_notes: "تم الدفع تلقائياً عبر Chargily Pay",
       });
+
+      if (depositError) {
+        console.error("Error creating deposit:", depositError);
+      } else {
+        console.log(`Deposit created for user ${payment.user_id}: +${payment.amount} DZD`);
+      }
     }
 
     return new Response(JSON.stringify({ received: true }), {
