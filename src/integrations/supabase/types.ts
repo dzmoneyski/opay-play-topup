@@ -452,6 +452,54 @@ export type Database = {
         }
         Relationships: []
       }
+      chargily_payments: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          chargily_fee: number | null
+          checkout_id: string | null
+          checkout_url: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          payment_method: string
+          processed_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          chargily_fee?: number | null
+          checkout_id?: string | null
+          checkout_url?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          payment_method?: string
+          processed_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          chargily_fee?: number | null
+          checkout_id?: string | null
+          checkout_url?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          payment_method?: string
+          processed_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       delivery_fee_settings: {
         Row: {
           created_at: string
