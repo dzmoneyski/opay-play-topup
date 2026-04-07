@@ -40,6 +40,7 @@ import albarakaLogo from '@/assets/albaraka-logo.png';
 import badrLogo from '@/assets/badr-logo.png';
 import mobilisLogo from '@/assets/mobilis-logo.png';
 import FlexyDepositForm from '@/components/FlexyDepositForm';
+import ChargilyPaymentForm from '@/components/ChargilyPaymentForm';
 
 export default function Deposits() {
   const { deposits, loading, createDeposit, fetchDeposits } = useDeposits();
