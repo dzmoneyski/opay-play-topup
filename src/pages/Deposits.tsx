@@ -56,6 +56,27 @@ export default function Deposits() {
   const [showBalance, setShowBalance] = React.useState(true);
   const [copied, setCopied] = React.useState(false);
 
+  // Handle Chargily payment redirect results
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get('payment');
+    if (paymentStatus === 'success') {
+      toast({
+        title: "تمت عملية الدفع بنجاح! ✅",
+        description: "سيتم إضافة الرصيد إلى حسابك خلال لحظات",
+      });
+      fetchBalance();
+      fetchDeposits();
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (paymentStatus === 'failed') {
+      toast({
+        title: "فشلت عملية الدفع",
+        description: "لم تتم عملية الدفع. يمكنك المحاولة مرة أخرى",
+        variant: "destructive",
+      });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
   // حساب الرسوم
   const depositAmount = parseFloat(amount) || 0;
   const depositFee = calculateFee(depositAmount, feeSettings?.deposit_fees || null);
