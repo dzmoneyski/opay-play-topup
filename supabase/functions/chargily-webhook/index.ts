@@ -31,7 +31,7 @@ serve(async (req) => {
 
     // Verify webhook signature
     if (signature) {
-      const computedSignature = hmac("sha256", CHARGILY_SECRET_KEY, body, "utf8", "hex");
+      const computedSignature = await computeHmacSha256(CHARGILY_SECRET_KEY, body);
       if (computedSignature !== signature) {
         console.error("Invalid webhook signature");
         return new Response("Invalid signature", { status: 403 });
