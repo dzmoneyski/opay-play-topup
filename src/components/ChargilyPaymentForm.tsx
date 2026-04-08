@@ -38,14 +38,6 @@ const ChargilyPaymentForm: React.FC<ChargilyPaymentFormProps> = ({ onSuccess }) 
 
   const presetAmounts = [500, 1000, 2000, 5000, 10000];
 
-  // Animate steps
-  useEffect(() => {
-    if (parseFloat(amount) >= 100) {
-      setActiveStep(2);
-    } else if (paymentMethod) {
-      setActiveStep(1);
-    }
-  }, [amount, paymentMethod]);
 
   const handlePayment = async () => {
     if (!user) {
