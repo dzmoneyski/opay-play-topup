@@ -32,7 +32,7 @@ const ChargilyPaymentForm: React.FC<ChargilyPaymentFormProps> = ({ onSuccess }) 
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'edahabia' | 'cib'>('edahabia');
   const [loading, setLoading] = useState(false);
-  const [activeStep, setActiveStep] = useState(0);
+  
   const { toast } = useToast();
   const { user } = useAuth();
 
