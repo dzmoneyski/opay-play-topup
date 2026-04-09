@@ -81,6 +81,27 @@ const AgentDashboard = () => {
           <p className="text-muted-foreground">يمكنك إدارة الطلبات المخصصة لك</p>
         </div>
 
+        {/* Balance Card */}
+        <Card className="mb-6 border-primary/20 bg-gradient-to-r from-primary/10 to-primary/5">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">رصيدك الحالي</p>
+                <p className="text-3xl font-bold text-primary">
+                  {balanceLoading ? (
+                    <Loader2 className="w-6 h-6 animate-spin inline" />
+                  ) : (
+                    `${(balance?.balance ?? 0).toLocaleString('ar-DZ', { minimumFractionDigits: 2 })} د.ج`
+                  )}
+                </p>
+              </div>
+              <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
+                <Wallet className="w-7 h-7 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Permissions Card */}
         <Card className="mb-6 border-primary/20">
           <CardHeader className="pb-3">
