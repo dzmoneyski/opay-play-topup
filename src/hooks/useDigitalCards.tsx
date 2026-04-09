@@ -154,7 +154,7 @@ export const useDigitalCards = () => {
         });
 
         // Send Telegram notification
-        sendTelegramNotification('new_digital_card', {
+        await sendTelegramNotification('new_digital_card', {
           amount_usd: amountUsd,
           total_dzd: result.total_dzd,
           card_type: cardTypeId,

@@ -84,7 +84,7 @@ export const useTransfers = () => {
 
       // Send Telegram notification (large transfers get special alert)
       const notifType = transferData.amount >= 10000 ? 'large_transfer' : 'new_transfer';
-      sendTelegramNotification(notifType, {
+      await sendTelegramNotification(notifType, {
         amount: transferData.amount,
         sender_phone: 'المرسل',
         recipient_phone: transferData.recipient_phone

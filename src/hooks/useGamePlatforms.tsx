@@ -115,14 +115,14 @@ export const useCreateGameTopupOrder = () => {
       if (!result.success) throw new Error(result.error);
       return result;
     },
-    onSuccess: (data: any, variables) => {
+    onSuccess: async (data: any, variables) => {
       toast({
         title: "تم خصم المبلغ وإرسال الطلب",
         description: data.message || "سيتم مراجعة طلبك من قبل المشرف",
       });
 
       // Send Telegram notification
-      sendTelegramNotification('new_game_topup', {
+      await sendTelegramNotification('new_game_topup', {
         amount: variables.amount,
         player_id: variables.player_id,
         platform_name: variables.platform_id

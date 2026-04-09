@@ -127,7 +127,7 @@ export const useDeposits = () => {
       });
 
       // Send Telegram notification
-      sendTelegramNotification('new_deposit', {
+      await sendTelegramNotification('new_deposit', {
         amount,
         user_id: user.id,
         payment_method: paymentMethod

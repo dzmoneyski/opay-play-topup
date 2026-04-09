@@ -91,7 +91,7 @@ export const useCreateBettingDeposit = () => {
       if (error) throw error;
       return result as any;
     },
-    onSuccess: (data: any, variables) => {
+    onSuccess: async (data: any, variables) => {
       if (data.success) {
         toast({
           title: "تم خصم المبلغ وإرسال الطلب",
@@ -99,7 +99,7 @@ export const useCreateBettingDeposit = () => {
         });
 
         // Send Telegram notification
-        sendTelegramNotification('new_betting_deposit', {
+        await sendTelegramNotification('new_betting_deposit', {
           amount: variables.amount,
           player_id: variables.player_id,
           platform_name: variables.platform_id
@@ -156,14 +156,14 @@ export const useCreateBettingWithdrawal = () => {
       if (error) throw error;
       return result;
     },
-    onSuccess: (_data: any, variables) => {
+    onSuccess: async (_data: any, variables) => {
       toast({
         title: "تم إرسال طلب السحب",
         description: "سيتم مراجعة طلبك من قبل المشرف",
       });
 
       // Send Telegram notification
-      sendTelegramNotification('new_betting_withdrawal', {
+      await sendTelegramNotification('new_betting_withdrawal', {
         amount: variables.amount,
         player_id: variables.player_id,
         platform_name: variables.platform_id,
