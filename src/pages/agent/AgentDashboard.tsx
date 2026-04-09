@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Gamepad2, CreditCard, Loader2, Shield, Smartphone } from 'lucide-react';
+import { Gamepad2, CreditCard, Loader2, Shield, Smartphone, Wallet } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAgentPermissions } from '@/hooks/useAgentPermissions';
 import { useAgentPendingOrders } from '@/hooks/useAgentPendingOrders';
+import { useBalance } from '@/hooks/useBalance';
 import BackButton from '@/components/BackButton';
 
 const AgentDashboard = () => {
