@@ -1,18 +1,18 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Gamepad2, CreditCard, Loader2, Shield, Smartphone, Wallet } from 'lucide-react';
+import { Gamepad2, CreditCard, Loader2, Shield, Smartphone, Wallet, TrendingUp, CheckCircle, Clock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAgentPermissions } from '@/hooks/useAgentPermissions';
 import { useAgentPendingOrders } from '@/hooks/useAgentPendingOrders';
-import { useBalance } from '@/hooks/useBalance';
+import { useAgentEarnings } from '@/hooks/useAgentEarnings';
 import BackButton from '@/components/BackButton';
 
 const AgentDashboard = () => {
   const navigate = useNavigate();
   const { isAgent, permissions, loading, canManageGameTopups, canManageBetting, canManagePhoneTopups } = useAgentPermissions();
   const { counts: pendingCounts } = useAgentPendingOrders();
-  const { balance, loading: balanceLoading } = useBalance();
+  const { earnings, loading: earningsLoading } = useAgentEarnings();
 
   useEffect(() => {
     if (!loading && !isAgent) {
