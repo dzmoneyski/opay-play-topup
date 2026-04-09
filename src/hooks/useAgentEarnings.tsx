@@ -33,24 +33,46 @@ export const useAgentEarnings = () => {
     setLoading(true);
 
     try {
-      const [phoneResult, gameResult] = await Promise.all([
+      const [phoneResult, gameResult, operatorsResult] = await Promise.all([
         supabase
           .from('phone_topup_orders')
-          .select('amount, fee_amount, status')
+          .select('amount, fee_amount, status, operator_id')
           .eq('processed_by', user.id),
         supabase
           .from('game_topup_orders')
           .select('amount, status')
           .eq('processed_by', user.id),
+        supabase
+          .from('phone_operators')
+          .select('id, fee_type, fee_value, fee_min, fee_max'),
       ]);
 
       const phoneOrders = phoneResult.data || [];
       const gameOrders = gameResult.data || [];
+      const operators = operatorsResult.data || [];
+
+      // Build operator fee lookup
+      const opMap = new Map(operators.map(op => [op.id, op]));
+
+      // Calculate fee dynamically from operator settings
+      const calcFee = (amount: number, operatorId: string): number => {
+        const op = opMap.get(operatorId);
+        if (!op) return 0;
+        let fee = op.fee_type === 'percentage' 
+          ? (amount * Number(op.fee_value) / 100)
+          : Number(op.fee_value);
+        fee = Math.max(fee, Number(op.fee_min || 0));
+        if (op.fee_max) fee = Math.min(fee, Number(op.fee_max));
+        return fee;
+      };
 
       // Phone topup stats
       const phoneApproved = phoneOrders.filter(o => o.status === 'approved');
       const phoneAmount = phoneApproved.reduce((sum, o) => sum + Number(o.amount), 0);
-      const phoneFees = phoneApproved.reduce((sum, o) => sum + Number(o.fee_amount || 0), 0);
+      const phoneFees = phoneApproved.reduce((sum, o) => {
+        const dbFee = Number(o.fee_amount || 0);
+        return sum + (dbFee > 0 ? dbFee : calcFee(Number(o.amount), o.operator_id));
+      }, 0);
 
       // Game topup stats (approved or completed)
       const gameApproved = gameOrders.filter(o => o.status === 'approved' || o.status === 'completed');
