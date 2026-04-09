@@ -34,7 +34,7 @@ import {
   Banknote,
   FileText,
   RefreshCw,
-  Filter,
+  
   Copy
 } from 'lucide-react';
 
