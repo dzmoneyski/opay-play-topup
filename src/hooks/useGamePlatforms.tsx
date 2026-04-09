@@ -115,7 +115,7 @@ export const useCreateGameTopupOrder = () => {
       if (!result.success) throw new Error(result.error);
       return result;
     },
-    onSuccess: (data: any, variables) => {
+    onSuccess: async (data: any, variables) => {
       toast({
         title: "تم خصم المبلغ وإرسال الطلب",
         description: data.message || "سيتم مراجعة طلبك من قبل المشرف",

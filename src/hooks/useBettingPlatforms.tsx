@@ -91,7 +91,7 @@ export const useCreateBettingDeposit = () => {
       if (error) throw error;
       return result as any;
     },
-    onSuccess: (data: any, variables) => {
+    onSuccess: async (data: any, variables) => {
       if (data.success) {
         toast({
           title: "تم خصم المبلغ وإرسال الطلب",
@@ -156,7 +156,7 @@ export const useCreateBettingWithdrawal = () => {
       if (error) throw error;
       return result;
     },
-    onSuccess: (_data: any, variables) => {
+    onSuccess: async (_data: any, variables) => {
       toast({
         title: "تم إرسال طلب السحب",
         description: "سيتم مراجعة طلبك من قبل المشرف",
