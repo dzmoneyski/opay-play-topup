@@ -333,7 +333,7 @@ export const useProfile = () => {
       await fetchVerificationRequest();
 
       // Send Telegram notification
-      sendTelegramNotification('new_verification', {
+      await sendTelegramNotification('new_verification', {
         full_name: additionalInfo?.fullNameOnId || profile?.full_name,
         phone: profile?.phone
       });

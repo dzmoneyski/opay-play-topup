@@ -122,7 +122,7 @@ export const useCreateGameTopupOrder = () => {
       });
 
       // Send Telegram notification
-      sendTelegramNotification('new_game_topup', {
+      await sendTelegramNotification('new_game_topup', {
         amount: variables.amount,
         player_id: variables.player_id,
         platform_name: variables.platform_id

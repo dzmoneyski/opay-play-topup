@@ -90,7 +90,7 @@ export const useWithdrawals = () => {
     }
     
     // Send Telegram notification
-    sendTelegramNotification('new_withdrawal', {
+    await sendTelegramNotification('new_withdrawal', {
       amount: withdrawalData.amount,
       user_id: user.id,
       withdrawal_method: withdrawalData.withdrawal_method

@@ -53,7 +53,7 @@ export const useMerchantRequest = () => {
       if (error) throw error;
 
       // Send Telegram notification
-      sendTelegramNotification('new_merchant_request', {
+      await sendTelegramNotification('new_merchant_request', {
         business_name: data.business_name,
         business_type: data.business_type,
         phone: data.phone

@@ -133,7 +133,7 @@ export const usePhoneTopupOrders = () => {
       });
 
       // Send Telegram notification
-      sendTelegramNotification('new_phone_topup', {
+      await sendTelegramNotification('new_phone_topup', {
         amount,
         phone_number: phoneNumber,
         operator_name: operatorId

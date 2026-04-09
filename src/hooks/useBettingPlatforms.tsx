@@ -99,7 +99,7 @@ export const useCreateBettingDeposit = () => {
         });
 
         // Send Telegram notification
-        sendTelegramNotification('new_betting_deposit', {
+        await sendTelegramNotification('new_betting_deposit', {
           amount: variables.amount,
           player_id: variables.player_id,
           platform_name: variables.platform_id
@@ -163,7 +163,7 @@ export const useCreateBettingWithdrawal = () => {
       });
 
       // Send Telegram notification
-      sendTelegramNotification('new_betting_withdrawal', {
+      await sendTelegramNotification('new_betting_withdrawal', {
         amount: variables.amount,
         player_id: variables.player_id,
         platform_name: variables.platform_id,
