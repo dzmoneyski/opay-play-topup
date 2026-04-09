@@ -1,18 +1,18 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Gamepad2, CreditCard, Loader2, Shield, Smartphone, Wallet } from 'lucide-react';
+import { Gamepad2, CreditCard, Loader2, Shield, Smartphone, Wallet, TrendingUp, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAgentPermissions } from '@/hooks/useAgentPermissions';
 import { useAgentPendingOrders } from '@/hooks/useAgentPendingOrders';
-import { useBalance } from '@/hooks/useBalance';
+import { useAgentEarnings } from '@/hooks/useAgentEarnings';
 import BackButton from '@/components/BackButton';
 
 const AgentDashboard = () => {
   const navigate = useNavigate();
   const { isAgent, permissions, loading, canManageGameTopups, canManageBetting, canManagePhoneTopups } = useAgentPermissions();
   const { counts: pendingCounts } = useAgentPendingOrders();
-  const { balance, loading: balanceLoading } = useBalance();
+  const { earnings, loading: earningsLoading } = useAgentEarnings();
 
   useEffect(() => {
     if (!loading && !isAgent) {
@@ -81,26 +81,53 @@ const AgentDashboard = () => {
           <p className="text-muted-foreground">يمكنك إدارة الطلبات المخصصة لك</p>
         </div>
 
-        {/* Balance Card */}
-        <Card className="mb-6 border-primary/20 bg-gradient-to-r from-primary/10 to-primary/5">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">رصيدك الحالي</p>
-                <p className="text-3xl font-bold text-primary">
-                  {balanceLoading ? (
-                    <Loader2 className="w-6 h-6 animate-spin inline" />
-                  ) : (
-                    `${(balance?.balance ?? 0).toLocaleString('ar-DZ', { minimumFractionDigits: 2 })} د.ج`
-                  )}
-                </p>
+        {/* Earnings Cards */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <Card className="border-green-500/20 bg-gradient-to-br from-green-500/10 to-green-500/5">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-muted-foreground">المستحق الكلي</p>
+                <Wallet className="w-5 h-5 text-green-500" />
               </div>
-              <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
-                <Wallet className="w-7 h-7 text-primary" />
+              <p className="text-2xl font-bold text-green-600">
+                {earningsLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : `${Math.round(earnings.netDue).toLocaleString()} د.ج`}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-blue-500/20 bg-gradient-to-br from-blue-500/10 to-blue-500/5">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-muted-foreground">المبلغ المشحون</p>
+                <TrendingUp className="w-5 h-5 text-blue-500" />
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              <p className="text-2xl font-bold text-blue-600">
+                {earningsLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : `${Math.round(earnings.totalApprovedAmount).toLocaleString()} د.ج`}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-orange-500/20 bg-gradient-to-br from-orange-500/10 to-orange-500/5">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-muted-foreground">الرسوم المحصلة</p>
+                <CreditCard className="w-5 h-5 text-orange-500" />
+              </div>
+              <p className="text-2xl font-bold text-orange-600">
+                {earningsLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : `${Math.round(earnings.totalFeesCollected).toLocaleString()} د.ج`}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-purple-500/5">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-muted-foreground">الطلبات المعالجة</p>
+                <CheckCircle className="w-5 h-5 text-purple-500" />
+              </div>
+              <p className="text-2xl font-bold text-purple-600">
+                {earningsLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : earnings.approvedOrders}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Permissions Card */}
         <Card className="mb-6 border-primary/20">
