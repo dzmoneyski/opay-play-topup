@@ -12,6 +12,7 @@ const AgentDashboard = () => {
   const navigate = useNavigate();
   const { isAgent, permissions, loading, canManageGameTopups, canManageBetting, canManagePhoneTopups } = useAgentPermissions();
   const { counts: pendingCounts } = useAgentPendingOrders();
+  const { balance, loading: balanceLoading } = useBalance();
 
   useEffect(() => {
     if (!loading && !isAgent) {
