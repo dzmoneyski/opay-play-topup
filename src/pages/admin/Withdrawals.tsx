@@ -270,62 +270,6 @@ export default function WithdrawalsPage() {
         ))}
       </div>
 
-      {/* Daily Stats */}
-      {stats.dailyStats && stats.dailyStats.length > 0 && (
-        <Card className="border-border/50 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <BarChart3 className="h-4 w-4 text-primary" />
-              إحصائيات آخر 7 أيام
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-right font-semibold">اليوم</TableHead>
-                    <TableHead className="text-center font-semibold">الطلبات</TableHead>
-                    <TableHead className="text-center font-semibold">المبلغ</TableHead>
-                    <TableHead className="text-center font-semibold">
-                      <span className="text-amber-600">معلقة</span>
-                    </TableHead>
-                    <TableHead className="text-center font-semibold">
-                      <span className="text-emerald-600">مكتملة</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {stats.dailyStats.slice(0, 7).map((day) => (
-                    <TableRow key={day.date} className="hover:bg-muted/40">
-                      <TableCell className="font-medium text-sm">
-                        {new Date(day.date).toLocaleDateString('ar-DZ', { weekday: 'short', month: 'short', day: 'numeric' })}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="secondary" className="font-mono">{day.totalCount}</Badge>
-                      </TableCell>
-                      <TableCell className="text-center font-semibold text-sm">{formatCurrency(day.totalAmount)}</TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-amber-600 font-medium">{day.pendingCount}</span>
-                        {day.pendingAmount > 0 && (
-                          <span className="text-xs text-muted-foreground mr-1">({formatCurrency(day.pendingAmount)})</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-emerald-600 font-medium">{day.completedCount}</span>
-                        {day.completedAmount > 0 && (
-                          <span className="text-xs text-muted-foreground mr-1">({formatCurrency(day.completedAmount)})</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Filters & Search */}
       <Card className="border-border/50 shadow-sm">
         <CardContent className="p-4">
@@ -418,7 +362,6 @@ export default function WithdrawalsPage() {
                 <TableBody>
                   {filteredAndSortedWithdrawals.map((withdrawal) => (
                     <TableRow key={withdrawal.id} className={`hover:bg-muted/30 border-border/20 ${withdrawal.status === 'pending' ? 'bg-amber-500/[0.03]' : ''}`}>
-                      {/* User */}
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -430,11 +373,9 @@ export default function WithdrawalsPage() {
                           </div>
                         </div>
                       </TableCell>
-                      {/* Amount */}
                       <TableCell>
                         <span className="font-bold text-sm text-foreground">{formatCurrency(withdrawal.amount)}</span>
                       </TableCell>
-                      {/* Fee */}
                       <TableCell>
                         {withdrawal.fee_amount > 0 ? (
                           <div>
@@ -445,14 +386,12 @@ export default function WithdrawalsPage() {
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </TableCell>
-                      {/* Method */}
                       <TableCell>
                         <Badge variant="outline" className="text-xs font-normal gap-1">
                           {withdrawal.withdrawal_method === 'cash' ? <MapPin className="h-3 w-3" /> : <CreditCard className="h-3 w-3" />}
                           {getMethodName(withdrawal.withdrawal_method)}
                         </Badge>
                       </TableCell>
-                      {/* Account Info */}
                       <TableCell>
                         {withdrawal.withdrawal_method === 'cash' ? (
                           <span className="text-xs text-muted-foreground">{withdrawal.cash_location || '—'}</span>
@@ -472,15 +411,12 @@ export default function WithdrawalsPage() {
                           </div>
                         )}
                       </TableCell>
-                      {/* Status */}
                       <TableCell className="text-center">
                         {getStatusBadge(withdrawal.status)}
                       </TableCell>
-                      {/* Date */}
                       <TableCell>
                         <span className="text-xs text-muted-foreground">{formatDate(withdrawal.created_at)}</span>
                       </TableCell>
-                      {/* Actions */}
                       <TableCell>
                         <div className="flex items-center justify-center gap-1">
                           {withdrawal.status === 'pending' && (
@@ -547,6 +483,62 @@ export default function WithdrawalsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Daily Stats - moved after the table */}
+      {stats.dailyStats && stats.dailyStats.length > 0 && (
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BarChart3 className="h-4 w-4 text-primary" />
+              إحصائيات آخر 7 أيام
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-right font-semibold">اليوم</TableHead>
+                    <TableHead className="text-center font-semibold">الطلبات</TableHead>
+                    <TableHead className="text-center font-semibold">المبلغ</TableHead>
+                    <TableHead className="text-center font-semibold">
+                      <span className="text-amber-600">معلقة</span>
+                    </TableHead>
+                    <TableHead className="text-center font-semibold">
+                      <span className="text-emerald-600">مكتملة</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {stats.dailyStats.slice(0, 7).map((day) => (
+                    <TableRow key={day.date} className="hover:bg-muted/40">
+                      <TableCell className="font-medium text-sm">
+                        {new Date(day.date).toLocaleDateString('ar-DZ', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="secondary" className="font-mono">{day.totalCount}</Badge>
+                      </TableCell>
+                      <TableCell className="text-center font-semibold text-sm">{formatCurrency(day.totalAmount)}</TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-amber-600 font-medium">{day.pendingCount}</span>
+                        {day.pendingAmount > 0 && (
+                          <span className="text-xs text-muted-foreground mr-1">({formatCurrency(day.pendingAmount)})</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-emerald-600 font-medium">{day.completedCount}</span>
+                        {day.completedAmount > 0 && (
+                          <span className="text-xs text-muted-foreground mr-1">({formatCurrency(day.completedAmount)})</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Approve Dialog */}
       <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
