@@ -12,9 +12,9 @@ import { useAdminWithdrawals } from '@/hooks/useAdminWithdrawals';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  ArrowUpFromLine, Search, Clock, CheckCircle, DollarSign, User, CreditCard, MapPin, X, Eye,
+  ArrowUpFromLine, Search, Clock, CheckCircle, User, CreditCard, MapPin, X, Eye,
   Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, ArrowUp, ArrowDown,
-  TrendingUp, BarChart3, Banknote, RefreshCw, Copy, ChevronDown, ChevronUp
+  BarChart3, Banknote, RefreshCw, Copy, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 type SortField = 'amount' | 'created_at' | 'fee_amount';
