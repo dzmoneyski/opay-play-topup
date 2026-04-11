@@ -33,7 +33,7 @@ export const useAgentEarnings = () => {
     setLoading(true);
 
     try {
-      const [phoneResult, gameResult, operatorsResult] = await Promise.all([
+      const [phoneResult, gameResult, operatorsResult, settlementsResult] = await Promise.all([
         supabase
           .from('phone_topup_orders')
           .select('amount, fee_amount, status, operator_id')
@@ -45,6 +45,10 @@ export const useAgentEarnings = () => {
         supabase
           .from('phone_operators')
           .select('id, fee_type, fee_value, fee_min, fee_max'),
+        supabase
+          .from('agent_settlements')
+          .select('amount')
+          .eq('agent_id', user.id),
       ]);
 
       const phoneOrders = phoneResult.data || [];
