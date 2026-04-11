@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Users, Calendar, TrendingUp, DollarSign, CheckCircle, XCircle, Clock, Loader2, Filter, Download } from 'lucide-react';
+import { Users, Calendar, TrendingUp, DollarSign, CheckCircle, XCircle, Clock, Loader2, Filter, Download, Banknote } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ServiceStats {
   total_orders: number;
