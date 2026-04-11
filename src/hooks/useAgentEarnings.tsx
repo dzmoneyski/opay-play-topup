@@ -54,6 +54,8 @@ export const useAgentEarnings = () => {
       const phoneOrders = phoneResult.data || [];
       const gameOrders = gameResult.data || [];
       const operators = operatorsResult.data || [];
+      const settlements = settlementsResult.data || [];
+      const totalSettled = settlements.reduce((sum, s) => sum + Number(s.amount), 0);
 
       // Build operator fee lookup
       const opMap = new Map(operators.map(op => [op.id, op]));
