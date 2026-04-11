@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Calendar, TrendingUp, DollarSign, CheckCircle, XCircle, Clock, Loader2, Filter, Download, Banknote } from 'lucide-react';
+import { Users, Calendar, TrendingUp, DollarSign, CheckCircle, Loader2, Download, Banknote } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
