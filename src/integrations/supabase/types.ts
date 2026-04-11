@@ -111,6 +111,33 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_settlements: {
+        Row: {
+          agent_id: string
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          settled_by: string
+        }
+        Insert: {
+          agent_id: string
+          amount: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          settled_by: string
+        }
+        Update: {
+          agent_id?: string
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          settled_by?: string
+        }
+        Relationships: []
+      }
       aliexpress_orders: {
         Row: {
           admin_notes: string | null
