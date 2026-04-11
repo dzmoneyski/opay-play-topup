@@ -33,7 +33,7 @@ export const useAgentEarnings = () => {
     setLoading(true);
 
     try {
-      const [phoneResult, gameResult, operatorsResult] = await Promise.all([
+      const [phoneResult, gameResult, operatorsResult, settlementsResult] = await Promise.all([
         supabase
           .from('phone_topup_orders')
           .select('amount, fee_amount, status, operator_id')
@@ -45,11 +45,17 @@ export const useAgentEarnings = () => {
         supabase
           .from('phone_operators')
           .select('id, fee_type, fee_value, fee_min, fee_max'),
+        supabase
+          .from('agent_settlements')
+          .select('amount')
+          .eq('agent_id', user.id),
       ]);
 
       const phoneOrders = phoneResult.data || [];
       const gameOrders = gameResult.data || [];
       const operators = operatorsResult.data || [];
+      const settlements = settlementsResult.data || [];
+      const totalSettled = settlements.reduce((sum, s) => sum + Number(s.amount), 0);
 
       // Build operator fee lookup
       const opMap = new Map(operators.map(op => [op.id, op]));
@@ -80,7 +86,7 @@ export const useAgentEarnings = () => {
 
       const totalApproved = phoneAmount + gameAmount;
       const totalFees = phoneFees;
-      const netDue = totalApproved + totalFees;
+      const netDue = totalApproved + totalFees - totalSettled;
 
       const pendingPhone = phoneOrders.filter(o => o.status === 'pending').length;
       const pendingGame = gameOrders.filter(o => o.status === 'pending').length;

@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Users, Calendar, TrendingUp, DollarSign, CheckCircle, XCircle, Clock, Loader2, Filter, Download } from 'lucide-react';
+import { Users, Calendar, TrendingUp, DollarSign, CheckCircle, Loader2, Download, Banknote } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ServiceStats {
   total_orders: number;
@@ -23,7 +28,6 @@ interface AgentStats {
   agent_id: string;
   agent_name: string;
   agent_phone: string;
-  // Combined stats
   total_orders: number;
   approved_orders: number;
   rejected_orders: number;
@@ -33,7 +37,7 @@ interface AgentStats {
   total_pending_amount: number;
   total_fees_collected: number;
   net_due: number;
-  // Per-service breakdown
+  total_settled: number;
   phone_topup: ServiceStats;
   game_topup: ServiceStats;
 }
@@ -71,6 +75,7 @@ const getDateRanges = (): DateRange[] => {
 
 const AgentAccountingReport = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [agentStats, setAgentStats] = useState<AgentStats[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState('this_month');
@@ -84,7 +89,15 @@ const AgentAccountingReport = () => {
     totalPendingAmount: 0,
     totalFees: 0,
     totalNetDue: 0,
+    totalSettled: 0,
   });
+
+  // Settlement dialog state
+  const [settlementDialogOpen, setSettlementDialogOpen] = useState(false);
+  const [settlementAgent, setSettlementAgent] = useState<AgentStats | null>(null);
+  const [settlementAmount, setSettlementAmount] = useState('');
+  const [settlementNotes, setSettlementNotes] = useState('');
+  const [settlementSaving, setSettlementSaving] = useState(false);
 
   const dateRanges = getDateRanges();
 
@@ -109,13 +122,11 @@ const AgentAccountingReport = () => {
       const range = dateRanges.find(r => r.value === selectedPeriod);
       if (!range) return;
 
-      // Fetch phone topup orders with operator info
       let phoneQuery = supabase
         .from('phone_topup_orders')
         .select('*, phone_operators(fee_type, fee_value, fee_min, fee_max)')
         .not('processed_by', 'is', null);
 
-      // Fetch game topup orders
       let gameQuery = supabase
         .from('game_topup_orders')
         .select('*')
@@ -130,9 +141,10 @@ const AgentAccountingReport = () => {
           .lte('processed_at', range.endDate.toISOString());
       }
 
-      const [phoneResult, gameResult] = await Promise.all([
+      const [phoneResult, gameResult, settlementsResult] = await Promise.all([
         phoneQuery,
-        gameQuery
+        gameQuery,
+        supabase.from('agent_settlements').select('agent_id, amount'),
       ]);
 
       if (phoneResult.error) throw phoneResult.error;
@@ -140,28 +152,23 @@ const AgentAccountingReport = () => {
 
       const phoneOrders = phoneResult.data || [];
       const gameOrders = gameResult.data || [];
+      const settlements = settlementsResult.data || [];
 
-      // Helper function to calculate fee based on operator settings
+      // Build settlements map (all-time, not filtered by period)
+      const settlementsMap = new Map<string, number>();
+      for (const s of settlements) {
+        settlementsMap.set(s.agent_id, (settlementsMap.get(s.agent_id) || 0) + Number(s.amount));
+      }
+
       const calculateFee = (amount: number, operator: any): number => {
         if (!operator) return 0;
-        
         const { fee_type, fee_value, fee_min, fee_max } = operator;
-        let fee = 0;
-        
-        if (fee_type === 'percentage') {
-          fee = (amount * fee_value) / 100;
-        } else {
-          fee = fee_value;
-        }
-        
-        // Apply min/max bounds
+        let fee = fee_type === 'percentage' ? (amount * fee_value) / 100 : fee_value;
         if (fee < fee_min) fee = fee_min;
         if (fee_max && fee > fee_max) fee = fee_max;
-        
         return fee;
       };
 
-      // Get unique agent IDs from both services
       const allAgentIds = [
         ...new Set([
           ...phoneOrders.map(o => o.processed_by).filter(Boolean),
@@ -169,15 +176,12 @@ const AgentAccountingReport = () => {
         ])
       ];
 
-      // Fetch agent profiles
       const { data: profiles } = await supabase
         .from('profiles')
         .select('user_id, full_name, phone')
         .in('user_id', allAgentIds);
 
       const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
-
-      // Calculate stats per agent
       const statsMap = new Map<string, AgentStats>();
 
       const getOrCreateAgent = (agentId: string): AgentStats => {
@@ -187,15 +191,9 @@ const AgentAccountingReport = () => {
             agent_id: agentId,
             agent_name: profile?.full_name || 'غير معروف',
             agent_phone: profile?.phone || '',
-            total_orders: 0,
-            approved_orders: 0,
-            rejected_orders: 0,
-            pending_orders: 0,
-            total_approved_amount: 0,
-            total_rejected_amount: 0,
-            total_pending_amount: 0,
-            total_fees_collected: 0,
-            net_due: 0,
+            total_orders: 0, approved_orders: 0, rejected_orders: 0, pending_orders: 0,
+            total_approved_amount: 0, total_rejected_amount: 0, total_pending_amount: 0,
+            total_fees_collected: 0, net_due: 0, total_settled: 0,
             phone_topup: createEmptyServiceStats(),
             game_topup: createEmptyServiceStats(),
           });
@@ -203,11 +201,9 @@ const AgentAccountingReport = () => {
         return statsMap.get(agentId)!;
       };
 
-      // Process phone topup orders
       for (const order of phoneOrders) {
         if (!order.processed_by) continue;
         const stats = getOrCreateAgent(order.processed_by);
-        
         stats.phone_topup.total_orders++;
         stats.total_orders++;
 
@@ -216,12 +212,9 @@ const AgentAccountingReport = () => {
           stats.approved_orders++;
           stats.phone_topup.total_approved_amount += order.amount || 0;
           stats.total_approved_amount += order.amount || 0;
-          
-          // Calculate fee from operator settings if fee_amount is 0
           const calculatedFee = order.fee_amount > 0 
             ? order.fee_amount 
             : calculateFee(order.amount, order.phone_operators);
-          
           stats.phone_topup.total_fees_collected += calculatedFee;
           stats.total_fees_collected += calculatedFee;
         } else if (order.status === 'rejected') {
@@ -237,11 +230,9 @@ const AgentAccountingReport = () => {
         }
       }
 
-      // Process game topup orders (uses 'completed' instead of 'approved')
       for (const order of gameOrders) {
         if (!order.processed_by) continue;
         const stats = getOrCreateAgent(order.processed_by);
-        
         stats.game_topup.total_orders++;
         stats.total_orders++;
 
@@ -263,18 +254,18 @@ const AgentAccountingReport = () => {
         }
       }
 
-      // Calculate net due for each agent (Amount + Fees)
-      const agentStatsArray = Array.from(statsMap.values()).map(agent => ({
-        ...agent,
-        net_due: agent.total_approved_amount + agent.total_fees_collected,
-      }));
+      const agentStatsArray = Array.from(statsMap.values()).map(agent => {
+        const settled = settlementsMap.get(agent.agent_id) || 0;
+        return {
+          ...agent,
+          total_settled: settled,
+          net_due: agent.total_approved_amount + agent.total_fees_collected - settled,
+        };
+      });
 
-      // Sort by total approved amount
       agentStatsArray.sort((a, b) => b.total_approved_amount - a.total_approved_amount);
-
       setAgentStats(agentStatsArray);
 
-      // Calculate totals
       const calculatedTotals = agentStatsArray.reduce(
         (acc, agent) => ({
           totalOrders: acc.totalOrders + agent.total_orders,
@@ -286,17 +277,12 @@ const AgentAccountingReport = () => {
           totalPendingAmount: acc.totalPendingAmount + agent.total_pending_amount,
           totalFees: acc.totalFees + agent.total_fees_collected,
           totalNetDue: acc.totalNetDue + agent.net_due,
+          totalSettled: acc.totalSettled + agent.total_settled,
         }),
         {
-          totalOrders: 0,
-          totalApproved: 0,
-          totalRejected: 0,
-          totalPending: 0,
-          totalApprovedAmount: 0,
-          totalRejectedAmount: 0,
-          totalPendingAmount: 0,
-          totalFees: 0,
-          totalNetDue: 0,
+          totalOrders: 0, totalApproved: 0, totalRejected: 0, totalPending: 0,
+          totalApprovedAmount: 0, totalRejectedAmount: 0, totalPendingAmount: 0,
+          totalFees: 0, totalNetDue: 0, totalSettled: 0,
         }
       );
 
@@ -313,66 +299,75 @@ const AgentAccountingReport = () => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return Math.round(amount) + ' د.ج';
+  const handleSettlement = async () => {
+    if (!settlementAgent || !user) return;
+    const amount = Number(settlementAmount);
+    if (!amount || amount <= 0) {
+      toast({ title: 'خطأ', description: 'أدخل مبلغاً صحيحاً', variant: 'destructive' });
+      return;
+    }
+
+    setSettlementSaving(true);
+    try {
+      const { error } = await supabase.from('agent_settlements').insert({
+        agent_id: settlementAgent.agent_id,
+        amount,
+        notes: settlementNotes || null,
+        settled_by: user.id,
+      });
+
+      if (error) throw error;
+
+      toast({ title: 'تم بنجاح', description: `تم تسجيل تسوية بمبلغ ${Math.round(amount)} د.ج` });
+      setSettlementDialogOpen(false);
+      setSettlementAgent(null);
+      setSettlementAmount('');
+      setSettlementNotes('');
+      fetchAgentStats();
+    } catch (err) {
+      console.error('Error creating settlement:', err);
+      toast({ title: 'خطأ', description: 'فشل في تسجيل التسوية', variant: 'destructive' });
+    } finally {
+      setSettlementSaving(false);
+    }
   };
+
+  const openSettlementDialog = (agent: AgentStats) => {
+    setSettlementAgent(agent);
+    setSettlementAmount(String(Math.max(0, Math.round(agent.net_due))));
+    setSettlementNotes('');
+    setSettlementDialogOpen(true);
+  };
+
+  const formatCurrency = (amount: number) => Math.round(amount) + ' د.ج';
 
   const exportToCSV = () => {
     const headers = [
-      'اسم الوكيل',
-      'رقم الهاتف',
-      'إجمالي الطلبات',
-      'الطلبات المقبولة',
-      'الطلبات المرفوضة',
-      'المبلغ المشحون',
-      'الرسوم المحصلة',
-      'المستحق للوكيل',
-      'طلبات الهاتف',
-      'طلبات الألعاب',
+      'اسم الوكيل', 'رقم الهاتف', 'إجمالي الطلبات', 'الطلبات المقبولة',
+      'الطلبات المرفوضة', 'المبلغ المشحون', 'الرسوم المحصلة', 'المُسوّى', 'المستحق للوكيل',
+      'طلبات الهاتف', 'طلبات الألعاب',
     ];
 
     const rows = agentStats.map(agent => [
-      agent.agent_name,
-      agent.agent_phone,
-      agent.total_orders,
-      agent.approved_orders,
-      agent.rejected_orders,
-      agent.total_approved_amount,
-      agent.total_fees_collected,
-      agent.net_due,
-      agent.phone_topup.approved_orders,
-      agent.game_topup.approved_orders,
+      agent.agent_name, agent.agent_phone, agent.total_orders, agent.approved_orders,
+      agent.rejected_orders, agent.total_approved_amount, agent.total_fees_collected,
+      agent.total_settled, agent.net_due, agent.phone_topup.approved_orders, agent.game_topup.approved_orders,
     ]);
 
-    // Add totals row
     rows.push([
-      'الإجمالي',
-      '',
-      totals.totalOrders,
-      totals.totalApproved,
-      totals.totalRejected,
-      totals.totalApprovedAmount,
-      totals.totalFees,
-      totals.totalNetDue,
+      'الإجمالي', '', totals.totalOrders, totals.totalApproved, totals.totalRejected,
+      totals.totalApprovedAmount, totals.totalFees, totals.totalSettled, totals.totalNetDue,
       agentStats.reduce((sum, a) => sum + a.phone_topup.approved_orders, 0),
       agentStats.reduce((sum, a) => sum + a.game_topup.approved_orders, 0),
-    ]);
+    ] as any);
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(',')),
-    ].join('\n');
-
+    const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `agent-report-${selectedPeriod}-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
-
-    toast({
-      title: 'تم التصدير',
-      description: 'تم تصدير التقرير بنجاح',
-    });
+    toast({ title: 'تم التصدير', description: 'تم تصدير التقرير بنجاح' });
   };
 
   return (
@@ -412,7 +407,7 @@ const AgentAccountingReport = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center justify-between">
@@ -445,7 +440,21 @@ const AgentAccountingReport = () => {
           <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">المستحق للوكلاء</p>
+                <p className="text-sm text-muted-foreground">المُسوّى (مدفوع)</p>
+                <p className="text-xl font-bold text-blue-500">
+                  {formatCurrency(totals.totalSettled)}
+                </p>
+              </div>
+              <Banknote className="w-8 h-8 text-blue-500 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">المستحق المتبقي</p>
                 <p className="text-xl font-bold text-orange-500">
                   {formatCurrency(totals.totalNetDue)}
                 </p>
@@ -474,9 +483,7 @@ const AgentAccountingReport = () => {
       <Card>
         <CardHeader>
           <CardTitle>تفاصيل الوكلاء</CardTitle>
-          <CardDescription>
-            إحصائيات كل وكيل والمبالغ المستحقة له
-          </CardDescription>
+          <CardDescription>إحصائيات كل وكيل والمبالغ المستحقة له</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -487,9 +494,7 @@ const AgentAccountingReport = () => {
             <div className="text-center py-12">
               <Users className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">لا توجد بيانات</h3>
-              <p className="text-muted-foreground">
-                لم يتم العثور على طلبات معالجة في هذه الفترة
-              </p>
+              <p className="text-muted-foreground">لم يتم العثور على طلبات معالجة في هذه الفترة</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -508,9 +513,11 @@ const AgentAccountingReport = () => {
                     <TableHead className="text-center">🎮 ألعاب</TableHead>
                     <TableHead className="text-center">المبلغ المشحون</TableHead>
                     <TableHead className="text-center">الرسوم</TableHead>
+                    <TableHead className="text-center">المُسوّى</TableHead>
                     <TableHead className="text-center">
-                      <span className="text-orange-500 font-bold">المستحق</span>
+                      <span className="text-orange-500 font-bold">المتبقي</span>
                     </TableHead>
+                    <TableHead className="text-center">تسوية</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -519,33 +526,23 @@ const AgentAccountingReport = () => {
                       <TableCell>
                         <div>
                           <p className="font-medium">{agent.agent_name}</p>
-                          <p className="text-sm text-muted-foreground" dir="ltr">
-                            {agent.agent_phone}
-                          </p>
+                          <p className="text-sm text-muted-foreground" dir="ltr">{agent.agent_phone}</p>
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
                         <Badge variant="secondary">{agent.total_orders}</Badge>
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className="text-green-500 font-medium">
-                          {agent.approved_orders}
-                        </span>
+                        <span className="text-green-500 font-medium">{agent.approved_orders}</span>
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className="text-red-500 font-medium">
-                          {agent.rejected_orders}
-                        </span>
+                        <span className="text-red-500 font-medium">{agent.rejected_orders}</span>
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className="text-blue-500 font-medium">
-                          {agent.phone_topup.approved_orders}
-                        </span>
+                        <span className="text-blue-500 font-medium">{agent.phone_topup.approved_orders}</span>
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className="text-purple-500 font-medium">
-                          {agent.game_topup.approved_orders}
-                        </span>
+                        <span className="text-purple-500 font-medium">{agent.game_topup.approved_orders}</span>
                       </TableCell>
                       <TableCell className="text-center font-medium">
                         {formatCurrency(agent.total_approved_amount)}
@@ -553,10 +550,25 @@ const AgentAccountingReport = () => {
                       <TableCell className="text-center text-green-500">
                         {formatCurrency(agent.total_fees_collected)}
                       </TableCell>
+                      <TableCell className="text-center text-blue-500">
+                        {formatCurrency(agent.total_settled)}
+                      </TableCell>
                       <TableCell className="text-center">
-                        <span className="text-orange-500 font-bold text-lg">
+                        <span className={`font-bold text-lg ${agent.net_due > 0 ? 'text-orange-500' : 'text-green-500'}`}>
                           {formatCurrency(agent.net_due)}
                         </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openSettlementDialog(agent)}
+                          disabled={agent.net_due <= 0}
+                          className="gap-1"
+                        >
+                          <Banknote className="w-4 h-4" />
+                          تسوية
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -567,27 +579,19 @@ const AgentAccountingReport = () => {
                     <TableCell className="text-center">
                       <Badge>{totals.totalOrders}</Badge>
                     </TableCell>
-                    <TableCell className="text-center text-green-500">
-                      {totals.totalApproved}
-                    </TableCell>
-                    <TableCell className="text-center text-red-500">
-                      {totals.totalRejected}
-                    </TableCell>
+                    <TableCell className="text-center text-green-500">{totals.totalApproved}</TableCell>
+                    <TableCell className="text-center text-red-500">{totals.totalRejected}</TableCell>
                     <TableCell className="text-center text-blue-500">
                       {agentStats.reduce((sum, a) => sum + a.phone_topup.approved_orders, 0)}
                     </TableCell>
                     <TableCell className="text-center text-purple-500">
                       {agentStats.reduce((sum, a) => sum + a.game_topup.approved_orders, 0)}
                     </TableCell>
-                    <TableCell className="text-center">
-                      {formatCurrency(totals.totalApprovedAmount)}
-                    </TableCell>
-                    <TableCell className="text-center text-green-500">
-                      {formatCurrency(totals.totalFees)}
-                    </TableCell>
-                    <TableCell className="text-center text-orange-500 text-lg">
-                      {formatCurrency(totals.totalNetDue)}
-                    </TableCell>
+                    <TableCell className="text-center">{formatCurrency(totals.totalApprovedAmount)}</TableCell>
+                    <TableCell className="text-center text-green-500">{formatCurrency(totals.totalFees)}</TableCell>
+                    <TableCell className="text-center text-blue-500">{formatCurrency(totals.totalSettled)}</TableCell>
+                    <TableCell className="text-center text-orange-500 text-lg">{formatCurrency(totals.totalNetDue)}</TableCell>
+                    <TableCell></TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
@@ -606,15 +610,72 @@ const AgentAccountingReport = () => {
             <div>
               <h4 className="font-medium text-blue-500 mb-1">طريقة الحساب</h4>
               <p className="text-sm text-muted-foreground">
-                <strong>المستحق للوكيل</strong> = إجمالي المبالغ المشحونة (المقبولة فقط) - الرسوم المحصلة
+                <strong>المتبقي للوكيل</strong> = (المبالغ المشحونة + الرسوم المحصلة) - المبالغ المُسوّاة
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                هذا المبلغ يمثل ما يجب دفعه للوكيل مقابل الرصيد الذي استخدمه في شحن حسابات العملاء.
+                عند دفع مستحقات الوكيل نقداً، سجّل التسوية لتصفير المستحق.
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Settlement Dialog */}
+      <Dialog open={settlementDialogOpen} onOpenChange={setSettlementDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>تسجيل تسوية - {settlementAgent?.agent_name}</DialogTitle>
+            <DialogDescription>
+              سجّل المبلغ الذي دفعته نقداً للوكيل
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {settlementAgent && (
+              <div className="bg-muted p-3 rounded-lg space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">المستحق الكلي:</span>
+                  <span className="font-bold">
+                    {formatCurrency(settlementAgent.total_approved_amount + settlementAgent.total_fees_collected)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">المُسوّى سابقاً:</span>
+                  <span className="text-blue-500 font-medium">{formatCurrency(settlementAgent.total_settled)}</span>
+                </div>
+                <div className="flex justify-between border-t pt-1">
+                  <span className="text-muted-foreground">المتبقي:</span>
+                  <span className="text-orange-500 font-bold">{formatCurrency(settlementAgent.net_due)}</span>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <Label>المبلغ المدفوع (د.ج)</Label>
+              <Input
+                type="number"
+                placeholder="أدخل المبلغ"
+                value={settlementAmount}
+                onChange={(e) => setSettlementAmount(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label>ملاحظات (اختياري)</Label>
+              <Textarea
+                placeholder="مثال: دفعة نقدية بتاريخ..."
+                value={settlementNotes}
+                onChange={(e) => setSettlementNotes(e.target.value)}
+              />
+            </div>
+
+            <Button onClick={handleSettlement} disabled={settlementSaving} className="w-full gap-2">
+              {settlementSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Banknote className="h-4 w-4" />}
+              تأكيد التسوية
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
