@@ -28,7 +28,6 @@ interface AgentStats {
   agent_id: string;
   agent_name: string;
   agent_phone: string;
-  // Combined stats
   total_orders: number;
   approved_orders: number;
   rejected_orders: number;
@@ -38,7 +37,7 @@ interface AgentStats {
   total_pending_amount: number;
   total_fees_collected: number;
   net_due: number;
-  // Per-service breakdown
+  total_settled: number;
   phone_topup: ServiceStats;
   game_topup: ServiceStats;
 }
