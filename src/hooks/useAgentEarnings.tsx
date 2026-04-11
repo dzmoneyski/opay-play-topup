@@ -85,8 +85,7 @@ export const useAgentEarnings = () => {
       const gameAmount = gameApproved.reduce((sum, o) => sum + Number(o.amount), 0);
 
       const totalApproved = phoneAmount + gameAmount;
-      const totalFees = phoneFees;
-      const netDue = totalApproved + totalFees;
+      const netDue = totalApproved + totalFees - totalSettled;
 
       const pendingPhone = phoneOrders.filter(o => o.status === 'pending').length;
       const pendingGame = gameOrders.filter(o => o.status === 'pending').length;
