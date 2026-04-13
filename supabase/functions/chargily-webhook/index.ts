@@ -82,22 +82,33 @@ serve(async (req) => {
       return new Response("Database error", { status: 500 });
     }
 
-    // If payment is successful, create an approved deposit (triggers balance update automatically)
+    // If payment is successful, create an approved deposit (with duplicate check)
     if (paymentStatus === "paid" && payment) {
-      const { error: depositError } = await supabaseAdmin.from("deposits").insert({
-        user_id: payment.user_id,
-        amount: payment.amount,
-        payment_method: payment.payment_method === "edahabia" ? "edahabiya" : "cib",
-        status: "approved",
-        transaction_id: checkoutId,
-        processed_at: new Date().toISOString(),
-        admin_notes: "تم الدفع تلقائياً عبر Chargily Pay",
-      });
+      // Check if a deposit already exists for this checkout to prevent duplicates
+      const { data: existingDeposit } = await supabaseAdmin
+        .from("deposits")
+        .select("id")
+        .eq("transaction_id", checkoutId)
+        .limit(1);
 
-      if (depositError) {
-        console.error("Error creating deposit:", depositError);
+      if (existingDeposit && existingDeposit.length > 0) {
+        console.log(`Deposit already exists for checkout ${checkoutId}, skipping`);
       } else {
-        console.log(`Deposit created for user ${payment.user_id}: +${payment.amount} DZD`);
+        const { error: depositError } = await supabaseAdmin.from("deposits").insert({
+          user_id: payment.user_id,
+          amount: payment.amount,
+          payment_method: payment.payment_method === "edahabia" ? "edahabiya" : "cib",
+          status: "approved",
+          transaction_id: checkoutId,
+          processed_at: new Date().toISOString(),
+          admin_notes: "تم الدفع تلقائياً عبر Chargily Pay",
+        });
+
+        if (depositError) {
+          console.error("Error creating deposit:", depositError);
+        } else {
+          console.log(`Deposit created for user ${payment.user_id}: +${payment.amount} DZD`);
+        }
       }
     }
 
