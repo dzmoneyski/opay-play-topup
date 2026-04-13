@@ -1,0 +1,1 @@
+DELETE FROM deposits WHERE id = '22acac68-f7e7-4dc5-bf51-8ff7267564d0';
