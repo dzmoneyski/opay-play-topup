@@ -29,13 +29,16 @@ serve(async (req) => {
     const body = await req.text();
     const signature = req.headers.get("signature");
 
-    // Verify webhook signature
-    if (signature) {
-      const computedSignature = await computeHmacSha256(CHARGILY_SECRET_KEY, body);
-      if (computedSignature !== signature) {
-        console.error("Invalid webhook signature");
-        return new Response("Invalid signature", { status: 403 });
-      }
+    // Signature is REQUIRED — reject any request without a valid HMAC signature
+    if (!signature) {
+      console.error("Missing webhook signature header");
+      return new Response("Missing signature", { status: 401 });
+    }
+
+    const computedSignature = await computeHmacSha256(CHARGILY_SECRET_KEY, body);
+    if (computedSignature !== signature) {
+      console.error("Invalid webhook signature");
+      return new Response("Invalid signature", { status: 403 });
     }
 
     const event = JSON.parse(body);
