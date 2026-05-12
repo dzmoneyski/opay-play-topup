@@ -52,7 +52,7 @@ const serviceItems = [
   { title: "بطاقات ID", url: "/admin/digital-cards", icon: Wallet },
   { title: "البطاقات الرقمية", url: "/admin/cards", icon: Gift },
   { title: "إدارة الألعاب", url: "/admin/games", icon: Gamepad2, notificationKey: 'pendingGames' },
-  { title: "إدارة المراهنات", url: "/admin/betting", icon: Gamepad2, notificationKey: 'pendingBettingVerifications' },
+  
   { title: "شحن الهاتف", url: "/admin/phone-topup", icon: Phone, notificationKey: 'pendingPhoneTopups' },
   { title: "طلبات علي اكسبرس", url: "/admin/aliexpress", icon: ShoppingBag },
   { title: "طلبات الجالية", url: "/admin/diaspora", icon: Globe2 },
