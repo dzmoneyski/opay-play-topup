@@ -41,17 +41,6 @@ export function AdminAlertBanner() {
     });
   }
 
-  if (counts.pendingBettingVerifications > 0 && !dismissed.includes('bettingVerifications')) {
-    alerts.push({
-      id: 'bettingVerifications',
-      icon: Shield,
-      title: 'طلبات تحقق حسابات المراهنات',
-      description: `لديك ${counts.pendingBettingVerifications} طلب تحقق حساب مراهنات بانتظار الموافقة`,
-      link: '/admin/betting',
-      variant: 'default' as const,
-      urgent: false,
-    });
-  }
 
   if (counts.pendingDeposits > 0 && !dismissed.includes('deposits')) {
     alerts.push({
