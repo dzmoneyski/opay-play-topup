@@ -3,15 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import BackButton from "@/components/BackButton";
-import commercialRegister1 from "@/assets/commercial-register-1.jpg";
-import commercialRegister2 from "@/assets/commercial-register-2.jpg";
 
 const AboutUs = () => {
   const companyInfo = {
     nif: "19621230011114402100",
     telegram: "https://t.me/opay_admin",
     website: "https://opaydz.com",
-    commercialRegister: "19621230011114402100",
     email: "opaydz.officel@gmail.com",
     whatsapp: "https://wa.me/213660873714",
   };
