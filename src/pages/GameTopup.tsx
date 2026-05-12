@@ -10,7 +10,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useGamePlatforms, useGamePackages, useCreateGameTopupOrder, useGameTopupOrders } from "@/hooks/useGamePlatforms";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BettingForm } from "@/components/BettingForm";
 import { useBalance } from "@/hooks/useBalance";
 import { getPlatformLogo } from "@/lib/gamePlatformLogos";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
