@@ -531,7 +531,7 @@ const { isAdmin, loading: rolesLoading } = useUserRoles();
                       <div className="space-y-0.5">
                         <p className="text-white/85 text-[8px] leading-tight">• منصة جزائرية رسمية</p>
                         <p className="text-white/85 text-[8px] leading-tight">• موثوقة 100%</p>
-                        <p className="text-white/85 text-[8px] leading-tight">• شاهد السجل التجاري</p>
+                        <p className="text-white/85 text-[8px] leading-tight">• تعرف علينا أكثر</p>
                       </div>
                     </div>
                   </div>
