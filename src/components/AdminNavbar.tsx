@@ -260,21 +260,6 @@ export function AdminNavbar() {
                   </DropdownMenuItem>
                 )}
 
-                {counts.pendingBettingVerifications > 0 && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin/betting" className="flex items-center gap-3 cursor-pointer">
-                      <div className="p-2 rounded-full bg-warning/10">
-                        <Gamepad2 className="h-4 w-4 text-warning" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">طلبات تحقق حسابات مراهنات</p>
-                        <p className="text-xs text-muted-foreground">
-                          {counts.pendingBettingVerifications} حساب بانتظار الموافقة
-                        </p>
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
 
                 {counts.pendingDeposits > 0 && (
                   <DropdownMenuItem asChild>
