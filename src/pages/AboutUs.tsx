@@ -99,43 +99,6 @@ const AboutUs = () => {
                   <span className="text-muted-foreground font-medium">رقم NIF:</span>
                   <span className="font-mono font-bold text-primary direction-ltr">{companyInfo.nif}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground font-medium">رقم السجل التجاري:</span>
-                  <span className="font-mono font-bold text-primary direction-ltr">{companyInfo.commercialRegister}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Commercial Register Images */}
-          <Card className="shadow-elevated">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <FileText className="w-5 h-5 text-primary" />
-                السجل التجاري الرسمي
-              </CardTitle>
-              <CardDescription>
-                نسخة من سجلنا التجاري كدليل على مصداقيتنا
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4">
-                <div className="relative group overflow-hidden rounded-xl border-2 border-primary/20 hover:border-primary/40 transition-all">
-                  <img 
-                    src={commercialRegister1} 
-                    alt="السجل التجاري - صفحة 1" 
-                    className="w-full h-auto object-contain bg-muted/30"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                </div>
-                <div className="relative group overflow-hidden rounded-xl border-2 border-primary/20 hover:border-primary/40 transition-all">
-                  <img 
-                    src={commercialRegister2} 
-                    alt="السجل التجاري - صفحة 2" 
-                    className="w-full h-auto object-contain bg-muted/30"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                </div>
               </div>
             </CardContent>
           </Card>
