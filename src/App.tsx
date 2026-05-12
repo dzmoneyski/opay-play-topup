@@ -218,11 +218,6 @@ const App = () => {
                   <AgentGameOrders />
                 </ProtectedRoute>
               } />
-              <Route path="/agent/betting-orders" element={
-                <ProtectedRoute requireActivation={false}>
-                  <AgentBettingOrders />
-                </ProtectedRoute>
-              } />
               <Route path="/agent/phone-orders" element={
                 <ProtectedRoute requireActivation={false}>
                   <AgentPhoneOrders />
