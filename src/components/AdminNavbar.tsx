@@ -176,12 +176,12 @@ export function AdminNavbar() {
                 <Button variant="ghost" className="gap-2 relative">
                   <div className="relative">
                     <Gift className="h-4 w-4" />
-                    {(counts.pendingBetting + counts.pendingBettingVerifications + counts.pendingGames) > 0 && (
+                    {(counts.pendingGames) > 0 && (
                       <Badge 
                         variant="destructive" 
                         className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center text-[10px] font-bold rounded-full animate-pulse"
                       >
-                        {counts.pendingBetting + counts.pendingBettingVerifications + counts.pendingGames}
+                        {counts.pendingGames}
                       </Badge>
                     )}
                   </div>
