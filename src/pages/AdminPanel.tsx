@@ -70,7 +70,7 @@ const AdminPanel = () => {
           <Route path="cards" element={<CardsPage />} />
           <Route path="digital-cards" element={<DigitalCardsPage />} />
           <Route path="games" element={<GameManagement />} />
-          <Route path="betting" element={<BettingManagement />} />
+          
           <Route path="phone-topup" element={<PhoneTopupManagement />} />
           <Route path="merchants" element={<MerchantManagement />} />
           <Route path="agents" element={<AgentManagement />} />
