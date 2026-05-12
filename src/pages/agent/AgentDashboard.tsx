@@ -44,16 +44,6 @@ const AgentDashboard = () => {
       pendingCount: pendingCounts.gameTopups,
     },
     {
-      title: 'طلبات المراهنات',
-      titleEn: 'Betting Orders',
-      description: 'إدارة طلبات شحن المراهنات',
-      icon: CreditCard,
-      path: '/agent/betting-orders',
-      enabled: canManageBetting,
-      color: 'bg-orange-500',
-      pendingCount: pendingCounts.betting,
-    },
-    {
       title: 'طلبات شحن الهاتف',
       titleEn: 'Phone Top-up Orders',
       description: 'إدارة طلبات شحن الهاتف',
