@@ -12,7 +12,7 @@ import WithdrawalsPage from '@/pages/admin/Withdrawals';
 import TransfersPage from '@/pages/admin/Transfers';
 import CardsPage from '@/pages/admin/Cards';
 import GameManagement from '@/pages/admin/GameManagement';
-import BettingManagement from '@/pages/admin/BettingManagement';
+
 import PhoneTopupManagement from '@/pages/admin/PhoneTopup';
 import MerchantManagement from '@/pages/admin/MerchantManagement';
 import SettingsPage from '@/pages/admin/Settings';
