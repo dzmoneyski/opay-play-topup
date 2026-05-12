@@ -132,9 +132,6 @@ const AgentDashboard = () => {
               <Badge variant={canManageGameTopups ? "default" : "secondary"}>
                 {canManageGameTopups ? '✓' : '✗'} شحن الألعاب
               </Badge>
-              <Badge variant={canManageBetting ? "default" : "secondary"}>
-                {canManageBetting ? '✓' : '✗'} المراهنات
-              </Badge>
               <Badge variant={canManagePhoneTopups ? "default" : "secondary"}>
                 {canManagePhoneTopups ? '✓' : '✗'} شحن الهاتف
               </Badge>
