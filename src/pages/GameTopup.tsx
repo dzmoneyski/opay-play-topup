@@ -336,20 +336,10 @@ const GameTopup = () => {
           </Tabs>
         )}
 
-        {/* Order Form / Betting Form */}
+        {/* Order Form */}
         {selectedPlatform && selectedPlatformData && (
           <>
-            {selectedPlatformData.category === 'betting' ? (
-              <div className="mt-6">
-                <BettingForm
-                  key={selectedPlatform}
-                  platformId={selectedPlatform}
-                  platformName={selectedPlatformData.name_ar}
-                  balance={balance}
-                  onBalanceUpdate={fetchBalance}
-                />
-              </div>
-            ) : (
+            {false ? null : (
               <Card className="shadow-card border-0 bg-gradient-card mt-6 animate-fade-in">
                 <CardHeader>
                   <CardTitle>معلومات الشحن</CardTitle>
