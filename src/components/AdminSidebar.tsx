@@ -54,7 +54,7 @@ export function AdminSidebar() {
   const serviceItems = [
     { title: "البطاقات الرقمية", url: "/admin/cards", icon: Gift, badge: counts.pendingDigitalCards },
     { title: "إدارة الألعاب", url: "/admin/games", icon: Gamepad2, badge: counts.pendingGames },
-    { title: "إدارة المراهنات", url: "/admin/betting", icon: Gamepad2, badge: counts.pendingBetting + counts.pendingBettingVerifications },
+    
     { title: "طلبات AliExpress", url: "/admin/aliexpress", icon: ShoppingBag, badge: 0 },
     { title: "محاولات الاحتيال", url: "/admin/fraud-attempts", icon: AlertTriangle, badge: 0 },
     { title: "التقارير", url: "/admin/reports", icon: BarChart3, badge: 0 },

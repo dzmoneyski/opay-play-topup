@@ -10,7 +10,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useGamePlatforms, useGamePackages, useCreateGameTopupOrder, useGameTopupOrders } from "@/hooks/useGamePlatforms";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BettingForm } from "@/components/BettingForm";
 import { useBalance } from "@/hooks/useBalance";
 import { getPlatformLogo } from "@/lib/gamePlatformLogos";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -159,10 +158,9 @@ const GameTopup = () => {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <Tabs value={currentTab} onValueChange={(v) => setCurrentTab(v as 'games' | 'betting' | 'orders')} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
+          <Tabs value={currentTab === 'betting' ? 'games' : currentTab} onValueChange={(v) => setCurrentTab(v as 'games' | 'orders')} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="games">الألعاب</TabsTrigger>
-              <TabsTrigger value="betting">توقعات كرة القدم</TabsTrigger>
               <TabsTrigger value="orders">الطلبيات</TabsTrigger>
             </TabsList>
 
@@ -180,37 +178,6 @@ const GameTopup = () => {
                   >
                     <CardContent className="p-4 text-center">
                       <div className="aspect-square mb-3 rounded-2xl bg-gradient-primary/10 flex items-center justify-center p-2 overflow-hidden">
-                        {getPlatformLogo(platform.slug, platform.logo_url) ? (
-                          <img
-                            src={getPlatformLogo(platform.slug, platform.logo_url)!}
-                            alt={platform.name_ar}
-                            className="w-full h-full object-contain rounded-2xl"
-                          />
-                        ) : (
-                          <Gamepad2 className="h-12 w-12 text-primary" />
-                        )}
-                      </div>
-                      <h3 className="font-semibold text-sm">{platform.name_ar}</h3>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="betting" className="space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {bettingPlatforms.map((platform) => (
-                  <Card
-                    key={platform.id}
-                    className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 rounded-3xl ${
-                      selectedPlatform === platform.id
-                        ? 'ring-2 ring-primary shadow-lg scale-105'
-                        : ''
-                    }`}
-                    onClick={() => handlePlatformSelect(platform.id, 'betting')}
-                  >
-                    <CardContent className="p-4 text-center">
-                      <div className="aspect-square mb-3 rounded-2xl bg-gradient-gold/10 flex items-center justify-center p-2 overflow-hidden">
                         {getPlatformLogo(platform.slug, platform.logo_url) ? (
                           <img
                             src={getPlatformLogo(platform.slug, platform.logo_url)!}
@@ -337,20 +304,10 @@ const GameTopup = () => {
           </Tabs>
         )}
 
-        {/* Order Form / Betting Form */}
+        {/* Order Form */}
         {selectedPlatform && selectedPlatformData && (
           <>
-            {selectedPlatformData.category === 'betting' ? (
-              <div className="mt-6">
-                <BettingForm
-                  key={selectedPlatform}
-                  platformId={selectedPlatform}
-                  platformName={selectedPlatformData.name_ar}
-                  balance={balance}
-                  onBalanceUpdate={fetchBalance}
-                />
-              </div>
-            ) : (
+            {false ? null : (
               <Card className="shadow-card border-0 bg-gradient-card mt-6 animate-fade-in">
                 <CardHeader>
                   <CardTitle>معلومات الشحن</CardTitle>

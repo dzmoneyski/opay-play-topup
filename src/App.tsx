@@ -39,7 +39,7 @@ import ShareApp from "./pages/ShareApp";
 import NotFound from "./pages/NotFound";
 import AgentDashboard from "./pages/agent/AgentDashboard";
 import AgentGameOrders from "./pages/agent/AgentGameOrders";
-import AgentBettingOrders from "./pages/agent/AgentBettingOrders";
+
 import AgentPhoneOrders from "./pages/agent/AgentPhoneOrders";
 import PhoneTopup from "./pages/PhoneTopup";
 import FraudReport from "./pages/FraudReport";
@@ -216,11 +216,6 @@ const App = () => {
               <Route path="/agent/game-orders" element={
                 <ProtectedRoute requireActivation={false}>
                   <AgentGameOrders />
-                </ProtectedRoute>
-              } />
-              <Route path="/agent/betting-orders" element={
-                <ProtectedRoute requireActivation={false}>
-                  <AgentBettingOrders />
                 </ProtectedRoute>
               } />
               <Route path="/agent/phone-orders" element={

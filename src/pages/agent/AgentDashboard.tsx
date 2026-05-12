@@ -44,16 +44,6 @@ const AgentDashboard = () => {
       pendingCount: pendingCounts.gameTopups,
     },
     {
-      title: 'طلبات المراهنات',
-      titleEn: 'Betting Orders',
-      description: 'إدارة طلبات شحن المراهنات',
-      icon: CreditCard,
-      path: '/agent/betting-orders',
-      enabled: canManageBetting,
-      color: 'bg-orange-500',
-      pendingCount: pendingCounts.betting,
-    },
-    {
       title: 'طلبات شحن الهاتف',
       titleEn: 'Phone Top-up Orders',
       description: 'إدارة طلبات شحن الهاتف',
@@ -141,9 +131,6 @@ const AgentDashboard = () => {
             <div className="flex flex-wrap gap-2">
               <Badge variant={canManageGameTopups ? "default" : "secondary"}>
                 {canManageGameTopups ? '✓' : '✗'} شحن الألعاب
-              </Badge>
-              <Badge variant={canManageBetting ? "default" : "secondary"}>
-                {canManageBetting ? '✓' : '✗'} المراهنات
               </Badge>
               <Badge variant={canManagePhoneTopups ? "default" : "secondary"}>
                 {canManagePhoneTopups ? '✓' : '✗'} شحن الهاتف
